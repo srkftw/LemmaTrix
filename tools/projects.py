@@ -266,6 +266,7 @@ def serve(socket,project,sign_key,output,version='0.1.0',poll_interval=.5):
     current=next((r for r in roots(client) if r['name']==project and r['head']==job['source_root']),None)
     published=publish_result(directory/'job.result.json',sign_key,project,'.'.join(map(str,selected)),release_path,parent,client=client,rights=768,attach_root=current['cap'] if current else None)
     counter=next_version(selected)
+    report('published',job=job['job_id'],source_root=job['source_root'],release=published['release_id'],version=published['version'],parent=parent,path=str(release_path),installed=False)
     staged=client.stage(release_path)
     if staged['release_id']!=published['release_id']:raise ValueError('staged release differs from signed result')
     report('staged',job=job['job_id'],source_root=job['source_root'],release=published['release_id'],version=published['version'],parent=parent,path=str(release_path),signature_verified=staged['guest_signature_verified'],material_checked=staged.get('guest_material_commitments_checked',False),installed=False,approval='Review F12, then physical Enter')
