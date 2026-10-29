@@ -16,7 +16,7 @@ partial def digits (n count p t : UInt64) : UInt64 :=
   if count == 0 then t else
     let d := (n >>> ((count-1)*4)) &&& 15
     digits n (count-1) (p+1) (store8 p (if d < 10 then d+48 else d+87) t)
-def response (j t : UInt64) : UInt64 :=
+def authorityResponse (j t : UInt64) : UInt64 :=
   let t := zero wire 8 t
   let t := store64 (wire+8) (load64 (j+8) t) t
   let t := store64 (wire+16) (load64 j t) t
@@ -27,10 +27,17 @@ def response (j t : UInt64) : UInt64 :=
   let t := store64 (wire+56) (load64 (j+248) t) t
   let t := copy (j+64) (wire+64) 32 t
   let t := copy (j+96) (wire+96) 32 t
-  if load64 j t == 1 then
-    let t := copy (st+32) (wire+128) 32 t
-    192+zero (wire+160) 4 t
-  else
+  let t := copy (st+32) (wire+128) 32 t
+  let t := copy (j+800) (wire+160) 32 t
+  let t := store64 (wire+192) (load64 (j+832) t) t
+  let t := store64 (wire+200) (load64 (j+16) t) t
+  let t := store64 (wire+208) (load64 (j+840) t) t
+  let t := store64 (wire+216) 1 t
+  256+zero (wire+224) 4 t
+
+def response (j t : UInt64) : UInt64 :=
+  if load64 j t == 1 then authorityResponse j t else
+    let t := authorityResponse j t
     let t := copy (j+256) (wire+128) (load64 (j+40) t) t
     128+load64 (j+40) t+t
 
@@ -140,6 +147,10 @@ def cancel (j t : UInt64) : UInt64 :=
     let evidence := load64 (j+232) r
     let t := if build == 0 then r else drop build r
     let t := if evidence == 0 then t else drop evidence t
+    let staged := load64 (j+896) t
+    let artifact := load64 (j+920) t
+    let t := if staged == 0 then t else abortStage staged t
+    let t := if artifact == 0 then t else drop artifact t
     let t := zero j 256 t
     fail 0 t
 
@@ -178,6 +189,11 @@ def enqueue (caller root t : UInt64) : UInt64 :=
     let r := describeRoot root t
     if r != 160 || status r != 0 || load64 (wire+48) r != caller then fail 1 r else
       let t := copy (wire+64) 0x610000 32 r
+      let t := store64 0x610100 (load64 (wire+56) t) t
+      let t := store64 0x610108 (load64 (wire+48) t) t
+      let identity := projectIdentity root t
+      if identity != 192 || status identity != 0 then fail 1 identity else
+      let t := copy (wire+160) 0x610120 32 identity
       let slot := reserveJob caller t
       if slot == error then fail 4 slot else
       let r := freezeExport root 0x610000 slot
@@ -202,6 +218,10 @@ def enqueue (caller root t : UInt64) : UInt64 :=
             let t := store64 (j+32) (result r) t
             let t := store64 (j+48) h t
             let t := copy 0x610000 (j+64) 32 t
+            let t := copy 0x610120 (j+800) 32 t
+            let t := store64 (j+832) (load64 0x610100 t) t
+            let t := store64 (j+840) (load64 0x610108 t) t
+            let t := store64 (j+848) root t
             response j t
 
 
@@ -219,6 +239,62 @@ def artifactGrants (j caller t : UInt64) : UInt64 :=
         let t := store64 (wire+56) evidence t
         Guest.Effects.effectValue r t
 
+def validateJobAuthority (j t : UInt64) : UInt64 :=
+  let alive := syscall 34 (load64 (j+16) t) 0 0 0 t
+  if alive == error then error else
+    let r := describeRoot (load64 (j+848) alive) alive
+    if r != 160 || status r != 0 || load64 (wire+48) r != load64 (j+16) r ||
+      load64 (wire+56) r != load64 (j+832) r then error else r
+
+-- Remote artifact return-v1: a completed job's binary is an actual object,
+-- distinct from the asserted digest. Initial supported output cap is64KiB.
+def artifactBegin (j length t : UInt64) : UInt64 :=
+  let n := load64 (command+24) t
+  if length != 160 || load64 j t != 2 || load64 (command+16) t != self t || n == 0 || n > 65536 ||
+    !Guest.ProjectGraph.equal (command+64) (j+64) 32 t || !Guest.ProjectGraph.equal (command+96) (j+96) 32 t ||
+    !Guest.ProjectGraph.equal (command+128) (st+32) 32 t then fail 1 t else
+  if load64 (j+920) t != 0 then fail (if n == load64 (j+904) t then 6 else 2) t else
+    let previous := load64 (j+896) t
+    let t := if previous == 0 then t else abortStage previous t
+    let r := stage n 10 0 t
+    if r != 64 || status r != 0 then fail 4 r else
+      let t := store64 (j+896) (result r) r
+      let t := store64 (j+904) n t
+      fail 0 (store64 (j+912) 0 t)
+def artifactAppend (j length t : UInt64) : UInt64 :=
+  let n := length-64
+  let offset := load64 (command+24) t
+  if length < 65 || length > 576 || load64 j t != 2 || load64 (command+16) t != self t ||
+    load64 (j+896) t == 0 || offset != load64 (j+912) t || offset > load64 (j+904) t || n > load64 (j+904) t-offset then fail 1 t else
+    let r := append (load64 (j+896) t) offset (command+64) n t
+    if r != 64 || status r != 0 then fail 4 r else fail 0 (store64 (j+912) (offset+n) r)
+def artifactCommit (j length t : UInt64) : UInt64 :=
+  if length != 64 || load64 j t != 2 || load64 (command+16) t != self t then fail 1 t else
+  if load64 (j+920) t != 0 then fail 0 t else
+  if load64 (j+896) t == 0 || load64 (j+904) t != load64 (j+912) t then fail 1 t else
+    let r := commit (load64 (j+896) t) (j+96) t
+    if r != 96 || status r != 0 then
+      let h := load64 (j+896) r
+      let t := store64 (j+896) 0 r
+      fail 2 (abortStage h t)
+    else
+      let t := store64 (j+920) (result r) r
+      let t := store64 (j+896) 0 t
+      -- commit returns the payload SHA, not the canonical typed Source ID.
+      -- Graph references must always use nodeMetadata's canonical identity.
+      let r := nodeMetadata (load64 (j+920) t) t
+      if r != 128 || status r != 0 then fail 2 r else
+        fail 0 (copy (wire+64) (j+928) 32 r)
+def artifactRead (j caller t : UInt64) : UInt64 :=
+  if load64 j t != 2 || load64 (j+920) t == 0 then fail 6 t else
+    let r := share (load64 (j+920) t) caller 3 t
+    if r != 64 || status r != 0 then fail 1 r else
+      let h := result r
+      let t := zero wire 8 r
+      let t := store64 (wire+8) h t
+      let t := store64 (wire+16) (load64 (j+904) t) t
+      96+copy (j+928) (wire+64) 32 t
+
 def dispatch (caller rights length t : UInt64) : UInt64 :=
   let op := load64 command t
   let id := load64 (command+8) t
@@ -226,13 +302,23 @@ def dispatch (caller rights length t : UInt64) : UInt64 :=
   if op == 1 && length == 64 then enqueue caller id t else
   if op == 2 && length == 64 && (rights &&& 0x100000000) != 0 then
     let i := nextJob 0 t
-    if i == error then fail 6 t else response (job i) t
+    if i == error then fail 6 t else
+      let checked := validateJobAuthority (job i) t
+      if checked == error then fail 6 (cancel (job i) checked) else response (job i) checked
   else
     let i := findJob id 0 t
     if i == error then fail 3 t else
       let j := job i
+      if op == 8 && (rights &&& 0x100000000) != 0 then artifactBegin j length t else
+      if op == 9 && (rights &&& 0x100000000) != 0 then artifactAppend j length t else
+      if op == 10 && (rights &&& 0x100000000) != 0 then artifactCommit j length t else
+      if op == 11 && length == 64 && load64 (j+16) t == caller then artifactRead j caller t else
       if op == 4 && length == 64 && load64 (j+16) t == caller then response j t else
       if op == 5 && length == 64 && load64 (j+16) t == caller then cancel j t else
+      if op == 7 && length == 64 && (rights &&& 0x100000000) != 0 then
+        let checked := validateJobAuthority j t
+        if checked == error then fail 1 checked else authorityResponse j checked
+      else
       if op == 6 && length == 64 && (rights &&& 0x100000000) != 0 then artifactGrants j caller t else
       if op == 3 && (rights &&& 0x100000000) != 0 && length >= 192 && length <= 704 &&
         load64 j t == 1 && load64 (command+16) t == self t && load64 (command+24) t >= 2 && load64 (command+24) t <= 3 && load64 (command+40) t == 2 &&

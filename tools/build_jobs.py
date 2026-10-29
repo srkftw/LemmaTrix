@@ -4,7 +4,7 @@ from pathlib import Path,PurePosixPath
 import driver
 ROOT=driver.ROOT
 MAX_FILES=128;MAX_INPUT=4*1024*1024
-SDK_MODULES=['Guest.Primitives','Guest.Structured','Guest.Effects','Guest.LiveSDK','Guest.LiveMemory','Guest.Keyboard','Guest.Raster']
+SDK_MODULES=['Guest.Primitives','Guest.Structured','Guest.Effects','Guest.LiveSDK','Guest.NetworkSDK','Guest.LiveMemory','Guest.Keyboard','Guest.Raster']
 RECIPE='lemmatrix-lean-rv64-structured-2'
 
 def sha(data):return hashlib.sha256(data).hexdigest()
@@ -82,13 +82,16 @@ def compiler_identity():
  tools,closure=_toolchain()
  return sha(canonical({'lock':driver.LOCK,'closure':closure,'tools':tools,'sdk_digest':sdk_digest,'recipe':RECIPE}))
 
-def build_source_snapshot(files,*,entry,module,profile,jobid,rootid,outputdir):
+def build_source_snapshot(files,*,entry,module,profile,jobid,rootid,outputdir,output_limit=None):
  """Build only frozen files. The caller must obtain them from an authorized root.
     Returns a bounded attributable result; publisher signing is a separate API.
  """
  files=dict(files)
  if not re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*',entry) or not re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*',module):raise ValueError('invalid module/entry')
  if profile not in (1,2):raise ValueError('unsupported runtime profile')
+ profile_limit=262144 if profile==2 else 65536
+ output_limit=profile_limit if output_limit is None else output_limit
+ if not isinstance(output_limit,int) or not 0<output_limit<=profile_limit:raise ValueError('output byte limit exceeds runtime profile')
  if not re.fullmatch('[0-9a-f]{64}',rootid):raise ValueError('source root must be a stable256-bit identity')
  if not re.fullmatch('[A-Za-z0-9_-]{1,96}',str(jobid)):raise ValueError('invalid build job identity')
  snapshot,manifest=source_commitment(files);modules=_modules(files)
@@ -96,7 +99,7 @@ def build_source_snapshot(files,*,entry,module,profile,jobid,rootid,outputdir):
  sdk_files=[ROOT/(n.replace('.','/')+'.lean') for n in SDK_MODULES]+[ROOT/'Compiler/Main.lean',ROOT/'runtime/primitives.S',ROOT/'runtime/app.ld',ROOT/'runtime/app2.ld',ROOT/'tools/build_sandbox_runner.py',ROOT/'tools/build_jobs.py']
  sdk_entries={str(p.relative_to(ROOT)):p.read_bytes() for p in sdk_files}
  sdk_digest=sha(canonical([{'path':name,'sha256':sha(data)} for name,data in sdk_entries.items()]))
- request={'schema':1,'recipe':RECIPE,'job_id':str(jobid),'source_root':rootid,'snapshot_digest':snapshot,'module':module,'entry':entry,'runtime_profile':profile,'sdk_digest':sdk_digest}
+ request={'schema':1,'recipe':RECIPE,'job_id':str(jobid),'source_root':rootid,'snapshot_digest':snapshot,'module':module,'entry':entry,'runtime_profile':profile,'sdk_digest':sdk_digest,'output_limit':output_limit}
  result={**request,'request_digest':sha(b'LT-BUILD-JOB-1\0'+canonical(request)),'status':'unavailable','diagnostics':[],'diagnostic_text':'','source_files':manifest}
  outputdir=Path(outputdir);outputdir.mkdir(parents=True,exist_ok=True)
  try:tools,closure=_toolchain()
@@ -122,7 +125,7 @@ def build_source_snapshot(files,*,entry,module,profile,jobid,rootid,outputdir):
     if uid and threads and int(uid[1])==os.getuid():uid_tasks+=int(threads[1])
    except (OSError,ValueError):pass
   uid_limit=max(uid_tasks+64,128)
-  cfg={'uid_process_limit':uid_limit,'root':str(newroot),'input':str(inputs),'sdk':str(sdk),'closure':closure,'tools':tools,'sdk_modules':SDK_MODULES,'modules':modules,'module':module,'entry':entry,'profile':profile}
+  cfg={'uid_process_limit':uid_limit,'root':str(newroot),'input':str(inputs),'sdk':str(sdk),'closure':closure,'tools':tools,'sdk_modules':SDK_MODULES,'modules':modules,'module':module,'entry':entry,'profile':profile,'output_limit':output_limit}
   config=stage/'config.json';config.write_bytes(canonical(cfg))
   command=[unshare,'--user','--map-root-user','--mount','--net','--pid','--fork',str(Path(sys.executable).resolve()),str(ROOT/'tools/build_sandbox_runner.py'),str(config)]
   # No inherited environment, stdin, credentials or directory descriptors.
@@ -139,11 +142,11 @@ def build_source_snapshot(files,*,entry,module,profile,jobid,rootid,outputdir):
   result['steps']=reply.get('steps',[])[:256]
   result['status']=reply.get('status','error') if reply.get('status') in ('ok','error','unavailable') else 'error'
   text=str(reply.get('diagnostics',''))[:65536];result['diagnostic_text']=text;result['diagnostics']=_diagnostics(text,manifest,rootid)
-  result['sandbox']={'ready':reply.get('sandbox_ready',False),'user_namespace':True,'mount_namespace':True,'network_namespace':True,'pid_namespace':True,'readonly_input':True,'work_bytes':128*1024*1024,'temp_bytes':16*1024*1024,'address_space_bytes':16*1024*1024*1024,'cpu_seconds':60,'uid_process_limit':uid_limit,'additional_uid_tasks':64,'signer_present':False}
+  result['sandbox']={'ready':reply.get('sandbox_ready',False),'user_namespace':True,'mount_namespace':True,'network_namespace':True,'pid_namespace':True,'readonly_input':True,'work_bytes':128*1024*1024,'temp_bytes':16*1024*1024,'address_space_bytes':16*1024*1024*1024,'cpu_seconds':60,'artifact_output_bytes':output_limit,'artifact_file_limit_enforced':True,'uid_process_limit':uid_limit,'additional_uid_tasks':64,'signer_present':False}
   if result['status']=='ok':
    try:binary=base64.b64decode(reply['binary_base64'],validate=True)
    except (ValueError,KeyError):result['status']='error';result['diagnostic_text']='invalid sandbox artifact transport';return result
-   if not 0<len(binary)<=(262144 if profile==2 else 65536):result['status']='error';result['diagnostic_text']='artifact exceeds resource profile';return result
+   if not 0<len(binary)<=output_limit:result['status']='error';result['diagnostic_text']='artifact exceeds resource profile';return result
    path=outputdir/'app.bin';path.write_bytes(binary)
    result['artifact']={'path':str(path),'sha256':sha(binary),'bytes':len(binary)}
  result['evidence_digest']=sha(b'LT-BUILD-EVIDENCE-1\0'+canonical({k:v for k,v in result.items() if k!='artifact'}))

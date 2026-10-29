@@ -48,9 +48,9 @@ def main(config_path):
  (Path('/work')/'sdk/Guest').mkdir(parents=True);(Path('/work')/'project').mkdir()
  log=Path('/work/diagnostics.txt')
  tools=cfg['tools'];steps=[]
- def run(args):
+ def run(args,artifact_limit=None):
   with log.open('ab') as out:
-   result=subprocess.run([str(x) for x in args],stdin=subprocess.DEVNULL,stdout=out,stderr=subprocess.STDOUT,close_fds=True)
+   result=subprocess.run([str(x) for x in args],stdin=subprocess.DEVNULL,stdout=out,stderr=subprocess.STDOUT,close_fds=True,preexec_fn=(lambda:resource.setrlimit(resource.RLIMIT_FSIZE,(artifact_limit,artifact_limit))) if artifact_limit is not None else None)
   steps.append({'tool':Path(args[0]).name,'exit':result.returncode})
   if result.returncode:raise RuntimeError('build command failed')
  def lean(args):run([tools['lean'],'-j2','-M4096','-Dcompiler.extract_closed=false',*args])
@@ -71,9 +71,9 @@ def main(config_path):
   for i,src in enumerate(['/work/app.S','/work/start.S','/sdk/runtime/primitives.S']):
    obj=f'/work/{i}.o';run([tools['clang'],'-target','riscv64-unknown-elf','-march=rv64im','-mabi=lp64','-mno-relax','-c',src,'-o',obj]);objects.append(obj)
   run([tools['ld.lld'],'-m','elf64lriscv','--no-relax','-T',('/sdk/runtime/app2.ld' if cfg['profile']==2 else '/sdk/runtime/app.ld'),*objects,'-o','/work/app.elf'])
-  run([tools['llvm-objcopy'],'-O','binary','/work/app.elf','/work/app.bin'])
+  run([tools['llvm-objcopy'],'-O','binary','/work/app.elf','/work/app.bin'],cfg['output_limit'])
   binary=Path('/work/app.bin').read_bytes()
-  if not 0<len(binary)<=(262144 if cfg['profile']==2 else 65536):raise RuntimeError('native code exceeds profile code limit')
+  if not 0<len(binary)<=cfg['output_limit']:raise RuntimeError('native code exceeds profile code limit')
   artifact=base64.b64encode(binary).decode()
  except (OSError,RuntimeError) as error:
   status='error'
