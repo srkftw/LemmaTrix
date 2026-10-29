@@ -120,6 +120,9 @@ def main():
               '  release keygen/create/inspect      publisher-signed envelopes\n'
               '  vault-init IMAGE [--key-out KEY]   explicit development storage\n'
               '  project / project-vault / display   graphical creator graph/build/vault tools\n'
+              '  network / forge / federation       encrypted peer setup and guest discovery/admission\n'
+              '  server-store / node                explicit durable backing and isolated node roles\n'
+              '  remote-build                       guest-approved executor and real verifier comparison\n'
               '  rel-live ...             native edit / host build / live reimport loop\n'
               '  check                    live integrated acceptance\n'
               '  fixture-build/run/check  historical finite campaign-001 regression')

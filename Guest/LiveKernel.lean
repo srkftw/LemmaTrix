@@ -171,6 +171,19 @@ def deliver (caller target token src len dst t : UInt64) : UInt64 :=
   let t := Guest.store64 (out+24) 2 t
   copy src (out+32) len t
 
+-- Native approval rechecks bounded code/hash/RSA material before publication.
+-- The assembly backends advance timer ticks by retired instruction quanta;
+-- their ordinary 5,000-tick RPC deadline can expire before this work replies.
+-- Extend only these authenticated local service operations. Remote transfers
+-- remain asynchronous broker jobs, and all other ordinary calls keep 5,000.
+def rpcBudget (caller target endpoint ptr len t : UInt64) : UInt64 :=
+  let operation := if len >= 8 then Guest.load64 (physical caller ptr) t else err
+  if caller == 4 && target == 1 && ((operation == 24 && len == 8) || (operation == 180 && len == 16)) then 30000
+  else if caller >= 7 && target == 4 && len == 64 && operation == 6 &&
+      Guest.load64 (physical caller ptr+56) t == 1 then 60000
+  else if target == 3 || endpoint == Guest.load64 (state+200) t then 30000
+  else 5000
+
 def call (p endpoint ptr len capacity t : UInt64) : UInt64 :=
   let target := endpoint &&& 255
   if target == 0 || target >= 12 || target == p || !validFor p ptr len 1024 t || capacity > 1024 || !validFor p ptr capacity 1024 t then err else
@@ -185,7 +198,7 @@ def call (p endpoint ptr len capacity t : UInt64) : UInt64 :=
         let t := Guest.store64 (state+8) serial t
         let t := Guest.store64 (proc p+32) (identity target t) t
         let t := Guest.store64 (proc p+40) serial t
-        let t := Guest.store64 (proc p+120) (Guest.load64 (state+16) t+(if target == 3 || endpoint == Guest.load64 (state+200) t then 30000 else 5000)) t
+        let t := Guest.store64 (proc p+120) (Guest.load64 (state+16) t+rpcBudget p target endpoint ptr len t) t
         let t := Guest.store64 (proc p+48) ptr t
         let t := Guest.store64 (proc p+56) capacity t
         let t := Guest.store64 (proc p) 2 t
