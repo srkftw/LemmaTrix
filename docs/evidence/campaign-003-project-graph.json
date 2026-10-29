@@ -79,5 +79,59 @@
     "current_head": "757429c2f984ad4e725ea11e50abea55935961322f00048541032d8c03338407",
     "unrelated_head": "2aab1d41fb7c65e5072837efbc77612ede9dc9d2e4ecdde215d82d038a671879",
     "image": "4f4f1ea6be9169a4a9236cd563b3342970838aa584f2e5f9e373ddb9c805db3e"
+  },
+  "final_image_retention_interruption": {
+    "image": "4f4f1ea6be9169a4a9236cd563b3342970838aa584f2e5f9e373ddb9c805db3e",
+    "backend": "qemu",
+    "environment": "QEMU RISC-V reference, headless",
+    "source_vault_sha256": "90db5c93e6373b2d16019fd7e790460705e423d2dfd4e054809bfa5e1b69d0d0",
+    "interrupted_vault_sha256": "2885ac9ce32663b7e6c31b3329b8566669fe21e597f3d2e16fc85dbc0e1f8f91",
+    "boundary": {
+      "inactive_bank": 1,
+      "observed_sector": 10802,
+      "completed_prior_record_chunks": 2,
+      "commit_roots_unchanged": true,
+      "durability_acknowledged": false
+    },
+    "recovery": {
+      "generation": 2,
+      "graph": {
+        "nodes": 27,
+        "bytes": 135295,
+        "roots": [
+          {
+            "cap": 13882974754840772864,
+            "name": "creator",
+            "head": "04f243c6e7c946e9a7ef81422967cf1b9ffa56395841d0ee73cf9bd29eaddd82",
+            "project_id": "69d8274c92d5b2c829e55d5e3f5359b7c652b13160d138eec5d7e99623a72f2b"
+          },
+          {
+            "cap": 13882974754840772865,
+            "name": "notes",
+            "head": "e1d03abf1ccbd513c5d9ee01ce4cccc4ef6afb506f60ea44cdecbac6c3b989e7",
+            "project_id": "e1d03abf1ccbd513c5d9ee01ce4cccc4ef6afb506f60ea44cdecbac6c3b989e7"
+          }
+        ],
+        "logical_identity_and_ancestry_checked": true
+      },
+      "snapshot": "old",
+      "fresh_authority": true
+    },
+    "command": "python3 tests/creator_retention.py interrupt --image build/live/guest.bin --expected-image 4f4f1ea6be9169a4a9236cd563b3342970838aa584f2e5f9e373ddb9c805db3e --vault build/creator-complete-vault.img --key build/creator-complete-vault.key --output build/creator-retention-final"
+  },
+  "final_image_build_job_lifetime": {
+    "checks": [
+      "more than four completed success/error iterations recycle bounded old jobs",
+      "queued/failing builds preserve most recent successful result",
+      "native requester receives nonzero readable Build/Evidence grants; obsolete handles and job IDs are revoked",
+      "three pending jobs plus newest success exhaust four slots without eviction"
+    ],
+    "completed_jobs": 11,
+    "artifact_sha256": "d854d32152e760498b04a0a1cfda44e07cbcbf1928a52a12b80402b799ecf048",
+    "source_root": "6a63eb88b055df772d700631547b88be217b5365a08587fe125805ba291a7c1f",
+    "scope": "controlled explicit builder/management assertions over a prior real artifact; no new compiler execution or signature",
+    "image": "4f4f1ea6be9169a4a9236cd563b3342970838aa584f2e5f9e373ddb9c805db3e",
+    "environment": "QEMU11.1.1 RV64 guest, modern virtio MMIO; explicit controlled management/builder fixture over prior native artifact",
+    "execution": "tools.build_job_checks.check in a separate recovered QEMU session, using the creator root and build/creator-complete/build-weight7/job.result.json"
   }
 }

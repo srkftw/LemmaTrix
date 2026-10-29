@@ -49,6 +49,12 @@
 # Restart the guest, then explicitly unlock and recover with fresh authority:
 ./lt project-vault --socket /tmp/lt.sock --key build/project.key recover
 python3 tools/project_graph_checks.py --socket /tmp/lt.sock
+# Focused new identity boundary (disposable nodes/roots, no full suite):
+python3 tools/project_graph_checks.py --socket /tmp/lt.sock --identity-only
+# Reuse an existing real result for controlled job-lifetime assertions:
+python3 tools/build_job_checks.py --socket /tmp/lt.sock --root ROOT_CAPABILITY \
+  --artifact-result build/creator-complete/build-weight7/job.result.json
 </pre>
+<p>The final-image persistence helper <a href="../tests/creator_retention.py">creator_retention.py</a> copies an explicitly supplied complete saved vault and freezes the selected guest image. Its <code>interrupt</code> command observes an actual second-record encrypted inactive-bank sector write, kills only its owned QEMU process group before commit-root publication, and recovers the complete previous or new graph. <code>recover --backend x86_64</code> and <code>recover --backend aarch64</code> reuse that exact image, backing and reference for positive assembly recovery parity. ARM64 execution under qemu-aarch64 is distinct from physical hardware. The regular-file backing and process interruption do not establish physical storage power-loss behavior. Its authenticated content, names, parents and logical Project IDs are checked through actual guest responses; stale operational handles and the private unsaved object are denied after restart.</p>
 <p>The focused graph checker exercises actual guest service boundaries; it is not the graphical user journey or evidence of input hardware, ARM hardware, independent infrastructure or self-hosting. The campaign evidence page records which commands actually ran and their image identities. Launcher operation221 prepares a trusted160-byte retention summary (node count, bytes, name and stable head). Operation220 accepts a root and exact displayed head, freezes that head, delegates only its read closure to Vault and cleans up after the real save response. The graphical path additionally consumes a kernel-issued trusted-chrome gesture before220; the management UART remains a separate explicit authority. Without an explicitly supplied vault backing and successful retain acknowledgment, project roots remain session state.</p>
 </body></html>
