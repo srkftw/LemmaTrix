@@ -613,6 +613,48 @@ def appendImport (h length t : UInt64) : UInt64 :=
       let t := store64 (j+1344) (load64 (j+1344) t+n) t
       respond 0 (offset+n) 0 0 t
 
+-- A completed stage is immutable. Memoization is bound to this record's
+-- allocation generation and is cleared by every new offer; no unchecked suffix
+-- or replacement allocation can inherit the integrity result.
+def verifyImportBytes (r t : UInt64) : UInt64 :=
+  if load64 (r+240) t == load64 (r+16) t then t else
+    let t := ServiceHash.sha256At hashScratch (r+256) (load64 (r+32) t) hashResult t
+    if !equal hashResult (r+96) 32 t then error else
+      let p := ProjectGraph.scratch
+      let t := zero p 12 t
+      let t := store64 p 0x3145444f4e544c t
+      let t := store64 (p+8) 1 t
+      let t := store64 (p+16) (load64 (r+40) t) t
+      let t := store64 (p+24) (ProjectGraph.nodeSchema r t) t
+      let t := copy hashResult (p+32) 32 t
+      let t := copy (r+192) (p+64) 32 t
+      let t := ServiceHash.sha256At hashScratch p 96 (hashResult+64) t
+      if !equal (hashResult+64) (r+160) 32 t then error else store64 (r+240) (load64 (r+16) t) t
+
+-- Cache access is private to the transaction owner. Integrity of complete
+-- record bytes is independent of dependency availability; only finishImport
+-- validates the complete typed closure and publishes local root capabilities.
+def readVerifiedImport (caller rights h t : UInt64) : UInt64 :=
+  let j := importAt (h &&& 255)
+  let index := load64 (command+16) t
+  let offset := load64 (command+24) t
+  let requested := load64 (command+32) t
+  if !has rights 1 || index >= load64 (j+32) t || requested > 512 || load64 (command+40) t != 0 then respond 2 0 0 0 t else
+    let r := recordAt (load64 (j+832+index*8) t)
+    let bytes := load64 (r+32) t
+    if (load64 r t != 3 && load64 r t != 4) || load64 (r+8) t != caller || load64 (r+64) t != h ||
+      load64 (r+24) t != bytes || offset > bytes then respond 2 0 0 0 t else
+      let checked := verifyImportBytes r t
+      if checked == error then respond 5 0 0 0 checked else
+        let count := if requested <= bytes-offset then requested else bytes-offset
+        let t := respond 0 count 0 0 checked
+        let t := store64 (wire+16) bytes t
+        let t := store64 (wire+24) offset t
+        let t := store64 (wire+32) (load64 (r+40) t) t
+        let t := store64 (wire+40) (ProjectGraph.nodeSchema r t) t
+        let t := store64 (wire+48) index t
+        64+count+copy (r+256+offset) (wire+64) count t
+
 -- A pass seals only records whose typed references and predecessor are already
 -- validated in this transaction or visible through the caller's current grants.
 partial def sealImportPass (caller j i progress t : UInt64) : UInt64 :=
@@ -685,6 +727,7 @@ def importDispatch (op caller rights length t : UInt64) : UInt64 :=
   if op == 36 then offerImport caller h length t else
   if op == 37 then appendImport h length t else
   if length != 64 then respond 2 0 0 0 t else
+  if op == 43 then readVerifiedImport caller rights h t else
   if op == 38 then finishImport caller rights h t else
   if op == 39 then respond 0 0 0 0 (eraseImport (importAt (h &&& 255)) t) else
     let j := importAt (h &&& 255)
@@ -932,7 +975,7 @@ def validReserved (op t : UInt64) : Bool :=
   let d := load64 (command+40) t
   let e := load64 (command+48) t
   if e != 0 then false else
-  if op >= 20 && op <= 42 then true else
+  if op >= 20 && op <= 43 then true else
   if op == 1 then true else
   if c != 0 || d != 0 then false else
   if op == 4 || op == 6 || op == 14 then true else
@@ -951,7 +994,7 @@ def dispatch (caller rights length t : UInt64) : UInt64 :=
     else if op == 3 then commitObject caller rights length t
     else if op == 41 then checkpointRoot caller rights length t
     else if op == 42 then forkRoot caller rights length t
-    else if op >= 35 && op <= 40 then importDispatch op caller rights length t
+    else if (op >= 35 && op <= 40) || op == 43 then importDispatch op caller rights length t
     else if op >= 20 && op <= 34 then graphDispatch op caller rights length t
     else if length != 64 then respond 2 0 0 0 t
     else if op == 4 then readObject caller rights 1 t

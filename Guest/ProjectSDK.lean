@@ -44,6 +44,11 @@ def importAppend (transaction ordinal offset bytes count t : UInt64) : UInt64 :=
     let t := header 37 transaction ordinal offset 0 0 0 t
     call (64+count) (copy bytes (wire+64) count t)
 def importCommit (transaction t : UInt64) : UInt64 := call 64 (header 38 transaction 0 0 0 0 0 t)
+-- Complete staged bytes only: rehashes payload and canonical node ID; no caps,
+-- graph publication or dependency-validation claim. Header includes total bytes,
+-- offset, kind, schema and ordinal; verified payload starts at wire+64.
+def importVerifiedRead (transaction ordinal offset count t : UInt64) : UInt64 :=
+  call 64 (header 43 transaction ordinal offset count 0 0 t)
 def importAbort (transaction t : UInt64) : UInt64 := call 64 (header 39 transaction 0 0 0 0 0 t)
 def importStatus (transaction t : UInt64) : UInt64 := call 64 (header 40 transaction 0 0 0 0 0 t)
 -- Explicit source-only archival checkpoint; response256 includes origin/head
