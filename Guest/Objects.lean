@@ -34,7 +34,11 @@ def grantedRecord (h t : UInt64) : UInt64 := recordAt (load64 (capAt (h &&& 255)
 partial def findCap (slot t : UInt64) : UInt64 :=
   if slot == 256 then error else
     let c := capAt slot
-    if load64 (c+40) t == 0 && load64 c t < 0xffffff then slot else findCap (slot+1) t
+    if load64 (c+40) t == 0 && load64 c t < 0xffffff then slot else
+      let alive := if load64 (c+40) t == 1 then syscall 34 (load64 (c+8) t) 0 0 0 t else t
+      if alive == error && load64 c alive < 0xffffff then
+        Guest.Effects.effectValue slot (store64 (c+40) 0 alive)
+      else findCap (slot+1) alive
 partial def findRecord (i t : UInt64) : UInt64 :=
   if i == 64 then error else
     let r := recordAt i
@@ -82,6 +86,38 @@ def respond (status result r rights t : UInt64) : UInt64 :=
     let t := store64 (wire+56) (objectId r t) t
     64+t
 
+partial def invalidate (i generation slot t : UInt64) : UInt64 :=
+  if slot == 256 then t else
+    let c := capAt slot
+    let t := if load64 (c+16) t == i && load64 (c+24) t == generation then store64 (c+40) 0 t else t
+    invalidate i generation (slot+1) t
+
+partial def cleanDeadGrants (slot t : UInt64) : UInt64 :=
+  if slot == 256 then t else
+    let c := capAt slot
+    let t := if load64 (c+40) t == 1 then
+      let alive := syscall 34 (load64 (c+8) t) 0 0 0 t
+      if alive == error then store64 (c+40) 0 alive else alive
+    else t
+    cleanDeadGrants (slot+1) t
+partial def survivingGrant (i generation slot t : UInt64) : Bool :=
+  if slot == 256 then false else
+    let c := capAt slot
+    if load64 (c+40) t == 1 && load64 (c+16) t == i && load64 (c+24) t == generation then true
+    else survivingGrant i generation (slot+1) t
+partial def collectDead (i t : UInt64) : UInt64 :=
+  if i == 64 then t else
+    let r := recordAt i
+    let t := if load64 r t != 0 then
+      let alive := syscall 34 (load64 (r+8) t) 0 0 0 t
+      if alive == error && !ProjectGraph.pinned i alive && !survivingGrant i (load64 (r+16) alive) 0 alive then
+        let t := invalidate i (load64 (r+16) alive) 0 alive
+        store64 r 0 t
+      else alive
+    else t
+    collectDead (i+1) t
+
+
 def beginObject (caller rights length t : UInt64) : UInt64 :=
   let parent := load64 (command+8) t
   let n := load64 (command+16) t
@@ -98,6 +134,8 @@ def beginObject (caller rights length t : UInt64) : UInt64 :=
     let reserved := reservedBytes caller 0 t
     if (!admin rights && (count >= (if kind >= 10 then 24 else 8) || reserved+n > (if kind >= 10 then 1048576 else 262144) || capCount caller 0 t >= 64)) then respond 4 0 0 0 t
     else
+      let first := findRecord 0 t
+      let t := if first == error then collectDead 0 (ProjectGraph.markAll (cleanDeadGrants 0 t)) else t
       let i := findRecord 0 t
       let slot := findCap 0 t
       if i == error || slot == error then respond 4 0 0 0 t else
@@ -211,11 +249,6 @@ def revokeObject (caller rights t : UInt64) : UInt64 :=
         (load64 (r+8) t != caller && load64 (c+48) t != caller) then respond 1 0 0 0 t
     else respond 0 0 r (load64 (capAt (h &&& 255)+32) t) (store64 (c+40) 0 t)
 
-partial def invalidate (i generation slot t : UInt64) : UInt64 :=
-  if slot == 256 then t else
-    let c := capAt slot
-    let t := if load64 (c+16) t == i && load64 (c+24) t == generation then store64 (c+40) 0 t else t
-    invalidate i generation (slot+1) t
 
 def dropObject (caller rights t : UInt64) : UInt64 :=
   let h := load64 (command+8) t
@@ -252,30 +285,6 @@ def listObjects (caller rights t : UInt64) : UInt64 :=
         let h := handle slot t
         respond 0 h (grantedRecord h t) (load64 (capAt slot+32) t) t
 
-partial def cleanDeadGrants (slot t : UInt64) : UInt64 :=
-  if slot == 256 then t else
-    let c := capAt slot
-    let t := if load64 (c+40) t == 1 then
-      let alive := syscall 34 (load64 (c+8) t) 0 0 0 t
-      if alive == error then store64 (c+40) 0 alive else alive
-    else t
-    cleanDeadGrants (slot+1) t
-partial def survivingGrant (i generation slot t : UInt64) : Bool :=
-  if slot == 256 then false else
-    let c := capAt slot
-    if load64 (c+40) t == 1 && load64 (c+16) t == i && load64 (c+24) t == generation then true
-    else survivingGrant i generation (slot+1) t
-partial def collectDead (i t : UInt64) : UInt64 :=
-  if i == 64 then t else
-    let r := recordAt i
-    let t := if load64 r t != 0 then
-      let alive := syscall 34 (load64 (r+8) t) 0 0 0 t
-      if alive == error && !ProjectGraph.pinned i alive && !survivingGrant i (load64 (r+16) alive) 0 alive then
-        let t := invalidate i (load64 (r+16) alive) 0 alive
-        store64 r 0 t
-      else alive
-    else t
-    collectDead (i+1) t
 
 def graphMetadata (h r rights t : UInt64) : UInt64 :=
   let t := respond 0 h r rights t
