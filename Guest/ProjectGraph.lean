@@ -179,7 +179,11 @@ partial def freeRoot (i t : UInt64) : UInt64 :=
 partial def freeRootCap (i t : UInt64) : UInt64 :=
   if i == 64 then error else
     let c := rootCapAt i
-    if load64 (c+40) t == 0 && load64 c t < 0xffffff then i else freeRootCap (i+1) t
+    if load64 (c+40) t == 0 && load64 c t < 0xffffff then i else
+      let alive := if load64 (c+40) t == 1 then syscall 34 (load64 (c+8) t) 0 0 0 t else t
+      if alive == error && load64 c alive < 0xffffff then
+        Guest.Effects.effectValue i (store64 (c+40) 0 alive)
+      else freeRootCap (i+1) alive
 
 def grantRoot (slot caller r rights issuer t : UInt64) : UInt64 :=
   let c := rootCapAt slot
