@@ -38,6 +38,7 @@ def check(client,vault=False):
  second_data=b'private second selected project\n'
  second_source,second_id=projects.node(client,second_data,10)
  second,second_head,_=publish(client,'graph-secondary',[('Notes.txt',10,second_id)])
+ assert projects.project_identity(client,root)==head
  checks.append('canonical typed identities; two named project roots and aggregate source/resource bytes exceed64KiB')
  reject(lambda:client.objects(25,second,data=bytes.fromhex(a)),1)
  reject(lambda:client.objects(8,h),8)
@@ -59,6 +60,13 @@ def check(client,vault=False):
  assert actual==newhead and files['Main.lean']==changed
  old=projects.resolve(client,root,a)
  assert client.read_object(old)==source
+ assert projects.project_identity(client,root)==head
+ # An exact expected head cannot silently rebase this logical project onto an
+ # unrelated Manifest. An identical head remains a harmless publication.
+ reject(lambda:client.objects(22,client.objects(24,second)[0][1],root,len('graph-primary'),data=bytes.fromhex(newhead)+b'graph-primary'.ljust(64,b'\0')),8)
+ assert projects.snapshot(client,root)[0]==newhead
+ assert client.objects(22,newmanifest,root,len('graph-primary'),data=bytes.fromhex(newhead)+b'graph-primary'.ljust(64,b'\0'))[1][:32].hex()==newhead
+ checks.append('logical project identity survives revisions; exact-head CAS rejects unrelated lineage and allows identical-head no-op')
  checks.append('revision ancestry survives reopen; stale expected-head publication is rejected')
  reject(lambda:client.objects(32,root,data=bytes(32)),8)
  snapshot=client.objects(32,root,data=bytes.fromhex(newhead))[0][1]

@@ -49,6 +49,17 @@ partial def findVisibleNode (caller id kind i t : UInt64) : UInt64 :=
     if load64 r t == 2 && load64 (r+224) t == 1 && load64 (r+40) t == kind &&
       equal id (r+160) 32 t && visible caller i 0 t then i else findVisibleNode caller id kind (i+1) t
 
+-- A logical project is the oldest schema1 Manifest in its validated stable
+-- predecessor chain. Named aliases and mutable head capabilities are separate.
+-- A malformed or overlong chain fails closed; no lookup here grants a record.
+partial def projectOrigin (i fuel t : UInt64) : UInt64 :=
+  if i >= 64 || fuel == 0 then error else
+    let r := recordAt i
+    if load64 r t != 2 || load64 (r+224) t != 1 || load64 (r+40) t != 11 then error else
+      if allZero (r+192) 32 t then i else
+        let parent := findNode (r+192) 11 0 t
+        if parent == error then error else projectOrigin parent (fuel-1) t
+
 -- Resolving a content ID alone never creates authority.
 def edgeAllowed (kind child : UInt64) : Bool :=
   if kind == 11 then child == 10 || child == 12 || child == 13 || child == 14 else
