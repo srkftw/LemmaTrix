@@ -132,9 +132,11 @@ def unlock (length t : UInt64) : UInt64 :=
     let t := zero key 4 t
     let t := store64 state 0 t
     let t := copy (command+64) key 32 t
-    let result := scan t
+    let legacy := scan t
+    let result := if legacy == 0 then ProjectVault.scan legacy else legacy
     if result != 0 then
-      let t := zero key 4 result
+      let t := ProjectVault.clear result
+      let t := zero key 4 t
       let t := zero 0x600000 16384 t
       describe 5 0 t
     else
