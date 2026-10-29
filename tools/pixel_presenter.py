@@ -73,7 +73,13 @@ def main(argv=None):
     if not stat.S_ISFIFO(args.events.stat().st_mode):
         p.error('--events must be a named FIFO, not a persistent input-history file')
     fd = os.open(args.events, os.O_RDWR | os.O_NONBLOCK)
-    root = tk.Tk()
+    try:
+        root = tk.Tk()
+    except tk.TclError as exc:
+        os.close(fd)
+        if created:
+            args.events.unlink(missing_ok=True)
+        p.error(f'the explicit pixel adapter cannot open the display server: {exc}')
     root.title('LemmaTrix — raw pixel/input adapter')
     root.resizable(False, False)
     blank = tk.PhotoImage(width=WIDTH, height=HEIGHT)
