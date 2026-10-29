@@ -419,6 +419,20 @@
       "modal": "90924c9c24d2853d864720776fcbd6a3ee62106b2cd19085d8c694e29c614ea7",
       "modal_moved": "c3ca931e37d879a22940f913e851cc18709d0d47cd5434f16b8374b99d7baef7"
     },
-    "limits": "Headless device-driven rendered-frame evidence; no claim of physical pointer/display hardware validation."
+    "limits": "Headless device-driven rendered-frame evidence; no claim of physical pointer/display hardware validation.",
+    "additional_reference_check": {
+      "backend": "QEMU11.1.1 reference",
+      "result": "pass same raw-motion/clipping/modal cursor component",
+      "initial_moved_clipped_hashes": "Identical to native x86 values above",
+      "modal_frame": "40306252e84b769211c07ab26b15dad9e9a23a0f07d66995644c20efd86c745b",
+      "modal_moved_frame": "0e74565be5e9baf1dc8c4db63ad7cd4dbe79064a93a17905fe67d4010c002b8e"
+    },
+    "candidate_regression": {
+      "image": "Same367f004f provisional image",
+      "executed": "Stage existing editor-003-4 package; real raw F12; inspect actual process fault and UART event",
+      "qemu": "Parent captured compositor store-page-fault cause15 at virtual0x42f718, below mapped0x430000 stack",
+      "native_x86": "Same state5/cause15 and UART stval0x42f718; frame remained unchanged",
+      "cause": "Expanded Labels.say generated11600-byte frame combined with approval path exceeded bounded16KiB stack. This is a static-label compiler stack-usage regression, not a device incompatibility. Parent is splitting label functions into bounded groups; a fresh image must validate that fix."
+    }
   }
 }
