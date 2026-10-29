@@ -36,6 +36,10 @@ _start:
  addr x1, vault_fd
  mov x0, #-1
  str x0, [x1]
+ addr x1, display_fd
+ str x0, [x1]
+ addr x1, input_fd
+ str x0, [x1]
  ldr x24, [sp]
  cmp x24, #2
  b.lt usage
@@ -53,6 +57,16 @@ parse_arguments:
  addr x1, readonly_arg
  bl argument_equal
  cbnz x0, argument_readonly
+ add x2, x25, #1
+ ldr x0, [x18, x2, lsl #3]
+ addr x1, display_arg
+ bl argument_equal
+ cbnz x0, argument_display
+ add x2, x25, #1
+ ldr x0, [x18, x2, lsl #3]
+ addr x1, input_arg
+ bl argument_equal
+ cbnz x0, argument_input
  add x2, x25, #1
  ldr x0, [x18, x2, lsl #3]
  addr x1, vault_arg
@@ -79,6 +93,22 @@ argument_interactive:
  addr x0, interactive
  mov w1, #1
  strb w1, [x0]
+ add x25, x25, #1
+ b parse_arguments
+argument_display:
+ addr x3, display_path
+ b argument_adapter_path
+argument_input:
+ addr x3, input_path
+argument_adapter_path:
+ add x25, x25, #1
+ cmp x25, x24
+ b.hs usage
+ ldr x0, [x3]
+ cbnz x0, usage
+ add x2, x25, #1
+ ldr x0, [x18, x2, lsl #3]
+ str x0, [x3]
  add x25, x25, #1
  b parse_arguments
 arguments_done:
@@ -153,6 +183,7 @@ vault_open_flags:
  addr x1, vault_sectors
  str x0, [x1]
 vault_opened:
+ bl graphics_open_adapters
  b step
 argument_equal:
  ldrb w2, [x0], #1
@@ -1424,6 +1455,11 @@ virtio_read:
  sub x5, x0, x3
  lsr x6, x5, #12
  and x5, x5, #4095
+ cmp x6, #2
+ b.lo 1f
+ cmp x6, #5
+ b.lo modern_read
+1:
  addr x9, virtio_states
  add x9, x9, x6, lsl #6
  cbz x5, virtio_magic
@@ -1516,6 +1552,11 @@ virtio_write:
  sub x5, x0, x3
  lsr x6, x5, #12
  and x5, x5, #4095
+ cmp x6, #2
+ b.lo 1f
+ cmp x6, #5
+ b.lo modern_write
+1:
  cmp x6, #2
  b.hs store_return
  devset w6, virtio_number
@@ -1920,8 +1961,10 @@ uart_poll_byte:
 uart_poll_done:
  ret
 
+#include "graphics_aarch64.inc"
+
 .section .rodata
-usage_msg: .ascii "usage: lemmatrix-arm64 guest.bin [--interactive] [--vault backing.img] [--vault-readonly]\n"
+usage_msg: .ascii "usage: lemmatrix-arm64 guest.bin [--interactive] [--vault backing.img] [--vault-readonly] [--display-out frame.bgrx] [--input-events events.evdev]\n"
 .equ usage_len, .-usage_msg
 io_msg: .ascii "arm64 emulator: cannot load image (empty, inaccessible, or larger than 128 MiB)\n"
 .equ io_len, .-io_msg

@@ -31,6 +31,8 @@ _start:
     cmp qword ptr [rsp], 2
     jb usage
     mov qword ptr [rip+vault_fd], -1
+    mov qword ptr [rip+display_fd], -1
+    mov qword ptr [rip+input_fd], -1
     mov r8, [rsp]
     mov r9, rsp
     mov ebx, 2
@@ -47,6 +49,16 @@ parse_arguments:
     call argument_equal
     test eax, eax
     jnz argument_readonly
+    mov rdi, [r9+rbx*8+8]
+    lea rsi, [rip+display_arg]
+    call argument_equal
+    test eax, eax
+    jnz argument_display
+    mov rdi, [r9+rbx*8+8]
+    lea rsi, [rip+input_arg]
+    call argument_equal
+    test eax, eax
+    jnz argument_input
     mov rdi, [r9+rbx*8+8]
     lea rsi, [rip+vault_arg]
     call argument_equal
@@ -67,6 +79,21 @@ argument_readonly:
     jmp parse_arguments
 argument_interactive:
     mov byte ptr [rip+interactive], 1
+    inc rbx
+    jmp parse_arguments
+argument_display:
+    lea rdx, [rip+display_path]
+    jmp argument_adapter_path
+argument_input:
+    lea rdx, [rip+input_path]
+argument_adapter_path:
+    inc rbx
+    cmp rbx, r8
+    jae usage
+    cmp qword ptr [rdx], 0
+    jne usage
+    mov rax, [r9+rbx*8+8]
+    mov [rdx], rax
     inc rbx
     jmp parse_arguments
 arguments_done:
@@ -150,6 +177,7 @@ vault_open_flags:
     shr rax, 9
     mov [rip+vault_sectors], rax
 vault_opened:
+    call graphics_open_adapters
     lea r12, [rip+regs]
     mov r14d, RAM_BASE
     mov qword ptr [rip+privilege], 3
@@ -1593,6 +1621,11 @@ virtio_read:
     mov r8d, eax
     shr r8d, 12
     and eax, 4095
+    cmp r8d, 2
+    jb 1f
+    cmp r8d, 5
+    jb modern_read
+1:
     mov r9d, r8d
     shl r9d, 6
     lea rdi, [rip+virtio_states]
@@ -1687,6 +1720,11 @@ virtio_write:
     mov r8d, eax
     shr r8d, 12
     and eax, 4095
+    cmp r8d, 2
+    jb 1f
+    cmp r8d, 5
+    jb modern_write
+1:
     cmp r8d, 2
     jae virtio_write_done
     mov [rip+virtio_number], r8d
@@ -2045,6 +2083,8 @@ virtio_block_fatal:
     pop rax /* discard virtio_block return before returning to guest store */
     jmp virtio_fail
 
+#include "graphics_x86_64.inc"
+
 argument_equal:
     mov al, [rdi]
     cmp al, [rsi]
@@ -2131,7 +2171,7 @@ hex_loop:
     syscall
     ret
 .section .rodata
-usage_message: .ascii "usage: ltemu-x86_64 guest.bin [--interactive] [--vault backing.img] [--vault-readonly]\n"
+usage_message: .ascii "usage: ltemu-x86_64 guest.bin [--interactive] [--vault backing.img] [--vault-readonly] [--display-out frame.bgrx] [--input-events events.evdev]\n"
 usage_end:
 image_message: .ascii "ltemu-x86_64: cannot load nonempty guest image (maximum 128 MiB)\n"
 image_end:

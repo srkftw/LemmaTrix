@@ -19,7 +19,8 @@ partial def clear (p words token : UInt64) : UInt64 :=
 partial def discover (index token : UInt64) : UInt64 :=
   if index == 8 then token else
     let base := 0x10001000+index*4096
-    let valid := load32 base token == 0x74726976 && load32 (base+4) token == 1
+    let version := load32 (base+4) token
+    let valid := load32 base token == 0x74726976 && (version == 1 || version == 2)
     let id := if valid then load32 (base+8) token else 0
     let token := if id == 2 then store64 state base token else token
     let token := if id == 4 then store64 (state+8) base token else token
@@ -46,11 +47,31 @@ def setup (base queue token : UInt64) : UInt64 :=
     let features := load32 (base+0x10) token &&& 0x220
     let token := store32 (base+0x24) 0 token
     let token := store32 (base+0x20) features token
-    let token := store32 (base+0x28) 4096 token
+    let modern := load32 (base+4) token == 2
+    let token := if modern then
+      let token := store32 (base+0x14) 1 token
+      let supported := load32 (base+0x10) token
+      if supported &&& 1 == 0 then store32 (base+0x70) 128 token else
+      let token := store32 (base+0x24) 1 token
+      let token := store32 (base+0x20) 1 token
+      store32 (base+0x70) 11 token
+      else store32 (base+0x28) 4096 token
     let token := store32 (base+0x30) 0 token
+    if load32 (base+0x34) token < 8 || (modern && (load32 (base+0x70) token &&& 8) == 0) then
+      store32 (base+0x70) 128 token
+    else
     let token := store32 (base+0x38) 8 token
-    let token := store32 (base+0x3c) 4096 token
-    let token := store32 (base+0x40) (queue >>> 12) token
+    let token := if modern then
+      let token := store32 (base+0x80) queue token
+      let token := store32 (base+0x84) 0 token
+      let token := store32 (base+0x90) (queue+128) token
+      let token := store32 (base+0x94) 0 token
+      let token := store32 (base+0xa0) (queue+4096) token
+      let token := store32 (base+0xa4) 0 token
+      store32 (base+0x44) 1 token
+      else
+      let token := store32 (base+0x3c) 4096 token
+      store32 (base+0x40) (queue >>> 12) token
     let token := store32 (base+0x70) 15 token
     store64 (queue+128) 1 token
 
@@ -102,6 +123,7 @@ def block (operation sector buffer bytes token : UInt64) : UInt64 :=
   let valid := supported && base != 0 && bounded &&
     (if operation == 4 then bytes == 0 else bytes > 0 && bytes % 512 == 0 && sector < total && count <= total-sector)
   if !valid then error else
+    let token := store32 (base+0x14) 0 token
     let readonly := (load32 (base+0x10) token &&& 32) != 0
     if operation == 1 && readonly then error else
     let token := store64 request operation token
