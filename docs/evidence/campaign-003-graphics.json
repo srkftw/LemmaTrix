@@ -257,5 +257,148 @@
       }
     ],
     "scope": "Same new probe binary reused on QEMU and native x86. Earlier all-three device and frozen UI records above are preserved; this focused change did not repeat signing or cryptographic checks."
+  },
+  "provisional_0945_ui": {
+    "scope": "Affected UI/input rerun using one immutable image and the same already-signed packages on both assembly machines. Provisional: later Desktop/Inspector/cursor changes require a new final artifact.",
+    "image_sha256": "0945a863ae16c11e9dc1ec00e10e9b1778d32dc53ed5d346404bfa404cb99809",
+    "editor_package_sha256": "b66a1108506e2b95a8cfec79f84f2becb5e2c686d030bd0a04c7ab907ec6a07c",
+    "consumer_package_sha256": "cc9bb269f858beca54191c8030da28994c2e78e033775f937a4e6f4449203205",
+    "x86_64": {
+      "backend": "x86_64",
+      "image": "0945a863ae16c11e9dc1ec00e10e9b1778d32dc53ed5d346404bfa404cb99809",
+      "editor_release": "1f8603c85a1383cdab36f5dca0caa936cdc8b5409238966167b03d980a897a52",
+      "consumer_release": "1a4cfdad50e8241837c3b2ef36b59400545b7da468941eff54590dd08739083f",
+      "root": {
+        "cap": 936869505563361537,
+        "name": "alpha",
+        "head": "1fa1e032c588bf6efd81235bf6e05de8edb03f3736ecd1e731caca0521d20f26"
+      },
+      "head": "1fa1e032c588bf6efd81235bf6e05de8edb03f3736ecd1e731caca0521d20f26",
+      "files": {
+        "Main.lean": "def parity : UInt64 := 41\n",
+        "Util.lean": "def extra : UInt64 := 7\n"
+      },
+      "frames": {
+        "approval": "f14ac9e76e7b03918bf669aa2ba69ef9ec96445cd69a71d76b490aa60a717c77",
+        "editor": "840e8270f1e0fe48e9bf982e101f98f67d9c322b3210e804c01817a6b6b2136b",
+        "consumer": "ddc55234cbf9cdef9d85bf859e76ee77c99a0190ed17a8fafa6af068ab35f926",
+        "reopened": "2293f30ef1aed46c916d63e59f53564e7c28aec21af8330a4257c1ab4ded4ab2"
+      },
+      "processes": [
+        {
+          "instance": 0,
+          "state": 0,
+          "rights": 0,
+          "cause": 0
+        },
+        {
+          "instance": 936869501268394241,
+          "state": 1,
+          "rights": 4294967551,
+          "cause": 0
+        },
+        {
+          "instance": 936869501268394242,
+          "state": 3,
+          "rights": 0,
+          "cause": 0
+        },
+        {
+          "instance": 936869501268394243,
+          "state": 3,
+          "rights": 1,
+          "cause": 0
+        },
+        {
+          "instance": 936869501268394244,
+          "state": 1,
+          "rights": 127,
+          "cause": 0
+        },
+        {
+          "instance": 936869501268394245,
+          "state": 3,
+          "rights": 127,
+          "cause": 0
+        },
+        {
+          "instance": 936869501268394246,
+          "state": 1,
+          "rights": 895,
+          "cause": 0
+        },
+        {
+          "instance": 936869501268394247,
+          "state": 1,
+          "rights": 769,
+          "cause": 0
+        },
+        {
+          "instance": 936869501268393992,
+          "state": 0,
+          "rights": 0,
+          "cause": 0
+        },
+        {
+          "instance": 936869501268393993,
+          "state": 0,
+          "rights": 0,
+          "cause": 0
+        },
+        {
+          "instance": 936869501268393994,
+          "state": 0,
+          "rights": 0,
+          "cause": 0
+        },
+        {
+          "instance": 936869501268393995,
+          "state": 0,
+          "rights": 0,
+          "cause": 0
+        }
+      ],
+      "result": "partial integrated journey; exact editor graph assertions passed, consumer output not verified",
+      "harness_result": "pass (automated assertions only; frame review narrowed scope)",
+      "frame_review": "The frame labeled consumer is the editor with uncommitted text independent input 42 prepended. TextTools was installed/running but the harness Alt-Tab switched away from its newly focused surface. This is not independent-consumer computation evidence. The final affected run must identify the actual visible app before input."
+    },
+    "x86_64_seconds": {
+      "boot_ready": 0.75,
+      "editor_staged": 22.79,
+      "trusted_modal": 23.24,
+      "editor_running_frame": 30.14,
+      "committed_root": 40.46,
+      "exact_snapshot_export": 40.6,
+      "consumer_staged": 50.86,
+      "consumer_frame": 65.66,
+      "completed": 68.9
+    },
+    "aarch64": {
+      "environment": "AArch64 assembly interpreter under qemu-aarch64 on x86-64; not physical ARM64",
+      "result": "partial; exact multi-file input assertion failed",
+      "passed": [
+        "Booted same image",
+        "Guest verified same signed editor",
+        "Raw F12 and fresh Enter approved/installed editor",
+        "Actual app compartment ran state1 rights895, no emulator/app fault",
+        "Raw input created named root alpha and committed source through real project service"
+      ],
+      "seconds": {
+        "boot_ready": 6.61,
+        "publisher_provisioned": 8.09,
+        "editor_staged": 135.76,
+        "trusted_modal": 138.3,
+        "editor_running_frame": 174.81,
+        "committed_root": 185.73,
+        "export": 186.91
+      },
+      "approval_frame_sha256": "f14ac9e76e7b03918bf669aa2ba69ef9ec96445cd69a71d76b490aa60a717c77",
+      "observed_head": "0ae72e0e78b84641a95ea160510e3fa532276dacee7c112f177afd26b9f794e7",
+      "observed_files": {
+        "Main.lean": "df extra : UInt64 := 7\n",
+        "Util.lean": ""
+      },
+      "failure": "80ms key-edge timing and 200ms post-name redraw delay did not preserve the intended source burst. Frame called editor-ready by harness still lacked the bottom project-name prompt, unlike native x86. Startup/full-redraw pacing was not observed before subsequent input; exact queue-loss mechanism not established. Final affected run must wait for actual rendered readiness, not just process state or any changed frame."
+    }
   }
 }
