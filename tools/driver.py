@@ -110,11 +110,52 @@ def backend(name):
 
 def main():
     os.chdir(ROOT)
-    if len(sys.argv)>1 and sys.argv[1] in ('package','capsule','rel'):
+    if len(sys.argv)==1 or sys.argv[1] in ('-h','--help'):
+        print('LemmaTrix live development commands (docs/development.html)\n'
+              '  setup / doctor           pinned host dependencies\n'
+              '  build / emulators        incremental guest image / assembly backends\n'
+              '  run --socket PATH        long-lived session; --backend, --vault supported\n'
+              '  ctl --socket PATH ...    trusted guest management; use ctl --help\n'
+              '  app --module M --entry E --name N   independent native client build\n'
+              '  release keygen/create/inspect      publisher-signed envelopes\n'
+              '  vault-init IMAGE [--key-out KEY]   explicit development storage\n'
+              '  rel-live ...             native edit / host build / live reimport loop\n'
+              '  check                    live integrated acceptance\n'
+              '  fixture-build/run/check  historical finite campaign-001 regression')
+        return
+    if len(sys.argv)>1 and sys.argv[1] in ('package','capsule','rel','release'):
         import importlib
-        module=importlib.import_module({'package':'packaging','capsule':'capsule','rel':'rel'}[sys.argv[1]])
+        module=importlib.import_module({'package':'packaging','capsule':'capsule','rel':'rel','release':'releases'}[sys.argv[1]])
         sys.exit(module.main(sys.argv[2:]))
-    p=argparse.ArgumentParser(description='LemmaTrix freestanding development commands; see docs/index.html')
+    if len(sys.argv)>1 and sys.argv[1] in ('session','ctl','vault-init'):
+        import live
+        try:sys.exit(live.main(sys.argv[1:]))
+        except (ValueError,OSError,EOFError,TimeoutError) as error:
+            print('lt:',error,file=sys.stderr);sys.exit(1)
+    if len(sys.argv)>1 and sys.argv[1] in ('build','live-build'):
+        import live_build
+        p=argparse.ArgumentParser(description='Incremental live-image build')
+        p.add_argument('--clean',action='store_true');a=p.parse_args(sys.argv[2:])
+        live_build.build(clean=a.clean);return
+    if len(sys.argv)>1 and sys.argv[1] in ('app','live-app'):
+        p=argparse.ArgumentParser(description='Incremental native client build; no machine image rebuild')
+        p.add_argument('--module',required=True);p.add_argument('--entry',required=True);p.add_argument('--name',required=True)
+        a=p.parse_args(sys.argv[2:]);import live_build
+        print(live_build.app(a.module,a.entry,a.name));return
+    if len(sys.argv)>1 and sys.argv[1]=='rel-live':
+        import live_rel
+        sys.exit(live_rel.main(sys.argv[2:]))
+    if len(sys.argv)>1 and sys.argv[1]=='run':
+        import live
+        sys.exit(live.main(['session',*sys.argv[2:]]))
+    if len(sys.argv)>1 and sys.argv[1] in ('check','demo'):
+        sys.path.insert(0,str(ROOT/'tests'))
+        import live_acceptance
+        sys.exit(live_acceptance.main(sys.argv[2:]))
+    if len(sys.argv)>1 and sys.argv[1].startswith('fixture-'):
+        sys.argv[1]=sys.argv[1][8:]
+
+    p=argparse.ArgumentParser(description='LemmaTrix live native workbench; see docs/development.html', epilog='Live commands: build; emulators; run/session --backend qemu|x86_64|aarch64 --socket PATH [--vault IMAGE]; ctl --socket PATH COMMAND; app --module MODULE --entry ENTRY --name NAME; release keygen|create|inspect; vault-init IMAGE [--key-out KEY]; rel-live --help; check. Historical batch commands use fixture-build/run/demo/check/app.')
     p.add_argument('command',choices=['doctor','build','run','demo','check','emulators','app','setup'])
     p.add_argument('--backend',choices=['qemu','x86_64','aarch64'],default='qemu')
     p.add_argument('--text',default='LemmaTrix source objects\n')
@@ -136,6 +177,11 @@ def main():
         if a.command=='doctor':
             for name,version in validate_toolchain().items():print(name,version,tool(name))
         elif a.command=='setup':
+            try:
+                validate_toolchain()
+                print('Pinned dependencies ready; ordinary builds perform no downloads')
+                return
+            except RuntimeError:pass
             paths=sorted(set(str(Path(value).parent.parent) for value in LOCK['nix_store'].values()))
             missing=[path for path in paths if not Path(path).exists()]
             if missing:
