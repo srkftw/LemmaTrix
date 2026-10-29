@@ -225,6 +225,7 @@ class Journey:
   with self.client() as c:
    private=c.import_object(b'private ephemeral object not retained',2)
    named=projects.roots(c);selected=[next(r for r in named if r['name']=='notes'),next(r for r in named if r['name']=='creator')]
+   logical_ids={r['name']:projects.project_identity(c,r['cap']) for r in selected}
   require(inventory['generation']>creator_saved['generation'] and inventory['bytes']>65536 and len(inventory['projects'])==2,'second GUI snapshot did not preserve both named projects')
   require({r['name']:r['head'] for r in inventory['projects']}=={r['name']:r['head'] for r in selected},'GUI retained different named heads')
   saved=dict(generation=inventory['generation'],nodes=len(inventory['nodes']),projects=len(inventory['projects']),bytes=inventory['bytes'])
@@ -232,6 +233,7 @@ class Journey:
   old_caps=[r['cap'] for r in selected];self.stop();self.boot()
   with self.client() as c:
    project_vault.unlock(c,self.args.vault_key.read_bytes());restored=project_vault.recover(c)
+   require({r['name']:projects.project_identity(c,r['cap']) for r in restored['roots']}==logical_ids,'logical project identities changed during recovery')
    for old in old_caps:
     try:c.objects(24,old)
     except ValueError:pass
