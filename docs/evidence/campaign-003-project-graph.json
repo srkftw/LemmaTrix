@@ -80,7 +80,26 @@
     "unrelated_head": "2aab1d41fb7c65e5072837efbc77612ede9dc9d2e4ecdde215d82d038a671879",
     "image": "4f4f1ea6be9169a4a9236cd563b3342970838aa584f2e5f9e373ddb9c805db3e"
   },
-  "final_image_retention_interruption": {
+  "release_present_material_semantic_binding": {
+    "checks": [
+      "existing valid signed Release content is readmitted with exact actual source/evidence material",
+      "fresh valid publisher signature and JSON commitments cannot substitute unrelated source claims for actual typed graph material",
+      "fresh valid publisher signature and JSON commitments cannot substitute unrelated evidence claims for actual typed graph material"
+    ],
+    "source_root": "6a63eb88b055df772d700631547b88be217b5365a08587fe125805ba291a7c1f",
+    "binary_sha256": "d854d32152e760498b04a0a1cfda44e07cbcbf1928a52a12b80402b799ecf048",
+    "existing_release_node": "fbe4c0d109988b73e24994027c5ab602dd0e588f6b5bb91aa42b750ff2ea0ec4",
+    "scope": "present source/evidence semantic consistency only; host builder assertions and source-to-binary correctness remain unverified",
+    "compiler_executions": 0,
+    "new_signed_negative_headers": 2,
+    "guest_verified_negative_signatures": 2,
+    "installed": false,
+    "image": "8dfec42445edfea2043c0032c477aa4f670d882d40c4c639485da802e5b8351f",
+    "environment": "QEMU11.1.1 RV64 guest, modern virtio MMIO",
+    "positive_recovered_nodes": 27,
+    "execution": "tools.release_material_checks.check in an isolated QEMU guest after normal recovery of the previous complete fixture; explicit campaign publisher key supplied"
+  },
+  "retention_interruption_before_material_binding": {
     "image": "4f4f1ea6be9169a4a9236cd563b3342970838aa584f2e5f9e373ddb9c805db3e",
     "backend": "qemu",
     "environment": "QEMU RISC-V reference, headless",
@@ -119,7 +138,7 @@
     },
     "command": "python3 tests/creator_retention.py interrupt --image build/live/guest.bin --expected-image 4f4f1ea6be9169a4a9236cd563b3342970838aa584f2e5f9e373ddb9c805db3e --vault build/creator-complete-vault.img --key build/creator-complete-vault.key --output build/creator-retention-final"
   },
-  "final_image_build_job_lifetime": {
+  "build_job_lifetime_before_material_binding": {
     "checks": [
       "more than four completed success/error iterations recycle bounded old jobs",
       "queued/failing builds preserve most recent successful result",
@@ -134,23 +153,43 @@
     "environment": "QEMU11.1.1 RV64 guest, modern virtio MMIO; explicit controlled management/builder fixture over prior native artifact",
     "execution": "tools.build_job_checks.check in a separate recovered QEMU session, using the creator root and build/creator-complete/build-weight7/job.result.json"
   },
-  "release_present_material_semantic_binding": {
-    "checks": [
-      "existing valid signed Release content is readmitted with exact actual source/evidence material",
-      "fresh valid publisher signature and JSON commitments cannot substitute unrelated source claims for actual typed graph material",
-      "fresh valid publisher signature and JSON commitments cannot substitute unrelated evidence claims for actual typed graph material"
-    ],
-    "source_root": "6a63eb88b055df772d700631547b88be217b5365a08587fe125805ba291a7c1f",
-    "binary_sha256": "d854d32152e760498b04a0a1cfda44e07cbcbf1928a52a12b80402b799ecf048",
-    "existing_release_node": "fbe4c0d109988b73e24994027c5ab602dd0e588f6b5bb91aa42b750ff2ea0ec4",
-    "scope": "present source/evidence semantic consistency only; host builder assertions and source-to-binary correctness remain unverified",
-    "compiler_executions": 0,
-    "new_signed_negative_headers": 2,
-    "guest_verified_negative_signatures": 2,
-    "installed": false,
+  "final_image_retention_interruption": {
     "image": "8dfec42445edfea2043c0032c477aa4f670d882d40c4c639485da802e5b8351f",
-    "environment": "QEMU11.1.1 RV64 guest, modern virtio MMIO",
-    "positive_recovered_nodes": 27,
-    "execution": "tools.release_material_checks.check in an isolated QEMU guest after normal recovery of the previous complete fixture; explicit campaign publisher key supplied"
+    "backend": "qemu",
+    "environment": "QEMU RISC-V reference, headless",
+    "source_vault_sha256": "90db5c93e6373b2d16019fd7e790460705e423d2dfd4e054809bfa5e1b69d0d0",
+    "interrupted_vault_sha256": "67597674d7f71ddc208199a8fb0088fb0536a3bc470ac1673c7a7c4be500fd83",
+    "boundary": {
+      "inactive_bank": 1,
+      "observed_sector": 10802,
+      "completed_prior_record_chunks": 2,
+      "commit_roots_unchanged": true,
+      "durability_acknowledged": false
+    },
+    "recovery": {
+      "generation": 2,
+      "graph": {
+        "nodes": 27,
+        "bytes": 135295,
+        "roots": [
+          {
+            "cap": 11050144274929680640,
+            "name": "creator",
+            "head": "04f243c6e7c946e9a7ef81422967cf1b9ffa56395841d0ee73cf9bd29eaddd82",
+            "project_id": "69d8274c92d5b2c829e55d5e3f5359b7c652b13160d138eec5d7e99623a72f2b"
+          },
+          {
+            "cap": 11050144274929680641,
+            "name": "notes",
+            "head": "e1d03abf1ccbd513c5d9ee01ce4cccc4ef6afb506f60ea44cdecbac6c3b989e7",
+            "project_id": "e1d03abf1ccbd513c5d9ee01ce4cccc4ef6afb506f60ea44cdecbac6c3b989e7"
+          }
+        ],
+        "logical_identity_and_ancestry_checked": true
+      },
+      "snapshot": "old",
+      "fresh_authority": true
+    },
+    "command": "python3 tests/creator_retention.py interrupt --image build/live/guest.bin --expected-image 8dfec42445edfea2043c0032c477aa4f670d882d40c4c639485da802e5b8351f --vault build/creator-complete-vault.img --key build/creator-complete-vault.key --output build/creator-retention-material-final"
   }
 }
