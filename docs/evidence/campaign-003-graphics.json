@@ -237,5 +237,25 @@
     "No self-hosting claim",
     "Headless raw-device input and framebuffer checks do not establish physical display hardware support",
     "No networking, privacy, federation or payment evidence was added by these checks"
-  ]
+  ],
+  "input_idle_boundary_fix": {
+    "image_sha256": "e0c11fe910815132fb2ecc026efffea62cd9f39bd4a424d91696b5d8941dbad3",
+    "why": "An all-zero SYN_REPORT previously returned0, which could falsely indicate physical-input idle while a queued Enter remained. A trusted modal may arm only after true input idle and a complete frame.",
+    "implementation": "Skip SYN_REPORT internally with budget32. Return0 only after both sources are idle; return0xfffe000000000000 when report work remains. Compositor explicitly ignores the nonzero work marker.",
+    "executed": [
+      {
+        "backend": "qemu",
+        "environment": "QEMU11.1.1 reference",
+        "input": "QMP A key, relativeX7, left button through actual input queues",
+        "result": "exit0, no UART error"
+      },
+      {
+        "backend": "x86_64",
+        "environment": "Native assembly interpreter",
+        "input": "Forty all-zero SYN_REPORT records followed by A, relativeX7, left button in raw FIFO before boot",
+        "result": "Guest observed non-idle work marker after budget32 (UART P), then consumed real input and exited0"
+      }
+    ],
+    "scope": "Same new probe binary reused on QEMU and native x86. Earlier all-three device and frozen UI records above are preserved; this focused change did not repeat signing or cryptographic checks."
+  }
 }

@@ -15,6 +15,8 @@ def pointerQueue : UInt64 := 0x80e16000
 def eventBuffers : UInt64 := 0x80e18000
 def state : UInt64 := 0x80e1a000
 def error : UInt64 := 0xffffffffffffffff
+def consumedReport : UInt64 := 0xfffffffffffffffe
+def inputPending : UInt64 := 0xfffe000000000000
 
 partial def discover (index token : UInt64) : UInt64 :=
   if index == 8 then token else
@@ -201,17 +203,26 @@ def pollInput (base ring buffers counter token : UInt64) : UInt64 :=
   let token := store64 counter ((consumed+1) &&& 65535) token
   let token := store32 (base+0x64) (load32 (base+0x60) token &&& 3) token
   let token := deviceFence token
-  Effects.effectValue event token
+  Effects.effectValue (if event == 0 then consumedReport else event) token
 
-def input (token : UInt64) : UInt64 :=
+partial def inputFuel (remaining token : UInt64) : UInt64 :=
+  if remaining == 0 then inputPending else
   -- Alternate the first source, so pointer traffic cannot starve the keyboard.
   let turn := load64 (state+56) token &&& 1
   let token := store64 (state+56) (1-turn) token
   let first := if turn == 0 then pollInput (load64 (state+8) token) keyQueue eventBuffers (state+40) token
     else pollInput (load64 (state+16) token) pointerQueue (eventBuffers+64) (state+48) token
+  if first == consumedReport then inputFuel (remaining-1) first else
   if first != 0 then first else
-  if turn == 0 then pollInput (load64 (state+16) first) pointerQueue (eventBuffers+64) (state+48) first
-  else pollInput (load64 (state+8) first) keyQueue eventBuffers (state+40) first
+  let second := if turn == 0 then pollInput (load64 (state+16) first) pointerQueue (eventBuffers+64) (state+48) first
+    else pollInput (load64 (state+8) first) keyQueue eventBuffers (state+40) first
+  if second == consumedReport then inputFuel (remaining-1) second else second
+
+-- Zero means both event sources were actually idle. All-zero SYN_REPORT records
+-- are consumed internally; a nonzero work marker preserves that guarantee when
+-- the bounded report-drain budget is exhausted. Trusted prompts may arm only
+-- after an idle result and completed presentation, never after a queued report.
+def input (token : UInt64) : UInt64 := inputFuel 32 token
 
 def resetOne (base token : UInt64) : UInt64 :=
   if base == 0 then token else
