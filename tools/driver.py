@@ -151,6 +151,24 @@ def main():
     if len(sys.argv)>1 and sys.argv[1]=='project-vault':
         import project_vault
         sys.exit(project_vault.main(sys.argv[2:]))
+    if len(sys.argv)>1 and sys.argv[1]=='server-store':
+        import server_store
+        sys.exit(server_store.main(sys.argv[2:]))
+    if len(sys.argv)>1 and sys.argv[1]=='node':
+        import nodes
+        sys.exit(nodes.main(sys.argv[2:]))
+    if len(sys.argv)>1 and sys.argv[1]=='network':
+        import network
+        sys.exit(network.main(sys.argv[2:]))
+    if len(sys.argv)>1 and sys.argv[1]=='forge':
+        import forge
+        sys.exit(forge.main(sys.argv[2:]))
+    if len(sys.argv)>1 and sys.argv[1]=='federation':
+        import federation
+        sys.exit(federation.main(sys.argv[2:]))
+    if len(sys.argv)>1 and sys.argv[1]=='remote-build':
+        import remote_build
+        sys.exit(remote_build.main(sys.argv[2:]))
     if len(sys.argv)>1 and sys.argv[1]=='project':
         import projects
         sys.exit(projects.main(sys.argv[2:]))
