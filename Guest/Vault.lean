@@ -3,6 +3,7 @@ import Guest.Effects
 import Guest.ServiceHash
 import Guest.VaultCrypto
 import Guest.VaultPolicy
+import Guest.ProjectVault
 namespace Guest.Vault
 open Guest.LiveSDK
 -- One explicitly authorized Objects record per vault. Dual authenticated roots select
@@ -54,6 +55,7 @@ def wipePlain (t : UInt64) : UInt64 :=
   store64 (state+16) 0 t
 
 def wipeSecrets (t : UInt64) : UInt64 :=
+  let t := ProjectVault.clear t
   let t := zero plaintext 8192 t
   let t := zero 0x600000 16384 t
   let t := zero bank 9216 t
@@ -231,6 +233,8 @@ def dispatch (rights length t : UInt64) : UInt64 :=
     let domain := load64 (command+16) t
     if !VaultPolicy.authorized rights domain then describe 1 0 t else
       if op == 200 then unlock length t
+      else if op >= 210 && op <= 216 then
+        if load64 state t != 1 then describe 3 0 t else ProjectVault.dispatch op length t
       else if length != 64 then describe 2 0 t
       else if op == 201 then lock t
       else if op == 202 then status t
@@ -251,7 +255,8 @@ partial def loop (t : UInt64) : UInt64 :=
   loop t
 
 def appMain (initial : UInt64) : UInt64 :=
-  let t := zero state 256 initial
+  let t := ProjectVault.clear initial
+  let t := zero state 256 t
   let t := zero 0x600000 16384 t
   let t := wipePlain t
   loop t

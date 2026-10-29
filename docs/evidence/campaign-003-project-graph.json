@@ -1,0 +1,57 @@
+{
+  "schema": 1,
+  "date": "2026-10-29",
+  "scope": "actual QEMU service-boundary execution; not graphical journey or ARM hardware",
+  "initial_image_sha256": "9ede620a94b38597b5f10bf07a450f4e89831debd30277ffdc2bcc7d90c87084",
+  "recovery_image_sha256": "e4e83213ff7e51acf24bbde69dd1971d7fd4f788a1ddd6dfda0cc791caa1f417",
+  "environment": "x86_64 Linux, QEMU11.1.1 RV64 guest, modern virtio MMIO, explicit12MiB regular-file block backing",
+  "checks": [
+    "canonical typed identities; two named project roots and aggregate source/resource bytes exceed64KiB",
+    "root-scoped resolution denies unrelated content; rooted content cannot be dropped",
+    "guest rejects traversal, ambiguous paths, duplicate names and missing typed references",
+    "revision ancestry survives reopen; stale expected-head publication is rejected",
+    "real encrypted streaming vault retains both selected named graphs and ancestry, excluding private object"
+  ],
+  "snapshot": {
+    "generation": 1,
+    "nodes": 7,
+    "projects": 2,
+    "bytes": 124156,
+    "format": 2
+  },
+  "selected_projects": [
+    {
+      "name": "graph-primary",
+      "head": "a68c6b352671908bec73955f976fa05909ed6846004f823a9b83bf804b245a99"
+    },
+    {
+      "name": "graph-secondary",
+      "head": "c661620fbf2c5cc2674750f3ac4cb20bf7aff666616183c2408f19232323757f"
+    }
+  ],
+  "recovery": {
+    "checks": [
+      "fresh session restores names, stable identities, complete content and ancestry; stale handles and unsaved private content denied"
+    ],
+    "generation": 1,
+    "nodes": 7,
+    "bytes": 124156
+  },
+  "interruption": {
+    "interrupted_after": "first inactive-bank encrypted body chunk reached block backing; before index/root publication",
+    "error": "EOFError",
+    "previous_generation": 1,
+    "candidate_generation": 2,
+    "previous_head": "a68c6b352671908bec73955f976fa05909ed6846004f823a9b83bf804b245a99",
+    "candidate_head": "7fd073f1ee76282cc4dea92f73791cd4981054b1d529ff3981842695d6e870e8"
+  },
+  "interruption_recovery": {
+    "checks": [
+      "fresh session restores names, stable identities, complete content and ancestry; stale handles and unsaved private content denied"
+    ],
+    "generation": 1,
+    "nodes": 7,
+    "bytes": 124156
+  },
+  "limitation": "Recovery found and fixed a cached-read effect-token bug. Recovery image overlays newly compiled Objects/Vault on the initial integrated image. A final integrated image and backend parity are separate evidence. No physical external-drive durability or entire-store rollback protection claimed."
+}
