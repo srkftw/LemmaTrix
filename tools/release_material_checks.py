@@ -6,7 +6,7 @@ key; this performs no host compilation and makes no source-to-binary proof claim
 """
 import argparse,copy,hashlib,json,struct
 from pathlib import Path
-import live,projects,releases,packaging as pkg
+import live,projects,releases,capsule,packaging as pkg
 
 
 def release_payload(entries,envelope,manifest):
@@ -35,6 +35,9 @@ def check(client,root,key,result_path,output):
  assert identity==release_id
  client.objects(8,duplicate)
  checks=['existing valid signed Release content is readmitted with exact actual source/evidence material']
+ # Explicit campaign key authority also provisions this disposable guest's
+ # publisher scope; no install or execution approval is granted.
+ client.request(10,releases.project(manifest['project'])+capsule.modulus(key))
  for label in ('source','evidence'):
   changed=copy.deepcopy(manifest)
   if label=='source':
@@ -44,14 +47,15 @@ def check(client,root,key,result_path,output):
    changed['evidence'][0]['request_digest']=('99' if old[:2]!='99' else '88')+old[2:]
   envelope,new_manifest=releases.make(artifact,manifest['project'],manifest['version'],manifest['rights'],key,parent=manifest['parent'],license=manifest['license'],evidence=changed['evidence'],profile=result['runtime_profile'],source_records_override=changed['sources'])
   # make() verifies the new RSA header, executable and all signed JSON hashes.
+  path=output/(label+'-substitution.ltrel');path.write_bytes(envelope)
+  assert client.stage(path)['guest_signature_verified']
   payload=release_payload(entries,envelope,new_manifest)
   try:client.import_object(payload,13)
   except ValueError as error:
    if 'status2' not in str(error):raise
   else:raise AssertionError('guest accepted signed '+label+' JSON unrelated to actual material')
-  (output/(label+'-substitution.ltrel')).write_bytes(envelope)
   checks.append('fresh valid publisher signature and JSON commitments cannot substitute unrelated '+label+' claims for actual typed graph material')
- return dict(checks=checks,source_root=source,binary_sha256=result['artifact']['sha256'],existing_release_node=release_id,scope='present source/evidence semantic consistency only; host builder assertions and source-to-binary correctness remain unverified',compiler_executions=0,new_signed_negative_headers=2)
+ return dict(checks=checks,source_root=source,binary_sha256=result['artifact']['sha256'],existing_release_node=release_id,scope='present source/evidence semantic consistency only; host builder assertions and source-to-binary correctness remain unverified',compiler_executions=0,new_signed_negative_headers=2,guest_verified_negative_signatures=2,installed=False)
 
 
 def main(argv=None):
