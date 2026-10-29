@@ -1,0 +1,717 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LemmaTrixOS — Minimum Viable Product Specification v0.2</title>
+<style>
+:root{color-scheme:light dark}body{font:17px/1.65 system-ui,sans-serif;max-width:76rem;margin:3rem auto;padding:0 1.5rem}h1,h2{line-height:1.25}aside{border-left:4px solid #888;padding:.5rem 1.2rem}nav a{display:inline-block;margin:0 .65rem .5rem 0}.source{font:14px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;tab-size:4}section{border-top:1px solid #888;margin-top:2rem;padding-top:1rem}a{overflow-wrap:anywhere}@media print{nav{display:none}section{break-before:page}.source{font-size:9pt}}
+</style>
+</head>
+<body>
+<header>
+<p><a href="../index.html">Source register</a> · <a href="../documentation-policy.html">Documentation policy</a></p>
+<h1>LemmaTrixOS — Minimum Viable Product Specification</h1>
+<p>Draft v0.2 · 28 October 2026 · Governing proposed engineering and product baseline</p>
+<aside><p><strong>Provenance:</strong> HTML transcription of the accessible extracted text of <code>LemmaTrixOS_MVP_Spec_v0.2.pdf</code>, 13 indexed source pages. Source-page boundaries and requirement identifiers are retained. Extraction page markers and repeated page footers are replaced by HTML page headings; whitespace and line wrapping may differ. This is not a binary PDF archive or visual facsimile. The original PDF bytes were not exportable during this import. No requirement has been intentionally revised, and this import supplies no implementation or assurance evidence.</p></aside>
+<nav aria-label="Source pages"><a href="#page-1">1</a><a href="#page-2">2</a><a href="#page-3">3</a><a href="#page-4">4</a><a href="#page-5">5</a><a href="#page-6">6</a><a href="#page-7">7</a><a href="#page-8">8</a><a href="#page-9">9</a><a href="#page-10">10</a><a href="#page-11">11</a><a href="#page-12">12</a><a href="#page-13">13</a></nav>
+</header>
+<main id="source-transcription">
+<section id="page-1"><h2>Source page 1</h2><pre class="source">
+LemmaTrixOS — Minimum Viable Product
+Specification
+Draft v0.2 | 28 October 2026 | Proposed engineering and product baseline
+Scope: canonical operating system, native developer toolchain, federated software/media distribution, initial
+social layer, privacy network, payments, and independently operated infrastructure.
+
+Launch thesis. LemmaTrixOS is an open-source, monolingual Lean 4 operating system and native
+application environment targeting a versioned RISC-V machine. Its first public release shall let
+people import authorized existing software; inspect and reconstruct it; build, test, modify, and
+publish Lean-native applications; discover and install one another's work; distribute and seed
+consumer media and games; and operate independent services, without surrendering default
+custody of their data, software, or financial keys.
+
+Document status. This is a specification to implement and validate, not a claim that the described software
+already exists or that its security properties have been proved. SHALL denotes release-blocking MVP
+requirements; SHOULD denotes strongly preferred MVP behavior; TARGET denotes an objective to
+demonstrate before advertising; POST-MVP denotes deferred scope. Numbered identifiers are stable
+tracking keys. Any deviation needs a recorded decision and revised acceptance gate.
+
+0. Superseded MVP decisions and fixed boundaries
+This draft revises the 23 October 2026 LemmaTrix application list and MVP v0.1, incorporating the
+subsequent decisions:
+
+1. Feed is in the MVP, initially with project-centric posts, normal short/long posts, follows, comments,
+   federation moderation, and shareable project cards. The full TikTok/Substack-scale feature set is not a
+   launch obligation.
+2. LemmaForge → dAppStore → Library is the catalog and admission hierarchy, with a necessary
+   type distinction: Forge releases include applications and non-executable media; dAppStore lists eligible
+   native executable application releases; Library presents consumer goods through the same distribution
+   registry. Thus Library games are eligible dAppStore applications, but a film or ebook is a consumer media
+   release, not a fictitious executable.
+3. *Library remains the arr-inspired consumer manager: indexer adapters, monitoring, automated eligible
+   acquisition, quality/edition selection, collections, streaming/downloads, preservation/seeding, and Steam-
+   like executable-game management.
+4. The IDE and Reverse Engineering Lab (REL) are principal MVP applications and must integrate
+   directly with the LemmaTrix SDK, proof/test evidence, Forge, Creative Suite's minimum semantic editors,
+   and release admission.
+5. Creative Suite's full professional scope is POST-MVP; the MVP includes the domain-specific editing
+   and preview capabilities necessary for selected imported game and software projects.
+6. Messenger and Agent are cross-cutting MVP capabilities, with small user-facing surfaces. Feed is
+   not built on top of Messenger: both use shared LemmaNET, event, identity, and object services but
+   retain distinct confidentiality protocols.
+7. The OS, LemmaNET, LemmaCoin, Server Edition, amnesiac/vault model, and open/distributed
+   architecture are real launch infrastructure, not presentation-only demos. LemmaCoin mainnet
+   launch and complete four-mode anonymity parity are separately gated from this MVP.
+</pre></section>
+<section id="page-2"><h2>Source page 2</h2><pre class="source">
+8. LemmaTrixOS is independent of Lemma One hardware. The canonical RISC-V guest, with x86-64
+   and ARM64 host emulators, is the deployment target. Lemma One is neither a prerequisite nor the
+   product's hardware identity.
+
+1. Product definition and success criteria
+Product family. LemmaTrixOS names the guest OS, runtime, platform services, SDK, and distribution.
+LemmaTrix names the complete user-facing ecosystem. LemmaForge is its general repository and release
+system. dAppStore is its native executable catalog. Library is its consumer goods/acquisition and
+preservation interface. REL is the migration, reconstruction, and provenance workbench.
+
+Primary launch audience. Open-source developers; Lean and formal-methods programmers; systems/
+security researchers; software-preservation communities; game developers/modders; and users willing to
+operate independent storage, verification, and compute nodes. General nontechnical adoption is not the first
+optimization objective.
+
+Core user loops:
+
+ • Develop: install → create from SDK template → compile/test/prove → run → sign and publish in Forge →
+   request dAppStore admission → install/fork on a second machine.
+ • Port: import rights-cleared sources/assets → REL inventory and baseline → isolate execution → reconstruct
+   semantic objects and service interfaces → edit in IDE and Creative Suite → differential-test → publish an
+   honestly labeled Lean port.
+ • Discover/seed: view Feed project card → inspect provenance → try or install → add to Library where
+   eligible → pin/seed → follow changes → fork/fund/verify.
+ • Operate: launch Server Edition → select isolated roles → advertise signed service contract → serve
+   objects/jobs → receive auditable signed receipts → settle bounded LemmaCoin payments on the release
+   test network.
+
+MVP success is a working, independent, end-to-end loop; mock pages, single-operator services,
+prearranged UI demonstrations, or self-reported proof claims do not qualify.
+
+2. Architecture and canonical data model
+2.1 Logical layers
+1. Machine: versioned RISC-V hardware/virtual-device contract; x86-64 and ARM64 assembly emulators;
+   host adapters; reproducible boot image.
+2. System: freestanding Lean runtime, capability-oriented kernel, IPC/process and device isolation,
+   compositor/input, networking and storage brokers, signing broker, package/update services, disposable
+   instance management.
+3. Shared services: typed object graph, project/event protocol, scoped identities, LemmaNET, LemmaCoin,
+   federation discovery, contracts/receipts, encrypted vault.
+4. Developer tools: LemmaForge + IDE, REL, minimal Creative Suite, build/test/proof infrastructure, Player/
+   Runner, scoped Agent.
+5. Distribution and consumer surfaces: dAppStore, Library, Feed, thin Messenger surface, Wallet, Server
+   Edition dashboard.
+
+Services SHALL communicate through documented versioned messages, not access each other's private
+memory, keys, or persistent object roots. Client, server, and cluster editions share protocols and native APIs
+but may have different durability, hardware, and resource profiles.
+</pre></section>
+<section id="page-3"><h2>Source page 3</h2><pre class="source">
+2.2 One project graph, multiple catalog views
+DAT-001. All first-party applications SHALL use a signed, versioned, content-addressed Project graph with
+typed Source , Object , Build , Release , Evidence , Fork , Offer , Receipt , and Event records.
+
+DAT-002. Releases SHALL distinguish NativeApplication , ContentProduct , Game , Service ,
+CompatibilityCapsule , DevelopmentArtifact , and ModelArtifact , allowing a release to have several
+compatible facets. Game has both application and consumer-product facets when native and admitted.
+
+DAT-003. A project SHALL identify its lineage and parent forks without requiring one account operator. A
+repository is not itself a native application; a build is not automatically a reviewed release; a signed release is
+not automatically catalog-admitted.
+
+DAT-004. Manifests SHALL include at least: schema version; project/release ID; signer/maintainers; content
+hashes and sizes; source lineage; license and distribution authority; machine/runtime profile; toolchain/
+dependency locks; capabilities; persistence and network modes; entry points; build/reproducibility steps;
+tests/proofs/assurance labels; supported consumer formats; provider/replica policy; revocation/updates; and
+known limitations.
+
+DAT-005. The registry SHALL index shared metadata, not claim possession of every underlying object. The
+owner can export a project and its permitted artifacts/evidence without permission from its current
+federation.
+
+DAT-006. Local Library references SHALL distinguish metadata-only Add, content Pin, update Subscribe,
+signed lineage Fork, provider Seed, and rights-aware Publish. None shall be conflated with another or
+silently trigger large transfers or payments.
+
+Promotion rule: ForgeRelease → DistributionRegistry requires schema/signature/rights validation;
+DistributionRegistry → dAppStore additionally requires native executable and technical-admission checks;
+DistributionRegistry → Library requires consumer-good eligibility, rights, metadata, acquisition/playback
+rules and federation policy. Native Library games must also pass the applicable dAppStore executable gate.
+Media do not become apps merely to fit the catalog hierarchy.
+
+3. LemmaTrixOS machine, runtime, and security
+3.1 Canonical guest and host portability
+OS-001. The canonical target SHALL be a frozen LT-Machine-v1 RV64 profile; the normative document
+SHALL pin the ratified unprivileged and privileged ISA versions, permitted extensions, address translation,
+interrupt/timer model, boot path, virtual-device register layouts, and byte-level image formats. A proposed
+implementation baseline is RV64GC with Sv39, virtual block/network devices, console, input, a basic
+framebuffer/display device, and a cryptographically seeded RNG; the exact enumerated contract must be
+frozen before release candidate.
+
+OS-002. The identical guest image SHALL boot and execute the release test suite on the canonical QEMU
+reference machine and on both x86-64 and ARM64 host implementations. Platform-specific host emulators
+SHALL follow the explicitly requested pure-assembly implementation policy. Host OS I/O adapters, bootstrap
+code, firmware, and other exceptions SHALL be documented, minimized and placed in the published trusted
+computing base (TCB). Hosted execution does not claim independence from a compromised host OS.
+
+OS-003. Emulator conformance SHALL test instruction semantics, exceptions, page translation, interrupts,
+timers, memory ordering within the selected profile, virtual devices, and reproducible guest-visible results.
+Cross-host differences SHALL be tracked with failing fixtures; assembly is not presumed secure or fast
+without evidence.
+
+OS-004. The shipped guest kernel, first-party native apps, guest policies, and guest platform services SHALL
+be written in Lean 4 under the monolingual policy. Native releases cannot quietly depend on Linux userspace,
+a bundled foreign-language runtime, or undocumented C/C++ kernel services. A compatibility capsule is
+explicitly not a native Lean release.
+</pre></section>
+<section id="page-4"><h2>Source page 4</h2><pre class="source">
+OS-005. A freestanding compilation/runtime path SHALL specify allocation/GC, calling conventions, panic/
+exceptions, startup, core primitives, linking, and the RISC-V backend. Upstream Lean normally compiles
+native modules through C and uses non-Lean runtime components; use of that pipeline alone is insufficient
+evidence of a monolingual guest. The MVP shall publish the actual source-to-binary chain and its unresolved
+TCB, not equate Lean source with verified machine code.
+
+3.2 Kernel and user experience
+OS-006. Provide process/address-space isolation, narrow message-based capabilities, revocation, resource
+quotas, independent device and network brokers, a separate non-networked signing service, and no ambient
+root in native application compartments.
+
+OS-007. Provide the minimum operational desktop: launcher, keyboard/pointer input, accessible window/
+control toolkit, basic compositor, notifications, file/object import portal, Settings, system diagnostics, and
+application lifecycle. No claim of macOS or Qubes feature parity is required for MVP.
+
+OS-008. Implement a Lean-defined configuration/package system with immutable dependency graphs,
+lockfiles, isolated builds, signed caches, generation-based atomic upgrades, rollback, garbage collection, and
+deterministic repair. This is not automatic binary compatibility with Nixpkgs or Linux applications.
+
+OS-009. Provide crash reports and privacy-filtered diagnostics without unrestricted object uploads or
+persistent logs. Critical updates SHALL have rollback and recovery paths.
+
+3.3 Amnesia and persistence
+VAULT-001. Personal application sessions SHALL be disposable. Persistent personal state SHALL be explicitly
+approved, schema-checked, encrypted, and scoped to the external-drive vault with separate Wallet ,
+Messenger , and Objects domains and separate keys/policies. Imports become approved Objects; there is no
+unrestricted vault mount.
+
+VAULT-002. In the absence of an authorized external vault, personal sessions SHALL operate ephemerally
+and disclose that no durable personal state is being kept. The MVP SHALL NOT silently create a host-disk
+vault or claim that browser closure erases host swap, telemetry, or recipient copies.
+
+VAULT-003. Server Edition SHALL intentionally retain subscribed databases, ledger state, mailboxes, paid
+storage, and service records in authorized durable stores with explicit retention and deletion rules; the
+personal amnesia policy does not imply server amnesia.
+
+VAULT-004. Backup, key rotation, recovery drills, device revocation, encrypted export, and capability
+inspection SHALL be accessible through Settings. Persisted data migration SHALL preserve authorization
+boundaries.
+
+3.4 Formal assurance
+PROOF-001. Publish machine-checked proofs for specifically enumerated critical kernel/platform properties:
+selected memory/isolation invariants, capability mediation, authorized vault-write policy, and signing
+authorization state transitions. Claims of monetary integrity shall identify the consensus/transaction model
+proved. The proof repository shall reject sorry , admitted goals, or unlisted trust axioms in release evidence.
+
+PROOF-002. Each assurance record SHALL state formal assumptions, code/binary version, threat model,
+excluded channels, checker version, and the remaining trusted components. A source proof without a
+justified source-to-shipped-binary bridge shall be labeled source-level only.
+
+PROOF-003. Package catalogs SHALL separately display signature verified, reproducible build, tests
+passed, differentially tested, reviewed, formally proved property X, and unknown/unassessed.
+There shall be no single misleading “verified safe” bit.
+</pre></section>
+<section id="page-5"><h2>Source page 5</h2><pre class="source">
+4. LemmaNET, federations, and messaging substrate
+NET-001. LemmaNET SHALL supply signed peer/service descriptions, authenticated object requests,
+encrypted content-addressed transport, federation-scoped discovery, and a shared typed event substrate.
+There SHALL be no mandatory global project/social index.
+
+NET-002. The mode API SHALL express four independent contracts: interactive onion routing, delayed
+padded mixing, encrypted bulk-object transport, and private high-throughput cluster links. MVP
+release requires functioning interactive privacy routing and encrypted bulk transfer; mode implementations
+not yet validated shall be marked unavailable, not quietly replaced with another mode. Tor interoperability,
+delayed mixing, and private cluster equivalence have separate conformance gates where they are not
+complete.
+
+NET-003. Applications SHALL request network capabilities through Lemma.Net and the network broker. An
+operation that requires onion or mix privacy SHALL fail closed if that mode is unavailable. No raw socket,
+direct DNS, or direct-route escape is permitted for native apps without separate explicit authority and clear
+disclosure.
+
+NET-004. Pseudonyms SHALL be scoped to user-selected roles and federations. Feed profile, project
+maintainer, node operator, and wallet spending identities SHALL NOT be silently joined. Public project sharing
+or signatures may intentionally reveal stable identity information; this is a user-visible choice.
+
+NET-005. The social/event substrate SHALL expose signed versioned events, inbox/outbox or equivalent
+replication, deduplication, causal references, object links, subscriptions, revocations, and federation
+moderation decisions. Feed posts and Messenger messages share transport/object primitives but not a
+common plaintext data store or confidentiality model.
+
+MSG-001. Minimum Messenger functionality: end-to-end encrypted one-to-one project text, limited project-
+group communication, encrypted attachments, store-and-forward mailboxes, contact/block controls, device
+recovery/revocation, and explicit retention. Voice/video, large public groups and advanced collaboration are
+POST-MVP.
+
+NET-006. All privacy documentation SHALL distinguish content secrecy from metadata protection. Bulk
+encryption alone does not anonymize endpoints, low-latency anonymity does not prevent all traffic analysis,
+federations can contain hostile members, and a compromised desktop host can observe its own input/output.
+
+5. LemmaCoin and Wallet
+COIN-001. LemmaCoin SHALL be an independent Layer 1 protocol, not merely a token issued on another
+chain. The MVP SHALL exercise actual independently operated consensus/full nodes, transaction validation,
+wallet state and contract execution on a capped testnet, with published protocol/test vectors and
+reproducible node builds. A real-value mainnet is not required for MVP and must receive a separate
+cryptographic, economic and operational release decision.
+
+COIN-002. The architectural target remains permissionless, privacy-native, mandatory shielded transfers,
+self-custody, public/private programmable contracts, no secret trusted setup, cryptographic agility, and post-
+quantum security targets. The MVP SHALL implement and test the privacy/transaction primitives it actually
+advertises; uncompleted PQ, anonymity, proof-system, scalability or confidentiality guarantees SHALL be
+clearly labeled unsupported/experimental, never inferred from using one standardized primitive.
+
+COIN-003. The wallet SHALL separate view and spend authority, use a trusted confirmation surface, and
+expose typed payment/invoice, escrow, refund, tip, bounty and service-settlement intents with recipient,
+asset, amount, max fee, expiry, status/finality, idempotency key and scope. Neither applications nor Agents
+may read or export spending keys.
+
+COIN-004. A charge, delegation, or remote job SHALL NOT exceed approved limits. Funds SHALL be released
+using verifiable service receipts and stated acceptance/dispute logic; retry and timeout handling SHALL not
+create duplicate settlement.
+</pre></section>
+<section id="page-6"><h2>Source page 6</h2><pre class="source">
+COIN-005. Wallet-to-app interfaces SHALL not expose other transactions or link pseudonyms by default. A
+user may selectively disclose only the information necessary for the requested transaction. Federation
+operators SHALL NOT alter LemmaCoin consensus rules through catalog moderation.
+
+COIN-006. Product demonstrations SHALL use testnet credits or voluntary sponsor credits and display
+reference-unit price estimates; ordinary free software installation SHALL not require token purchase or
+speculative participation.
+
+6. Native SDK and developer experience
+SDK-001. All native development shall use one documented, versioned, typed Lean SDK with packages:
+Lemma.UI , Lemma.Objects , Lemma.Net , Lemma.Identity , Lemma.Social , Lemma.Messenger , Lemma.Wallet ,
+Lemma.Server , Lemma.Library , Lemma.Forge , and Lemma.Proof .
+
+SDK-002. SDK calls SHALL express effects and narrow resource authority rather than expose raw keys,
+filesystem mounts, global social identity, or unrestricted networks. High-impact actions SHALL produce
+reviewable typed intents with preview, destination, scope, fees and expiration. Trivial authorized UI and local
+computation shall not generate prompt fatigue.
+
+SDK-003. Provide working templates for a local native utility, a Feed-integrated project application, a
+LemmaCoin tipping/invoice flow, a multiplayer client + Server Edition service, and an object-backed creative
+tool. Each template SHALL build, test and run with the shipped SDK, not mocked network/payment
+implementations.
+
+SDK-004. IDE and REL Agents SHALL generate versioned SDK integrations and manifest entries, tests,
+handling of denial/offline/retry states, and human-reviewable patches. Agents SHALL NEVER implement
+alternate wallet cryptography or expose a raw direct-network workaround in lieu of an SDK capability.
+
+SDK-005. A native app check command SHALL perform schema validation, dependency closure, capability-
+policy evaluation, source/license checks, forbidden host calls, package reproducibility tests, proof/test
+attestations, and release-admission preflight. Every failure must explain a practical fix.
+
+7. LemmaForge and IDE
+FORGE-001. LemmaForge SHALL provide independent signed repositories, branches/forks, commits, tagged
+releases, issues, reviews, pull/merge requests, documentation, dependency manifests, release evidence, CI,
+and project export/clone. Peer federation and replication SHALL function without one mandatory Forge
+account service.
+
+IDE-001. The native IDE SHALL offer Lean 4 editing, syntax/type diagnostics, interactive theorem states,
+build/test, debug and basic profiling, project search, dependency control, integrated terminal, code review,
+and local Runner launch.
+
+IDE-002. The IDE SHALL open foreign-language source or imported binaries for inspection in isolated project
+workspaces. Opening a file does not make it a native application or grant its code executable authority.
+
+IDE-003. Reproducible build evidence SHALL bind source revision, generated artifacts, toolchain and inputs,
+dependency locks, machine/runtime profile, release policy, and independent builders. Proof obligations and
+known unsupported behavior travel with each release.
+
+IDE-004. The Agent SHALL support explicit tasks such as “add wallet tips,” “make a LemmaNET multiplayer
+server,” “replace raw storage with approved Objects,” or “prepare for dAppStore admission.” It SHALL show
+the generated SDK invocations, capability deltas, tests and estimated remote compute cost before
+consequential actions.
+
+FORGE-002. A Forge release may remain private, development-only, preserved, or compatibility-only.
+Passing Forge release validation is not sufficient for dAppStore or Library listing.
+</pre></section>
+<section id="page-7"><h2>Source page 7</h2><pre class="source">
+8. Reverse Engineering Lab, minimal Creative Suite, and Runner
+8.1 REL stages and privacy
+REL-001. REL SHALL accept authorized source repositories, code archives, executable files, disk images/
+ROMs, structured assets, documentation, formats, traces, and test fixtures. Every import receives a hash,
+source/provenance record, rights classification, dependency/target inventory and privacy class before
+analysis.
+
+REL-002. REL SHALL retain the seven evidence levels: 0 Preserved, 1 Encapsulated, 2 Portable, 3
+Semantic, 4 Editable, 5 Native, 6 Verified. A project may publish at any honest level; a stage label
+SHALL NOT be promoted without its prescribed evidence. “Verified” must enumerate the specific tested/
+proved claims.
+
+REL-003. Available jobs SHALL include local isolation, public remote execution and supported confidential
+remote execution. The user SHALL see input disclosure, selected provider, stage plan, estimated price, hard
+cap, retention, and expected artifact before authorizing. Unsupported confidential compute hardware/
+attestation SHALL be explicitly refused rather than relabeled private.
+
+REL-004. Workers SHALL be disposable, resource capped, checkpointable, cancelable and reproducible
+where feasible. Untrusted binaries, installers, parsers, agent tools, and model inputs SHALL have no access to
+wallet keys, unrelated vault objects, or unrestricted network paths. Long jobs SHALL generate stage-by-stage
+accepted/failed evidence and resumable checkpoints.
+
+REL-005. Prefer available source and specifications over opaque binary analysis. Supported techniques may
+include build-environment reconstruction, static/dynamic analysis, disassembly/decompilation, file/API and
+protocol analysis, fuzzing, behavioral traces, semantic extraction, differential tests, clean-room
+reimplementation, and test-driven Lean-native reconstruction. Legal authority to analyze is distinct from
+authority to distribute.
+
+REL-006. Each reconstruction SHALL map platform-specific behaviors to SDK-native capabilities and
+services, highlight privacy/identity/decentralization violations, propose replacements, generate integration
+tests, and flag gaps rather than invent equivalence. Reconstructed macOS/Twitter/AWS-like workflows are
+long-term architectural reference targets, not a promise to copy proprietary source or reproduce those
+complete products in the MVP.
+
+REL-007. Model import, inference-runtime porting, quantization, fine-tuning, and teacher–student distillation
+SHALL be separately labeled workflows; MVP may implement only selected model-format/runtime operations,
+without asserting exact equivalence or automatic access to unlicensed weights.
+
+8.2 Shared semantic editing and execution
+CRE-001. MVP Creative Suite integration SHALL provide editable typed semantic objects relevant to chosen
+reference projects: a minimum asset browser, property inspector, scene/level or equivalent structured editor,
+code-linked object identity, preview, undo, branch comparison and export. Full DAW/NLE/CAD/Unreal/Blender
+parity is POST-MVP.
+
+CRE-002. An edit in the semantic workspace SHALL track affected source/build artifacts and invalidate
+appropriate tests/proofs. IDE and Creative Suite shall edit one underlying project lineage, not separate
+replicated project silos.
+
+RUN-001. Runner SHALL execute native Lean applications in disposable compartments and, where
+supported, foreign compatibility baselines in separate labeled emulators/capsules. It SHALL expose
+version selection, comparison, crash/permission reporting, and opt-in demo sharing; a browser preview is not
+assumed to reproduce hardware-level isolation or host erasure.
+
+8.3 Concrete initial porting fixtures
+REL-TEST-01. A rights-cleared small application SHALL progress from imported baseline through a
+functioning Lean-native replacement with documented I/O or differential tests.
+</pre></section>
+<section id="page-8"><h2>Source page 8</h2><pre class="source">
+REL-TEST-02. A chosen licensed component of Luanti (e.g., a mod/world schema or limited game/server
+subsystem) SHALL import as editable semantic objects, be modified through Creative Suite and IDE, and
+round-trip through a working Runner/package pipeline. A complete C++/Lua engine rewrite is not a
+prerequisite.
+
+REL-TEST-03. A chosen legally distributable Lugaru game subsystem/asset set SHALL be imported, edited,
+compared to its baseline, and packaged with accurate code-versus-asset license notices; full native
+rendering/game parity is a later target.
+
+9. dAppStore, Library, and consumer acquisition
+9.1 Technical admission and federation policy
+STORE-001. dAppStore SHALL index native executable releases passing baseline schema, signer,
+dependency, capability, machine-profile, executable, integrity, and selected reproducibility/test gates.
+Catalog admission is not a blanket claim of safety, full formal verification, or legal approval.
+
+STORE-002. Admission SHALL have four independently visible judgments: (a) content/signature/provenance
+validity; (b) technical assurance and declared capabilities; (c) federation catalog policy; and (d) local user's
+execution policy. Federations can reject a listing without erasing the project or controlling consensus.
+Sideloading remains possible under non-bypassable OS isolation and explicit user policy.
+
+STORE-003. Updates SHALL support threshold/delegated signing as applicable, expiration, rollback/freeze
+protection, staged updates, key rotation, revocation, and atomic rollback. Maliciously signed packages SHALL
+still be contained by capabilities and runtime isolation.
+
+STORE-004. Installation SHALL show requested authority, persistence scope, intended network mode,
+payment privileges, provenance/evidence, warnings, and relevant federation decisions. Material capability
+escalation on update requires renewed authorization.
+
+9.2 Library as *arr + Steam + preservation
+LIB-001. Library SHALL unify consumer film/television/music/books/audiobooks/courses/game catalogs under
+the shared distribution registry and project graph. Imported creative work is not automatically a dApp; a
+native installed game uses the dAppStore executable gate plus Library's game/consumer-product gate.
+
+LIB-002. The *arr-inspired manager SHALL provide federation/peer indexer adapters, searches, watchlists/
+monitoring, release matching, quality and edition profiles, policy-bounded acquisition, update/episode
+monitoring, naming/metadata, deduplication, automatic organization and failure recovery. Only sources the
+user is authorized to retrieve or redistribute are eligible; provider-specific adapter policies are explicit.
+
+LIB-003. Library SHALL keep Add metadata, Pin entire content, Stream, Subscribe, Seed, Fund, and
+Download as separate operations. Where applicable, it SHALL permit offline playback and independent object
+verification. No registry is required to retain the user's collection metadata.
+
+LIB-004. Games SHALL support install/run, compatible build and hardware selection, updates/rollback,
+controller/input profiles, approved save data and mods, with a path to multiplayer discovery and Server
+Edition. Achievements, rich social overlays, remote play and full Steam parity are POST-MVP.
+
+LIB-005. MVP SHALL demonstrate at least one authorized open-media format and one native
+executable consumer game/product in Library; all advertised formats/codecs shall be listed in a
+compatibility matrix, with native Lean implementation versus declared host adapter clearly identified.
+Consumer media decoders and untrusted parsers run under narrow capabilities.
+
+LIB-006. Federation catalog discovery remains peer/federation-scoped. A maintainer may intentionally
+publish a sanitized externally shareable page or demo, but the software SHALL NOT silently publish private
+subscriptions, query history, federations joined, or wallet identities.
+</pre></section>
+<section id="page-9"><h2>Source page 9</h2><pre class="source">
+10. Feed and social collaboration
+FEED-001. Feed SHALL offer federated signed short/long posts, replies, follows/subscriptions, project release
+cards, fork/issue/bounty activity, basic media attachments, user-selected chronological/ranking views,
+blocking/reporting, and moderation/appeal metadata. General personalized short-video ranking, paid
+memberships and large media-creator monetization are POST-MVP.
+
+FEED-002. A project card SHALL link to its authoritative signed Forge release and expose only authorized
+actions such as Inspect, Run Demo, Install, Add, Fork, Seed, Fund and Report. Actions check the relevant
+dAppStore/Library gates and local policy; displaying a card does not confer installation authority.
+
+FEED-003. Accounts and community policy SHALL be portable; no single federation controls the common
+event format. Moderation decisions, paid promotion, verified build evidence, monetary reputation and social
+popularity SHALL remain distinguishable.
+
+FEED-004. Externally accessible public project/share pages are opt-in; content intended only for
+participating LemmaTrix peers or chosen federations shall not appear in a mandatory global crawler/index.
+
+11. Server Edition and distributed work
+SRV-001. Server Edition SHALL boot under the common guest machine contract with server-specific
+authorized durable storage. A node can run separately isolated roles: registry mirror, content seed,
+retrieval provider, verifier/CI builder, compute/REL worker, relay, demo host, and LemmaCoin
+validator/full node. Each role has independent credentials, resource limits, pricing, lifecycle and logs.
+
+SRV-002. Operators SHALL select roles and explicit storage/compute/bandwidth budgets, opt-in projects,
+permitted privacy modes, retention terms, and pricing/reward policies. An unattended instance shall recover
+cleanly from restart without relying on personal amnesia.
+
+SRV-003. Nodes SHALL publish signed service descriptions and support request/quote/approve/execute/
+receipt/verify/settle with replay protection, expiry, versioned contracts, failure cases and human-readable
+cost disclosure.
+
+SRV-004. The MVP SHALL support jobs for reproducible builds, tests, verification, selected REL stages, object
+replication and retrieval. General-purpose hyperscaler parity, arbitrary GPU clusters, world-model training
+and universal ZK verifiable execution are POST-MVP.
+
+SRV-005. Local, public remote, and confidential remote job modes SHALL be distinct. Confidential mode
+requires supported attested hardware, measurement-bound code and client-encrypted input/output; no claim
+of zero-knowledge or immunity to hardware side channels is permitted. Absence of a supported enclave
+prevents that job class from being sold as confidential.
+
+12. Economics, seeding, and service guarantees
+ECON-001. Local work has no LemmaTrix network-compute fee. Remote work may be requester-funded,
+project-sponsored, bounty-funded or voluntary. The Wallet displays an estimated stable-reference price,
+actual settlement asset, signed terms, hard maximum, milestone plan and refund conditions.
+
+ECON-002. Retrieval rewards require accepted delivery receipts and preferably independent evidence where
+feasible; availability rewards require project-funded randomized storage/retrievability challenges and
+reliability/scarcity terms. Merely claiming to host an object SHALL NOT earn income. Receipts do not alone
+prove useful computation or defeat all collusion.
+
+ECON-003. Supported distribution policies SHALL include sponsor-paid free access, pay-per-retrieval, hybrid/
+free quota, encrypted private retention, volunteer distribution, and user-supplied-original-data releases.
+</pre></section>
+<section id="page-10"><h2>Source page 10</h2><pre class="source">
+ECON-004. Self-retrieval fraud, circular traffic, replayed/duplicated receipts, colluding nodes, fake traffic,
+expired contracts, under-replicated popular content and neglected low-demand content SHALL be explicit
+adversarial tests. Rewards shall be bounded, challengeable and claimable only for defined service.
+Independent verification and funded replicas are needed for preservation guarantees.
+
+ECON-005. A failed reconstruction may charge only for approved, actually delivered milestone work under
+the contract; it SHALL NOT be labeled a successful port. Escrow dispute/refund paths need exact state
+transitions and tests.
+
+13. Agents, rights, federation governance, and abuse prevention
+AGENT-001. REL and IDE Agents SHALL run in separate ephemeral compartments, use deterministic typed
+capability and budget enforcement, and keep project memory in approved vault objects only. User-selected
+local/remote models are permitted; private source or wallet data cannot leave the local environment merely
+because an Agent requests it.
+
+AGENT-002. The Agent can explain, plan, analyze, generate patches, run tests, inspect reports and
+recommend platform-native integration. It cannot sign wallet spends, grant itself capabilities, upload private
+files, publish releases, change federation visibility, or deploy paid services without the relevant
+independently authorized intent.
+
+RIGHTS-001. Each imported and published artifact SHALL declare public-domain basis, open/source-
+available license, explicit rights-holder authorization, user-supplied restricted original, private authorized
+analysis, institutional preservation, or unresolved/disputed rights. “Abandoned” and “old” do not
+automatically mean public domain. Unresolved rights block public paid seeding of full content until clarified.
+
+RIGHTS-002. Source, extracted assets, inferred behavior, generated replacements and user modifications
+SHALL remain separately attributed. Licenses for code and media are independently enforced. Rights to
+inspect, run, modify, publish and redistribute are distinct.
+
+GOV-001. Federations SHALL publish admission/moderation criteria, appeals, blocklists, evidence
+requirements and migration/export formats. Federation catalog policy is not software execution authority,
+monetary consensus, or ownership of portable project identities.
+
+SEC-001. Mandatory abuse cases: malicious publisher, compromised signer, poisoned dependencies, agent
+prompt injection, hostile imported code, dishonest compute worker, lying seeder, wallet replay/double-
+charge, unauthorized vault writes, DNS/network route escape, federation metadata scraping and recovery-
+key loss. Each gets executable negative tests and a documented residual-risk statement.
+
+14. Non-functional release requirements
+ • Independence: at least two separately administered registries and two seed/retrieval nodes; core
+   publish/install and object recovery work after one registry or provider becomes unavailable.
+ • Cross-host reproducibility: canonical guest boots and passes the specified core tests on QEMU, x86-64
+   host emulation and ARM64 host emulation; at least one release builds bit-for-bit identically on two
+   separately operated builders or records a specific explained nondeterminism blocking its reproducibility
+   badge.
+ • Fail-closed privacy: test attempts to bypass selected LemmaNET anonymity modes, object scopes, or
+   wallet signing fail. Tests include restarts, offline mode, malicious input and update transitions.
+ • Resumability: signed uploads/downloads, REL stages and paid build jobs resume from validated
+   checkpoints, or are explicitly marked non-resumable before authorization.
+ • Observability without exposure: provide job stages, resource use, costs, error reports and health
+   checks without indiscriminate plaintext logging of private projects or keys.
+ • Accessibility: keyboard navigation, scalable text, readable contrast and semantic labels across the
+   desktop, IDE, installation approvals, Library and Wallet.
+</pre></section>
+<section id="page-11"><h2>Source page 11</h2><pre class="source">
+ • Distribution: reproducible install media, source-available build instructions, complete manifest/schema
+   specifications, import/export tooling, signed updates and revocation drills.
+ • Assurance: publish the actual TCB, proof coverage and limitations, cryptographic/security audits
+   completed, benchmark/test hardware and observed metrics; make no unsupported privacy, safety,
+   performance or superiority claims.
+
+15. Release acceptance matrix
+RG-01 — Boot and isolation. One identical canonical guest boots on the reference and both host
+emulators. A malicious app attempts prohibited IPC, vault writing and network escape; all are rejected and
+logged without exposing secrets.
+
+RG-02 — Persistence. Import a file through the Object portal; approve retention on an external vault; close/
+reset the session; recover only approved objects and wallet/messaging domain data. Repeat without a vault
+and verify the absence of durable personal state. Disclose host-trust limitations.
+
+RG-03 — Native SDK and IDE. From a clean checkout, create an SDK-template Lean application, use
+scoped Objects and LemmaNET, build, debug, test and run. Attach a named theorem or a correctly labeled
+absence of proof. No private wallet key enters the app's address space.
+
+RG-04 — Forge and dAppStore. Publish to Forge, reproduce the release on two independent
+environments, validate signatures/dependencies/rights/capabilities, pass two independently configured
+federation admissions, install, run, update, reject a revoked or tampered release, and roll back a broken
+version.
+
+RG-05 — REL and Creative Suite. Import a rights-cleared reference program plus selected Luanti/Lugaru
+fixture, produce dependency and rights inventory, run isolated baseline, extract at least one editable
+semantic object, modify source and object, regenerate a native Lean component, compare outputs and
+publish evidence with its honest maturity stage.
+
+*RG-06 — Library and arr workflow. In a chosen federation, monitor an authorized series/collection or open-
+media release; identify a newly eligible edition via provider adapter; apply a declared quality rule; retrieve
+and integrity-check the object; organize the collection; play it offline. Separately install/run/update a native
+Library-listed consumer game, persist an approved save, and rollback.
+
+RG-07 — Feed and Messenger. Publish a signed project event and ordinary text post, replicate between
+two federations, view and reply under local ranking policy, exercise block/appeal mechanics, and send an
+encrypted project message. Check that no private project/federation membership is unintentionally made
+globally searchable.
+
+RG-08 — Server Edition. Two independent nodes seed a release; a third user retrieves it after the original
+publisher goes offline. Execute a capped remote build/REL job; receive authenticated stage receipts; an
+independent verifier checks at least one outcome. An interrupted download/job resumes or fails under
+documented refund rules.
+
+RG-09 — LemmaCoin and Wallet. Independent full/validator nodes process a shielded testnet payment,
+bounded job escrow and retrieval/availability reward. Test stale invoices, duplicated receipts, replay, aborted
+jobs, fee-ceiling violation, signer revocation and wallet recovery without granting application access to
+spending keys.
+
+RG-10 — Confidentiality claims. Demonstrate a local private job and, if sold as supported, one hardware-
+attested confidential remote job with encrypted upload/output, attestation binding and operator log
+inspection. Explicitly show that a signed compute receipt alone is not a zero-knowledge proof and that
+unimplemented modes are unavailable.
+
+RG-11 — Entire developer flywheel. A new user discovers a public (opt-in) shareable Forge/Feed project,
+tests it, forks it, adds a native platform feature through the IDE Agent, modifies a semantic asset, signs a
+valid release, requests catalog admission, becomes a seeder and can be independently installed by a second
+user without relying on the original publisher or one mandatory central server.
+</pre></section>
+<section id="page-12"><h2>Source page 12</h2><pre class="source">
+Release rule: all RG-01 through RG-11 SHALL pass on documented clean environments. If an RG contains an
+optional feature (for example, confidential remote compute), that feature must be excluded from the
+release's available services and marketing unless its complete gate passes; the core named baseline cannot
+be waived while still advertising full MVP completion.
+
+16. Delivery sequence and out-of-scope roadmap
+ Workstream                     Dependency order and finished output
+
+ A. Machine and kernel          Freeze LT-Machine-v1; freestanding Lean build/runtime; guest boot; host emulator
+                                conformance; capability kernel, vault brokers and recovery.
+
+ B. Native SDK and Forge        Object/protocol schemas, typed service interfaces, IDE, Runner, reproducible package
+                                builds, release signatures and assurance labels.
+
+ C. Network and                 LemmaNET brokers and peer object exchange; federation indexes; Server Edition
+ independent nodes              seeding/retrieval/CI; independent operator testing.
+
+ D. dAppStore / Library         Catalog admission, signed install/update/rollback, consumer indexer/monitor/acquire
+                                flows, one game and one open-media format.
+
+ E. REL and creative            Quarantined import; source-first analysis; semantic graph; reference port and
+ interchange                    editable game fixture; SDK-native transformation Agent.
+
+ F. Feed, Messenger, Wallet     Shared signed events, social/project cards, minimal encrypted messaging,
+ and testnet                    independent LemmaCoin testnet, bounded service payments and rewards.
+
+ G. Hardening and public        Independent federation and node failures; adversarial package and wallet tests;
+ reference release              proofs/TCB publication; reproducibility; rights reviews; end-to-end RG acceptance.
+
+These workstreams SHALL be integrated continuously; the sequence is a dependency map, not a plan to
+build disconnected apps and wire them together only at the end.
+
+Explicit POST-MVP scope: complete macOS/Twitter/AWS feature parity; arbitrary closed-source one-click
+decompilation to perfect Lean; full creative suite (DAW/NLE/3D/CAD/complete game engines); all *arr
+providers and every media codec; sophisticated social video recommendation; full Messenger calls; mature
+mobile clients; complete privacy-mix and clustered transport guarantees if not independently proven;
+universal zero-knowledge remote AI; general GPU compute exchange; production LemmaCoin mainnet;
+smart-contract DeFi and prediction markets; physical goods/gig markets; full Lemma School and scientific
+suites. These remain long-term architectural targets, not promises smuggled into MVP acceptance.
+
+17. Public positioning and launch evidence
+One-sentence positioning: LemmaTrixOS is a Lean-native RISC-V software platform where developers can
+reconstruct, build, verify, share, install, and seed one another's applications and consumer projects across
+independently operated, privacy-oriented federations.
+
+Demonstration assets: ship public project pages, working app/demo releases, versioned SDK templates,
+native proof/build artifacts, one full REL case study, an independently seeded game/media collection, a node-
+operator tutorial, a documented testnet deployment, and a plain-language security/limitations report.
+
+Adoption measurements: installation-to-first-run, template-to-first-successful-build, imported-project-to-
+editable-object, fork-to-valid-release, cross-federation installs, independent seed availability, successful build/
+verification receipts, repeat contributors, and severity/closure of reported security defects. Follower counts,
+token volume, and landing-page impressions are secondary.
+</pre></section>
+<section id="page-13"><h2>Source page 13</h2><pre class="source">
+Appendix A — Terms and safety semantics
+ • Native application: Lean-defined release built against the canonical guest runtime and declared SDK,
+   satisfying technical catalog admission. Not equivalent to universally proved safe.
+ • Compatibility capsule: quarantined, labeled execution of a foreign artifact; eligible for preservation/
+   analysis, not mislabeled native.
+ • Forge release: immutable signed project snapshot with provenance; broader than an installable
+   application.
+ • Distribution registry: federated signed metadata and content-addressed release references supporting
+   both executable and consumer content catalogs.
+ • dAppStore: native executable application catalog and admission process.
+ • Library: consumer acquisition, playback/installation, management and preservation experience; native
+   Library games also satisfy the executable gate.
+ • Restoration level: evidence about observed and reconstructed behavior at levels 0–6; not an automatic
+   claim of equivalence or ownership.
+ • Amnesiac: designed to discard guest session state; does not prove the host, network, recipients or
+   external providers forgot copies.
+ • Confidential compute: encryption and hardware-attested isolated processing under identified
+   assumptions; not general zero-knowledge computation.
+ • Verified: always qualified by which property, evidence, toolchain, binary and assumptions.
+
+Appendix B — Technical reference baselines (non-normative until
+pinned)
+1. Lean 4 language reference, elaboration and compilation — https://lean-lang.org/doc/reference/latest/
+   Elaboration-and-Compilation/
+2. RISC-V International ratified specification library — https://docs.riscv.org/
+3. Tor protocol specifications — https://spec.torproject.org/
+4. SLSA build provenance and assurance framework — https://slsa.dev/spec/v1.2/
+5. The Update Framework — https://theupdateframework.com/docs/metadata/
+
+End of draft v0.2.
+</pre></section>
+</main>
+</body>
+</html>
