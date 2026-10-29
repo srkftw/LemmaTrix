@@ -13,7 +13,15 @@ from creator_journey import rendered_text,rendered_score
 WAIT_FLOOR=0
 def wait(check,label,seconds=90):return bounded_wait(check,label,max(seconds,WAIT_FLOOR))
 
+class CompletedFrameInput:
+ """Wait for an assembly backend's published frame, never a partial commit."""
+ def __init__(self,device):self.device=device
+ def __getattr__(self,name):return getattr(self.device,name)
+ def frame(self):return bounded_wait(self.device.frame,'completed hardware framebuffer',30)
+
 class ClientNode(Node):
+ def __init__(self,*args,**kwargs):
+  super().__init__(*args,**kwargs);self.ui=CompletedFrameInput(self.ui)
  def client(self):return live.Client(self.sock,timeout=max(180,WAIT_FLOOR))
  def inspect(self):
   deadline=time.monotonic()+max(180,WAIT_FLOOR)
@@ -63,7 +71,9 @@ def package(binary,name,version,rights,key,path):
  path.write_bytes(data);Path(str(path)+'.manifest.json').write_text(json.dumps(manifest,sort_keys=True,separators=(',',':')));return path
 
 def native_score(node):
- try:return rendered_score(node.ui.frame())
+ frame=node.ui.frame()
+ if frame is None:return None
+ try:return rendered_score(frame)
  except AssertionError:return None
 
 def events(path):
