@@ -15,7 +15,7 @@ from creator_journey import rendered_text
 
 class OpaqueSwitch:
  def __init__(self):
-  self.lock=threading.Lock();self.closed=False;self.pair=();self.connections={};self.pending={};self.listeners=[]
+  self.lock=threading.Lock();self.closed=False;self.paused=False;self.pair=();self.connections={};self.pending={};self.listeners=[]
   for _ in range(3):
    listener=socket.socket();listener.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1);listener.bind(('127.0.0.1',0));listener.listen(2);listener.setblocking(False);self.listeners.append(listener)
   self.endpoints=[f'127.0.0.1:{s.getsockname()[1]}' for s in self.listeners]
@@ -24,11 +24,13 @@ class OpaqueSwitch:
   with self.lock:
    for c in self.connections.values():c.close()
    self.connections={};self.pending={};self.pair=(a,b)
+ def pause(self,value):
+  with self.lock:self.paused=value
  def run(self):
   while not self.closed:
    with self.lock:
-    sources=self.listeners+[self.connections[i] for i in self.pair if i in self.connections]
-    writes=[self.connections[i] for i in self.pair if i in self.connections and self.pending.get(i)]
+    sources=self.listeners+([] if self.paused else [self.connections[i] for i in self.pair if i in self.connections])
+    writes=[] if self.paused else [self.connections[i] for i in self.pair if i in self.connections and self.pending.get(i)]
     try:ready,writable,_=select.select(sources,writes,[],.01)
     except (ValueError,OSError):continue
     for listener in self.listeners:
