@@ -15,6 +15,15 @@ def wait(check,label,seconds=90):return bounded_wait(check,label,max(seconds,WAI
 
 class ClientNode(Node):
  def client(self):return live.Client(self.sock,timeout=max(180,WAIT_FLOOR))
+ def inspect(self):
+  deadline=time.monotonic()+max(180,WAIT_FLOOR)
+  while True:
+   try:return super().inspect()
+   except ValueError as error:
+    if str(error) not in ('guest rejected command150, status1','guest rejected command150, status2') or time.monotonic()>=deadline:raise
+    # An inspection queued behind this app's bounded Objects/crypto operation
+    # can time out. Retry only the read; no import, approval or transfer changes.
+    time.sleep(.2)
  def install_app(self,package,public,name):
   c=self.client()
   try:
