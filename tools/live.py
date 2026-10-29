@@ -157,6 +157,7 @@ def main(argv=None):
  untrust=cs.add_parser('untrust');untrust.add_argument('key_id')
  for name in ['inspect','install']:
   a=cs.add_parser(name);a.add_argument('release',type=Path)
+  if name=='install':a.add_argument('--approve-release');a.add_argument('--rights',type=lambda x:int(x,0))
  approve=cs.add_parser('approve');approve.add_argument('release_id');approve.add_argument('--rights',required=True,type=lambda x:int(x,0))
  cs.add_parser('activate')
  for name in ['start','stop','service-stop','service-restart']:
@@ -215,7 +216,12 @@ def main(argv=None):
   elif cmd=='approve':print(client.request(23,bytes.fromhex(args.release_id)+struct.pack('<Q',args.rights)).hex())
   elif cmd=='activate':print(struct.unpack_from('<Q',client.request(24),8)[0])
   elif cmd=='install':
-   info=client.stage(args.release);print(json.dumps(info,indent=2));raise ValueError('candidate inspected; authorize exact identity with approve, then activate')
+   info=client.stage(args.release);print(json.dumps(info,indent=2))
+   if args.approve_release is not None:
+    if args.approve_release!=info['release_id'] or args.rights!=info['rights']:raise ValueError('explicit approval must match the exact inspected release and rights')
+    client.request(23,bytes.fromhex(args.approve_release)+struct.pack('<Q',args.rights))
+    print('Installed release slot',struct.unpack_from('<Q',client.request(24),8)[0])
+   else:print('Candidate staged; use approve RELEASE_ID --rights MASK then activate, or install with --approve-release and --rights')
   elif cmd in ['start','stop','service-stop','service-restart']:print(struct.unpack_from('<Q',client.request({'start':25,'stop':26,'service-stop':32,'service-restart':33}[cmd],struct.pack('<Q',args.identity)),8)[0])
   elif cmd=='restart':print(struct.unpack_from('<Q',client.request(27,struct.pack('<2Q',args.identity,args.release_slot)),8)[0])
   elif cmd in ['rollback','active']:
