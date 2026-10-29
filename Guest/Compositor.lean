@@ -1,4 +1,5 @@
 import Guest.Labels
+import Guest.Keyboard
 import Guest.ProjectSDK
 import Guest.ProjectGraph
 namespace Guest.Compositor
@@ -286,6 +287,8 @@ def approvalDraw (t : UInt64) : UInt64 :=
   let t := permission 0x656c6f736e6f63 7 128 322 t
   let t := permission 0x79616c70736964 7 256 376 t
   let t := permission 0x7475706e69 5 512 430 t
+  let t := permission 0x6b726f7774656e 7 1024 472 t
+  let t := permission 0x65726f7473 5 2048 526 t
   let t := if (load64 (0x710000+64) t &&& 768) != 0 then Guest.Labels.say 50 16 148 fg bg t else t
   let t := if load64 (st+416) t == 1 then materialLabel t else Guest.Labels.say 57 16 184 fg bg t
   let t := Guest.Labels.say 6 16 166 0x9fc6a5 bg t
@@ -683,6 +686,14 @@ def vaultStatusDraw (t : UInt64) : UInt64 :=
       hex (load64 (0x719080+56) t) 16 258 204 fg bg t
   let t := vaultStatusLabel 8 12 250 t
   let t := vaultStatusLabel 9 12 274 t
+  let t := store64 (0x414000+0) 7738151096250867797 t
+  let t := store64 (0x414000+8) 7310595043397740576 t
+  let t := store64 (0x414000+16) 7955925922491342948 t
+  let t := store64 (0x414000+24) 2314885530974975344 t
+  let t := store64 (0x414000+32) 8386658447324815442 t
+  let t := store64 (0x414000+40) 8243124913752601120 t
+  let t := store64 (0x414000+48) 32497644281667705 t
+  let t := text 0x414000 55 12 302 fg bg t
   let t := vaultStatusLabel 10 12 322 t
   let t := upload 0 0 1024000 1 t
   store64 (st+32) 1 t
@@ -705,6 +716,200 @@ def vaultStatusRequest (caller t : UInt64) : UInt64 :=
     let t := store64 (st+120) 0 t
     vaultStatusDraw t
 
+def forgeInstallRequest (root t : UInt64) : UInt64 :=
+  let launcher := syscall 97 1 0 0 0 t
+  let r := Guest.ProjectSDK.delegate root launcher 65 launcher
+  if r != 160 || status r != 0 then error else
+    let t := store64 wire (result r) r
+    let r := management 180 8 t
+    if r != 512 then error else candidate r
+
+def recoveryLabel (id x y t : UInt64) : UInt64 :=
+  if id == 0 then
+    let t := store64 (0x414000+0) 2325059536107688532 t
+    let t := store64 (0x414000+8) 2329298080182714959 t
+    let t := store64 (0x414000+16) 5644453254408782166 t
+    let t := store64 (0x414000+24) 1262702412 t
+    text 0x414000 28 x y fg bg t
+  else
+  if id == 1 then
+    let t := store64 (0x414000+0) 3762230214415117893 t
+    let t := store64 (0x414000+8) 7162241152197158944 t
+    let t := store64 (0x414000+16) 8747515638238506345 t
+    let t := store64 (0x414000+24) 3347146944121758752 t
+    let t := store64 (0x414000+32) 7575182620983445792 t
+    let t := store64 (0x414000+40) 7234306519740522611 t
+    let t := store64 (0x414000+48) 46 t
+    text 0x414000 49 x y fg bg t
+  else
+  if id == 2 then
+    let t := store64 (0x414000+0) 8746399989145101643 t
+    let t := store64 (0x414000+8) 8462954332422742131 t
+    let t := store64 (0x414000+16) 8243121275932079219 t
+    let t := store64 (0x414000+24) 7935407910235105654 t
+    let t := store64 (0x414000+32) 7309940812469575791 t
+    let t := store64 (0x414000+40) 7575181452852684131 t
+    let t := store64 (0x414000+48) 11892 t
+    text 0x414000 50 x y fg bg t
+  else
+  if id == 3 then
+    let t := store64 (0x414000+0) 7950296392892968517 t
+    let t := store64 (0x414000+8) 2314885532081155948 t
+    let t := store64 (0x414000+16) 7164770998127129413 t
+    let t := store64 (0x414000+24) 7142819434248301669 t
+    let t := store64 (0x414000+32) 8101528367764956524 t
+    let t := store64 (0x414000+40) 29813 t
+    text 0x414000 42 x y fg bg t
+  else
+  if id == 4 then
+    let t := store64 (0x414000+0) 5917822558267000147 t
+    let t := store64 (0x414000+8) 2330984739895198533 t
+    let t := store64 (0x414000+16) 2318544925434531666 t
+    let t := store64 (0x414000+24) 4707141581809997893 t
+    let t := store64 (0x414000+32) 4994005208586798422 t
+    let t := store64 (0x414000+40) 86102439641426 t
+    text 0x414000 46 x y fg bg t
+  else
+  if id == 5 then
+    let t := store64 (0x414000+0) 3327651190119425355 t
+    let t := store64 (0x414000+8) 7308329989264646198 t
+    let t := store64 (0x414000+16) 7310577382390592288 t
+    let t := store64 (0x414000+24) 4283895692519415908 t
+    let t := store64 (0x414000+32) 5917855690435478816 t
+    let t := store64 (0x414000+40) 125780104274789 t
+    text 0x414000 46 x y fg bg t
+  else
+  if id == 6 then
+    let t := store64 (0x414000+0) 7164770998127129413 t
+    let t := store64 (0x414000+8) 8315177932522679397 t
+    let t := store64 (0x414000+16) 2336349386397458536 t
+    let t := store64 (0x414000+24) 7596562542729650531 t
+    let t := store64 (0x414000+32) 8029390625359358324 t
+    let t := store64 (0x414000+40) 7453010356247032608 t
+    let t := store64 (0x414000+48) 7598258015748579616 t
+    let t := store64 (0x414000+56) 3045748 t
+    text 0x414000 59 x y fg bg t
+  else
+  if id == 7 then
+    let t := store64 (0x414000+0) 7142837018185393490 t
+    let t := store64 (0x414000+8) 7306844307210986607 t
+    let t := store64 (0x414000+16) 7957695015158965614 t
+    let t := store64 (0x414000+24) 58 t
+    text 0x414000 25 x y fg bg t
+  else
+  if id == 8 then
+    let t := store64 (0x414000+0) 7358999865938701909 t
+    let t := store64 (0x414000+8) 7719235063697402209 t
+    let t := store64 (0x414000+16) 8241980309258664293 t
+    let t := store64 (0x414000+24) 7309940695159956581 t
+    let t := store64 (0x414000+32) 8243311847943008884 t
+    let t := store64 (0x414000+40) 8389209267338505583 t
+    let t := store64 (0x414000+48) 3347148090778088224 t
+    text 0x414000 56 x y fg bg t
+  else
+  t
+
+partial def maskedKey (i n t : UInt64) : UInt64 :=
+  if i == n then t else maskedKey (i+1) n (char (16+i*8) 114 42 fg bg t)
+partial def recoveryRows (i count mask t : UInt64) : UInt64 :=
+  if i == count then t else
+    let p := 0x71b000+i*128
+    let t := char 16 (100+i*28) (if (mask &&& (1 <<< i)) != 0 then 42 else 45) fg bg t
+    let t := text (p+40) (load64 p t) 32 (100+i*28) fg bg t
+    let t := hex (load64 (p+8) t) 16 32 (112+i*28) fg bg t
+    recoveryRows (i+1) count mask t
+
+def recoveryDraw (t : UInt64) : UInt64 :=
+  let t := frameReady t
+  let t := fill 0 0 640 400 bg t
+  let unlocking := load64 (st+40) t == 6
+  let t := recoveryLabel (if unlocking then 0 else 4) 16 16 t
+  let t := recoveryLabel (if unlocking then 1 else 5) 16 44 t
+  let t := recoveryLabel (if unlocking then 2 else 6) 16 62 t
+  let t := if unlocking then maskedKey 0 (load64 (st+432) t) t else
+    recoveryRows 0 (load64 (st+448) t) (load64 (st+456) t) t
+  let t := recoveryLabel 7 16 298 t
+  let t := hex (load64 (st+440) t) 8 220 298 fg bg t
+  let t := hex (load64 (st+464) t) 16 300 298 fg bg t
+  let t := if unlocking then recoveryLabel 3 16 324 t else t
+  let t := upload 0 0 1024000 1 t
+  store64 (st+32) 1 t
+
+def clearUnlock (t : UInt64) : UInt64 :=
+  let t := zero 0x71c000 64 t
+  let t := store64 (st+432) 0 t
+  let t := zero (wire+64) 8 t
+  zero 0x414000 128 t
+
+def unlockOpen (t : UInt64) : UInt64 :=
+  let t := clearUnlock t
+  let t := store64 (st+40) 6 t
+  let t := store64 (st+440) 0 t
+  recoveryDraw t
+partial def inventoryRows (i count t : UInt64) : UInt64 :=
+  if i == count then t else
+    let t := header 213 i 3 0 0 0 0 t
+    let r := management 213 64 t
+    if r != 192 || status r != 0 || load64 (wire+64) r > 63 then error else
+      inventoryRows (i+1) count (copy (wire+64) (0x71b000+i*128) 128 r)
+def recoveryOpen (t : UInt64) : UInt64 :=
+  let t := clearUnlock t
+  let r := management 211 64 (header 211 0 3 0 0 0 0 t)
+  if r != 64 || status r != 0 || load64 (wire+24) r > 6 then
+    recoveryDraw (store64 (st+440) 1 r)
+  else
+    let count := load64 (wire+24) r
+    let t := store64 (st+464) (load64 (wire+56) r) r
+    let t := store64 (st+448) count t
+    let t := store64 (st+456) (if count == 0 then 0 else 1) t
+    let t := inventoryRows 0 count t
+    let t := store64 (st+440) (if t == error then 1 else 0) t
+    recoveryDraw (store64 (st+40) 7 t)
+partial def decodeKey (i t : UInt64) : UInt64 :=
+  if i == 32 then t else
+    decodeKey (i+1) (store8 (0x71c100+i) (load8 (0x71c000+i*2) t*16+load8 (0x71c001+i*2) t) t)
+def unlockApply (t : UInt64) : UInt64 :=
+  if load64 (st+432) t != 64 then t else
+    let t := decodeKey 0 t
+    let t := header 200 0 3 0 0 0 0 t
+    let t := copy 0x71c100 (wire+64) 32 t
+    let gesture := syscall 99 0 0 0 0 t
+    let t := store64 (wire+96) gesture gesture
+    let r := management 200 104 t
+    let code := if r < 64 then 1 else status r
+    let t := clearUnlock r
+    let t := store64 (st+440) code t
+    if code == 0 then recoveryOpen t else recoveryDraw t
+
+def recoverApply (t : UInt64) : UInt64 :=
+  if load64 (st+456) t == 0 then t else
+    let t := header 217 0 3 (load64 (st+456) t) (load64 (st+464) t) 0 0 t
+    let gesture := syscall 99 0 0 0 0 t
+    let t := store64 (wire+64) gesture gesture
+    let r := management 217 72 t
+    let code := if r < 64 then 1 else status r
+    let t := store64 (st+440) code r
+    recoveryDraw t
+
+def recoveryRoute (code value t : UInt64) : UInt64 :=
+  if value != 1 then t else
+  if code == 1 then dismiss (clearUnlock t) else
+  if load64 (st+40) t == 7 then
+    if code == 28 then recoverApply t else
+    if code >= 2 && code <= 7 && code-2 < load64 (st+448) t then
+      recoveryDraw (store64 (st+456) (load64 (st+456) t ^^^ (1 <<< (code-2))) t)
+    else t
+  else if code == 28 then unlockApply t else
+  if code == 14 then
+    let n := load64 (st+432) t
+    if n == 0 then t else recoveryDraw (store64 (st+432) (n-1) (store8 (0x71c000+n-1) 0 t))
+  else
+    let c := Guest.Keyboard.scanCode code 0
+    let digit := if c >= 48 && c <= 57 then c-48 else if c >= 97 && c <= 102 then c-87 else 16
+    let n := load64 (st+432) t
+    if digit >= 16 || n >= 64 then t else
+      recoveryDraw (store64 (st+432) (n+1) (store8 (0x71c000+n) digit t))
+
 def pollApps (t : UInt64) : UInt64 :=
   let n := syscall 36 4 0x416000 1056 0 t
   if n < 96 || n > 1056 then t else
@@ -726,7 +931,8 @@ def pollApps (t : UInt64) : UInt64 :=
       let r := if load64 (st+40) n != 0 || abi != 2 then error else
         if n == 128 && op == 2 then retentionRequest root 0x416060 caller n
         else if n == 96 && op == 3 && load64 0x416058 n == 1 then pickerRequest caller nonce n
-        else if n == 96 && op == 5 && load64 0x416058 n == 1 then vaultStatusRequest caller n else error
+        else if n == 96 && op == 5 && load64 0x416058 n == 1 then vaultStatusRequest caller n
+        else if n == 96 && op == 6 && load64 0x416058 n == 1 then forgeInstallRequest root n else error
       let t := zero wire 8 r
       let t := store64 wire (if r == error then 1 else 0) t
       let t := store64 (wire+8) nonce t
@@ -892,7 +1098,11 @@ def route (ev t : UInt64) : UInt64 :=
   else if kind == 0 && code == 3 then
     let t := store64 (st+56) 0 t
     Guest.syscall 89 ev 0 1 0 t
+  else if load64 (st+40) t == 6 || load64 (st+40) t == 7 then
+    if kind == 1 then recoveryRoute code value t else t
   else if load64 (st+40) t == 5 then
+    if kind == 1 && value == 1 && code == 22 then unlockOpen t else
+    if kind == 1 && value == 1 && code == 19 then recoveryOpen t else
     if kind == 1 && value == 1 && (code == 1 || (code == 28 && load64 (st+120) t == 1)) then dismiss t else t
   else if load64 (st+40) t == 4 then
     if kind == 1 then lifecycleRoute code value t else t

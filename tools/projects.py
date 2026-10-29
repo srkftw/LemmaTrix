@@ -24,7 +24,7 @@ def manifest(entries,detail=b''):
 def decode_manifest(data):
  if len(data)<32:raise ValueError('short manifest')
  magic,version,count,detail=struct.unpack_from('<4Q',data)
- if (magic,version)!=(MAGIC,1) or count>32 or len(data)!=32+count*128+detail:raise ValueError('invalid manifest')
+ if magic!=MAGIC or version not in (1,2) or count>32 or len(data)!=32+count*128+detail:raise ValueError('invalid manifest')
  entries=[]
  for i in range(count):
   entry=data[32+i*128:160+i*128];kind,n=struct.unpack_from('<2Q',entry)
@@ -34,6 +34,31 @@ def decode_manifest(data):
   entries.append((name,kind,entry[16:48].hex()))
  if entries!=sorted(entries) or len({x[0] for x in entries})!=len(entries):raise ValueError('manifest ordering')
  return entries
+
+def canonical_node(kind,payload,parent='00'*32,schema=1):
+ return hashlib.sha256(struct.pack('<4Q',0x3145444f4e544c,1,kind,schema)+hashlib.sha256(payload).digest()+bytes.fromhex(parent)).hexdigest()
+
+def import_records(client,selected,records):
+ """Opaque import adapter: the guest derives dependency order and publication."""
+ entries=b''
+ for root in selected:
+  name=safe_name(root['name']).encode('ascii')
+  if len(name)>63:raise ValueError('root name exceeds63bytes')
+  entries+=struct.pack('<2Q',0,len(name))+bytes.fromhex(root['head'])+name.ljust(80,b'\0')
+ transaction=client.objects(35,a=len(selected),b=len(records),c=sum(len(r['payload']) for r in records),data=entries)[0][1]
+ try:
+  for ordinal,record in enumerate(records):
+   payload=record['payload']
+   metadata=bytes.fromhex(record['id'])+bytes.fromhex(record.get('parent','00'*32))+hashlib.sha256(payload).digest()
+   client.objects(36,transaction,ordinal,record['kind'],len(payload),record.get('schema',1),data=metadata)
+   for offset in range(0,len(payload),512):client.objects(37,transaction,ordinal,offset,data=payload[offset:offset+512])
+  fields,data=client.objects(38,transaction)
+  if fields[1]!=len(selected) or len(data)!=8*len(selected):raise ValueError('native importer returned incomplete root set')
+  return [dict(root,cap=cap) for root,cap in zip(selected,struct.unpack('<'+'Q'*len(selected),data))]
+ except BaseException:
+  try:client.objects(39,transaction)
+  except (OSError,ValueError,EOFError):pass
+  raise
 
 def project_identity(client,root):
  fields,data=client.objects(34,root)
@@ -67,15 +92,15 @@ def queued_build(client):
  if len(raw)<64:raise ValueError('short build queue response')
  status=struct.unpack_from('<Q',raw)[0]
  if status==6:return None
- if status or len(raw)!=192:raise ValueError('invalid queued build job')
+ if status or len(raw)!=256:raise ValueError('invalid queued build job')
  return raw
 
 def frozen_build(client,raw):
  f=struct.unpack_from('<8Q',raw)
- job=dict(job_id=f[1],job_service=f[3],source_root_capability=f[4],runtime_profile=f[5],source_root=raw[64:96].hex(),toolchain_id=raw[128:160].hex())
+ job=dict(job_id=f[1],job_service=f[3],source_root_capability=f[4],runtime_profile=f[5],source_root=raw[64:96].hex(),toolchain_id=raw[128:160].hex(),project_id=raw[160:192].hex(),live_root_binding=struct.unpack_from('<Q',raw,192)[0],requester=struct.unpack_from('<Q',raw,200)[0],delegator=struct.unpack_from('<Q',raw,208)[0],recipe=struct.unpack_from('<Q',raw,216)[0])
  if not job['job_id'] or not job['job_service'] or not job['source_root_capability'] or job['runtime_profile']!=2:raise ValueError('incompatible graphical build job')
  meta,data=client.objects(29,job['source_root_capability'])
- if meta[2]>63 or meta[5]!=1 or data[:32].hex()!=job['source_root']:raise ValueError('queued job does not identify its immutable frozen root')
+ if meta[2]>63 or meta[5]!=1 or data[:32].hex()!=job['source_root'] or meta[7]!=job['live_root_binding'] or job['recipe']!=1 or job['requester']!=job['delegator'] or project_identity(client,job['source_root_capability'])!=job['project_id']:raise ValueError('queued job does not identify its immutable frozen root')
  job['project_name']=data[32:32+meta[2]].decode('ascii')
  return job
 
@@ -83,7 +108,7 @@ def compile_frozen(job,files,outputdir):
  import build_jobs
  result=build_jobs.build_source_snapshot(files,module='Main',entry='Main.main',profile=job['runtime_profile'],jobid=job['job_id'],rootid=job['source_root'],outputdir=outputdir)
  if result.get('toolchain_id')!=job['toolchain_id']:raise ValueError('guest frozen compiler/toolchain commitment differs; build result not returned')
- result['guest_session']={k:job[k] for k in ('job_service','job_id','source_root_capability','project_name')}
+ result['guest_session']={k:job[k] for k in ('job_service','job_id','source_root_capability','project_name','project_id','live_root_binding','requester','delegator','recipe')}
  result['delivered']=False
  return result
 
@@ -117,7 +142,7 @@ def complete_build(client,result):
  result['delivered']=True
  return accepted
 
-def publish_result(result_path,key,name,version,output,parent=None,*,client=None,rights=768,attach_root=None):
+def publish_result(result_path,key,name,version,output,parent=None,*,client=None,rights=768,attach_root=None,authority_root=None):
  import releases,packaging as pkg
  if client is None:raise ValueError('publishing requires the current guest connection for referenced Build/Evidence content')
  r=json.loads(Path(result_path).read_text())
@@ -125,7 +150,14 @@ def publish_result(result_path,key,name,version,output,parent=None,*,client=None
  artifact=Path(r['artifact']['path']);binary=artifact.read_bytes()
  if hashlib.sha256(binary).hexdigest()!=r['artifact']['sha256']:raise ValueError('build artifact changed after result')
  session=r.get('guest_session',{})
+ if authority_root is None:raise ValueError('publishing requires an explicitly selected live root capability')
+ selected_binding=client.objects(29,authority_root)[0][7]
+ selected_identity=project_identity(client,authority_root)
  if not {'job_service','job_id','source_root_capability'}<=session.keys():raise ValueError('current guest job authority is absent; imported build assertions cannot manufacture it')
+ authority_raw=client.request(160,struct.pack('<8Q',7,session['job_id'],0,0,0,0,0,1))
+ if len(authority_raw)!=256:raise ValueError('native job authority response missing')
+ actual_authority=frozen_build(client,authority_raw)
+ if any(session.get(field)!=actual_authority[field] for field in ('job_service','job_id','source_root_capability','project_id','live_root_binding','requester','delegator','recipe')) or selected_binding!=actual_authority['live_root_binding'] or selected_identity!=actual_authority['project_id']:raise ValueError('selected live root/requester differs from canonical guest job authority')
  job_request=struct.pack('<8Q',6,session['job_id'],0,0,0,0,0,1)
  raw=client.request(160,job_request)
  if len(raw)<128:raise ValueError('guest Build/Evidence response is missing')
@@ -143,9 +175,18 @@ def publish_result(result_path,key,name,version,output,parent=None,*,client=None
  # it can enter a published snapshot. Session handles stay in local job state.
  for _,kind,identity in source_entries:
   if kind==10:resolve(client,session['source_root_capability'],identity)
+ # Fork provenance is validated in Objects. Its explicitly chosen publisher
+ # must also be checked before the bootstrap signer sees a request, rather than
+ # relying only on later Release graph rejection.
+ publisher_id=hashlib.sha256(releases.capsule.modulus(key)).digest()
+ for _,kind,identity in source_entries:
+  if kind==15:
+   lineage=client.read_object(resolve(client,session['source_root_capability'],identity))
+   if len(lineage)!=208 or struct.unpack_from('<Q',lineage,32)[0]!=0x314b524f46544c or lineage[144:176]!=publisher_id:
+    raise ValueError('selected signing key is not the publisher authorized by this canonical Fork')
  records=[dict(path=m['path'],sha256=m['sha256'],size=m['bytes']) for m in r['source_files']]
  evidence=[dict(kind='host-sandbox-build',job_id=r['job_id'],source_root=r['source_root'],request_digest=r['request_digest'],toolchain_id=r['toolchain_id'],binary_sha256=r['artifact']['sha256'],source_to_binary='unverified')]
- envelope,signed_manifest=releases.make(artifact,name,version,rights,key,parent=parent,license='NOASSERTION',evidence=evidence,profile=r['runtime_profile'],source_records_override=records)
+ envelope,signed_manifest=releases.make(artifact,name,version,rights,key,parent=parent,license='NOASSERTION',evidence=evidence,profile=r['runtime_profile'],source_records_override=records,logical_project_id=session['project_id'])
  # Signing and writing the explicit package are distinct from graph admission,
  # publisher trust, install approval and local execution.
  pkg.write_new(Path(output),envelope);pkg.write_new(Path(str(output)+'.manifest.json'),pkg.canonical(signed_manifest))
@@ -199,7 +240,7 @@ def failed_job(job,message):
  request={'schema':1,'recipe':'lemmatrix-worker-rejection-1','job_id':str(job['job_id']),'source_root':job['source_root'],'runtime_profile':2,'toolchain_id':job['toolchain_id'],'diagnostic':message}
  return {**request,'status':'error','diagnostics':[],'diagnostic_text':message[:512],
   'request_digest':hashlib.sha256(b'LT-BUILD-JOB-REJECTION-1\0'+json.dumps(request,sort_keys=True,separators=(',',':')).encode()).hexdigest(),
-  'guest_session':{k:job[k] for k in ('job_service','job_id','source_root_capability','project_name')},'delivered':False,'compiled':False}
+  'guest_session':{k:job[k] for k in ('job_service','job_id','source_root_capability','project_name','project_id','live_root_binding','requester','delegator','recipe')},'delivered':False,'compiled':False}
 
 def version_tuple(value):
  import re
@@ -215,26 +256,35 @@ def next_version(value):
   fields[i]=0
  raise ValueError('release version space exhausted')
 
-def current_release(client,name):
+def current_release(client,name,publication_id=None):
  import releases
- try:raw=client.request(29,releases.project(name))
+ try:raw=client.request(29,bytes.fromhex(publication_id) if publication_id else releases.project(name))
  except ValueError as error:
   if str(error)=='guest rejected command29, status1':return None
   raise
- if len(raw)!=512 or raw[128:160]!=releases.project(name):raise ValueError('current active release identity mismatch')
+ if len(raw)!=512 or raw[128:160]!=(bytes.fromhex(publication_id) if publication_id else releases.project(name)):raise ValueError('current active release identity mismatch')
  return {'release_id':raw[160:192].hex(),'version':struct.unpack_from('<3Q',raw,72)}
 
-def serve(socket,project,sign_key,output,version='0.1.0',poll_interval=.5):
+def serve(socket,project,sign_key,output,version='0.1.0',poll_interval=.5,*,root,requester=None):
  import releases
  releases.project(project)
  if not sign_key.is_file():raise ValueError('explicit publisher signing key does not exist')
  # Key parsing stays in the publisher process, before any untrusted elaboration.
  import capsule
- capsule.modulus(sign_key)
+ publisher_id=hashlib.sha256(capsule.modulus(sign_key)).hexdigest()
+ approved_client=live.Client(socket,timeout=30)
+ try:
+  selected=next((item for item in roots(approved_client,include_identity=True) if item['cap']==root),None)
+  if selected is None:raise ValueError('explicit selected live root capability is unavailable')
+  binding=approved_client.objects(29,root)[0][7]
+  if not requester:raise ValueError('explicit authorized requester is required')
+ finally:approved_client.close()
+ authority=dict(root=root,project_id=selected['project_id'],live_root_binding=binding,requester=requester,publisher_id=publisher_id,recipe=1,rights=768)
+ publication_id=releases.publication(selected['project_id'],publisher_id).hex()
  counter=version_tuple(version);output=Path(output).resolve();output.mkdir(parents=True,exist_ok=True)
  delay=max(.1,min(float(poll_interval),5.0));backoff=delay
  def report(event,**fields):print(json.dumps(dict(event=event,project=project,**fields),sort_keys=True),flush=True)
- report('ready',recipe='Main.main/profile2',rights=768,signing='explicit host key, outside compilation sandbox',approval='F12 review required')
+ report('ready',authority=authority,publication_id=publication_id,recipe='Main.main/profile2',rights=768,signing='explicit host key, outside compilation sandbox',approval='F12 review required')
  try:
   while True:
    client=None;job=None
@@ -245,8 +295,8 @@ def serve(socket,project,sign_key,output,version='0.1.0',poll_interval=.5):
     job=frozen_build(client,raw)
     directory=output/('session-'+str(job['job_service']))/('job-'+str(job['job_id']))
     directory.mkdir(parents=True,exist_ok=True)
-    if job['project_name']!=project:
-     result=failed_job(job,'Publisher worker scope denied: frozen project '+repr(job['project_name'])+' does not match '+repr(project)+'. No source exported or signed.')
+    if any(job[field]!=authority[field] for field in ('project_id','live_root_binding','requester','recipe')):
+     result=failed_job(job,'Publisher worker scope denied: canonical identity, selected live root, requester or recipe differs. No source exported or signed.')
      complete_build(client,result);save_build(result,directory)
      report('rejected',job=job['job_id'],reason=result['diagnostic_text']);continue
     actual,files=snapshot(client,job['source_root_capability'],job['source_root'])
@@ -258,13 +308,15 @@ def serve(socket,project,sign_key,output,version='0.1.0',poll_interval=.5):
     complete_build(client,result);save_build(result,directory)
     if result['status']!='ok':
      report('diagnostic',job=job['job_id'],source_root=job['source_root'],status=result['status'],diagnostics=result.get('diagnostics',[]),message=result.get('diagnostic_text','')[:2048]);continue
-    active=current_release(client,project)
+    # The selected live capability must remain valid through the signing instant.
+    if client.objects(29,root)[0][7]!=binding or project_identity(client,root)!=authority['project_id']:raise ValueError('selected live root authority was revoked or replaced')
+    active=current_release(client,project,publication_id)
     selected=max(counter,next_version(active['version'])) if active else counter
     parent=active['release_id'] if active else None
     release_path=directory/('release-'+'.'.join(map(str,selected))+'.ltrel')
     # CAS attachment is optional. A completed build of A does not replace head B.
-    current=next((r for r in roots(client) if r['name']==project and r['head']==job['source_root']),None)
-    published=publish_result(directory/'job.result.json',sign_key,project,'.'.join(map(str,selected)),release_path,parent,client=client,rights=768,attach_root=current['cap'] if current else None)
+    current=next((r for r in roots(client) if r['cap']==root and r['head']==job['source_root']),None)
+    published=publish_result(directory/'job.result.json',sign_key,project,'.'.join(map(str,selected)),release_path,parent,client=client,rights=768,attach_root=current['cap'] if current else None,authority_root=root)
     counter=next_version(selected)
     report('published',job=job['job_id'],source_root=job['source_root'],release=published['release_id'],version=published['version'],parent=parent,path=str(release_path),installed=False)
     staged=client.stage(release_path)
@@ -290,41 +342,48 @@ def main(argv=None):
  p=argparse.ArgumentParser(description='Canonical guest Project roots; explicit byte import/export')
  p.add_argument('--socket',type=Path,required=True);s=p.add_subparsers(dest='cmd',required=True)
  s.add_parser('list')
- a=s.add_parser('serve',help='explicit persistent sandbox build and scoped publisher worker; never auto-approves');a.add_argument('--project',required=True);a.add_argument('--sign-key',type=Path,required=True);a.add_argument('--output',type=Path,required=True);a.add_argument('--version',default='0.1.0');a.add_argument('--poll-interval',type=float,default=.5)
+ a=s.add_parser('serve',help='explicit persistent sandbox build and scoped publisher worker; never auto-approves');a.add_argument('--project',required=True);a.add_argument('--sign-key',type=Path,required=True);a.add_argument('--output',type=Path,required=True);a.add_argument('--version',default='0.1.0');a.add_argument('--poll-interval',type=float,default=.5);a.add_argument('--root',type=int,required=True);a.add_argument('--requester',type=int,required=True)
  a=s.add_parser('build');a.add_argument('--output',type=Path,required=True);a.add_argument('--module',default='Main');a.add_argument('--entry',default='Main.main');a.add_argument('--defer-result',action='store_true')
  a=s.add_parser('complete');a.add_argument('result',type=Path)
- a=s.add_parser('publish');a.add_argument('result',type=Path);a.add_argument('--sign-key',type=Path,required=True);a.add_argument('--name',required=True);a.add_argument('--version',required=True);a.add_argument('--parent');a.add_argument('--rights',type=lambda x:int(x,0),default=768);a.add_argument('--attach-root',type=int);a.add_argument('--output',type=Path,required=True)
+ a=s.add_parser('publish');a.add_argument('result',type=Path);a.add_argument('--sign-key',type=Path,required=True);a.add_argument('--name',required=True);a.add_argument('--version',required=True);a.add_argument('--parent');a.add_argument('--rights',type=lambda x:int(x,0),default=768);a.add_argument('--attach-root',type=int);a.add_argument('--root',type=int,required=True);a.add_argument('--output',type=Path,required=True)
  a=s.add_parser('import');a.add_argument('directory',type=Path);a.add_argument('--name',required=True);a.add_argument('--root',type=int,default=0);a.add_argument('--expected')
  a=s.add_parser('export');a.add_argument('--root',type=int,required=True);a.add_argument('--head');a.add_argument('--output',type=Path,required=True)
  a=s.add_parser('share');a.add_argument('--root',type=int,required=True);a.add_argument('--to',type=int,required=True);a.add_argument('--rights',type=int,default=127)
  args=p.parse_args(argv)
- if args.cmd=='serve':return serve(args.socket,args.project,args.sign_key,args.output,args.version,args.poll_interval)
+ if args.cmd=='serve':return serve(args.socket,args.project,args.sign_key,args.output,args.version,args.poll_interval,root=args.root,requester=args.requester)
  client=live.Client(args.socket)
  try:
   if args.cmd=='build':print(json.dumps(build_bridge(client,args.output,args.module,args.entry,args.defer_result),indent=2))
   elif args.cmd=='complete':
    result=json.loads(args.result.read_text());complete_build(client,result);args.result.write_text(json.dumps(result,indent=2)+'\n');print(result['source_root'])
-  elif args.cmd=='publish':print(json.dumps(publish_result(args.result,args.sign_key,args.name,args.version,args.output,args.parent,client=client,rights=args.rights,attach_root=args.attach_root),indent=2))
+  elif args.cmd=='publish':print(json.dumps(publish_result(args.result,args.sign_key,args.name,args.version,args.output,args.parent,client=client,rights=args.rights,attach_root=args.attach_root,authority_root=args.root),indent=2))
   elif args.cmd=='list':print(json.dumps(roots(client,include_identity=True),indent=2))
   elif args.cmd=='share':print(client.objects(27,args.root,args.to,args.rights)[0][1])
   elif args.cmd=='import':
-   directory=args.directory.resolve();entries=[];total=0
+   directory=args.directory.resolve();entries=[];total=0;records=[]
    paths=sorted(x for x in directory.rglob('*') if x.is_file())
    if not 1<=len(paths)<=24:raise ValueError('project requires1..24members')
    for path in paths:
     if path.is_symlink() or not path.resolve().is_relative_to(directory):raise ValueError('symlink source denied')
     relative=safe_name(path.relative_to(directory).as_posix());data=path.read_bytes();total+=len(data)
-    if total>1048576:raise ValueError('project import exceeds1MiB')
-    h,identity=node(client,data,10);entries.append((relative,10,identity))
-   parent=client.objects(24,args.root)[0][1] if args.root else 0
-   h,identity=node(client,manifest(entries),11,parent)
-   name=safe_name(args.name).encode()
-   if len(name)>63:raise ValueError('root name exceeds63bytes')
-   expected=bytes.fromhex(args.expected) if args.expected else bytes(32)
-   f,data=client.objects(22,h,args.root,len(name),data=expected+name.ljust(64,b'\0'))
+    if total>1048576 or len(data)>65536:raise ValueError('project import exceeds bounded profile')
+    identity=canonical_node(10,data);records.append(dict(kind=10,id=identity,payload=data));entries.append((relative,10,identity))
+   if args.root:
+    # Editing a live root remains its explicit expected-head transition. New
+    # external project imports always use the native transaction below.
+    for record in records:node(client,record['payload'],10)
+    parent=client.objects(24,args.root)[0][1]
+    h,identity=node(client,manifest(entries),11,parent)
+    name=safe_name(args.name).encode();expected=bytes.fromhex(args.expected) if args.expected else bytes(32)
+    f,_=client.objects(22,h,args.root,len(name),data=expected+name.ljust(64,b'\0'));cap=f[1]
+   else:
+    payload=manifest(entries);identity=canonical_node(11,payload)
+    # Deliberately offer the root first: ordering is not a host responsibility.
+    records.insert(0,dict(kind=11,id=identity,payload=payload))
+    cap=import_records(client,[dict(name=args.name,head=identity)],records)[0]['cap']
    process=client.request(2);shell=struct.unpack_from('<Q',process,4*32)[0]
-   client.objects(27,f[1],shell,127)
-   print(json.dumps(dict(root=f[1],head=data[:32].hex(),name=args.name,members=len(entries),bytes=total),indent=2))
+   client.objects(27,cap,shell,127)
+   print(json.dumps(dict(root=cap,head=identity,name=args.name,members=len(entries),bytes=total),indent=2))
   elif args.cmd=='export':
    identity,files=snapshot(client,args.root,args.head)
    args.output.mkdir(parents=True,exist_ok=False)

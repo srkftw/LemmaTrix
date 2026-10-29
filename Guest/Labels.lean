@@ -650,11 +650,136 @@ def say5 (id x y fg bg t : UInt64) : UInt64 :=
     Guest.Raster.text 0x414000 26 x y fg bg t
   else
     t
+def say6 (id x y fg bg t : UInt64) : UInt64 :=
+  if id == 96 then
+    let t := store64 (0x414000+0) 2322251216327963715 t
+    let t := store64 (0x414000+8) 7597414702928717923 t
+    let t := store64 (0x414000+16) 7165919078633206894 t
+    let t := store64 (0x414000+24) 8245937481777160293 t
+    let t := store64 (0x414000+32) 121 t
+    Guest.Raster.text 0x414000 33 x y fg bg t
+  else
+  if id == 97 then
+    let t := store64 (0x414000+0) 7597414702928717891 t
+    let t := store64 (0x414000+8) 7310030993675547758 t
+    let t := store64 (0x414000+16) 7165919078633206894 t
+    let t := store64 (0x414000+24) 2323709439362670693 t
+    let t := store64 (0x414000+32) 8026294636604845637 t
+    let t := store64 (0x414000+40) 2322576946747762286 t
+    let t := store64 (0x414000+48) 7164771135566082885 t
+    let t := store64 (0x414000+56) 779316325 t
+    Guest.Raster.text 0x414000 60 x y fg bg t
+  else
+  if id == 98 then
+    let t := store64 (0x414000+0) 7598257706442777931 t
+    let t := store64 (0x414000+8) 7521981564372019559 t
+    let t := store64 (0x414000+16) 7885080994131572329 t
+    let t := store64 (0x414000+24) 4283895688056370281 t
+    let t := store64 (0x414000+32) 8389754698058785568 t
+    let t := store64 (0x414000+40) 8295757393064191520 t
+    let t := store64 (0x414000+48) 8391403612172542324 t
+    let t := store64 (0x414000+56) 8319395793566458721 t
+    let t := store64 (0x414000+64) 8367799666768964640 t
+    let t := store64 (0x414000+72) 8390047166775912808 t
+    let t := store64 (0x414000+80) 46 t
+    Guest.Raster.text 0x414000 81 x y fg bg t
+  else
+  if id == 99 then
+    let t := store64 (0x414000+0) 7597414702928717891 t
+    let t := store64 (0x414000+8) 7813865678659679342 t
+    let t := store64 (0x414000+16) 7309978950672151653 t
+    let t := store64 (0x414000+24) 8223624735748355169 t
+    let t := store64 (0x414000+32) 7234308675814056805 t
+    let t := store64 (0x414000+40) 8314896634767307296 t
+    let t := store64 (0x414000+48) 58 t
+    Guest.Raster.text 0x414000 49 x y fg bg t
+  else
+  if id == 100 then
+    let t := store64 (0x414000+0) 2334402176956461633 t
+    let t := store64 (0x414000+8) 2334097638073917808 t
+    let t := store64 (0x414000+16) 8439857173818335597 t
+    let t := store64 (0x414000+24) 7089066488320385390 t
+    let t := store64 (0x414000+32) 7307218278599779692 t
+    let t := store64 (0x414000+40) 2338340653495361650 t
+    let t := store64 (0x414000+48) 7236833183485161057 t
+    let t := store64 (0x414000+56) 8314330363680222825 t
+    let t := store64 (0x414000+64) 2336921123819975200 t
+    let t := store64 (0x414000+72) 13058235735894384 t
+    Guest.Raster.text 0x414000 79 x y fg bg t
+  else
+  if id == 101 then
+    let t := store64 (0x414000+0) 7597414702928717891 t
+    let t := store64 (0x414000+8) 7308332162361619566 t
+    let t := store64 (0x414000+16) 7599372963416128100 t
+    let t := store64 (0x414000+24) 8390047166775915887 t
+    let t := store64 (0x414000+32) 8534995790118154272 t
+    let t := store64 (0x414000+40) 3040357 t
+    Guest.Raster.text 0x414000 43 x y fg bg t
+  else
+  if id == 102 then
+    let t := store64 (0x414000+0) 7234316346692756819 t
+    let t := store64 (0x414000+8) 8386658438904705056 t
+    let t := store64 (0x414000+16) 8315171486950240032 t
+    let t := store64 (0x414000+24) 58 t
+    Guest.Raster.text 0x414000 25 x y fg bg t
+  else
+  if id == 103 then
+    let t := store64 (0x414000+0) 7142830407995191887 t
+    let t := store64 (0x414000+8) 7954884663572262255 t
+    let t := store64 (0x414000+16) 7521981564116213876 t
+    let t := store64 (0x414000+24) 7018130082659399273 t
+    let t := store64 (0x414000+32) 14948 t
+    Guest.Raster.text 0x414000 34 x y fg bg t
+  else
+    t
+def say7 (id x y fg bg t : UInt64) : UInt64 :=
+  if id == 104 then
+    let t := store64 (0x414000+0) 7881701908395749190 t
+    let t := store64 (0x414000+8) 7575185850760700005 t
+    let t := store64 (0x414000+16) 4285584516693517668 t
+    let t := store64 (0x414000+24) 7018141438805308704 t
+    let t := store64 (0x414000+32) 2338346091007909997 t
+    let t := store64 (0x414000+40) 7310575239018079603 t
+    let t := store64 (0x414000+48) 14889 t
+    Guest.Raster.text 0x414000 50 x y fg bg t
+  else
+  if id == 105 then
+    let t := store64 (0x414000+0) 7809933828255343950 t
+    let t := store64 (0x414000+8) 8462299375528866665 t
+    let t := store64 (0x414000+16) 8747515638088035426 t
+    let t := store64 (0x414000+24) 2320539253970585888 t
+    let t := store64 (0x414000+32) 8314035730082393964 t
+    let t := store64 (0x414000+40) 16371145723355237 t
+    Guest.Raster.text 0x414000 47 x y fg bg t
+  else
+  if id == 106 then
+    let t := store64 (0x414000+0) 7310014136068501318 t
+    let t := store64 (0x414000+8) 8606132852387837025 t
+    let t := store64 (0x414000+16) 7598819853036232814 t
+    let t := store64 (0x414000+24) 7308895020947241332 t
+    let t := store64 (0x414000+32) 8439872597044586337 t
+    let t := store64 (0x414000+40) 2334102031740531566 t
+    let t := store64 (0x414000+48) 8462299349826956917 t
+    let t := store64 (0x414000+56) 8028075772393122914 t
+    let t := store64 (0x414000+64) 11886 t
+    Guest.Raster.text 0x414000 66 x y fg bg t
+  else
+  if id == 107 then
+    let t := store64 (0x414000+0) 7593462736151015238 t
+    let t := store64 (0x414000+8) 8318277293049144684 t
+    let t := store64 (0x414000+16) 7309940799333298804 t
+    let t := store64 (0x414000+24) 8319591566782587245 t
+    let t := store64 (0x414000+32) 199270097505 t
+    Guest.Raster.text 0x414000 37 x y fg bg t
+  else
+    t
 def say (id x y fg bg t : UInt64) : UInt64 :=
   if id < 16 then say0 id x y fg bg t else
   if id < 32 then say1 id x y fg bg t else
   if id < 48 then say2 id x y fg bg t else
   if id < 64 then say3 id x y fg bg t else
   if id < 80 then say4 id x y fg bg t else
-  say5 id x y fg bg t
+  if id < 96 then say5 id x y fg bg t else
+  if id < 104 then say6 id x y fg bg t else
+  say7 id x y fg bg t
 end Guest.Labels

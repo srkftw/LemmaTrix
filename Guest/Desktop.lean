@@ -48,6 +48,7 @@ partial def initFiles (i t : UInt64) : UInt64 :=
 def newProject (t : UInt64) : UInt64 :=
   let t := zero st 32 t
   let t := store64 (st+312) 0 t
+  let t := store64 (st+352) 0 t
   let t := store64 (st+320) 0 t
   let t := store64 (st+296) 0 t
   let t := store64 (st+304) 0 t
@@ -84,6 +85,21 @@ partial def fileList (i t : UInt64) : UInt64 :=
     let t := if load64 (f+16) t != 0 then char 142 (52+i*16) 42 0xe9bc75 bg t else t
     fileList (i+1) t
 
+def checkpointDraw (t : UInt64) : UInt64 :=
+  if load64 (st+352) t == 0 then Guest.Labels.say 96 8 309 0xaac9aa bg t else
+    let t := fill 0 180 640 137 0x203447 t
+    let t := Guest.Labels.say (if load64 (st+352) t == 1 then 97 else 99) 8 185 fg 0x203447 t
+    let t := Guest.Labels.say (if load64 (st+352) t == 1 then 98 else 100) 8 201 fg 0x203447 t
+    let t := Guest.Labels.say 102 8 219 fg 0x203447 t
+    let t := text 0x6e1040 (load64 (st+48) t) 164 219 fg 0x203447 t
+    let t := Guest.Raster.hex (load64 st t) 2 564 219 fg 0x203447 t
+    let t := if load64 (st+352) t != 2 then t else
+      let t := Guest.Raster.hex (load64 (st+360) t) 4 340 235 fg 0x203447 t
+      Guest.Raster.hex (load64 (st+368) t) 4 390 235 fg 0x203447 t
+    let t := Guest.Labels.say 103 8 251 fg 0x203447 t
+    let t := Guest.Raster.hex (load64 (0x6ef000+160) t) 16 8 269 fg 0x203447 t
+    Guest.Raster.hex (load64 (0x6ef000+192) t) 16 8 285 fg 0x203447 t
+
 def draw (surface t : UInt64) : UInt64 :=
   let t := fill 0 0 640 352 bg t
   let t := Guest.Labels.say 9 8 3 fg bg t
@@ -97,6 +113,7 @@ def draw (surface t : UInt64) : UInt64 :=
   let t := if load64 (st+56) t == 40 then text 0x6e5000 (load64 (st+160) t) 164 305 0xf1988c bg t else t
   let t := if load64 (st+72) t != 0 then text 0x6e4000 (load64 (st+80) t) 8 336 fg bg t else
     Guest.Labels.say (if load64 (f+16) t != 0 then 13 else 12) 8 338 fg bg t
+  let t := checkpointDraw t
   upload surface 0 901120 0 t
 
 partial def saveFiles (i t : UInt64) : UInt64 :=
@@ -187,7 +204,7 @@ partial def openFiles (root manifest count i sources artifacts t : UInt64) : UIn
     let r := resolve root (e+16) t
     if r == error || status r != 0 || load64 (wire+32) r != kind then error else
       if kind != 10 then
-        if artifacts >= 24 || (kind != 12 && kind != 13 && kind != 14) then error else
+        if artifacts >= 24 || (kind != 12 && kind != 13 && kind != 14 && kind != 15) then error else
           let t := copy e (0x6eb000+artifacts*128) 128 r
           openFiles root manifest count (i+1) sources (artifacts+1) t
       else if sources >= 8 || load64 (wire+16) r > 32768 then error else
@@ -367,11 +384,41 @@ def erase (forward t : UInt64) : UInt64 :=
 
 def scanCode (code shift : UInt64) : UInt64 := Guest.Keyboard.scanCode code shift
 
+def hexNibble (c : UInt64) : UInt64 :=
+  if c >= 48 && c <= 57 then c-48 else if c >= 97 && c <= 102 then c-87 else error
+partial def forkPublisherBytes (i t : UInt64) : UInt64 :=
+  if i == 32 then t else
+    let high := hexNibble (load8 (0x6e4000+i*2) t)
+    let low := hexNibble (load8 (0x6e4001+i*2) t)
+    if high == error || low == error then error else
+      forkPublisherBytes (i+1) (store8 (0x6ef380+i) (high*16+low) t)
+def finishFork (t : UInt64) : UInt64 :=
+  if load64 (st+80) t != 64 then message 107 t else
+    let decoded := forkPublisherBytes 0 t
+    if decoded == error then message 107 decoded else
+      let r := forkProject (load64 (st+24) decoded) 0x6e1000 0x6ef380 0x6ef300 (load64 (st+376) decoded) decoded
+      if r != 256 || status r != 0 then message 107 (store64 (st+72) 0 r) else
+        let root := result r
+        let t := store64 (st+72) 0 r
+        let t := openRootReply t
+        let launcher := syscall 97 1 0 0 0 t
+        let t := delegate root launcher 127 launcher
+        let shell := syscall 97 4 0 0 0 t
+        let t := delegate root shell 127 shell
+        message 106 t
+
 def acceptPrompt (t : UInt64) : UInt64 :=
   let mode := load64 (st+72) t
   let n := load64 (st+80) t
+  if mode == 5 then finishFork t else
   if n == 0 || !Guest.ProjectGraph.validName 0x6e4000 n 63 t then message 24 t else
-  if mode == 1 then
+  if mode == 4 then
+    let t := zero 0x6ef300 8 t
+    let t := copy 0x6e4000 0x6ef300 n t
+    let t := store64 (st+376) n t
+    let t := store64 (st+72) 5 t
+    message 105 (store64 (st+80) 0 t)
+  else if mode == 1 then
     let t := copy 0x6e4000 0x6e1040 n t
     let t := store64 (st+48) n t
     let t := store64 (st+72) 0 t
@@ -478,6 +525,33 @@ def navigateDiagnostic (t : UInt64) : UInt64 :=
     let t := store64 (f+8) off t
     store64 (f+32) (if line > 20 then line-10 else 0) t
 
+def requestFork (t : UInt64) : UInt64 :=
+  let t := commitProject t
+  if load64 (st+56) t == 24 || load64 (st+24) t == 0 then message 107 t else
+    let t := store64 (st+72) 4 t
+    message 104 (store64 (st+80) 0 t)
+
+def requestCheckpoint (t : UInt64) : UInt64 :=
+  let t := commitProject t
+  if load64 (st+56) t == 24 || load64 (st+24) t == 0 then message 101 t else
+    let r := projectIdentity (load64 (st+24) t) t
+    if r != 192 || status r != 0 then message 101 r else
+      let t := copy (wire+160) (0x6ef000+160) 32 r
+      let t := copy 0x6e1000 (0x6ef000+192) 32 t
+      store64 (st+352) 1 t
+
+def applyCheckpoint (t : UInt64) : UInt64 :=
+  let root := load64 (st+24) t
+  let r := checkpoint root (0x6ef000+192) t
+  if r != 256 || status r != 0 then message 101 (store64 (st+352) 0 r) else
+    let t := copy wire 0x6ef000 256 r
+    let t := store64 (st+360) (load64 (wire+224) t) t
+    let t := store64 (st+368) (load64 (wire+232) t) t
+    let r := describeRoot root t
+    if r != 160 || status r != 0 then message 101 (store64 (st+352) 0 r) else
+      let t := openRootReply r
+      store64 (st+352) 2 t
+
 def requestVaultStatus (t : UInt64) : UInt64 :=
   let shell := syscall 97 4 0 0 0 t
   let t := header 5 0 0 0 0 0 0 t
@@ -537,7 +611,12 @@ def key (code down surface t : UInt64) : UInt64 :=
     let shift := load64 (st+64) t &&& 1
     let ctrl := load64 (st+136) t &&& 1
     let c := scanCode code shift
-    if load64 (st+312) t == 1 then
+    if load64 (st+352) t != 0 then
+      if code == 1 then store64 (st+352) 0 t else
+      if code == 28 then
+        if load64 (st+352) t == 1 then applyCheckpoint t else store64 (st+352) 0 t
+      else t
+    else if load64 (st+312) t == 1 then
       if code == 1 then store64 (st+312) 0 t
       else if code == 28 then applyResource t
       else if code == 103 then store64 (st+336) (if load64 (st+336) t == 255 then 255 else load64 (st+336) t+1) t
@@ -547,7 +626,7 @@ def key (code down surface t : UInt64) : UInt64 :=
       if code == 1 then store64 (st+72) 0 t
       else if code == 28 then acceptPrompt t
       else if code == 14 then store64 (st+80) (if load64 (st+80) t == 0 then 0 else load64 (st+80) t-1) t
-      else if c >= 33 && c <= 126 && load64 (st+80) t < 63 then
+      else if c >= 33 && c <= 126 && load64 (st+80) t < (if load64 (st+72) t == 5 then 64 else 63) then
         let n := load64 (st+80) t
         store64 (st+80) (n+1) (store8 (0x6e4000+n) c t)
       else t
@@ -573,6 +652,8 @@ def key (code down surface t : UInt64) : UInt64 :=
     else if code == 67 then removeFile t
     else if code == 68 then requestRetention t
     else if code == 87 then requestVaultStatus t
+    else if ctrl == 1 && code == 33 then requestFork t
+    else if ctrl == 1 && code == 37 then requestCheckpoint t
     else if ctrl == 1 && code == 18 then openResource t
     else if ctrl == 1 && code == 44 then undo 0 t
     else if ctrl == 1 && code == 21 then undo 1 t

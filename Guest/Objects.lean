@@ -124,7 +124,7 @@ def beginObject (caller rights length t : UInt64) : UInt64 :=
   let kind := load64 (command+24) t
   let schema := load64 (command+32) t
   let derive := load64 (command+40) t
-  if n > 65536 || kind < 1 || kind > 14 || schema != 1 ||
+  if n > 65536 || kind < 1 || kind > 15 || schema != 1 ||
       !((length == 96 && derive == 0) || (length == 64 && derive == 1)) then respond 2 0 0 0 t
   else if (parent == 0 && !has rights 2) || (parent != 0 && (!has rights 4 || !grantValid caller parent 4 t)) then respond 1 0 0 0 t
   else if parent != 0 && load64 (grantedRecord parent t) t != 2 then respond 2 0 0 0 t
@@ -288,6 +288,7 @@ def listObjects (caller rights t : UInt64) : UInt64 :=
 
 def graphMetadata (h r rights t : UInt64) : UInt64 :=
   let t := respond 0 h r rights t
+  let t := store64 (wire+40) (ProjectGraph.nodeSchema r t) t
   let t := copy (r+160) (wire+64) 32 t
   128+copy (r+192) (wire+96) 32 t
 
@@ -298,6 +299,7 @@ def rootReply (h r cursor t : UInt64) : UInt64 :=
   let t := store64 (wire+32) (load64 (r+8) t) t
   let t := store64 (wire+40) (load64 (r+48) t) t
   let t := store64 (wire+48) (load64 (ProjectGraph.rootCapAt (h &&& 255)+48) t) t
+  let t := store64 (wire+56) (ProjectGraph.rootBinding r t) t
   let t := copy (r+128) (wire+64) 32 t
   160+copy (r+64) (wire+96) 64 t
 
@@ -468,6 +470,7 @@ def graphDispatch (op caller rights length t : UInt64) : UInt64 :=
           let t := store64 (r+16) generation t
           let t := store64 (r+40) (load64 (root+40) t) t
           let t := store64 (r+48) 1 t
+          let t := store64 (r+24) (ProjectGraph.rootBinding root t) t
           let t := copy (root+64) (r+64) 96 t
           let t := ProjectGraph.grantRoot slot caller r (rights &&& granted) caller t
           rootReply (ProjectGraph.rootHandle slot t) r (slot+1) t
@@ -475,7 +478,7 @@ def graphDispatch (op caller rights length t : UInt64) : UInt64 :=
       let origin := ProjectGraph.projectOrigin (ProjectGraph.findNode (root+128) 11 0 t) 64 t
       if origin == error then respond 2 0 0 0 t else
         let t := rootReply h root 0 t
-        192+copy (recordAt origin+160) (wire+160) 32 t
+        192+copy (ProjectGraph.logicalIdAt (recordAt origin) t) (wire+160) 32 t
     else if op == 29 then rootReply h root 0 t else
     if op == 31 then
       let target := load64 (command+16) t
@@ -509,6 +512,398 @@ def graphDispatch (op caller rights length t : UInt64) : UInt64 :=
         if op == 26 then respond 0 0 0 0 t else respond 2 0 0 0 t
       else if !ProjectGraph.pinned i t then respond 1 0 0 0 t else grantGraphObject caller h i (i+1) t
 
+-- Transactional graph import v1. Private stages have no Object capabilities.
+-- The caller supplies opaque records in any order; dependency ordering, closure
+-- checking and all-or-nothing root publication are entirely guest operations.
+def importBase : UInt64 := 0xd70000
+def importAt (i : UInt64) : UInt64 := importBase+i*2048
+def importHandle (i t : UInt64) : UInt64 :=
+  (load64 state t <<< 32) ||| (load64 (importAt i+8) t <<< 8) ||| i
+def importValid (caller h t : UInt64) : Bool :=
+  (h &&& 255) < 4 && h >>> 32 == load64 state t &&
+  load64 (importAt (h &&& 255)) t == 1 && load64 (importAt (h &&& 255)+16) t == caller &&
+  ((h >>> 8) &&& 0xffffff) == load64 (importAt (h &&& 255)+8) t
+partial def eraseImportRecords (j i t : UInt64) : UInt64 :=
+  if i == load64 (j+32) t then t else
+    let r := recordAt (load64 (j+832+i*8) t)
+    let t := zero (r+256) (load64 (r+32) t/8+1) t
+    let t := store64 r 0 t
+    eraseImportRecords j (i+1) t
+def eraseImport (j t : UInt64) : UInt64 :=
+  store64 j 0 (store64 ProjectGraph.importScope 0 (eraseImportRecords j 0 t))
+partial def freeImport (i t : UInt64) : UInt64 :=
+  if i == 4 then error else
+    let j := importAt i
+    if load64 j t == 0 && load64 (j+8) t < 0xffffff then Guest.Effects.effectValue i t else
+      let alive := syscall 34 (load64 (j+16) t) 0 0 0 t
+      if alive == error && load64 (j+8) alive < 0xffffff then Guest.Effects.effectValue i (eraseImport j alive)
+      else freeImport (i+1) alive
+partial def importNames (caller i count t : UInt64) : Bool :=
+  if i == count then true else
+    let e := command+64+i*128
+    let n := load64 (e+8) t
+    load64 e t == 0 && ProjectGraph.validName (e+48) n 63 t &&
+      ProjectGraph.allZero (e+48+n) (80-n) t && !ProjectGraph.allZero (e+16) 32 t &&
+      validRestoreNames e i t && !ProjectGraph.duplicateRoot caller (e+48) n 0 0 t && importNames caller (i+1) count t
+
+def beginImport (caller rights length t : UInt64) : UInt64 :=
+  let count := load64 (command+16) t
+  let nodes := load64 (command+24) t
+  let bytes := load64 (command+32) t
+  if !has rights 6 then respond 1 0 0 0 t else
+  if count == 0 || count > 6 || nodes == 0 || nodes > 64 || bytes > 4194304 || length != 64+count*128 ||
+    (!admin rights && (rights &&& 0x400000000) == 0 && (count > 4 || nodes > 24 || bytes > 1048576 || ProjectGraph.ownerRoots caller 0 0 0 t+count > 4)) then respond 4 0 0 0 t else
+  if !importNames caller 0 count t then respond 2 0 0 0 t else
+    let slot := freeImport 0 t
+    if slot == error then respond 4 0 0 0 t else
+      let j := importAt slot
+      let generation := load64 (j+8) slot+1
+      let t := zero j 256 slot
+      let t := store64 j 1 t
+      let t := store64 (j+8) generation t
+      let t := store64 (j+16) caller t
+      let t := store64 (j+24) nodes t
+      let t := store64 (j+48) bytes t
+      let t := store64 (j+56) count t
+      let t := copy (command+64) (j+64) (count*128) t
+      respond 0 (importHandle slot t) 0 0 t
+
+partial def duplicateImportId (j id i t : UInt64) : Bool :=
+  if i == load64 (j+32) t then false else
+    equal (recordAt (load64 (j+832+i*8) t)+160) id 32 t || duplicateImportId j id (i+1) t
+
+def offerImport (caller h length t : UInt64) : UInt64 :=
+  let j := importAt (h &&& 255)
+  let index := load64 (command+16) t
+  let kind := load64 (command+24) t
+  let n := load64 (command+32) t
+  let schema := if load64 (command+40) t == 0 then 1 else load64 (command+40) t
+  if length != 160 || index != load64 (j+32) t || index >= load64 (j+24) t || kind < 10 || kind > 15 || n > 65536 ||
+    (schema != 1 && schema != 2) || (schema == 2 && kind != 10 && kind != 11) ||
+    n > load64 (j+48) t-load64 (j+40) t || duplicateImportId j (command+64) 0 t then respond 2 0 0 0 (eraseImport j t) else
+    let i := findRecord 0 t
+    if i == error then respond 4 0 0 0 (eraseImport j t) else
+      let r := recordAt i
+      let generation := load64 (r+16) t+1
+      let t := zero r 32 t
+      let t := store64 r 3 t
+      let t := store64 (r+8) caller t
+      let t := store64 (r+16) generation t
+      let t := store64 (r+32) n t
+      let t := store64 (r+40) kind t
+      let t := store64 (r+64) h t
+      let t := store64 (r+232) schema t
+      let t := copy (command+64) (r+160) 64 t
+      let t := copy (command+128) (r+96) 32 t
+      let t := store64 (j+832+index*8) i t
+      let t := store64 (j+32) (index+1) t
+      let t := store64 (j+40) (load64 (j+40) t+n) t
+      respond 0 index 0 0 t
+
+def appendImport (h length t : UInt64) : UInt64 :=
+  let j := importAt (h &&& 255)
+  let index := load64 (command+16) t
+  let offset := load64 (command+24) t
+  let n := length-64
+  if index >= load64 (j+32) t || length < 64 || n > 512 then respond 2 0 0 0 (eraseImport j t) else
+    let r := recordAt (load64 (j+832+index*8) t)
+    if load64 r t != 3 || offset != load64 (r+24) t || offset > load64 (r+32) t || n > load64 (r+32) t-offset then respond 2 0 0 0 (eraseImport j t) else
+      let t := copy (command+64) (r+256+offset) n t
+      let t := store64 (r+24) (offset+n) t
+      let t := store64 (j+1344) (load64 (j+1344) t+n) t
+      respond 0 (offset+n) 0 0 t
+
+-- A pass seals only records whose typed references and predecessor are already
+-- validated in this transaction or visible through the caller's current grants.
+partial def sealImportPass (caller j i progress t : UInt64) : UInt64 :=
+  if i == load64 (j+32) t then Guest.Effects.effectValue progress t else
+    let r := recordAt (load64 (j+832+i*8) t)
+    if load64 r t == 4 then sealImportPass caller j (i+1) progress t else
+    if load64 (r+24) t != load64 (r+32) t then error else
+      let t := ServiceHash.sha256At hashScratch (r+256) (load64 (r+32) t) (r+128) t
+      if !equal (r+128) (r+96) 32 t then error else
+      let parent := if ProjectGraph.nodeSchema r t == 2 || ProjectGraph.allZero (r+192) 32 t then 0 else ProjectGraph.findVisibleNode caller (r+192) (load64 (r+40) t) 0 t
+      if parent == error then sealImportPass caller j (i+1) progress t else
+        let t := copy (r+160) hashResult 32 t
+        let sealed := ProjectGraph.sealNode caller r t
+        if sealed == error then sealImportPass caller j (i+1) progress t else
+          if !equal hashResult (r+160) 32 sealed then error else
+            sealImportPass caller j (i+1) (progress+1) (store64 r 4 sealed)
+partial def sealImport (caller j remaining t : UInt64) : UInt64 :=
+  if remaining == 0 then t else
+    let progress := sealImportPass caller j 0 0 t
+    if progress == error || progress == 0 || progress > remaining then error else sealImport caller j (remaining-progress) progress
+partial def importSelected (caller j i t : UInt64) : UInt64 :=
+  if i == load64 (j+56) t then t else
+    let e := j+64+i*128
+    let found := ProjectGraph.findVisibleNode caller (e+16) 11 0 t
+    if found == error || ProjectGraph.duplicateRoot caller (e+48) (load64 (e+8) t) 0 0 t then error else
+      let t := ProjectGraph.markNode found 64 t
+      importSelected caller j (i+1) t
+partial def importInScope (j i t : UInt64) : Bool :=
+  if i == load64 (j+32) t then true else
+    ProjectGraph.pinned (load64 (j+832+i*8) t) t && importInScope j (i+1) t
+partial def commitImportRecords (j i t : UInt64) : UInt64 :=
+  if i == load64 (j+32) t then t else
+    commitImportRecords j (i+1) (store64 (recordAt (load64 (j+832+i*8) t)) 2 t)
+partial def commitImportRoots (caller rights j i t : UInt64) : UInt64 :=
+  if i == load64 (j+56) t then 64+i*8+t else
+    let e := j+64+i*128
+    let r := ProjectGraph.rootAt (ProjectGraph.freeRoot 0 t)
+    let slot := ProjectGraph.freeRootCap 0 t
+    let generation := load64 (r+16) t+1
+    let t := zero r 24 t
+    let t := store64 r 1 t
+    let t := store64 (r+8) caller t
+    let t := store64 (r+16) generation t
+    let t := store64 (r+40) (load64 (e+8) t) t
+    let t := copy (e+48) (r+64) 64 t
+    let t := copy (e+16) (r+128) 32 t
+    let t := ProjectGraph.grantRoot slot caller r (rights &&& 127) caller t
+    let t := store64 (wire+64+i*8) (ProjectGraph.rootHandle slot t) t
+    commitImportRoots caller rights j (i+1) t
+
+def finishImport (caller rights h t : UInt64) : UInt64 :=
+  let j := importAt (h &&& 255)
+  let count := load64 (j+56) t
+  if load64 (j+32) t != load64 (j+24) t || load64 (j+40) t != load64 (j+48) t ||
+    freeRootsCount 0 0 t < count || freeRootCapsCount 0 0 t < count then respond 4 0 0 0 (eraseImport j t) else
+    let checked := sealImport caller j (load64 (j+32) t) (store64 ProjectGraph.importScope h t)
+    if checked == error then respond 2 0 0 0 (eraseImport j checked) else
+      let checked := importSelected caller j 0 (zero ProjectGraph.marks 64 checked)
+      if checked == error || !ProjectGraph.importCommitAllowed (importInScope j 0 checked) (ProjectGraph.markedComplete 0 checked) then respond 2 0 0 0 (eraseImport j checked) else
+        let t := commitImportRecords j 0 checked
+        let t := store64 ProjectGraph.importScope 0 t
+        let t := respond 0 count 0 0 t
+        let result := commitImportRoots caller rights j 0 t
+        Guest.Effects.effectValue result (store64 j 0 result)
+
+def importDispatch (op caller rights length t : UInt64) : UInt64 :=
+  let h := load64 (command+8) t
+  if op == 35 then beginImport caller rights length t else
+  if !importValid caller h t then respond 3 0 0 0 t else
+  if op == 36 then offerImport caller h length t else
+  if op == 37 then appendImport h length t else
+  if length != 64 then respond 2 0 0 0 t else
+  if op == 38 then finishImport caller rights h t else
+  if op == 39 then respond 0 0 0 0 (eraseImport (importAt (h &&& 255)) t) else
+    let j := importAt (h &&& 255)
+    let t := respond 0 h 0 0 t
+    let t := store64 (wire+16) (load64 (j+32) t) t
+    let t := store64 (wire+24) (load64 (j+24) t) t
+    let t := store64 (wire+32) (load64 (j+1344) t) t
+    64+store64 (wire+40) (load64 (j+48) t) t
+
+-- Checkpoint-v2 is an explicit source-only history transaction. It keeps signed
+-- origin/archive commitments and current file bytes, while schema1 ancestry and
+-- every other named/frozen root remain unchanged. No predecessor is zeroed.
+def checkpointTxn : UInt64 := 0xd74000
+def checkpointMarks : UInt64 := 0xd75000
+def checkpointOriginal : UInt64 := 0xd76000
+
+def checkpointRecord (caller source kind scope j t : UInt64) : UInt64 :=
+  let i := findRecord 0 t
+  if i == error then error else
+    let r := recordAt i
+    let generation := load64 (r+16) t+1
+    let t := zero r 32 t
+    let t := store64 r 3 t
+    let t := store64 (r+8) caller t
+    let t := store64 (r+16) generation t
+    let t := store64 (r+40) kind t
+    let t := store64 (r+64) scope t
+    let t := store64 (r+232) 2 t
+    let t := if source == 0 then t else copy (source+160) (r+192) 32 t
+    let count := load64 (j+32) t
+    let t := store64 (j+832+count*8) i t
+    Guest.Effects.effectValue r (store64 (j+32) (count+1) t)
+partial def checkpointFiles (caller old fresh scope index count bytes t : UInt64) : UInt64 :=
+  if index == load64 (old+272) t then
+    if count == 0 || count > 24 || bytes > 1048576 then error else
+      let t := store64 (fresh+272) count t
+      store64 (fresh+280) 128 t
+  else
+    let e := old+288+index*128
+    if load64 e t == 15 then
+      if load64 (checkpointTxn+48) t != 1 then checkpointFiles caller old fresh scope (index+1) count bytes t else
+        checkpointFiles caller old fresh scope (index+1) (count+1) bytes (copy e (fresh+288+count*128) 128 t)
+    else if load64 e t != 10 then checkpointFiles caller old fresh scope (index+1) count bytes t else
+      let found := ProjectGraph.findNode (e+16) 10 0 t
+      if found == error then error else
+        let source := recordAt found
+        let r := checkpointRecord caller source 10 scope checkpointTxn t
+        if r == error then error else
+          let n := load64 (source+32) r
+          let t := store64 (r+32) n r
+          let t := store64 (r+24) n t
+          let t := copy (source+256) (r+256) n t
+          let t := copy (source+128) (r+128) 32 t
+          let sealed := ProjectGraph.sealNode caller r t
+          if sealed == error then error else
+            let t := store64 r 4 sealed
+            let to := fresh+288+count*128
+            let t := copy e to 128 t
+            let t := copy (r+160) (to+16) 32 t
+            checkpointFiles caller old fresh scope (index+1) (count+1) (bytes+n) t
+partial def foreignRecordGrant (i caller slot t : UInt64) : Bool :=
+  if slot == 256 then false else
+    let c := capAt slot
+    (load64 (c+40) t == 1 && load64 (c+16) t == i && load64 (c+24) t == load64 (recordAt i+16) t && load64 (c+8) t != caller) || foreignRecordGrant i caller (slot+1) t
+partial def reclaimCheckpoint (caller i count t : UInt64) : UInt64 :=
+  if i == 64 then Guest.Effects.effectValue count t else
+    let r := recordAt i
+    if load64 (checkpointMarks+i*8) t == 1 && !ProjectGraph.pinned i t && load64 (r+8) t == caller && !foreignRecordGrant i caller 0 t then
+      let t := invalidate i (load64 (r+16) t) 0 t
+      let t := zero (r+256) (load64 (r+32) t/8+1) t
+      reclaimCheckpoint caller (i+1) (count+1) (store64 r 0 t)
+    else reclaimCheckpoint caller (i+1) count t
+
+def checkpointRoot (caller rights length t : UInt64) : UInt64 :=
+  let h := load64 (command+8) t
+  if length != 96 || load64 (command+16) t != 1 || !has rights 22 || !ProjectGraph.rootValid caller h 20 t then respond 1 0 0 0 t else
+    let root := ProjectGraph.grantedRoot h t
+    if load64 (root+48) t != 0 || !equal (command+64) (root+128) 32 t then respond 8 0 0 0 t else
+      let found := ProjectGraph.findNode (root+128) 11 0 t
+      let origin := ProjectGraph.projectOrigin found 64 t
+      if found == error || origin == error then respond 2 0 0 0 t else
+        let old := recordAt found
+        let j := checkpointTxn
+        let t := store64 (j+48) 1 (zero j 256 t)
+        let t := copy (root+128) checkpointOriginal 32 t
+        let t := copy (ProjectGraph.logicalIdAt (recordAt origin) t) (checkpointOriginal+32) 32 t
+        let originHash := if ProjectGraph.nodeSchema (recordAt origin) t == 2 then ProjectGraph.checkpointDetail (recordAt origin) t+48 else recordAt origin+128
+        let t := copy originHash (checkpointOriginal+64) 32 t
+        let t := ProjectGraph.markRoot root (zero ProjectGraph.marks 64 t)
+        let t := copy ProjectGraph.marks checkpointMarks 512 t
+        let scope := ProjectGraph.rootBinding root t
+        let t := store64 ProjectGraph.importScope scope t
+        let fresh := checkpointRecord caller old 11 scope j t
+        if fresh == error then respond 4 0 0 0 (eraseImport j fresh) else
+          let copied := checkpointFiles caller old fresh scope 0 0 0 fresh
+          if copied == error then respond 4 0 0 0 (eraseImport j copied) else
+            let t := store64 (fresh+256) 0x31464e4d544c copied
+            let t := store64 (fresh+264) 2 t
+            let n := 32+load64 (fresh+272) t*128+128
+            let t := store64 (fresh+32) n t
+            let t := store64 (fresh+24) n t
+            let d := ProjectGraph.checkpointDetail fresh t
+            let t := zero d 16 t
+            let t := store64 d 0x3254504b4843544c t
+            let t := store64 (d+8) 2 t
+            let t := copy (checkpointOriginal+32) (d+16) 32 t
+            let t := copy (checkpointOriginal+64) (d+48) 32 t
+            let t := copy checkpointOriginal (d+80) 32 t
+            let t := store64 (d+112) 1 t
+            let t := ServiceHash.sha256At hashScratch (fresh+256) n (fresh+128) t
+            let sealed := ProjectGraph.sealNode caller fresh t
+            if sealed == error then respond 2 0 0 0 (eraseImport j sealed) else
+              let t := store64 fresh 4 sealed
+              let t := commitImportRecords j 0 t
+              let t := copy (fresh+160) (root+128) 32 t
+              let t := store64 ProjectGraph.importScope 0 t
+              let reclaimed := reclaimCheckpoint caller 0 0 (ProjectGraph.markAll t)
+              let t := rootReply h root 0 reclaimed
+              let t := copy (checkpointOriginal+32) (wire+160) 32 t
+              let t := copy checkpointOriginal (wire+192) 32 t
+              let t := store64 (wire+224) (load64 (j+32) t) t
+              let t := store64 (wire+232) reclaimed t
+              let t := store64 (wire+240) 1 t
+              256+store64 (wire+248) 2 t
+
+partial def sortForkEntries (r count i j t : UInt64) : UInt64 :=
+  if i >= count then t else
+  if j >= count then sortForkEntries r count (i+1) (i+2) t else
+    let a := r+288+i*128
+    let b := r+288+j*128
+    let t := if ProjectGraph.lessName (b+48) (load64 (b+8) t) (a+48) (load64 (a+8) t) 0 t then
+      let t := copy a (checkpointOriginal+256) 128 t
+      let t := copy b a 128 t
+      copy (checkpointOriginal+256) b 128 t else t
+    sortForkEntries r count i (j+1) t
+
+def forkRoot (caller rights length t : UInt64) : UInt64 :=
+  let h := load64 (command+8) t
+  let n := load64 (command+16) t
+  if length != 192 || !has rights 6 || !ProjectGraph.rootValid caller h 1 t then respond 1 0 0 0 t else
+  if !ProjectGraph.validName (command+128) n 63 t || !ProjectGraph.allZero (command+128+n) (64-n) t || ProjectGraph.allZero (command+96) 32 t ||
+    ProjectGraph.duplicateRoot caller (command+128) n 0 0 t then respond 2 0 0 0 t else
+    let root := ProjectGraph.grantedRoot h t
+    let oldIndex := ProjectGraph.findNode (root+128) 11 0 t
+    let origin := ProjectGraph.projectOrigin oldIndex 64 t
+    let slot := ProjectGraph.freeRootCap 0 t
+    let free := ProjectGraph.freeRoot 0 t
+    if oldIndex == error || origin == error || !equal (command+64) (root+128) 32 t then respond 8 0 0 0 t else
+    if slot == error || free == error || (!admin rights && ProjectGraph.ownerRoots caller 0 0 0 t >= 4) then respond 4 0 0 0 t else
+      let old := recordAt oldIndex
+      let j := checkpointTxn
+      let t := zero j 256 t
+      let t := copy (root+128) checkpointOriginal 32 t
+      let t := copy (ProjectGraph.logicalIdAt (recordAt origin) t) (checkpointOriginal+32) 32 t
+      let t := copy (command+96) (checkpointOriginal+96) 32 t
+      let entropy := syscall 111 0 (checkpointOriginal+128) 32 0 t
+      if entropy != 0 then respond 7 0 0 0 entropy else
+        let scope := ProjectGraph.rootBinding root entropy
+        let t := store64 ProjectGraph.importScope scope entropy
+        let fresh := checkpointRecord caller 0 11 scope j t
+        if fresh == error then respond 4 0 0 0 (eraseImport j fresh) else
+          let copied := checkpointFiles caller old fresh scope 0 0 0 fresh
+          if copied == error then respond 4 0 0 0 (eraseImport j copied) else
+            let lineage := checkpointRecord caller 0 15 scope j copied
+            if lineage == error then respond 4 0 0 0 (eraseImport j lineage) else
+              let t := store64 (lineage+232) 1 lineage
+              let t := store64 (lineage+32) 208 t
+              let t := store64 (lineage+24) 208 t
+              let t := store64 (lineage+256) 0x31464e4d544c t
+              let t := store64 (lineage+264) 1 t
+              let t := store64 (lineage+280) 176 t
+              let d := lineage+288
+              let t := store64 d 0x314b524f46544c t
+              let t := store64 (d+8) 1 t
+              let t := copy (checkpointOriginal+32) (d+16) 32 t
+              let t := copy checkpointOriginal (d+48) 32 t
+              let t := zero (d+80) 4 t
+              let t := copy (checkpointOriginal+96) (d+112) 32 t
+              let t := copy (checkpointOriginal+128) (d+144) 32 t
+              let t := ServiceHash.sha256At hashScratch (lineage+256) 208 (lineage+128) t
+              let sealed := ProjectGraph.sealNode caller lineage t
+              if sealed == error then respond 2 0 0 0 (eraseImport j sealed) else
+                let t := store64 lineage 4 sealed
+                let count := load64 (fresh+272) t
+                let e := fresh+288+count*128
+                let t := zero e 16 t
+                let t := store64 e 15 t
+                let t := store64 (e+8) 5 t
+                let t := copy (lineage+160) (e+16) 32 t
+                let t := store64 (e+48) 0x6b726f662e t
+                let t := store64 (fresh+232) 1 t
+                let t := store64 (fresh+256) 0x31464e4d544c t
+                let t := store64 (fresh+264) 1 t
+                let t := store64 (fresh+272) (count+1) t
+                let t := store64 (fresh+280) 0 t
+                let bytes := 32+(count+1)*128
+                let t := store64 (fresh+32) bytes t
+                let t := store64 (fresh+24) bytes t
+                let t := sortForkEntries fresh (count+1) 0 1 t
+                let t := ServiceHash.sha256At hashScratch (fresh+256) bytes (fresh+128) t
+                let sealed := ProjectGraph.sealNode caller fresh t
+                if sealed == error then respond 2 0 0 0 (eraseImport j sealed) else
+                  let t := commitImportRecords j 0 (store64 fresh 4 sealed)
+                  let r := ProjectGraph.rootAt free
+                  let generation := load64 (r+16) t+1
+                  let t := zero r 24 t
+                  let t := store64 r 1 t
+                  let t := store64 (r+8) caller t
+                  let t := store64 (r+16) generation t
+                  let t := store64 (r+40) n t
+                  let t := copy (command+128) (r+64) n t
+                  let t := copy (fresh+160) (r+128) 32 t
+                  let t := ProjectGraph.grantRoot slot caller r (rights &&& 127) caller t
+                  let t := store64 ProjectGraph.importScope 0 t
+                  let t := rootReply (ProjectGraph.rootHandle slot t) r 0 t
+                  let t := copy (lineage+160) (wire+160) 32 t
+                  let t := copy (checkpointOriginal+32) (wire+192) 32 t
+                  256+copy checkpointOriginal (wire+224) 32 t
+
 def validReserved (op t : UInt64) : Bool :=
   let h := load64 (command+8) t
   let a := load64 (command+16) t
@@ -517,7 +912,7 @@ def validReserved (op t : UInt64) : Bool :=
   let d := load64 (command+40) t
   let e := load64 (command+48) t
   if e != 0 then false else
-  if op >= 20 && op <= 34 then true else
+  if op >= 20 && op <= 42 then true else
   if op == 1 then true else
   if c != 0 || d != 0 then false else
   if op == 4 || op == 6 || op == 14 then true else
@@ -534,6 +929,9 @@ def dispatch (caller rights length t : UInt64) : UInt64 :=
     if op == 1 then beginObject caller rights length t
     else if op == 2 then appendObject caller rights length t
     else if op == 3 then commitObject caller rights length t
+    else if op == 41 then checkpointRoot caller rights length t
+    else if op == 42 then forkRoot caller rights length t
+    else if op >= 35 && op <= 40 then importDispatch op caller rights length t
     else if op >= 20 && op <= 34 then graphDispatch op caller rights length t
     else if length != 64 then respond 2 0 0 0 t
     else if op == 4 then readObject caller rights 1 t
@@ -573,7 +971,7 @@ partial def initializeRecords (i t : UInt64) : UInt64 :=
   if i == 64 then t else initializeRecords (i+1) (zero (recordAt i) 32 t)
 
 def main (initial : UInt64) : UInt64 :=
-  let t := initializeRecords 0 (zero state 8192 initial)
+  let t := zero importBase 1024 (initializeRecords 0 (zero state 8192 initial))
   let currentInstance := self t
   let incarnation := (currentInstance >>> 8) &&& 0xffffff
   let epoch := ((currentInstance >>> 32)+incarnation) &&& 0xffffffff

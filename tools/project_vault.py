@@ -13,7 +13,7 @@ def call(client,op,h=0,offset=0,count=0,data=b''):
  raw=client.request(op,struct.pack('<8Q',op,h,3,offset,count,0,0,1)+data)
  if len(raw)<64:raise ValueError('short Project Vault reply')
  fields=struct.unpack_from('<8Q',raw)
- if fields[0]:raise ValueError(f'Project Vault status{fields[0]}')
+ if fields[0]:raise ValueError(f'Project Vault status{fields[0]} stage{fields[1]}')
  return fields,raw[64:]
 
 
@@ -56,51 +56,20 @@ def inventory(client):
  for i in range(fields[2]):
   _,data=call(client,214,i)
   kind,length=struct.unpack_from('<2Q',data)
-  nodes.append(dict(index=i,kind=kind,length=length,id=data[16:48].hex(),parent=data[48:80].hex(),sha256=data[80:112].hex()))
+  nodes.append(dict(index=i,kind=kind,length=length,id=data[16:48].hex(),parent=data[48:80].hex(),sha256=data[80:112].hex(),schema=2 if len(data)>=136 and struct.unpack_from('<Q',data,128)[0]==2 else 1))
  return dict(generation=fields[1],bytes=fields[4],projects=roots,nodes=nodes)
 
 
-def recover(client):
+def recover(client,selection=None):
  saved=inventory(client)
  if not saved['projects']:return dict(generation=saved['generation'],roots=[],nodes=0,bytes=0)
- # Index order is an encoding detail. Dependency order is derived from canonical
- # parent and typed edge commitments and checked again by Objects on each commit.
- pending={node['id']:node for node in saved['nodes']};restored={};created=[]
- try:
-  while pending:
-   progress=False
-   for identity,node in list(pending.items()):
-    parent=node['parent']
-    if parent!='00'*32 and parent not in restored:continue
-    payload=bytearray()
-    for offset in range(0,node['length'],512):
-     _,data=call(client,215,node['index'],offset,min(512,node['length']-offset));payload.extend(data)
-    if len(payload)!=node['length'] or hashlib.sha256(payload).hexdigest()!=node['sha256']:raise ValueError('transported member digest mismatch')
-    if node['kind']!=10:
-     entries=projects.decode_manifest(bytes(payload))
-     if any(child not in restored for _,_,child in entries):continue
-    handle,actual=projects.node(client,bytes(payload),node['kind'],restored.get(parent,0))
-    created.append(handle)
-    if actual!=identity:raise ValueError('guest reconstructed a different canonical node identity')
-    restored[identity]=handle;del pending[identity];progress=True
-   if not progress:raise ValueError('missing/cyclic graph references; no project roots published')
-  entries=b''
-  for root in saved['projects']:
-   name=projects.safe_name(root['name']).encode('ascii')
-   if root['head'] not in restored:raise ValueError('missing selected project head')
-   entries+=struct.pack('<2Q',restored[root['head']],len(name))+bytes.fromhex(root['head'])+name.ljust(80,b'\0')
-  fields,data=client.objects(30,a=len(saved['projects']),data=entries)
-  caps=struct.unpack('<'+'Q'*fields[1],data)
-  process=client.request(2);shell=struct.unpack_from('<Q',process,4*32)[0]
-  for cap in caps:client.objects(27,cap,shell,127)
-  return dict(generation=saved['generation'],bytes=saved['bytes'],nodes=len(restored),roots=[dict(**root,cap=cap) for root,cap in zip(saved['projects'],caps)])
- except BaseException:
-  # Until op30 succeeds all imports are private, unrooted stages. Abort/drop them
-  # in reverse order. Prior visible roots and durable commit roots remain intact.
-  for handle in reversed(created):
-   try:client.objects(8,handle)
-   except Exception:pass
-  raise
+ chosen=list(range(len(saved['projects']))) if selection is None else list(selection)
+ if not chosen or len(set(chosen))!=len(chosen) or any(i<0 or i>=len(saved['projects']) for i in chosen):raise ValueError('explicit recovery selection is outside authenticated inventory')
+ mask=sum(1<<i for i in chosen)
+ fields,data=call(client,217,offset=mask)
+ if fields[1]!=len(chosen) or len(data)!=8*len(chosen):raise ValueError('incomplete native recovery result')
+ caps=struct.unpack('<'+'Q'*len(chosen),data)
+ return dict(generation=saved['generation'],bytes=saved['bytes'],nodes=len(saved['nodes']),native_import=True,roots=[dict(**saved['projects'][i],cap=cap) for i,cap in zip(sorted(chosen),caps)])
 
 
 def main(argv=None):

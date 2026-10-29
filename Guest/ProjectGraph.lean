@@ -12,6 +12,15 @@ def rootAt (i : UInt64) : UInt64 := roots+i*192
 def rootCapAt (i : UInt64) : UInt64 := rootCaps+i*64
 def recordAt (i : UInt64) : UInt64 := 0x610000+i*0x11000
 def capAt (i : UInt64) : UInt64 := 0x602000+i*64
+-- Nonzero only while Objects validates one private import transaction. No IPC
+-- or yield occurs while this scope is set; staged nodes never resolve publicly.
+def importScope : UInt64 := state+8
+def present (r t : UInt64) : Bool :=
+  load64 r t == 2 || (load64 r t == 4 && load64 importScope t != 0 && load64 (r+64) t == load64 importScope t)
+def nodeSchema (r t : UInt64) : UInt64 := if load64 (r+232) t == 2 then 2 else 1
+def checkpointDetail (r t : UInt64) : UInt64 := r+288+load64 (r+272) t*128
+def logicalIdAt (r t : UInt64) : UInt64 :=
+  if load64 (r+40) t == 11 && nodeSchema r t == 2 then checkpointDetail r t+16 else r+160
 partial def equal (a b n t : UInt64) : Bool :=
   if n == 0 then true else load8 a t == load8 b t && equal (a+1) (b+1) (n-1) t
 partial def allZero (p n t : UInt64) : Bool :=
@@ -32,22 +41,35 @@ partial def lessName (a an b bn i t : UInt64) : Bool :=
     let x := load8 (a+i) t
     let y := load8 (b+i) t
     if x == y then lessName a an b bn (i+1) t else x < y
-partial def findNode (id kind i t : UInt64) : UInt64 :=
+partial def findCommittedNode (id kind i t : UInt64) : UInt64 :=
   if i == 64 then error else
     let r := recordAt i
     if load64 r t == 2 && load64 (r+224) t == 1 &&
-      (kind == 0 || load64 (r+40) t == kind) && equal id (r+160) 32 t then i else findNode id kind (i+1) t
+      (kind == 0 || load64 (r+40) t == kind) && equal id (r+160) 32 t then i else findCommittedNode id kind (i+1) t
+partial def findStagedNode (id kind i t : UInt64) : UInt64 :=
+  if i == 64 || load64 importScope t == 0 then error else
+    let r := recordAt i
+    if load64 r t == 4 && present r t && load64 (r+224) t == 1 &&
+      (kind == 0 || load64 (r+40) t == kind) && equal id (r+160) 32 t then i else findStagedNode id kind (i+1) t
+def findNode (id kind i t : UInt64) : UInt64 :=
+  let staged := findStagedNode id kind i t
+  if staged == error then findCommittedNode id kind i t else staged
 partial def visible (caller i slot t : UInt64) : Bool :=
+  if load64 (recordAt i) t == 4 && load64 (recordAt i+8) t == caller && present (recordAt i) t then true else
   if slot == 256 then false else
     let c := capAt slot
     if load64 (c+40) t == 1 && load64 (c+8) t == caller && load64 (c+16) t == i &&
       load64 (c+24) t == load64 (recordAt i+16) t && (load64 (c+32) t &&& 1) == 1 then true
     else visible caller i (slot+1) t
-partial def findVisibleNode (caller id kind i t : UInt64) : UInt64 :=
+partial def findCommittedVisibleNode (caller id kind i t : UInt64) : UInt64 :=
   if i == 64 then error else
     let r := recordAt i
-    if load64 r t == 2 && load64 (r+224) t == 1 && load64 (r+40) t == kind &&
-      equal id (r+160) 32 t && visible caller i 0 t then i else findVisibleNode caller id kind (i+1) t
+    if present r t && load64 (r+224) t == 1 && load64 (r+40) t == kind &&
+      equal id (r+160) 32 t && visible caller i 0 t then i else findCommittedVisibleNode caller id kind (i+1) t
+
+def findVisibleNode (caller id kind i t : UInt64) : UInt64 :=
+  let staged := findStagedNode id kind i t
+  if staged != error && visible caller staged 0 t then staged else findCommittedVisibleNode caller id kind i t
 
 -- A logical project is the oldest schema1 Manifest in its validated stable
 -- predecessor chain. Named aliases and mutable head capabilities are separate.
@@ -55,19 +77,19 @@ partial def findVisibleNode (caller id kind i t : UInt64) : UInt64 :=
 partial def projectOrigin (i fuel t : UInt64) : UInt64 :=
   if i >= 64 || fuel == 0 then error else
     let r := recordAt i
-    if load64 r t != 2 || load64 (r+224) t != 1 || load64 (r+40) t != 11 then error else
-      if allZero (r+192) 32 t then i else
+    if !present r t || load64 (r+224) t != 1 || load64 (r+40) t != 11 then error else
+      if nodeSchema r t == 2 || allZero (r+192) 32 t then i else
         let parent := findNode (r+192) 11 0 t
         if parent == error then error else projectOrigin parent (fuel-1) t
 
 -- Resolving a content ID alone never creates authority.
 def edgeAllowed (kind child : UInt64) : Bool :=
-  if kind == 11 then child == 10 || child == 12 || child == 13 || child == 14 else
+  if kind == 11 then child == 10 || child == 12 || child == 13 || child == 14 || child == 15 else
   if kind == 12 then child == 11 || child == 14 else
   if kind == 13 then child == 11 || child == 12 || child == 14 else
   kind == 14 && (child == 10 || child == 11)
 partial def validateEntries (caller r i count required t : UInt64) : Bool :=
-  if i == count then required > 0 || load64 (r+40) t == 14 else
+  if i == count then required > 0 || load64 (r+40) t == 14 || load64 (r+40) t == 15 else
     let e := r+288+i*128
     let kind := load64 e t
     let n := load64 (e+8) t
@@ -84,7 +106,7 @@ def validPayload (caller r t : UInt64) : Bool :=
     let p := r+256
     let n := load64 (r+32) t
     let count := load64 (p+16) t
-    n >= 32 && load64 p t == 0x31464e4d544c && load64 (p+8) t == 1 && count <= 32 &&
+    n >= 32 && load64 p t == 0x31464e4d544c && load64 (p+8) t == nodeSchema r t && count <= 32 &&
       load64 (p+24) t <= 65536 && n == 32+count*128+load64 (p+24) t && validateEntries caller r 0 count 0 t
 
 -- Release content is inert. These checks bind present material to the signed
@@ -269,6 +291,30 @@ def canonicalEvidence (detail t : UInt64) : UInt64 :=
   let pos := jsonHex (detail+144) 32 pos pos
   jsonLiteral 12 pos pos
 
+partial def forkPublisherMatches (r h i t : UInt64) : Bool :=
+  if i == load64 (r+272) t then true else
+    let e := r+288+i*128
+    if load64 e t != 15 then forkPublisherMatches r h (i+1) t else
+      let found := findNode (e+16) 15 0 t
+      found != error && equal (recordAt found+400) (h+96) 32 t && forkPublisherMatches r h (i+1) t
+partial def hasFork (r i t : UInt64) : Bool :=
+  if i == load64 (r+272) t then false else load64 (r+288+i*128) t == 15 || hasFork r (i+1) t
+
+def publicationMatches (source h t : UInt64) : UInt64 :=
+  let origin := projectOrigin source 64 t
+  if origin == error then error else
+  if load64 (h+488) t == 0 then
+    if hasFork (recordAt origin) 0 t then error else t
+  else
+  if load64 (h+488) t != 3 || load64 (h+496) t != 0 || load64 (h+504) t != 0 then error else
+    if !forkPublisherMatches (recordAt origin) h 0 t then error else
+      let t := store64 scratch 5281669397183550540 t
+      let t := store64 (scratch+8) 3687689772325945667 t
+      let t := store8 (scratch+16) 0 t
+      let t := copy (logicalIdAt (recordAt origin) t) (scratch+17) 32 t
+      let t := copy (h+96) (scratch+49) 32 t
+      hashMatches scratch 81 (h+128) t
+
 def checkRelease (r t : UInt64) : UInt64 :=
   if load64 (r+272) t != 4 ||
     !releaseEdge r 0 12 0x646c697562 5 t || !releaseEdge r 1 11 0x65646f63 4 t ||
@@ -322,21 +368,49 @@ def checkRelease (r t : UInt64) : UInt64 :=
                                   !equal (bd+48) (r+688) 32 checked || !equal (bd+80) (h+192) 32 checked then error else
                                   let source := findNode (r+688) 11 0 checked
                                   if source == error then error else
+                                    let checked := publicationMatches source h checked
+                                    if checked == error then error else
                                     let generated := canonicalSources (recordAt source) checked
                                     if generated == error || generated != sn || !equal jsonBuffer (h+768+mn) sn generated then error else
                                       let generated := canonicalEvidence bd generated
                                       if generated == error || generated != en || !equal jsonBuffer (h+768+mn+sn) en generated then error else
                                         zero jsonBuffer 1024 (zero binaryBuffer 32768 generated)
 
+-- Schema2 checkpoints preserve the origin's canonical commitment and archived
+-- head. Their predecessor is explicitly archival, never a required payload edge.
+def checkCheckpoint (r t : UInt64) : UInt64 :=
+  if nodeSchema r t != 2 || load64 (r+40) t == 10 then t else
+  if load64 (r+40) t != 11 || load64 (r+280) t != 128 then error else
+    let d := checkpointDetail r t
+    if load64 d t != 0x3254504b4843544c || load64 (d+8) t != 2 ||
+      !equal (d+80) (r+192) 32 t || load64 (d+112) t != 1 || load64 (d+120) t != 0 then error else
+      let t := zero scratch 12 t
+      let t := store64 scratch 0x3145444f4e544c t
+      let t := store64 (scratch+8) 1 t
+      let t := store64 (scratch+16) 11 t
+      let t := store64 (scratch+24) 1 t
+      let t := copy (d+48) (scratch+32) 32 t
+      hashMatches scratch 96 (d+16) t
+
+def checkFork (r t : UInt64) : UInt64 :=
+  if load64 (r+40) t != 15 then t else
+    let d := r+288
+    if nodeSchema r t != 1 || load64 (r+272) t != 0 || load64 (r+280) t != 176 ||
+      load64 d t != 0x314b524f46544c || load64 (d+8) t != 1 ||
+      allZero (d+16) 32 t || allZero (d+48) 32 t || allZero (d+112) 32 t || allZero (d+144) 32 t ||
+      !allZero (r+192) 32 t then error else t
+
 def sealNode (caller r t : UInt64) : UInt64 :=
   if !validPayload caller r t then error else
-    let checked := if load64 (r+40) t == 13 then checkRelease r t else t
+    let checked := checkCheckpoint r t
+    let checked := if checked == error then error else checkFork r checked
+    let checked := if checked == error then error else if load64 (r+40) t == 13 then checkRelease r checked else checked
     if checked == error then error else
     let t := zero scratch 12 checked
     let t := store64 scratch 0x3145444f4e544c t
     let t := store64 (scratch+8) 1 t
     let t := store64 (scratch+16) (load64 (r+40) t) t
-    let t := store64 (scratch+24) 1 t
+    let t := store64 (scratch+24) (nodeSchema r t) t
     let t := copy (r+128) (scratch+32) 32 t
     let t := copy (r+192) (scratch+64) 32 t
     let t := ServiceHash.sha256At 0xd00000 scratch 96 (r+160) t
@@ -344,6 +418,11 @@ def sealNode (caller r t : UInt64) : UInt64 :=
 
 def rootHandle (slot t : UInt64) : UInt64 :=
   (load64 state t <<< 32) ||| (load64 (rootCapAt slot) t <<< 8) ||| slot
+-- Session-local origin of a live root capability, distinct from content identity.
+-- Exact snapshots inherit this binding; reimports receive a fresh root instance.
+def rootBinding (r t : UInt64) : UInt64 :=
+  if load64 (r+48) t == 1 then load64 (r+24) t else
+    (load64 state t <<< 32) ||| (load64 (r+16) t <<< 8) ||| ((r-roots)/192)
 
 def rootValid (caller h right t : UInt64) : Bool :=
   let c := rootCapAt (h &&& 255)
@@ -392,7 +471,7 @@ def worklist : UInt64 := 0xd18000
 def enqueueMark (i count limit t : UInt64) : UInt64 :=
   if i >= 64 || count >= limit || load64 (marks+i*8) t == 1 then Guest.Effects.effectValue count t else
     let r := recordAt i
-    if load64 r t != 2 || load64 (r+224) t != 1 then Guest.Effects.effectValue count t else
+    if !present r t || load64 (r+224) t != 1 then Guest.Effects.effectValue count t else
       let t := store64 (marks+i*8) 1 t
       Guest.Effects.effectValue (count+1) (store64 (worklist+count*8) i t)
 
@@ -406,7 +485,7 @@ partial def enqueueEdges (r j count limit t : UInt64) : UInt64 :=
 partial def drainMarks (head count limit t : UInt64) : UInt64 :=
   if head >= count || head >= limit then Guest.Effects.effectValue 0 t else
     let r := recordAt (load64 (worklist+head*8) t)
-    let parent := if allZero (r+192) 32 t then error else findNode (r+192) 0 0 t
+    let parent := if nodeSchema r t == 2 || allZero (r+192) 32 t then error else findNode (r+192) 0 0 t
     let count := enqueueMark parent count limit t
     let count := if load64 (r+40) count == 10 then count else enqueueEdges r 0 count limit count
     drainMarks (head+1) count limit count
@@ -435,7 +514,7 @@ partial def presentEdges (r j count t : UInt64) : Bool :=
 partial def markedComplete (i t : UInt64) : Bool :=
   if i == 64 then true else
     let r := recordAt i
-    (!pinned i t || ((allZero (r+192) 32 t || findNode (r+192) (load64 (r+40) t) 0 t != error) &&
+    (!pinned i t || ((nodeSchema r t == 2 || allZero (r+192) 32 t || findNode (r+192) (load64 (r+40) t) 0 t != error) &&
       (load64 (r+40) t == 10 || presentEdges r 0 (load64 (r+272) t) t))) && markedComplete (i+1) t
 
 def completeNode (i t : UInt64) : UInt64 :=
@@ -445,6 +524,11 @@ def completeNode (i t : UInt64) : UInt64 :=
 -- This transition is also used by root publication after exact expected-head
 -- comparison. It proves only the denied transition, not hash or memory safety.
 def publishAllowed (hasAuthority expectedMatches : Bool) : Bool := hasAuthority && expectedMatches
+def importCommitAllowed (exactScope dependenciesComplete : Bool) : Bool := exactScope && dependenciesComplete
+
+theorem incomplete_import_denied (scope : Bool) : importCommitAllowed scope false = false := by
+  unfold importCommitAllowed
+  exact Bool.and_false _
 
 theorem stale_head_denied (authority : Bool) : publishAllowed authority false = false := by
   unfold publishAllowed

@@ -29,6 +29,7 @@ def bankSector (bank : UInt64) : UInt64 := 512+bank*10240
 def rootAt (base i : UInt64) : UInt64 := base+32+i*128
 def nodeAt (base i : UInt64) : UInt64 := base+2080+i*192
 def indexLength : UInt64 := 14368
+def nodeSchema (n t : UInt64) : UInt64 := if load64 (n+128) t == 2 then 2 else 1
 
 def device (op sector ptr bytes t : UInt64) : UInt64 := syscall op sector ptr bytes 0 t
 partial def transfer (op sector ptr remaining t : UInt64) : UInt64 :=
@@ -74,9 +75,9 @@ partial def validNodes (base i count chunks bytes t : UInt64) : Bool :=
     let n := nodeAt base i
     let len := load64 (n+8) t
     let blocks := (len+4095)/4096
-    load64 n t >= 10 && load64 n t <= 14 && len <= 65536 && !ProjectGraph.allZero (n+16) 32 t &&
+    load64 n t >= 10 && load64 n t <= 15 && len <= 65536 && !ProjectGraph.allZero (n+16) 32 t &&
       load64 (n+112) t == chunks && load64 (n+120) t == blocks && chunks+blocks <= 1024 &&
-      ProjectGraph.allZero (n+128) 64 t && uniqueNodes base (n+16) i t && validNodes base (i+1) count (chunks+blocks) (bytes+len) t
+      load64 (n+128) t <= 2 && ProjectGraph.allZero (n+136) 56 t && uniqueNodes base (n+16) i t && validNodes base (i+1) count (chunks+blocks) (bytes+len) t
 partial def findNode (base id kind i count t : UInt64) : UInt64 :=
   if i == count then error else
     let n := nodeAt base i
@@ -165,17 +166,17 @@ partial def validEdges (node i count t : UInt64) : Bool :=
       (i == 0 || ProjectGraph.lessName (e-80) (load64 (e-120) t) (e+48) n 0 t) && validEdges node (i+1) count t
 
 partial def requiredEdge (kind i count t : UInt64) : Bool :=
-  if i == count then kind == 14 else
+  if i == count then kind == 14 || kind == 15 else
     let child := load64 (recordPlain+32+i*128) t
     (kind == 11 && child == 10) || (kind == 12 && child == 11) || (kind == 13 && child == 12) || requiredEdge kind (i+1) count t
 
 def validRecord (node t : UInt64) : Bool :=
   let kind := load64 node t
-  if !ProjectGraph.allZero (node+48) 32 t && findNode index (node+48) kind 0 (load64 (state+16) t) t == error then false else
+  if nodeSchema node t == 1 && !ProjectGraph.allZero (node+48) 32 t && findNode index (node+48) kind 0 (load64 (state+16) t) t == error then false else
   if kind == 10 then true else
     let n := load64 (node+8) t
     let count := load64 (recordPlain+16) t
-    n >= 32 && load64 recordPlain t == 0x31464e4d544c && load64 (recordPlain+8) t == 1 && count <= 32 &&
+    n >= 32 && load64 recordPlain t == 0x31464e4d544c && load64 (recordPlain+8) t == nodeSchema node t && count <= 32 &&
       n == 32+count*128+load64 (recordPlain+24) t && requiredEdge kind 0 count t && validEdges node 0 count t
 
 def checkRecord (node t : UInt64) : UInt64 :=
@@ -185,7 +186,7 @@ def checkRecord (node t : UInt64) : UInt64 :=
     let t := store64 aad 0x3145444f4e544c t
     let t := store64 (aad+8) 1 t
     let t := store64 (aad+16) (load64 node t) t
-    let t := store64 (aad+24) 1 t
+    let t := store64 (aad+24) (nodeSchema node t) t
     let t := copy (node+80) (aad+32) 32 t
     let t := copy (node+48) (aad+64) 32 t
     let t := ServiceHash.sha256At hashScratch aad 96 hashResult t
@@ -233,6 +234,7 @@ partial def gatherNodes (root cursor t : UInt64) : UInt64 :=
         let t := store64 n (load64 (wire+32) t) t
         let t := store64 (n+8) (load64 (wire+16) t) t
         let t := copy (wire+64) (n+16) 64 t
+        let t := store64 (n+128) (load64 (wire+40) t) t
         let t := store64 (handles+i*8) h t
         let t := if existing == error then store64 (staged+16) (count+1) t else t
         let received := metadata h t
@@ -325,10 +327,10 @@ def save (count length t : UInt64) : UInt64 :=
           let t := store64 (candidate+56) (load64 (staged+24) t) t
           let t := numberNodes 0 (load64 (staged+16) t) 0 0 t
           let random := device 63 0 chunk 12 t
-          if random != 0 then response 4 0 random else
+          if random != 0 then response 4 1 random else
             let t := copy chunk (candidate+96) 12 random
             let written := writeNodes 0 (load64 (staged+16) t) t
-            if written != 0 then response 4 0 written else
+            if written != 0 then response 4 2 written else
               let t := zero cipher 2048 written
               let t := makeNonce candidate 0 t
               let encrypted := VaultCrypto.encrypt key nonce candidate 128 staged indexLength cipher t
@@ -336,13 +338,13 @@ def save (count length t : UInt64) : UInt64 :=
                 let t := copy (cipher+indexLength) (candidate+128) 16 encrypted
                 let t := ServiceHash.sha256At hashScratch cipher indexLength (candidate+144) t
                 let written := transfer 61 (bankSector (generation%2)) cipher 14848 t
-                if written != 0 then response 4 0 written else
+                if written != 0 then response 4 3 written else
                   let flushed := device 62 0 chunk 0 written
-                  if flushed != 0 then response 4 0 flushed else
+                  if flushed != 0 then response 4 4 flushed else
                     let committed := transfer 61 (2+generation%2) candidate 512 flushed
-                    if committed != 0 then response 4 0 committed else
+                    if committed != 0 then response 4 5 committed else
                       let flushed := device 62 0 chunk 0 committed
-                      if flushed != 0 then response 4 0 flushed else
+                      if flushed != 0 then response 4 6 flushed else
                         let t := copy staged index indexLength flushed
                         let t := copy candidate current 512 t
                         let t := store64 state 1 t
@@ -371,7 +373,7 @@ def inspectRoot (i t : UInt64) : UInt64 :=
 def inspectNode (i t : UInt64) : UInt64 :=
   if load64 state t != 1 || i >= load64 (state+16) t then response 2 0 t else
     let t := response 0 i t
-    192+copy (nodeAt index i) (wire+64) 128 t
+    200+copy (nodeAt index i) (wire+64) 136 t
 
 def readNode (i offset count t : UInt64) : UInt64 :=
   if load64 state t != 1 || i >= load64 (state+16) t || count > 512 then response 2 0 t else
@@ -391,6 +393,99 @@ def delete (t : UInt64) : UInt64 :=
       let flushed := device 62 0 chunk 0 second
       if flushed != 0 then response 4 0 (clear flushed) else response 0 0 (clear flushed)
 
+-- Recovery invokes the same native transaction API used by peer/local imports.
+-- Only selected reachable records are disclosed to Objects; no host orders or
+-- reconstructs graph records, and recovered capabilities contain no admin bits.
+def recoveryMarks : UInt64 := 0x694000
+def recoveryRoots : UInt64 := 0x695000
+def recoveryMeta : UInt64 := 0x696000
+def markRecovery (id kind t : UInt64) : UInt64 :=
+  let i := findNode index id kind 0 (load64 (state+16) t) t
+  if i == error then error else
+    if load64 (recoveryMarks+i*8) t != 0 then t else store64 (recoveryMarks+i*8) 1 t
+partial def selectRecoveryRoots (mask i count t : UInt64) : UInt64 :=
+  if i == load64 (state+24) t then Guest.Effects.effectValue count t else
+    if ((mask >>> i) &&& 1) == 0 then selectRecoveryRoots mask (i+1) count t else
+      let r := rootAt index i
+      let e := recoveryRoots+count*128
+      let t := zero e 16 t
+      let t := store64 (e+8) (load64 r t) t
+      let t := copy (r+8) (e+16) 32 t
+      let t := copy (r+40) (e+48) (load64 r t) t
+      let t := markRecovery (r+8) 11 t
+      if t == error then error else selectRecoveryRoots mask (i+1) (count+1) t
+partial def markRecoveryEdges (i count t : UInt64) : UInt64 :=
+  if i == count then t else
+    let e := recordPlain+32+i*128
+    let t := markRecovery (e+16) (load64 e t) t
+    if t == error then error else markRecoveryEdges (i+1) count t
+partial def nextRecovery (i t : UInt64) : UInt64 :=
+  if i == load64 (state+16) t then error else
+    if load64 (recoveryMarks+i*8) t == 1 then i else nextRecovery (i+1) t
+partial def expandRecovery (fuel count bytes t : UInt64) : UInt64 :=
+  let i := nextRecovery 0 t
+  if i == error then
+    let t := store64 recoveryMeta count t
+    store64 (recoveryMeta+8) bytes t
+  else if fuel == 0 then error else
+    let n := nodeAt index i
+    let loaded := readRecord i t
+    if loaded != 0 then error else
+      let t := store64 (recoveryMarks+i*8) 2 loaded
+      let t := if nodeSchema n t == 2 || ProjectGraph.allZero (n+48) 32 t then t else markRecovery (n+48) (load64 n t) t
+      let t := if t == error || load64 n t == 10 then t else markRecoveryEdges 0 (load64 (recordPlain+16) t) t
+      if t == error then error else expandRecovery (fuel-1) (count+1) (bytes+load64 (n+8) t) t
+partial def importRecoveryBytes (transaction ordinal offset total t : UInt64) : UInt64 :=
+  if offset == total then t else
+    let count := if total-offset > 512 then 512 else total-offset
+    let r := ProjectSDK.importAppend transaction ordinal offset (recordPlain+offset) count t
+    if r != 64 || status r != 0 then error else importRecoveryBytes transaction ordinal (offset+count) total r
+partial def importRecoveryNodes (transaction i ordinal t : UInt64) : UInt64 :=
+  if i == load64 (state+16) t then t else
+  if load64 (recoveryMarks+i*8) t != 2 then importRecoveryNodes transaction (i+1) ordinal t else
+    let n := nodeAt index i
+    let t := copy (n+16) (recoveryMeta+32) 64 t
+    let t := copy (n+80) (recoveryMeta+96) 32 t
+    let r := ProjectSDK.importOfferVersion transaction ordinal (load64 n t) (load64 (n+8) t) (recoveryMeta+32) (nodeSchema n t) t
+    if r != 64 || status r != 0 then error else
+      let loaded := readRecord i r
+      if loaded != 0 then error else
+        let appended := importRecoveryBytes transaction ordinal 0 (load64 (n+8) loaded) loaded
+        if appended == error then error else importRecoveryNodes transaction (i+1) (ordinal+1) appended
+partial def grantRecoveryRoots (recipient count i t : UInt64) : UInt64 :=
+  if i == count then t else
+    let root := load64 (recoveryMeta+256+i*8) t
+    let r := ProjectSDK.delegate root recipient 127 t
+    if r != 160 || status r != 0 then error else
+      let t := store64 (recoveryMeta+512+i*8) (result r) r
+      grantRecoveryRoots recipient count (i+1) t
+
+def importRecovery (recipient mask expectedGeneration t : UInt64) : UInt64 :=
+  let scanned := recover t
+  if scanned != 64 || status scanned != 0 then response 5 0 scanned else
+  if expectedGeneration != 0 && expectedGeneration != load64 (state+8) scanned then response 6 0 scanned else
+  if mask == 0 || mask >>> load64 (state+24) scanned != 0 then response 2 0 scanned else
+    let t := zero recoveryMarks 64 scanned
+    let count := selectRecoveryRoots mask 0 0 t
+    if count == error then response 2 0 count else
+      let t := store64 (recoveryMeta+16) count count
+      let selected := expandRecovery 64 0 0 t
+      if selected == error then response 5 0 selected else
+        let r := ProjectSDK.importBegin recoveryRoots count (load64 recoveryMeta selected) (load64 (recoveryMeta+8) selected) selected
+        if r != 64 || status r != 0 then response 4 0 r else
+          let transaction := result r
+          let copied := importRecoveryNodes transaction 0 0 r
+          if copied == error then response 5 0 (ProjectSDK.importAbort transaction copied) else
+            let committed := ProjectSDK.importCommit transaction copied
+            if committed != 64+count*8 || status committed != 0 then response 5 0 committed else
+              let t := copy (wire+64) (recoveryMeta+256) (count*8) committed
+              let shell := syscall 97 4 0 0 0 t
+              let t := if shell == error then t else grantRecoveryRoots shell count 0 t
+              let granted := if t == error then error else grantRecoveryRoots recipient count 0 t
+              if granted == error then response 1 0 granted else
+                let t := response 0 count granted
+                64+count*8+copy (recoveryMeta+512) (wire+64) (count*8) t
+
 def dispatch (op length t : UInt64) : UInt64 :=
   if op == 210 then save (load64 (command+24) t) length t else
   if length != 64 then response 2 0 t else
@@ -399,5 +494,6 @@ def dispatch (op length t : UInt64) : UInt64 :=
   if op == 213 then inspectRoot (load64 (command+8) t) t else
   if op == 214 then inspectNode (load64 (command+8) t) t else
   if op == 215 then readNode (load64 (command+8) t) (load64 (command+24) t) (load64 (command+32) t) t else
-  if op == 216 then delete t else response 2 0 t
+  if op == 216 then delete t else
+  if op == 217 then importRecovery (load64 incoming t) (load64 (command+24) t) (load64 (command+32) t) t else response 2 0 t
 end Guest.ProjectVault
