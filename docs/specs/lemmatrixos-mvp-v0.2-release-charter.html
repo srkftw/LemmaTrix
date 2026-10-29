@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LemmaTrixOS MVP v0.2 — Release Charter</title>
+<style>
+:root{color-scheme:light dark}body{font:17px/1.65 system-ui,sans-serif;max-width:72rem;margin:3rem auto;padding:0 1.5rem}h1,h2{line-height:1.25}h1{font-size:2.25rem}h2{margin-top:2rem}aside{border-left:4px solid #888;padding:.5rem 1.2rem;margin:1.5rem 0}a{overflow-wrap:anywhere}li+li{margin-top:.45rem}.metadata{line-height:1.85}section{scroll-margin-top:1.5rem}@media print{body{max-width:none;margin:0;font-size:11pt}nav,.provenance{display:none}h1,h2{break-after:avoid}li{break-inside:avoid}}
+</style>
+</head>
+<body>
+<nav aria-label="Documentation"><a href="../index.html">Source register</a> · <a href="lemmatrixos-mvp-v0.2.html">Governing MVP specification</a> · <a href="../documentation-policy.html">Documentation policy</a></nav>
+<aside class="provenance" aria-label="Repository provenance note">
+<p><strong>Source:</strong> The complete Release Charter supplied by the project owner in conversation. All ten sections are preserved below with their original wording; Markdown formatting has been converted to semantic HTML. This navigation and provenance note are repository metadata, not additions to the charter. The detailed MVP specification remains governing, and the charter remains a proposed engineering baseline rather than evidence of implementation.</p>
+</aside>
+<main>
+<article id="release-charter" aria-labelledby="charter-title">
+<header>
+<h1 id="charter-title">LemmaTrixOS MVP v0.2 — Release Charter</h1>
+<p class="metadata"><strong>Status:</strong> Proposed engineering baseline<br>
+<strong>Date:</strong> <time datetime="2026-10-28">October 28, 2026</time><br>
+<strong>Governing document:</strong> <em><a href="lemmatrixos-mvp-v0.2.html">LemmaTrixOS Minimum Viable Product Specification v0.2</a></em></p>
+</header>
+<section id="product-objective" aria-labelledby="heading-1">
+<h2 id="heading-1">1. Product objective</h2>
+<p>LemmaTrixOS shall be an open-source, monolingual Lean 4 operating system and application environment targeting a versioned RISC-V machine contract.</p>
+<p>Its initial public release shall provide an integrated environment in which users can:</p>
+<ol>
+<li>Develop, reconstruct, test, and publish native LemmaTrix applications.</li>
+<li>Discover, install, execute, modify, and fork one another's software.</li>
+<li>Acquire, organize, play, and preserve authorized consumer media and games.</li>
+<li>Communicate through federated social and encrypted messaging services.</li>
+<li>Operate independent compute, storage, retrieval, verification, and network infrastructure.</li>
+<li>Make private, self-custodied payments for services through LemmaCoin.</li>
+<li>Retain control over application authority, persistent information, federation membership, and software distribution.</li>
+</ol>
+<p>The MVP is complete only when these capabilities function together across independently operated machines and federations.</p>
+</section>
+<section id="platform-architecture" aria-labelledby="heading-2">
+<h2 id="heading-2">2. Platform architecture</h2>
+<p>The operating system shall provide:</p>
+<ul>
+<li>One canonical RISC-V guest with versioned ISA, device, boot, and execution contracts.</li>
+<li>x86-64 and ARM64 host editions running the same guest through separately implemented assembly emulators.</li>
+<li>A freestanding Lean runtime/compiler path, kernel, compartment isolation, device services, network broker, signing broker, graphical desktop, and application lifecycle.</li>
+<li>Disposable personal sessions with an explicitly authorized external encrypted vault containing separate Wallet, Messenger, and Objects domains.</li>
+<li>Lean-defined configuration and reproducible packages, including dependency locking, signed updates, immutable releases, rollback, and recovery.</li>
+<li>Machine-checked proofs of named security properties, with their assumptions, binary coverage, and remaining trusted components disclosed.</li>
+</ul>
+<p>Personal sessions shall be amnesiac within their stated threat model. Server Edition shall preserve explicitly authorized durable state.</p>
+</section>
+<section id="application-hierarchy" aria-labelledby="heading-3">
+<h2 id="heading-3">3. Application hierarchy</h2>
+<p>All applications shall share one signed, content-addressed project and release graph.</p>
+<p><strong>LemmaForge</strong> is the universal repository, development, version-control, CI, and release infrastructure.</p>
+<p><strong>dAppStore</strong> is the federated distribution and admission system for native LemmaTrix executable applications.</p>
+<p><strong>Library</strong> is the consumer acquisition, playback, installation, organization, and preservation system built over the same distribution registry.</p>
+<p>Native games eligible for Library must satisfy the executable dAppStore gate and the additional consumer-product requirements. Non-executable books, films, music, and other media are eligible distribution releases, not executable applications.</p>
+<p>Creative Suite projects remain editable Forge artifacts until an appropriate consumer product or native application release is published.</p>
+</section>
+<section id="initial-applications" aria-labelledby="heading-4">
+<h2 id="heading-4">4. Initial applications</h2>
+<p><strong>Feed:</strong> Federated short/long posts, comments, follows, project cards, development activity, moderation, and opt-in public project sharing. Feed shall use shared LemmaNET event services rather than inherit Messenger's confidentiality protocol.</p>
+<p><strong>Library:</strong> Prowlarr/Sonarr/Radarr-inspired indexing, monitoring, release matching, quality profiles, authorized automated acquisition, downloading, streaming, collections, synchronization, and seeding. Games shall support Steam-like installation, launching, updates, rollback, mods, and approved save state.</p>
+<p><strong>IDE and LemmaForge:</strong> Lean editing, diagnostics, theorem proving, debugging, testing, dependency management, source control, pull requests, code review, reproducible CI, signed releases, and platform-specific Agent assistance.</p>
+<p><strong>Reverse Engineering Lab:</strong> Source and binary import, isolated baseline execution, dependency and behavioral analysis, semantic reconstruction, differential testing, staged migration to Lean, and integration with IDE and Creative Suite.</p>
+<p><strong>Wallet:</strong> Self-custody, invoices, private payments, tipping, escrow, bounded delegation, receipts, refunds, bounties, and provider settlement.</p>
+<p><strong>Server Edition:</strong> Independently configurable validator, registry, relay, seed, retrieval, build, verification, compute, and demo-hosting roles with explicit costs, resource limits, persistent records, and service contracts.</p>
+<p>The MVP shall additionally include a minimum Creative Suite editor, Player/Runner, basic encrypted Messenger, dAppStore interface, and permissioned development Agent.</p>
+</section>
+<section id="native-developer-contract" aria-labelledby="heading-5">
+<h2 id="heading-5">5. Native developer contract</h2>
+<p>The native SDK shall expose typed, versioned interfaces for UI, objects, networking, identity, social publishing, messaging, payments, server deployment, Library, Forge, and proof evidence.</p>
+<p>Applications shall not receive unrestricted vault access, signing keys, raw networking authority, or ambient system privileges.</p>
+<p>The IDE and REL Agents shall generate native SDK integrations, capability declarations, build configurations, tests, and reviewable patches. They shall not independently implement alternative wallet or anonymity mechanisms to bypass platform services.</p>
+<p>An imported artifact may be inspected or run in a separately labeled compatibility capsule before becoming native. Its presence in IDE does not establish compatibility, security, or Lean-native status.</p>
+</section>
+<section id="federation-and-trust-model" aria-labelledby="heading-6">
+<h2 id="heading-6">6. Federation and trust model</h2>
+<p>Software publishing and catalog admission shall be decentralized.</p>
+<p>Every dAppStore installation shall undergo separately identifiable:</p>
+<ol>
+<li>Package integrity and provenance validation.</li>
+<li>Technical, dependency, capability, and execution checks.</li>
+<li>Federation-specific admission and moderation.</li>
+<li>Local user authorization and runtime enforcement.</li>
+</ol>
+<p>Independent federations may adopt different policies. Users may choose catalogs and fork federation governance without transferring authority over their wallets or losing portable project identities.</p>
+<p>A signed or reproducibly built package shall never be described as universally safe. Security claims must identify specific tests, proofs, assumptions, and residual risks.</p>
+</section>
+<section id="lemmanet-and-lemmacoin" aria-labelledby="heading-7">
+<h2 id="heading-7">7. LemmaNET and LemmaCoin</h2>
+<p>LemmaNET shall provide federation-scoped discovery, private interactive routing, encrypted object transport, signed peer/service records, and explicit privacy-mode negotiation. Its four planned transport modes shall retain distinct security contracts. Unimplemented modes must not silently fall back to weaker transport.</p>
+<p>LemmaCoin shall remain an independent privacy-native Layer 1 with mandatory shielded-payment and post-quantum-security objectives. The MVP shall run a functional independently operated testnet and demonstrate wallet, escrow, provider settlement, failure recovery, and adversarial transaction testing.</p>
+<p>A production mainnet and unproved comparative claims against other blockchains are outside the MVP release guarantee.</p>
+</section>
+<section id="release-acceptance" aria-labelledby="heading-8">
+<h2 id="heading-8">8. Release acceptance</h2>
+<p>The public MVP must demonstrate:</p>
+<ul>
+<li>Canonical guest boot and compartment isolation on supported host editions.</li>
+<li>Approved vault persistence and correctly disposable sessions.</li>
+<li>Native SDK development, builds, tests, and application execution.</li>
+<li>Reproducible Forge publication and federated dAppStore admission.</li>
+<li>REL reconstruction with one meaningful native Lean component.</li>
+<li>A working IDE–Creative Suite editing round trip.</li>
+<li>Authorized Library acquisition and native-game execution.</li>
+<li>Federated Feed activity and encrypted Messenger communication.</li>
+<li>Independent seeding, retrieval, verification, and remote compute.</li>
+<li>LemmaCoin testnet payment, escrow, receipts, and recovery.</li>
+<li>One complete discover → run → fork → modify → build → publish → install → seed workflow across independent participants.</li>
+</ul>
+<p>All release evidence shall identify actual implementations and independently reproducible results. Simulated interfaces do not satisfy these gates.</p>
+</section>
+<section id="explicit-post-mvp-scope" aria-labelledby="heading-9">
+<h2 id="heading-9">9. Explicit post-MVP scope</h2>
+<p>The release does not require complete feature parity with macOS, Twitter, AWS, Netflix, Steam, NixOS, Blender, Unreal Engine, or the broader Creative Suite.</p>
+<p>Automatic perfect reconstruction of arbitrary proprietary software, complete AI-driven decompilation, universal formal verification, general-purpose confidential GPU computation, sophisticated financial markets, full consumer-business marketplaces, and production LemmaCoin mainnet launch remain separate development milestones.</p>
+</section>
+<section id="release-principle" aria-labelledby="heading-10">
+<h2 id="heading-10">10. Release principle</h2>
+<p><strong>LemmaTrixOS shall launch as a working platform for producing more LemmaTrix software.</strong></p>
+<p>Its initial applications are not isolated demonstrations. They form the development, distribution, social, preservation, and infrastructure loop through which independent contributors can expand the ecosystem without depending on a central operator.</p>
+</section>
+</article>
+</main>
+</body>
+</html>
