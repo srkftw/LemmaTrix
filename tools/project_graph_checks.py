@@ -60,6 +60,13 @@ def check(client,vault=False):
  old=projects.resolve(client,root,a)
  assert client.read_object(old)==source
  checks.append('revision ancestry survives reopen; stale expected-head publication is rejected')
+ reject(lambda:client.objects(32,root,data=bytes(32)),8)
+ snapshot=client.objects(32,root,data=bytes.fromhex(newhead))[0][1]
+ assert snapshot not in {x['cap'] for x in projects.roots(client)}
+ reject(lambda:client.objects(22,newmanifest,snapshot,len('graph-primary'),data=bytes.fromhex(newhead)+b'graph-primary'.ljust(64,b'\0')),3)
+ client.objects(28,snapshot)
+ reject(lambda:client.objects(24,snapshot),3)
+ checks.append('exact-head frozen snapshots are hidden, immutable and reclaimed after teardown')
  private=client.import_object(b'unsaved private object',1)
  private_fields,private_hash=client.objects(5,private)
  result=dict(checks=checks,roots=[dict(cap=root,name='graph-primary',head=newhead),dict(cap=second,name='graph-secondary',head=second_head)],private=private,private_sha256=private_hash.hex(),expected_bytes=len(source)+len(changed)+len(resource)+len(second_data))

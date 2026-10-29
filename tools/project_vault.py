@@ -29,14 +29,20 @@ def retain(client,roots):
  if len(processes)<128:raise ValueError('Vault process unavailable')
  vault=struct.unpack_from('<Q',processes,96)[0]
  if not vault:raise ValueError('Vault process unavailable')
- delegated=[]
+ delegated=[];frozen=[]
  try:
-  for root in roots:delegated.append((root,client.objects(27,root,vault,1)[0][1]))
+  for root in roots:
+   _,metadata=client.objects(29,root)
+   snapshot=client.objects(32,root,data=metadata[:32])[0][1];frozen.append(snapshot)
+  for root in frozen:delegated.append((root,client.objects(27,root,vault,1)[0][1]))
   fields,_=call(client,210,offset=len(delegated),data=struct.pack('<'+'Q'*len(delegated),*(grant for _,grant in delegated)))
   return dict(generation=fields[1],nodes=fields[2],projects=fields[3],bytes=fields[4],format=fields[6])
  finally:
   for root,grant in delegated:
    try:client.objects(31,root,grant)
+   except Exception:pass
+  for root in frozen:
+   try:client.objects(28,root)
    except Exception:pass
 
 

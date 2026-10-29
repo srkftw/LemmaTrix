@@ -21,4 +21,7 @@ def delegate (root recipient rights t : UInt64) : UInt64 := call 64 (header 27 r
 def remove (root t : UInt64) : UInt64 := call 64 (header 28 root 0 0 0 0 0 t)
 def describeRoot (root t : UInt64) : UInt64 := call 64 (header 29 root 0 0 0 0 0 t)
 def revoke (root delegated t : UInt64) : UInt64 := call 64 (header 31 root delegated 0 0 0 0 t)
+def freeze (root expected t : UInt64) : UInt64 :=
+  let t := header 32 root 0 0 0 0 0 t
+  call 96 (copy expected (wire+64) 32 t)
 end Guest.ProjectSDK

@@ -99,6 +99,12 @@ def rootValid (caller h right t : UInt64) : Bool :=
     i < 16 && load64 (rootAt i) t == 1 && load64 (rootAt i+16) t == load64 (c+24) t
 
 def grantedRoot (h t : UInt64) : UInt64 := rootAt (load64 (rootCapAt (h &&& 255)+16) t)
+partial def ownerRoots (caller temporary i count t : UInt64) : UInt64 :=
+  if i == 16 then count else
+    let r := rootAt i
+    let owned := load64 r t == 1 && load64 (r+8) t == caller && load64 (r+48) t == temporary
+    ownerRoots caller temporary (i+1) (count+(if owned then 1 else 0)) t
+
 partial def freeRoot (i t : UInt64) : UInt64 :=
   if i == 16 then error else if load64 (rootAt i) t == 0 then i else freeRoot (i+1) t
 partial def freeRootCap (i t : UInt64) : UInt64 :=
@@ -117,7 +123,7 @@ def grantRoot (slot caller r rights t : UInt64) : UInt64 :=
 partial def duplicateRoot (caller name n excluded i t : UInt64) : Bool :=
   if i == 16 then false else
     let r := rootAt i
-    (r != excluded && load64 r t == 1 && load64 (r+8) t == caller && load64 (r+40) t == n && equal name (r+64) n t) ||
+    (r != excluded && load64 r t == 1 && load64 (r+48) t == 0 && load64 (r+8) t == caller && load64 (r+40) t == n && equal name (r+64) n t) ||
       duplicateRoot caller name n excluded (i+1) t
 -- Mark before descent bounds traversal to64 nodes, even for malformed restored cycles.
 partial def markNode (i budget t : UInt64) : UInt64 :=

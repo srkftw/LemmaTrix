@@ -294,6 +294,7 @@ def publishRoot (caller rights length t : UInt64) : UInt64 :=
   let old := load64 (command+16) t
   let n := load64 (command+24) t
   if length != 160 || !has rights 4 || !grantValid caller h 1 t then respond 1 0 0 0 t else
+  if old == 0 && !admin rights && ProjectGraph.ownerRoots caller 0 0 0 t >= 4 then respond 4 0 0 0 t else
     let source := grantedRecord h t
     if load64 (source+40) t != 11 || load64 (source+224) t != 1 ||
       !ProjectGraph.validName (command+96) n 63 t || !ProjectGraph.allZero (command+96+n) (64-n) t then respond 2 0 0 0 t else
@@ -322,7 +323,7 @@ def publishRoot (caller rights length t : UInt64) : UInt64 :=
 
 partial def nextRoot (caller cursor t : UInt64) : UInt64 :=
   if cursor >= 64 then error else
-    if ProjectGraph.rootValid caller (ProjectGraph.rootHandle cursor t) 1 t then cursor else nextRoot caller (cursor+1) t
+    if ProjectGraph.rootValid caller (ProjectGraph.rootHandle cursor t) 1 t && load64 (ProjectGraph.grantedRoot (ProjectGraph.rootHandle cursor t) t+48) t == 0 then cursor else nextRoot caller (cursor+1) t
 
 partial def existingGrant (caller i requested slot t : UInt64) : UInt64 :=
   if slot == 256 then error else
@@ -421,8 +422,8 @@ def graphDispatch (op caller rights length t : UInt64) : UInt64 :=
   let h := load64 (command+8) t
   if op == 30 then restoreRoots caller rights length t else
   if op == 22 then publishRoot caller rights length t else
-  if op == 25 && length != 96 then respond 2 0 0 0 t else
-  if op != 25 && length != 64 then respond 2 0 0 0 t else
+  if (op == 25 || op == 32) && length != 96 then respond 2 0 0 0 t else
+  if op != 25 && op != 32 && length != 64 then respond 2 0 0 0 t else
   if op == 20 || op == 21 then
     if !has rights 1 || !grantValid caller h 1 t then respond 3 0 0 0 t else
       let r := grantedRecord h t
@@ -436,7 +437,24 @@ def graphDispatch (op caller rights length t : UInt64) : UInt64 :=
         rootReply root (ProjectGraph.grantedRoot root t) (slot+1) t
   else if !has rights 1 || !ProjectGraph.rootValid caller h 1 t then respond 3 0 0 0 t else
     let root := ProjectGraph.grantedRoot h t
-    if op == 29 then rootReply h root 0 t else
+    if op == 32 then
+      if !has rights 2 || !ProjectGraph.rootValid caller h 25 t || !equal (command+64) (root+128) 32 t then respond 8 0 0 0 t else
+      if !admin rights && ProjectGraph.ownerRoots caller 1 0 0 t >= 2 then respond 4 0 0 0 t else
+        let free := ProjectGraph.freeRoot 0 t
+        let slot := ProjectGraph.freeRootCap 0 t
+        if free == error || slot == error then respond 4 0 0 0 t else
+          let r := ProjectGraph.rootAt free
+          let generation := load64 (r+16) t+1
+          let t := zero r 24 t
+          let t := store64 r 1 t
+          let t := store64 (r+8) caller t
+          let t := store64 (r+16) generation t
+          let t := store64 (r+40) (load64 (root+40) t) t
+          let t := store64 (r+48) 1 t
+          let t := copy (root+64) (r+64) 96 t
+          let t := ProjectGraph.grantRoot slot caller r (rights &&& 25) t
+          rootReply (ProjectGraph.rootHandle slot t) r (slot+1) t
+    else if op == 29 then rootReply h root 0 t else
     if op == 31 then
       let target := load64 (command+16) t
       let c := ProjectGraph.rootCapAt (target &&& 255)
@@ -477,7 +495,7 @@ def validReserved (op t : UInt64) : Bool :=
   let d := load64 (command+40) t
   let e := load64 (command+48) t
   if e != 0 then false else
-  if op >= 20 && op <= 31 then true else
+  if op >= 20 && op <= 32 then true else
   if op == 1 then true else
   if c != 0 || d != 0 then false else
   if op == 4 || op == 6 || op == 14 then true else
@@ -494,7 +512,7 @@ def dispatch (caller rights length t : UInt64) : UInt64 :=
     if op == 1 then beginObject caller rights length t
     else if op == 2 then appendObject caller rights length t
     else if op == 3 then commitObject caller rights length t
-    else if op >= 20 && op <= 31 then graphDispatch op caller rights length t
+    else if op >= 20 && op <= 32 then graphDispatch op caller rights length t
     else if length != 64 then respond 2 0 0 0 t
     else if op == 4 then readObject caller rights 1 t
     else if op == 5 then metadataObject caller rights t

@@ -53,5 +53,18 @@
     "nodes": 7,
     "bytes": 124156
   },
-  "limitation": "Recovery found and fixed a cached-read effect-token bug. Recovery image overlays newly compiled Objects/Vault on the initial integrated image. A final integrated image and backend parity are separate evidence. No physical external-drive durability or entire-store rollback protection claimed."
+  "limitation": "Recovery found and fixed a cached-read effect-token bug. Recovery image overlays newly compiled Objects/Vault on the initial integrated image. A final integrated image and backend parity are separate evidence. No physical external-drive durability or entire-store rollback protection claimed.",
+  "mediation": {
+    "image_sha256": "5a78ab4ebf2742bf0fa428e20e4c73b81d5c40155f94fd1bd6fe1cb6ec2d0388",
+    "checks": [
+      "trusted Launcher summary reports selected stable head, name, five records and123964bytes",
+      "retention rejects a substituted displayed head",
+      "Launcher exact-head freeze delegates only selected closure, retains both previous named projects and acknowledges generation2",
+      "temporary roots are hidden, immutable, explicitly reclaimed and stale after teardown"
+    ],
+    "generation": 2,
+    "nodes": 7,
+    "projects": 2,
+    "bytes": 124156
+  }
 }
