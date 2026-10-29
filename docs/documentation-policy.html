@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LemmaTrix — HTML documentation policy</title>
+<style>
+:root{color-scheme:light dark}body{font:17px/1.65 system-ui,sans-serif;max-width:65rem;margin:3rem auto;padding:0 1.5rem}h1,h2{line-height:1.25}code{overflow-wrap:anywhere}aside{border-left:4px solid #888;padding:.5rem 1.2rem}
+</style>
+</head>
+<body>
+<header><p><a href="index.html">Source register</a></p><h1>HTML documentation policy</h1><p>Owner instruction recorded 28 October 2026 · Applies to all future first-party repository documentation</p></header>
+<main>
+<section><h2>Required format</h2>
+<p>Write all first-party README-equivalent material, specifications, design documents, plans, guides, changelogs, contributor guidance, and other prose documentation as UTF-8 HTML files with the <code>.html</code> extension. Do not create Markdown documentation such as <code>.md</code>, <code>.markdown</code>, or <code>.mdown</code>; do not substitute another prose markup format.</p>
+<p>HTML must be actual HTML, with a doctype, language, character encoding, descriptive title, and suitable document structure. Merely renaming a Markdown file to <code>.html</code> is not a conversion. Escape imported text and preserve code, symbols, requirement identifiers, and attribution.</p>
+</section>
+<section><h2>Keep the repository landing page free of a README panel</h2>
+<p>Use <code>docs/index.html</code> as the documentation entry point. Do not add a <code>README</code> or <code>README.*</code> file at the repository root or in <code>.github/</code> or <code>docs/</code>. Use descriptive HTML filenames for README-equivalent guidance instead of relying on a README filename or on GitHub's treatment of a particular extension.</p>
+<p>Documentation remains visible in the file tree and available after cloning; it is not meant to be hidden or access-restricted. This policy concerns the automatically displayed landing-page document. No GitHub Pages publication or other hosting is required.</p>
+</section>
+<section><h2>Placement and links</h2>
+<p>Keep the documentation register at <code>docs/index.html</code>, governing source specifications under <code>docs/specs/</code>, and dated historical or future-facing material under <code>docs/roadmap/</code>. Use relative links so the documentation can be browsed locally. Keep source dates and version numbers explicit.</p>
+</section>
+<section><h2>Source integrity and authority</h2>
+<p>The 28 October 2026 MVP specification v0.2 is the governing detailed baseline. The release charter is a concise acceptance interpretation; the 23 October application list is the broader roadmap. Do not silently expand MVP scope using an older source or treat proposed requirements as implemented capabilities.</p>
+<p>Identify every imported source, its date/version, and any extraction limitations. Keep transcriptions separate from editorial commentary. Preserve requirement IDs and page references. Never reconstruct missing original documents from memory and present them as originals. Where archival source binaries are available, retain them unchanged as source evidence; the HTML rule applies to authored repository documentation, not to altering historical source evidence or executable/configuration formats.</p>
+</section>
+<section><h2>Contributor and agent review</h2>
+<p>Before committing documentation, check that all new first-party prose is HTML, every local link resolves, source attribution is present, and no automatically displayed README file has been introduced. Tool-required source/configuration files retain their required formats. A tool that insists on a Markdown guidance file does not silently override this policy; record and resolve the conflict before adding that file.</p>
+<aside><p>This is a recorded repository convention, not an automated enforcement mechanism. No CI workflow or branch-protection rule is added by this document.</p></aside>
+</section>
+</main>
+</body>
+</html>
