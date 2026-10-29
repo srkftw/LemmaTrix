@@ -182,6 +182,7 @@ class Client:
   # bootstrap workers serialize whole sessions so a poll cannot disconnect an
   # in-progress bounded export/restore. This lock supplies no guest authority.
   self.stream=None;self.lock=os.open(str(path)+'.client.lock',os.O_CREAT|os.O_RDWR|os.O_CLOEXEC|os.O_NOFOLLOW,0o600)
+  self.timeout=timeout
   try:
    deadline=time.monotonic()+timeout
    while True:
@@ -196,9 +197,13 @@ class Client:
   if self.lock is not None:os.close(self.lock);self.lock=None
  def request(self,op,payload=b'',rid=None):
   if len(payload)>1024:raise ValueError('frame payload exceeds1024')
+  deadline=time.monotonic()+self.timeout
+  self.stream.settimeout(self.timeout)
   if rid is None:self.counter=max(self.counter+1,time.time_ns());rid=self.counter
   self.stream.sendall(struct.pack('<4sIQQQ',MAGIC,len(payload),rid,op,0)+payload)
   while True:
+   remaining=deadline-time.monotonic()
+   if remaining<=0:raise TimeoutError('management request deadline expired')
    where=self.buffer.find(REPLY)
    if where>=0:
     if where:
@@ -215,6 +220,8 @@ class Client:
     # App output is kernel-framed ASCII hex, never a permission/control frame.
     self.events.extend(self.buffer[:-3]);del self.events[:-4096]
     del self.buffer[:-3]
+   # Unrelated guest output must not restart an operation's absolute deadline.
+   self.stream.settimeout(remaining)
    data=self.stream.recv(65536)
    if not data:raise EOFError('management session closed')
    self.buffer.extend(data)
