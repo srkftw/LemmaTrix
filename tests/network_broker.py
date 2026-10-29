@@ -7,7 +7,7 @@ import argparse,hashlib,json,os,socket,struct,subprocess,sys,tempfile,time
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'tools'))
-import live,network
+import capsule,live,network
 
 def wait_until(predicate,seconds=90):
  end=time.monotonic()+seconds
@@ -17,13 +17,20 @@ def wait_until(predicate,seconds=90):
   time.sleep(.04)
  raise TimeoutError('bounded broker operation did not complete')
 
-def run_pair(client_backend,server_backend,size=4097):
+def run_pair(client_backend,server_backend,size=4097,signed_description=False):
  with tempfile.TemporaryDirectory(prefix='lt-network-') as td:
   directory=Path(td);socks=[directory/'client.sock',directory/'server.sock'];logs=[];processes=[];clients=[]
   pin_client=hashlib.sha256(os.getrandom(32)).digest();pin_server=hashlib.sha256(os.getrandom(32)).digest();service=hashlib.sha256(b'lt-forge-service-v1').digest();root=hashlib.sha256(b'explicit frozen test root').digest()
   creds=[directory/'client.credential',directory/'server.credential']
-  network.provision(*creds,pin_client,pin_server,service)
   port_probe=socket.socket();port_probe.bind(('127.0.0.1',0));port=port_probe.getsockname()[1];port_probe.close();endpoint=f'127.0.0.1:{port}'
+  description=None
+  if signed_description:
+   role_key=directory/'server-network-role.pem';role_public=directory/'server-network-role.pub';capsule.generate_key(role_key,role_public)
+   client_key=directory/'client-identity.pem';client_public=directory/'client-identity.pub';capsule.generate_key(client_key,client_public)
+   pin_client=hashlib.sha256(network.releases.public_modulus(client_public)).digest();description=directory/'service.ltnode'
+   details=network.create_description(role_key,pin_client,endpoint,'forge',description)
+   pin_server=bytes.fromhex(details['server_id']);service=bytes.fromhex(details['service_id'])
+  network.provision(*creds,pin_client,pin_server,service)
   try:
    for i,backend in [(1,server_backend),(0,client_backend)]:
     log=(directory/f'guest{i}.log').open('wb');logs.append(log)
@@ -31,13 +38,26 @@ def run_pair(client_backend,server_backend,size=4097):
     processes.append(subprocess.Popen(args,cwd=ROOT,stdout=log,stderr=subprocess.STDOUT))
    for path in socks:wait_until(path.exists)
    clients=[live.Client(path,timeout=90) for path in socks]
-   print("configure server",flush=True);network.configure(clients[1],creds[1]);print("configure client",flush=True);network.configure(clients[0],creds[0]);print("waiting Noise",flush=True)
+   if description:
+    public,descriptor,signature=network.load_description(description)
+    network.call(clients[0],11,data=public+descriptor)
+    tampered=bytearray(signature);tampered[13]^=1
+    f,_=network.call(clients[0],12,data=bytes(tampered),allow_error=True);assert f[0]==5,('guest accepted bad public service signature',f)
+    role,material=network.load_credentials(creds[0])
+    f,_=network.call(clients[0],1,a=role,data=material,allow_error=True);assert f[0]==2,'failed public signature silently downgraded'
+    network.call(clients[0],11,data=public+descriptor);network.call(clients[0],12,data=signature)
+    for offset in (0,64):
+     substituted=bytearray(material);substituted[offset]^=1
+     f,_=network.call(clients[0],1,a=role,data=bytes(substituted),allow_error=True);assert f[0]==2,('substituted ordered relationship/service accepted',offset,f)
+   print("configure server",flush=True);network.configure(clients[1],creds[1],description);print("configure client",flush=True);network.configure(clients[0],creds[0],description);print("waiting Noise",flush=True)
    def authenticated():
     statuses=[network.status(c) for c in clients]
     if not hasattr(authenticated,'last') or time.monotonic()-authenticated.last>5:
      print('Noise state',statuses,flush=True);authenticated.last=time.monotonic()
     return all(status['endpoint_authenticated'] for status in statuses)
    wait_until(authenticated,300)
+   if description:
+    assert all(network.status(c)['public_service_description_verified'] for c in clients)
    grants=[]
    for i,c in enumerate(clients):
     peer=pin_server if i==0 else pin_client
@@ -46,6 +66,8 @@ def run_pair(client_backend,server_backend,size=4097):
      f,_=network.call(c,2,a=3,b=bad_mode,c=262144,d=65536,e=100000,data=pin+service+root+struct.pack('<Q',1),allow_error=True)
      assert f[0]==expected,(bad_mode,f)
     f,_=network.call(c,2,a=3,b=3,c=max(size*3,8192),d=65536,e=100000,data=peer+service+root+struct.pack('<Q',1));grants.append(f[1])
+    if description:
+     f,_=network.call(c,2,a=3,b=3,c=8192,d=65536,e=100000,data=peer+service+root+struct.pack('<Q',2),allow_error=True);assert f[0]==1,'descriptor operation restriction not enforced'
    # Fill the bounded inbox, drain low slots, refill them while older high
    # slots remain. Physical slot reuse must not reorder the authenticated stream.
    bursts=[('fifo-'+str(i)).encode() for i in range(6)]
@@ -84,7 +106,11 @@ def run_pair(client_backend,server_backend,size=4097):
    assert wait_until(reverse)==reply
    network.call(clients[0],8,grants[0])
    f,_=network.call(clients[0],3,grants[0],a=1,data=b'denied',allow_error=True);assert f[0]==3
-   return {'client_backend':client_backend,'server_backend':server_backend,'guest_image_sha256':hashlib.sha256((ROOT/'build/live/guest.bin').read_bytes()).hexdigest(),'profile':'Noise_NNpsk0_25519_ChaChaPoly_SHA256','payload_bytes':len(received),'payload_sha256':hashlib.sha256(received).hexdigest(),'bidirectional_authenticated_records':'pass','bounded_inbox_slot_reuse_preserves_FIFO':'pass','denied_privacy_mode_wrong_peer_stale_grant':'pass','scope':'actual guest broker transport; no application/graph acceptance claim'}
+   images=[]
+   for path in directory.glob('guest*.log'):
+    images.extend(line.rsplit(' image ',1)[1] for line in path.read_text().splitlines() if line.startswith('SESSION ') and ' image ' in line)
+   assert len(images)==2 and len(set(images))==1,('actual guest images differ',images)
+   return {'client_backend':client_backend,'server_backend':server_backend,'guest_image_sha256':images[0],'profile':'Noise_NNpsk0_25519_ChaChaPoly_SHA256','payload_bytes':len(received),'payload_sha256':hashlib.sha256(received).hexdigest(),'bidirectional_authenticated_records':'pass','bounded_inbox_slot_reuse_preserves_FIFO':'pass','denied_privacy_mode_wrong_peer_stale_grant':'pass','signed_service_descriptor':bool(description),'public_signature_tamper_pin_substitution_operation_scope_no_downgrade':'pass' if description else 'not exercised','scope':'actual guest broker transport; no application/graph acceptance claim'}
   except BaseException:
    for log in logs:log.flush()
    for path in directory.glob('guest*.log'):print(path.name,path.read_text(errors='replace')[-4000:],file=sys.stderr)
@@ -99,6 +125,6 @@ def run_pair(client_backend,server_backend,size=4097):
    for log in logs:log.close()
 
 def main():
- p=argparse.ArgumentParser();p.add_argument('--client-backend',choices=('qemu','x86_64','aarch64'),default='qemu');p.add_argument('--server-backend',choices=('qemu','x86_64','aarch64'),default='x86_64');p.add_argument('--bytes',type=int,default=4097);a=p.parse_args()
- report=run_pair(a.client_backend,a.server_backend,a.bytes);path=ROOT/'build/network-broker-evidence.json';path.write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2))
+ p=argparse.ArgumentParser();p.add_argument('--client-backend',choices=('qemu','x86_64','aarch64'),default='qemu');p.add_argument('--server-backend',choices=('qemu','x86_64','aarch64'),default='x86_64');p.add_argument('--bytes',type=int,default=4097);p.add_argument('--signed-description',action='store_true');p.add_argument('--output',type=Path,default=ROOT/'build/network-broker-evidence.json');a=p.parse_args()
+ report=run_pair(a.client_backend,a.server_backend,a.bytes,a.signed_description);a.output.write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2))
 if __name__=='__main__':main()

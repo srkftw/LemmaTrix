@@ -1,5 +1,6 @@
 import Guest.NetworkSDK
 import Guest.Noise
+import Guest.PeerDescription
 namespace Guest.Network
 open Guest.LiveSDK
 -- Service6 owns this memory. No compiler/publisher key or graph root lives here.
@@ -245,7 +246,8 @@ def jobResponse (j t : UInt64) : UInt64 :=
 
 def configure (role length t : UInt64) : UInt64 :=
   if length != 192 || (role != 1 && role != 2) || nonzero (command+160) 32 0 t == 0 ||
-    nonzero (command+64) 32 0 t == 0 || nonzero (command+96) 32 0 t == 0 || nonzero (command+128) 32 0 t == 0 || equal (command+64) (command+96) 32 t then failure 2 t else
+    nonzero (command+64) 32 0 t == 0 || nonzero (command+96) 32 0 t == 0 || nonzero (command+128) 32 0 t == 0 || equal (command+64) (command+96) 32 t ||
+    (Guest.PeerDescription.selected t && !Guest.PeerDescription.matchesPins (command+64) t) then failure 2 t else
     let t := disconnect 0 t
     let t := zero 0x608000 2048 t
     let t := copy (command+64) pins 128 t
@@ -262,6 +264,7 @@ def grant (caller length t : UInt64) : UInt64 :=
   let operation := load64 (command+160) t
   let peer := pins+(if load64 (st+8) t == 1 then 32 else 0)
   if !Guest.NetworkSDK.modeAvailable mode then failure 7 t else
+  if !Guest.PeerDescription.permits operation t then failure 1 t else
   if length != 168 || direction == 0 || direction > 3 || budget == 0 || budget > 16777216 || rate == 0 || rate > 65536 || lifetime == 0 || lifetime > 100000 || operation == 0 || operation > 16 ||
     load64 (st+8) t == 0 || !equal (command+64) peer 32 t || !equal (command+96) (pins+64) 32 t then failure 2 t else
     let selected := freeGrant 0 t
@@ -329,6 +332,11 @@ def dispatch (caller rights length t : UInt64) : UInt64 :=
   let handle := load64 (command+8) t
   let admin := (rights &&& 0x100000000) != 0
   if length < 64 || load64 (command+56) t != 1 then failure 2 t else
+  if op == 11 && admin then
+    let t := store64 (st+8) 0 (disconnect 16 (syscall 105 0 0 0 0 t))
+    Guest.PeerDescription.stage length t
+  else
+  if op == 12 && admin then Guest.PeerDescription.confirm length t else
   if op == 1 && admin then configure (load64 (command+16) t) length t else
   if op == 9 && admin then failure 0 (disconnect 0 (syscall 105 0 0 0 0 t)) else
   if (rights &&& 1024) == 0 && !admin then failure 1 t else
@@ -344,6 +352,7 @@ def dispatch (caller rights length t : UInt64) : UInt64 :=
     let t := store64 (wire+16) (load64 (st+8) t) t
     let t := store64 (wire+24) (syscall 101 0 0 0 0 t) t
     let t := store64 (wire+32) (now t) t
+    let t := store64 (wire+56) (if Guest.PeerDescription.verified t then 1 else 0) t
     let t := store64 (wire+48) (inboxCount 0 0 t) t
     64+store64 (wire+40) (load64 (st+80) t) t
   else if op == 8 && length == 64 then
@@ -371,5 +380,6 @@ partial def serve (endpoint t : UInt64) : UInt64 :=
 
 def main (initial : UInt64) : UInt64 :=
   let t := zero 0x600000 16384 initial
+  let t := zero Guest.PeerDescription.publicKey 200 t
   serve (self t) t
 end Guest.Network
