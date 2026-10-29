@@ -66,5 +66,18 @@
     "nodes": 7,
     "projects": 2,
     "bytes": 124156
+  },
+  "logical_project_identity": {
+    "environment": "QEMU11.1.1 RV64 guest, modern virtio MMIO, clean no-vault session",
+    "result": "pass",
+    "execution": "tools.project_graph_checks.check_identity on a frozen copy of the built image; owned guest stopped",
+    "evidence": "build/creator-identity-final/identity.json",
+    "checks": [
+      "logical Project ID follows stable Manifest origin across exact-parent revision and aliases; unrelated rebase denied; identical-head publication allowed"
+    ],
+    "project_id": "8ddfd4140c92a52ed75b4da19b7898bd6ba67b50fcf48d170f9eb1325f099294",
+    "current_head": "757429c2f984ad4e725ea11e50abea55935961322f00048541032d8c03338407",
+    "unrelated_head": "2aab1d41fb7c65e5072837efbc77612ede9dc9d2e4ecdde215d82d038a671879",
+    "image": "4f4f1ea6be9169a4a9236cd563b3342970838aa584f2e5f9e373ddb9c805db3e"
   }
 }
