@@ -137,6 +137,30 @@ def draw (surface t : UInt64) : UInt64 :=
       label 5 8 326 t
   upload surface 0 901120 0 t
 
+partial def visibleRow (offset target col row t : UInt64) : UInt64 :=
+  if offset >= target || row >= 26 then row else
+    let c := load8 (input+offset) t
+    if c == 10 || col == 102 then visibleRow (offset+1) target 0 (row+1) t
+    else visibleRow (offset+1) target (col+1) row t
+
+-- Only the changing statistics strip and occupied text rows are uploaded.
+-- The title/footer stay in the backing surface after its initial full paint.
+def redrawInput (surface t : UInt64) : UInt64 :=
+  if load64 (st+112) t == 1 || load64 (st+40) t == 1 then
+    draw surface (store64 (st+112) 0 (store64 (st+104) 0 t))
+  else
+    let n := load64 st t
+    let last := visibleRow (load64 (st+96) t) n 0 0 t
+    let old := load64 (st+104) t
+    let rows := (if old > last then old else last)+1
+    let t := fill 0 42 640 18 bg t
+    let t := drawStatistics (statistics (bytes input n 4096) t) t
+    let t := fill 0 68 640 (rows*9) bg t
+    let t := renderInput (load64 (st+96) t) n (load64 (st+8) t) 0 0 t
+    let t := upload surface (42*2560) (18*2560) 0 t
+    let t := upload surface (68*2560) (rows*9*2560) 0 t
+    store64 (st+104) 0 t
+
 partial def moveRight (p n t : UInt64) : UInt64 :=
   if n == 0 then t else moveRight p (n-1) (store8 (p+n) (load8 (p+n-1) t) t)
 
@@ -207,12 +231,25 @@ def ipc (endpoint surface t : UInt64) : UInt64 :=
 partial def loop (endpoint surface t : UInt64) : UInt64 :=
   let t := ipc endpoint surface t
   let packed := Guest.syscall 90 surface 0 0 0 t
-  if packed == 0 || packed == error then loop endpoint surface (Guest.syscall 9 0 0 0 0 t) else
+  if packed == 0 || packed == error then
+    let t := if load64 (st+88) t == 1 then redrawInput surface (store64 (st+88) 0 t) else t
+    loop endpoint surface (Guest.syscall 9 0 0 0 0 t)
+  else
+    let oldLength := load64 st t
+    let oldMode := load64 (st+40) t
+    let oldScroll := load64 (st+96) t
+    let oldRow := visibleRow oldScroll oldLength 0 0 t
+    let t := Guest.Effects.effectValue t oldRow
     let ev := Guest.Structured.event (packed >>> 48) ((packed >>> 32) &&& 65535) 0 0 0 (packed &&& 0xffffffff)
     let t := match eventCode ev with
       | .ok code => key code ev.sequence t
       | .error _ => if ev.kind == 65535 || packed == 0x300000000 then store64 (st+16) 0 (store64 (st+24) 0 t) else t
-    let t := if packed >>> 48 == 1 && (packed &&& 0xffffffff) != 0 then draw surface t else t
+    let t := if packed >>> 48 == 1 && (packed &&& 0xffffffff) != 0 then
+        let last := load64 (st+104) t
+        let t := store64 (st+104) (if oldRow > last then oldRow else last) t
+        let t := if oldMode != load64 (st+40) t || oldScroll != load64 (st+96) t then store64 (st+112) 1 t else t
+        store64 (st+88) 1 t
+      else t
     loop endpoint surface t
 
 def main (initial : UInt64) : UInt64 :=

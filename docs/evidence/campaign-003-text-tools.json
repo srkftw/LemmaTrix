@@ -11,8 +11,16 @@
   "publisher_key_id": "f76b9c12cd19f6cdbb921dc16ce286ef5d210b9aa0ed5288b9cdd2733c98f423",
   "authority": "Fresh explicit publisher provisioning, project-scoped trust, exact release/769 rights approval, post-boot installation",
   "keyboard_input_utf8": "hello world\nabc",
-  "keyboard_input_counts": {"words": 3, "bytes": 15, "lf": 1},
-  "authorized_object_counts": {"words": 6, "bytes": 39, "lf": 2},
+  "keyboard_input_counts": {
+    "words": 3,
+    "bytes": 15,
+    "lf": 1
+  },
+  "authorized_object_counts": {
+    "words": 6,
+    "bytes": 39,
+    "lf": 2
+  },
   "authorized_object_sha256": "bbf06205decc94f60470026829ef88f4819569be9449ef028eb53a76423bda73",
   "source_frame_inspected": true,
   "object_result_frame_inspected": true,
@@ -21,5 +29,26 @@
   "final_process_state": "running",
   "final_rights": 769,
   "final_exit_cause": 0,
-  "limits": ["Component execution, not complete creator acceptance", "No assembly-backend execution for this component recorded here", "No physical display hardware validation", "ASCII font maps lowercase to uppercase glyphs"]
+  "limits": [
+    "Component execution, not complete creator acceptance",
+    "No assembly-backend execution for this component recorded here",
+    "No physical display hardware validation",
+    "ASCII font maps lowercase to uppercase glyphs"
+  ],
+  "responsiveness_followup": {
+    "environment": "native x86-64 assembly emulator on Linux; real raw evdev FIFO through virtio keyboard",
+    "guest_image_sha256": "f7616efeb47563f4c77b496007b0bd291dfa20cbf4741e745842e626bb642367",
+    "executable_sha256": "6a748be5ebb094c9d66617680031e7513a6419dbad728e821fb13d05545a5174",
+    "executable_bytes": 53344,
+    "release_id": "cd36ac27fb8771cb03f89c5ecba27f9906e0ba1612c3db885245b198418c8e71",
+    "input_utf8": "independent input 42",
+    "milliseconds_per_key": 120,
+    "words": 3,
+    "bytes": 20,
+    "lf": 0,
+    "complete_frame_inspected": true,
+    "frame_bgrx_sha256": "a40e17b8ec379cb73471a7136eadcb2ba01f1baba141ed3e0a101cfcafe2383d",
+    "fix": "Coalesce input and redraw only statistics plus occupied text rows; first-line upload approximately70KiB instead of901KiB",
+    "result": "pass"
+  }
 }
