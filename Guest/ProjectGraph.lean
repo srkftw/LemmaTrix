@@ -9,7 +9,7 @@ def roots : UInt64 := 0xd13000
 def scratch : UInt64 := 0xd16000
 def marks : UInt64 := 0xd17000
 def rootAt (i : UInt64) : UInt64 := roots+i*192
-def rootCapAt (i : UInt64) : UInt64 := rootCaps+i*48
+def rootCapAt (i : UInt64) : UInt64 := rootCaps+i*64
 def recordAt (i : UInt64) : UInt64 := 0x610000+i*0x11000
 def capAt (i : UInt64) : UInt64 := 0x602000+i*64
 partial def equal (a b n t : UInt64) : Bool :=
@@ -181,13 +181,14 @@ partial def freeRootCap (i t : UInt64) : UInt64 :=
     let c := rootCapAt i
     if load64 (c+40) t == 0 && load64 c t < 0xffffff then i else freeRootCap (i+1) t
 
-def grantRoot (slot caller r rights t : UInt64) : UInt64 :=
+def grantRoot (slot caller r rights issuer t : UInt64) : UInt64 :=
   let c := rootCapAt slot
   let t := store64 c (load64 c t+1) t
   let t := store64 (c+8) caller t
   let t := store64 (c+16) ((r-roots)/192) t
   let t := store64 (c+24) (load64 (r+16) t) t
   let t := store64 (c+32) rights t
+  let t := store64 (c+48) issuer t
   store64 (c+40) 1 t
 partial def duplicateRoot (caller name n excluded i t : UInt64) : Bool :=
   if i == 16 then false else

@@ -39,7 +39,7 @@ def enqueue (caller root t : UInt64) : UInt64 :=
   if slot == error || load64 st t >= 65535 then fail 4 t else
   if load64 (st+64) t != 1 then fail 7 t else
     let r := describeRoot root t
-    if r != 160 || status r != 0 then fail 1 r else
+    if r != 160 || status r != 0 || load64 (wire+48) r != caller then fail 1 r else
       let t := copy (wire+64) 0x610000 32 r
       let r := freezeExport root 0x610000 t
       if r != 160 || status r != 0 then fail 1 r else

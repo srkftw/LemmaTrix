@@ -286,6 +286,9 @@ def rootReply (h r cursor t : UInt64) : UInt64 :=
   let t := respond 0 h 0 0 t
   let t := store64 (wire+16) (load64 (r+40) t) t
   let t := store64 (wire+24) cursor t
+  let t := store64 (wire+32) (load64 (r+8) t) t
+  let t := store64 (wire+40) (load64 (r+48) t) t
+  let t := store64 (wire+48) (load64 (ProjectGraph.rootCapAt (h &&& 255)+48) t) t
   let t := copy (r+128) (wire+64) 32 t
   160+copy (r+64) (wire+96) 64 t
 
@@ -319,7 +322,7 @@ def publishRoot (caller rights length t : UInt64) : UInt64 :=
           let t := zero (r+64) 8 t
           let t := copy (command+96) (r+64) n t
           let t := copy (source+160) (r+128) 32 t
-          let t := if old == 0 then ProjectGraph.grantRoot slot caller r (rights &&& 127) t else t
+          let t := if old == 0 then ProjectGraph.grantRoot slot caller r (rights &&& 127) caller t else t
           rootReply (ProjectGraph.rootHandle slot t) r (slot+1) t
 
 partial def nextRoot (caller cursor t : UInt64) : UInt64 :=
@@ -344,12 +347,12 @@ def grantGraphObject (caller root i cursor t : UInt64) : UInt64 :=
     let t := graphMetadata (handle slot t) r rights t
     128+store64 (wire+24) cursor t
 
-partial def existingRootGrant (caller root requested slot t : UInt64) : UInt64 :=
+partial def existingRootGrant (caller root requested issuer slot t : UInt64) : UInt64 :=
   if slot == 64 then error else
     let c := ProjectGraph.rootCapAt slot
     if load64 (c+40) t == 1 && load64 (c+8) t == caller && load64 (c+16) t == (root-ProjectGraph.roots)/192 &&
-      load64 (c+24) t == load64 (root+16) t && has (load64 (c+32) t) requested then slot
-    else existingRootGrant caller root requested (slot+1) t
+      load64 (c+24) t == load64 (root+16) t && load64 (c+48) t == issuer && has (load64 (c+32) t) requested then slot
+    else existingRootGrant caller root requested issuer (slot+1) t
 partial def freeRootsCount (i count t : UInt64) : UInt64 :=
   if i == 16 then count else freeRootsCount (i+1) (count+(if load64 (ProjectGraph.rootAt i) t == 0 then 1 else 0)) t
 partial def freeRootCapsCount (i count t : UInt64) : UInt64 :=
@@ -383,7 +386,7 @@ partial def publishRestoreEntries (caller rights i count t : UInt64) : UInt64 :=
     let t := store64 (r+40) (load64 (e+8) t) t
     let t := copy (e+48) (r+64) 64 t
     let t := copy (e+16) (r+128) 32 t
-    let t := ProjectGraph.grantRoot slot caller r (rights &&& 127) t
+    let t := ProjectGraph.grantRoot slot caller r (rights &&& 127) caller t
     let t := store64 (wire+64+i*8) (ProjectGraph.rootHandle slot t) t
     let _ := source
     publishRestoreEntries caller rights (i+1) count t
@@ -456,7 +459,7 @@ def graphDispatch (op caller rights length t : UInt64) : UInt64 :=
           let t := store64 (r+40) (load64 (root+40) t) t
           let t := store64 (r+48) 1 t
           let t := copy (root+64) (r+64) 96 t
-          let t := ProjectGraph.grantRoot slot caller r (rights &&& granted) t
+          let t := ProjectGraph.grantRoot slot caller r (rights &&& granted) caller t
           rootReply (ProjectGraph.rootHandle slot t) r (slot+1) t
     else if op == 29 then rootReply h root 0 t else
     if op == 31 then
@@ -473,10 +476,10 @@ def graphDispatch (op caller rights length t : UInt64) : UInt64 :=
       if !has rights 8 || !has current 8 || requested == 0 || requested > 127 || !has current requested then respond 1 0 0 0 t else
         let actual := syscall 34 target 0 0 0 t
         if actual == error || !has actual requested then respond 1 0 0 0 actual else
-          let previous := existingRootGrant target root requested 0 actual
+          let previous := existingRootGrant target root requested caller 0 actual
           let slot := if previous == error then ProjectGraph.freeRootCap 0 actual else previous
           if slot == error then respond 4 0 0 0 actual else
-            let t := if previous == error then ProjectGraph.grantRoot slot target root requested actual else actual
+            let t := if previous == error then ProjectGraph.grantRoot slot target root requested caller actual else actual
             rootReply (ProjectGraph.rootHandle slot t) root (slot+1) t
     else if op == 28 then
       if !has rights 16 || !ProjectGraph.rootValid caller h 16 t || (load64 (root+8) t != caller && !admin rights) then respond 1 0 0 0 t else
