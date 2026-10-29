@@ -1,0 +1,618 @@
+{
+  "schema": 1,
+  "image_sha256": "6c8a9979bf46a33e03b8edbd8d39a421393139c7521de5479c16ac479cdc1c5e",
+  "source_sha256": "12436a60c4cfe614f3d645a9004c29be4f5ac06c30b8e43981724ce82e79fcb1",
+  "checks": [
+    {
+      "backend": "x86_64",
+      "result": "pass",
+      "checks": [
+        {
+          "check": "real UART resynchronization, exact replay, conflicting requests, bounded frames and truncated-payload recovery",
+          "result": "pass",
+          "cases": [
+            "noise/escape bytes resynchronize; no console execution",
+            "exact last request replay; conflicting duplicate denied",
+            "oversize length and unknown critical flags rejected",
+            "truncated payload times out and parser recovers"
+          ]
+        },
+        {
+          "check": "three original-publisher signed native clients installed and launched after OS boot",
+          "result": "pass",
+          "instances": {
+            "workbench": 6228383138242887940,
+            "inspector": 6228383138242887941,
+            "worker": 6228383138242887942
+          }
+        },
+        {
+          "check": "64 KiB source reaches native inspector, independent word counter and streamed revision",
+          "result": "pass",
+          "source_sha256": "c51e79ad965352b8ea6675d0495eb5d8b302eb920b4b5e82f60c342149df7fdd",
+          "revision_sha256": "dc9a7e255d9b4cbeda858c4cc1bc27147b32c7c3584219d4e60de07926945fff"
+        },
+        {
+          "check": "forged, revoked, stale, out-of-scope and export authority denied without source mutation",
+          "result": "pass"
+        },
+        {
+          "check": "native Workbench byte edit preserves source and publishes exact revision",
+          "result": "pass"
+        },
+        {
+          "check": "original signatures, exact approval, cancellation, failed restart, compiled update and explicit rollback",
+          "result": "pass",
+          "publisher_key_id": "ba927005a9c8276471e1b441a87a1173c2e92c2c73c3824f5930f4e83ad3d842",
+          "v1": "6def47bb9989f3ddb722e81350a948bca1864078f271e5a92b5a5442279989eb",
+          "v2": "db098dcdd0bf9e3982eb2be2e3b729e97b7d0f8be71bc422a45dbce3d3c3f485"
+        },
+        {
+          "check": "timer preempts non-yielding user code, cancels blocked management RPC and contains kernel-memory access",
+          "result": "pass"
+        },
+        {
+          "check": "console right is enforced and authorized binary reply-frame injection remains encoded app output",
+          "result": "pass"
+        },
+        {
+          "check": "release and publisher revocation block future launch/restart without stopping healthy existing compartments",
+          "result": "pass"
+        },
+        {
+          "check": "Objects stop/restart invalidates service epoch, stale controls and grants while healthy clients recover",
+          "result": "pass",
+          "previous_instance": 6228383138242887938,
+          "replacement_instance": 6228383138242888194
+        },
+        {
+          "check": "authorized source becomes live semantic Object; native edit regenerates signed consumer and passes 256 differential cases",
+          "result": "pass",
+          "source_sha256": "4d94af6a19e61a78753e36e47c429ebcce53ce2fe34c819c54d14b17ceb2c894",
+          "original_release": "a411c536cd91e9a02f28e98ce895d16d53d3c00ac4f8fc8af32d881774b8d890",
+          "edited_release": "e027eda65cc3ede9426a58db65e620ae5a80010aa8551745961e2289d1a9b495",
+          "original_native_output_sha256": "9d164df8e71d270083ccbf25b90c083166e77a0dd5f618c4316f2dee262d3a3a",
+          "edited_native_output_sha256": "6df83311fd190388caa37c04b914c60e14c368aee8a80d0db2ab938f947775c9"
+        },
+        {
+          "check": "explicit Objects-only retention encrypts 64 KiB, advances durable roots and uses fresh entropy nonces",
+          "result": "pass",
+          "generation": 2,
+          "nonce1": "ab0e5bf9702dac8ced476477",
+          "nonce2": "491bb0c3c0c36eeba34b6898",
+          "ciphertext_sha256": "7abe188b3b125521e2407e7f7f8108d23b5c10e840e71033c8094d50ee09783c"
+        },
+        {
+          "check": "reset loses volatile apps/objects/capabilities; explicit correct key recovers exact authenticated object",
+          "result": "pass"
+        },
+        {
+          "check": "real read-only device commit fails without changing the previous authenticated retained generation",
+          "result": "pass"
+        },
+        {
+          "check": "tampered newest ciphertext falls back to older authenticated root; two damaged roots fail closed",
+          "result": "pass"
+        },
+        {
+          "check": "actual process interruption after inactive-bank write preserves the previous commit roots",
+          "result": "pass",
+          "interrupted_generation": 3,
+          "inactive_bank_sector": 152
+        },
+        {
+          "check": "interrupted commit recovers prior object; explicit logical deletion prevents later recovery",
+          "result": "pass"
+        }
+      ],
+      "explicit_backing": "/home/sreekumaar/Desktop/LemmaTrix/build/live-checks/run-1793254829674431457/x86_64/explicit-vault.img",
+      "explicit_test_key": "/home/sreekumaar/Desktop/LemmaTrix/build/live-checks/run-1793254829674431457/x86_64/explicit-unlock.key"
+    },
+    {
+      "backend": "qemu",
+      "result": "pass",
+      "checks": [
+        {
+          "check": "real UART resynchronization, exact replay, conflicting requests, bounded frames and truncated-payload recovery",
+          "result": "pass",
+          "cases": [
+            "noise/escape bytes resynchronize; no console execution",
+            "exact last request replay; conflicting duplicate denied",
+            "oversize length and unknown critical flags rejected",
+            "truncated payload times out and parser recovers"
+          ]
+        },
+        {
+          "check": "three original-publisher signed native clients installed and launched after OS boot",
+          "result": "pass",
+          "instances": {
+            "workbench": 16629266110503452932,
+            "inspector": 16629266110503452933,
+            "worker": 16629266110503452934
+          }
+        },
+        {
+          "check": "64 KiB source reaches native inspector, independent word counter and streamed revision",
+          "result": "pass",
+          "source_sha256": "c51e79ad965352b8ea6675d0495eb5d8b302eb920b4b5e82f60c342149df7fdd",
+          "revision_sha256": "dc9a7e255d9b4cbeda858c4cc1bc27147b32c7c3584219d4e60de07926945fff"
+        },
+        {
+          "check": "forged, revoked, stale, out-of-scope and export authority denied without source mutation",
+          "result": "pass"
+        },
+        {
+          "check": "native Workbench byte edit preserves source and publishes exact revision",
+          "result": "pass"
+        },
+        {
+          "check": "original signatures, exact approval, cancellation, failed restart, compiled update and explicit rollback",
+          "result": "pass",
+          "publisher_key_id": "fc2a8172b3b27b3b0cb143c9bb483ffb70ac11d5f51f0b93ccbe814f95f2e80a",
+          "v1": "8472297fcccb07bb1b425998aa8858fc539df2e6ba37d284180bb03fbf63f44f",
+          "v2": "4f2425791da37e1325bcbd3a21849072afa3b646aeeddfbc8bf374568cb279ff"
+        },
+        {
+          "check": "timer preempts non-yielding user code, cancels blocked management RPC and contains kernel-memory access",
+          "result": "pass"
+        },
+        {
+          "check": "console right is enforced and authorized binary reply-frame injection remains encoded app output",
+          "result": "pass"
+        },
+        {
+          "check": "release and publisher revocation block future launch/restart without stopping healthy existing compartments",
+          "result": "pass"
+        },
+        {
+          "check": "Objects stop/restart invalidates service epoch, stale controls and grants while healthy clients recover",
+          "result": "pass",
+          "previous_instance": 16629266110503452930,
+          "replacement_instance": 16629266110503453186
+        },
+        {
+          "check": "authorized source becomes live semantic Object; native edit regenerates signed consumer and passes 256 differential cases",
+          "result": "pass",
+          "source_sha256": "4d94af6a19e61a78753e36e47c429ebcce53ce2fe34c819c54d14b17ceb2c894",
+          "original_release": "a278f8617494236de5551c256b53428eb610c24eb4fdaefc504faec50d4f4a62",
+          "edited_release": "95dab2c8c5d8893b52194f2295ac0816d16d4083143fa7d1ea319ebf47bd1328",
+          "original_native_output_sha256": "9d164df8e71d270083ccbf25b90c083166e77a0dd5f618c4316f2dee262d3a3a",
+          "edited_native_output_sha256": "6df83311fd190388caa37c04b914c60e14c368aee8a80d0db2ab938f947775c9"
+        },
+        {
+          "check": "explicit Objects-only retention encrypts 64 KiB, advances durable roots and uses fresh entropy nonces",
+          "result": "pass",
+          "generation": 2,
+          "nonce1": "7d5f03ff5b5c6c8d958a43a8",
+          "nonce2": "e206e49a734b77e44cbca03c",
+          "ciphertext_sha256": "f554c3315d9df14b8586b65cabf32d5bd97ca848f528b6f1826b4d8689f352dd"
+        },
+        {
+          "check": "reset loses volatile apps/objects/capabilities; explicit correct key recovers exact authenticated object",
+          "result": "pass"
+        },
+        {
+          "check": "real read-only device commit fails without changing the previous authenticated retained generation",
+          "result": "pass"
+        },
+        {
+          "check": "tampered newest ciphertext falls back to older authenticated root; two damaged roots fail closed",
+          "result": "pass"
+        },
+        {
+          "check": "actual process interruption after inactive-bank write preserves the previous commit roots",
+          "result": "pass",
+          "interrupted_generation": 3,
+          "inactive_bank_sector": 152
+        },
+        {
+          "check": "interrupted commit recovers prior object; explicit logical deletion prevents later recovery",
+          "result": "pass"
+        }
+      ],
+      "explicit_backing": "/home/sreekumaar/Desktop/LemmaTrix/build/live-checks/run-1793254829674431457/qemu/explicit-vault.img",
+      "explicit_test_key": "/home/sreekumaar/Desktop/LemmaTrix/build/live-checks/run-1793254829674431457/qemu/explicit-unlock.key"
+    },
+    {
+      "backend": "aarch64",
+      "result": "pass",
+      "checks": [
+        {
+          "check": "real UART resynchronization, exact replay, conflicting requests, bounded frames and truncated-payload recovery",
+          "result": "pass",
+          "cases": [
+            "noise/escape bytes resynchronize; no console execution",
+            "exact last request replay; conflicting duplicate denied",
+            "oversize length and unknown critical flags rejected",
+            "truncated payload times out and parser recovers"
+          ]
+        },
+        {
+          "check": "three original-publisher signed native clients installed and launched after OS boot",
+          "result": "pass",
+          "instances": {
+            "workbench": 244825402298597636,
+            "inspector": 244825402298597637,
+            "worker": 244825402298597638
+          }
+        },
+        {
+          "check": "64 KiB source reaches native inspector, independent word counter and streamed revision",
+          "result": "pass",
+          "source_sha256": "c51e79ad965352b8ea6675d0495eb5d8b302eb920b4b5e82f60c342149df7fdd",
+          "revision_sha256": "dc9a7e255d9b4cbeda858c4cc1bc27147b32c7c3584219d4e60de07926945fff"
+        },
+        {
+          "check": "forged, revoked, stale, out-of-scope and export authority denied without source mutation",
+          "result": "pass"
+        },
+        {
+          "check": "native Workbench byte edit preserves source and publishes exact revision",
+          "result": "pass"
+        },
+        {
+          "check": "original signatures, exact approval, cancellation, failed restart, compiled update and explicit rollback",
+          "result": "pass",
+          "publisher_key_id": "e2832f5d292f6974268f99b9555ee73ea7b92de84fa291b65b49dfe5e3213912",
+          "v1": "5333fe3543285c1eb9823e9b74bfb5c920b4908527dcc89ed5b7ca0d982566f2",
+          "v2": "e2f3795c5fa412ad532f98bc7b87f57c66856d2204512526275381ac7d239d45"
+        },
+        {
+          "check": "timer preempts non-yielding user code, cancels blocked management RPC and contains kernel-memory access",
+          "result": "pass"
+        },
+        {
+          "check": "console right is enforced and authorized binary reply-frame injection remains encoded app output",
+          "result": "pass"
+        },
+        {
+          "check": "release and publisher revocation block future launch/restart without stopping healthy existing compartments",
+          "result": "pass"
+        },
+        {
+          "check": "Objects stop/restart invalidates service epoch, stale controls and grants while healthy clients recover",
+          "result": "pass",
+          "previous_instance": 244825402298597634,
+          "replacement_instance": 244825402298597890
+        },
+        {
+          "check": "authorized source becomes live semantic Object; native edit regenerates signed consumer and passes 256 differential cases",
+          "result": "pass",
+          "source_sha256": "4d94af6a19e61a78753e36e47c429ebcce53ce2fe34c819c54d14b17ceb2c894",
+          "original_release": "a61bda55e0b2217b26db50a829910b0fe61629f61856dad5719e8ccb468bd45b",
+          "edited_release": "5a974d1ae9bacff692d0a231d43db611dcfb661678283600d91a5e04510015c2",
+          "original_native_output_sha256": "9d164df8e71d270083ccbf25b90c083166e77a0dd5f618c4316f2dee262d3a3a",
+          "edited_native_output_sha256": "6df83311fd190388caa37c04b914c60e14c368aee8a80d0db2ab938f947775c9"
+        },
+        {
+          "check": "explicit Objects-only retention encrypts 64 KiB, advances durable roots and uses fresh entropy nonces",
+          "result": "pass",
+          "generation": 2,
+          "nonce1": "7d506695023341b2ae5bee15",
+          "nonce2": "a36bbc7fb61c3386bef4557c",
+          "ciphertext_sha256": "a967f76c74a16b5feac34961771baf492d13c393c3133a5238359684d486d0da"
+        },
+        {
+          "check": "reset loses volatile apps/objects/capabilities; explicit correct key recovers exact authenticated object",
+          "result": "pass"
+        },
+        {
+          "check": "real read-only device commit fails without changing the previous authenticated retained generation",
+          "result": "pass"
+        },
+        {
+          "check": "tampered newest ciphertext falls back to older authenticated root; two damaged roots fail closed",
+          "result": "pass"
+        },
+        {
+          "check": "actual process interruption after inactive-bank write preserves the previous commit roots",
+          "result": "pass",
+          "interrupted_generation": 3,
+          "inactive_bank_sector": 152
+        },
+        {
+          "check": "interrupted commit recovers prior object; explicit logical deletion prevents later recovery",
+          "result": "pass"
+        }
+      ],
+      "explicit_backing": "/home/sreekumaar/Desktop/LemmaTrix/build/live-checks/run-1793254829674431457/aarch64/explicit-vault.img",
+      "explicit_test_key": "/home/sreekumaar/Desktop/LemmaTrix/build/live-checks/run-1793254829674431457/aarch64/explicit-unlock.key"
+    }
+  ],
+  "completed_observations": [
+    {
+      "check": "real UART resynchronization, exact replay, conflicting requests, bounded frames and truncated-payload recovery",
+      "result": "pass",
+      "cases": [
+        "noise/escape bytes resynchronize; no console execution",
+        "exact last request replay; conflicting duplicate denied",
+        "oversize length and unknown critical flags rejected",
+        "truncated payload times out and parser recovers"
+      ]
+    },
+    {
+      "check": "three original-publisher signed native clients installed and launched after OS boot",
+      "result": "pass",
+      "instances": {
+        "workbench": 6228383138242887940,
+        "inspector": 6228383138242887941,
+        "worker": 6228383138242887942
+      }
+    },
+    {
+      "check": "64 KiB source reaches native inspector, independent word counter and streamed revision",
+      "result": "pass",
+      "source_sha256": "c51e79ad965352b8ea6675d0495eb5d8b302eb920b4b5e82f60c342149df7fdd",
+      "revision_sha256": "dc9a7e255d9b4cbeda858c4cc1bc27147b32c7c3584219d4e60de07926945fff"
+    },
+    {
+      "check": "forged, revoked, stale, out-of-scope and export authority denied without source mutation",
+      "result": "pass"
+    },
+    {
+      "check": "native Workbench byte edit preserves source and publishes exact revision",
+      "result": "pass"
+    },
+    {
+      "check": "original signatures, exact approval, cancellation, failed restart, compiled update and explicit rollback",
+      "result": "pass",
+      "publisher_key_id": "ba927005a9c8276471e1b441a87a1173c2e92c2c73c3824f5930f4e83ad3d842",
+      "v1": "6def47bb9989f3ddb722e81350a948bca1864078f271e5a92b5a5442279989eb",
+      "v2": "db098dcdd0bf9e3982eb2be2e3b729e97b7d0f8be71bc422a45dbce3d3c3f485"
+    },
+    {
+      "check": "timer preempts non-yielding user code, cancels blocked management RPC and contains kernel-memory access",
+      "result": "pass"
+    },
+    {
+      "check": "console right is enforced and authorized binary reply-frame injection remains encoded app output",
+      "result": "pass"
+    },
+    {
+      "check": "release and publisher revocation block future launch/restart without stopping healthy existing compartments",
+      "result": "pass"
+    },
+    {
+      "check": "Objects stop/restart invalidates service epoch, stale controls and grants while healthy clients recover",
+      "result": "pass",
+      "previous_instance": 6228383138242887938,
+      "replacement_instance": 6228383138242888194
+    },
+    {
+      "check": "authorized source becomes live semantic Object; native edit regenerates signed consumer and passes 256 differential cases",
+      "result": "pass",
+      "source_sha256": "4d94af6a19e61a78753e36e47c429ebcce53ce2fe34c819c54d14b17ceb2c894",
+      "original_release": "a411c536cd91e9a02f28e98ce895d16d53d3c00ac4f8fc8af32d881774b8d890",
+      "edited_release": "e027eda65cc3ede9426a58db65e620ae5a80010aa8551745961e2289d1a9b495",
+      "original_native_output_sha256": "9d164df8e71d270083ccbf25b90c083166e77a0dd5f618c4316f2dee262d3a3a",
+      "edited_native_output_sha256": "6df83311fd190388caa37c04b914c60e14c368aee8a80d0db2ab938f947775c9"
+    },
+    {
+      "check": "explicit Objects-only retention encrypts 64 KiB, advances durable roots and uses fresh entropy nonces",
+      "result": "pass",
+      "generation": 2,
+      "nonce1": "ab0e5bf9702dac8ced476477",
+      "nonce2": "491bb0c3c0c36eeba34b6898",
+      "ciphertext_sha256": "7abe188b3b125521e2407e7f7f8108d23b5c10e840e71033c8094d50ee09783c"
+    },
+    {
+      "check": "reset loses volatile apps/objects/capabilities; explicit correct key recovers exact authenticated object",
+      "result": "pass"
+    },
+    {
+      "check": "real read-only device commit fails without changing the previous authenticated retained generation",
+      "result": "pass"
+    },
+    {
+      "check": "tampered newest ciphertext falls back to older authenticated root; two damaged roots fail closed",
+      "result": "pass"
+    },
+    {
+      "check": "actual process interruption after inactive-bank write preserves the previous commit roots",
+      "result": "pass",
+      "interrupted_generation": 3,
+      "inactive_bank_sector": 152
+    },
+    {
+      "check": "interrupted commit recovers prior object; explicit logical deletion prevents later recovery",
+      "result": "pass"
+    },
+    {
+      "check": "real UART resynchronization, exact replay, conflicting requests, bounded frames and truncated-payload recovery",
+      "result": "pass",
+      "cases": [
+        "noise/escape bytes resynchronize; no console execution",
+        "exact last request replay; conflicting duplicate denied",
+        "oversize length and unknown critical flags rejected",
+        "truncated payload times out and parser recovers"
+      ]
+    },
+    {
+      "check": "three original-publisher signed native clients installed and launched after OS boot",
+      "result": "pass",
+      "instances": {
+        "workbench": 16629266110503452932,
+        "inspector": 16629266110503452933,
+        "worker": 16629266110503452934
+      }
+    },
+    {
+      "check": "64 KiB source reaches native inspector, independent word counter and streamed revision",
+      "result": "pass",
+      "source_sha256": "c51e79ad965352b8ea6675d0495eb5d8b302eb920b4b5e82f60c342149df7fdd",
+      "revision_sha256": "dc9a7e255d9b4cbeda858c4cc1bc27147b32c7c3584219d4e60de07926945fff"
+    },
+    {
+      "check": "forged, revoked, stale, out-of-scope and export authority denied without source mutation",
+      "result": "pass"
+    },
+    {
+      "check": "native Workbench byte edit preserves source and publishes exact revision",
+      "result": "pass"
+    },
+    {
+      "check": "original signatures, exact approval, cancellation, failed restart, compiled update and explicit rollback",
+      "result": "pass",
+      "publisher_key_id": "fc2a8172b3b27b3b0cb143c9bb483ffb70ac11d5f51f0b93ccbe814f95f2e80a",
+      "v1": "8472297fcccb07bb1b425998aa8858fc539df2e6ba37d284180bb03fbf63f44f",
+      "v2": "4f2425791da37e1325bcbd3a21849072afa3b646aeeddfbc8bf374568cb279ff"
+    },
+    {
+      "check": "timer preempts non-yielding user code, cancels blocked management RPC and contains kernel-memory access",
+      "result": "pass"
+    },
+    {
+      "check": "console right is enforced and authorized binary reply-frame injection remains encoded app output",
+      "result": "pass"
+    },
+    {
+      "check": "release and publisher revocation block future launch/restart without stopping healthy existing compartments",
+      "result": "pass"
+    },
+    {
+      "check": "Objects stop/restart invalidates service epoch, stale controls and grants while healthy clients recover",
+      "result": "pass",
+      "previous_instance": 16629266110503452930,
+      "replacement_instance": 16629266110503453186
+    },
+    {
+      "check": "authorized source becomes live semantic Object; native edit regenerates signed consumer and passes 256 differential cases",
+      "result": "pass",
+      "source_sha256": "4d94af6a19e61a78753e36e47c429ebcce53ce2fe34c819c54d14b17ceb2c894",
+      "original_release": "a278f8617494236de5551c256b53428eb610c24eb4fdaefc504faec50d4f4a62",
+      "edited_release": "95dab2c8c5d8893b52194f2295ac0816d16d4083143fa7d1ea319ebf47bd1328",
+      "original_native_output_sha256": "9d164df8e71d270083ccbf25b90c083166e77a0dd5f618c4316f2dee262d3a3a",
+      "edited_native_output_sha256": "6df83311fd190388caa37c04b914c60e14c368aee8a80d0db2ab938f947775c9"
+    },
+    {
+      "check": "explicit Objects-only retention encrypts 64 KiB, advances durable roots and uses fresh entropy nonces",
+      "result": "pass",
+      "generation": 2,
+      "nonce1": "7d5f03ff5b5c6c8d958a43a8",
+      "nonce2": "e206e49a734b77e44cbca03c",
+      "ciphertext_sha256": "f554c3315d9df14b8586b65cabf32d5bd97ca848f528b6f1826b4d8689f352dd"
+    },
+    {
+      "check": "reset loses volatile apps/objects/capabilities; explicit correct key recovers exact authenticated object",
+      "result": "pass"
+    },
+    {
+      "check": "real read-only device commit fails without changing the previous authenticated retained generation",
+      "result": "pass"
+    },
+    {
+      "check": "tampered newest ciphertext falls back to older authenticated root; two damaged roots fail closed",
+      "result": "pass"
+    },
+    {
+      "check": "actual process interruption after inactive-bank write preserves the previous commit roots",
+      "result": "pass",
+      "interrupted_generation": 3,
+      "inactive_bank_sector": 152
+    },
+    {
+      "check": "interrupted commit recovers prior object; explicit logical deletion prevents later recovery",
+      "result": "pass"
+    },
+    {
+      "check": "real UART resynchronization, exact replay, conflicting requests, bounded frames and truncated-payload recovery",
+      "result": "pass",
+      "cases": [
+        "noise/escape bytes resynchronize; no console execution",
+        "exact last request replay; conflicting duplicate denied",
+        "oversize length and unknown critical flags rejected",
+        "truncated payload times out and parser recovers"
+      ]
+    },
+    {
+      "check": "three original-publisher signed native clients installed and launched after OS boot",
+      "result": "pass",
+      "instances": {
+        "workbench": 244825402298597636,
+        "inspector": 244825402298597637,
+        "worker": 244825402298597638
+      }
+    },
+    {
+      "check": "64 KiB source reaches native inspector, independent word counter and streamed revision",
+      "result": "pass",
+      "source_sha256": "c51e79ad965352b8ea6675d0495eb5d8b302eb920b4b5e82f60c342149df7fdd",
+      "revision_sha256": "dc9a7e255d9b4cbeda858c4cc1bc27147b32c7c3584219d4e60de07926945fff"
+    },
+    {
+      "check": "forged, revoked, stale, out-of-scope and export authority denied without source mutation",
+      "result": "pass"
+    },
+    {
+      "check": "native Workbench byte edit preserves source and publishes exact revision",
+      "result": "pass"
+    },
+    {
+      "check": "original signatures, exact approval, cancellation, failed restart, compiled update and explicit rollback",
+      "result": "pass",
+      "publisher_key_id": "e2832f5d292f6974268f99b9555ee73ea7b92de84fa291b65b49dfe5e3213912",
+      "v1": "5333fe3543285c1eb9823e9b74bfb5c920b4908527dcc89ed5b7ca0d982566f2",
+      "v2": "e2f3795c5fa412ad532f98bc7b87f57c66856d2204512526275381ac7d239d45"
+    },
+    {
+      "check": "timer preempts non-yielding user code, cancels blocked management RPC and contains kernel-memory access",
+      "result": "pass"
+    },
+    {
+      "check": "console right is enforced and authorized binary reply-frame injection remains encoded app output",
+      "result": "pass"
+    },
+    {
+      "check": "release and publisher revocation block future launch/restart without stopping healthy existing compartments",
+      "result": "pass"
+    },
+    {
+      "check": "Objects stop/restart invalidates service epoch, stale controls and grants while healthy clients recover",
+      "result": "pass",
+      "previous_instance": 244825402298597634,
+      "replacement_instance": 244825402298597890
+    },
+    {
+      "check": "authorized source becomes live semantic Object; native edit regenerates signed consumer and passes 256 differential cases",
+      "result": "pass",
+      "source_sha256": "4d94af6a19e61a78753e36e47c429ebcce53ce2fe34c819c54d14b17ceb2c894",
+      "original_release": "a61bda55e0b2217b26db50a829910b0fe61629f61856dad5719e8ccb468bd45b",
+      "edited_release": "5a974d1ae9bacff692d0a231d43db611dcfb661678283600d91a5e04510015c2",
+      "original_native_output_sha256": "9d164df8e71d270083ccbf25b90c083166e77a0dd5f618c4316f2dee262d3a3a",
+      "edited_native_output_sha256": "6df83311fd190388caa37c04b914c60e14c368aee8a80d0db2ab938f947775c9"
+    },
+    {
+      "check": "explicit Objects-only retention encrypts 64 KiB, advances durable roots and uses fresh entropy nonces",
+      "result": "pass",
+      "generation": 2,
+      "nonce1": "7d506695023341b2ae5bee15",
+      "nonce2": "a36bbc7fb61c3386bef4557c",
+      "ciphertext_sha256": "a967f76c74a16b5feac34961771baf492d13c393c3133a5238359684d486d0da"
+    },
+    {
+      "check": "reset loses volatile apps/objects/capabilities; explicit correct key recovers exact authenticated object",
+      "result": "pass"
+    },
+    {
+      "check": "real read-only device commit fails without changing the previous authenticated retained generation",
+      "result": "pass"
+    },
+    {
+      "check": "tampered newest ciphertext falls back to older authenticated root; two damaged roots fail closed",
+      "result": "pass"
+    },
+    {
+      "check": "actual process interruption after inactive-bank write preserves the previous commit roots",
+      "result": "pass",
+      "interrupted_generation": 3,
+      "inactive_bank_sector": 152
+    },
+    {
+      "check": "interrupted commit recovers prior object; explicit logical deletion prevents later recovery",
+      "result": "pass"
+    }
+  ],
+  "environment": "Linux x86-64; ARM64 assembly executes under qemu-aarch64",
+  "canonical_image_sha256_after_checks": "6c8a9979bf46a33e03b8edbd8d39a421393139c7521de5479c16ac479cdc1c5e",
+  "result": "PASS"
+}

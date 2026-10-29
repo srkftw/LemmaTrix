@@ -1,0 +1,107 @@
+{
+  "schema": 2,
+  "campaign": "002 interactive package-driven vault-backed native workbench",
+  "date": "2026-10-28",
+  "scope": "Executed development milestone; full v0.2 and RG-01\u2013RG-11 remain incomplete",
+  "branch": "codex/interactive-vault-workbench",
+  "base_commit": "d673b12811ecef270f5ad48beeb27105d3cba250",
+  "implementation_commit": "52fbc308751dc1ccffaa699faf96f6bd7b58309b",
+  "guest_image": {
+    "path": "build/live/guest.bin",
+    "sha256": "6c8a9979bf46a33e03b8edbd8d39a421393139c7521de5479c16ac479cdc1c5e",
+    "bytes": 6291456,
+    "build_command": "./lt build --clean",
+    "clean_build_executed": true,
+    "same_identified_image_across_backends": true,
+    "independent_builder_evidence": false
+  },
+  "integrated_execution": {
+    "command": "python3 tests/live_acceptance.py --phase full",
+    "result": "PASS",
+    "report": "campaign-002-live.json",
+    "report_sha256": "57da07b6d72f0360d119b1efd73976ba788b249298fa4ebc4b60cffa8aacfeac",
+    "observation_groups": 51,
+    "per_backend_groups": 17,
+    "native_REL_comparisons": 1536,
+    "environments": {
+      "x86_64": "Native Linux x86-64 assembly interpreter executable",
+      "qemu": "QEMU 11.1.1 RISC-V virt reference, no firmware, LT-Dev-v2 guest",
+      "aarch64": "Linux ARM64 assembly interpreter executable executed under qemu-aarch64 on x86-64; not native ARM64 hardware"
+    }
+  },
+  "focused_execution": {
+    "report": "campaign-002-components.json",
+    "report_sha256": "895a9e51de3ba909ea679fb24ee7ca650ddd98afad6b1cb1da822788607e2d90",
+    "guest_release_boundary_checks": 22,
+    "device_checks": 18,
+    "device_timeout_reset_checks": 3,
+    "proofs_audited": 8,
+    "compiler_and_AEAD": "Actual optimized guest workload / RFC8439 vectors and boundaries on QEMU; log commitments in component record"
+  },
+  "workflow": [
+    "Boot fixed image once; post-boot source/data and original-publisher signed imports",
+    "Inspect and explicitly approve exact release identity and permissions",
+    "Three independent native clients plus launcher and user Objects/Vault services",
+    "64KiB transactional object import, revision, lineage, limited delegation, revocation and export",
+    "Process stop/relaunch, stale handle denial, faults/quotas, service restart and blocked-client cancellation",
+    "Publisher/project pinning, strict signed decoder, atomic release activation and explicit compatible rollback",
+    "Native semantic edit, host bootstrap build/sign, live REL reimport without OS rebuild",
+    "Object-scoped encrypted snapshot retention, reset/unlock recovery, wrong-key/corruption/readonly rejection",
+    "Actual inactive-bank-write interruption before root publication and recovery on all three backends",
+    "No-vault usable ephemeral sessions; lock and explicit logical deletion"
+  ],
+  "trusted_boundary": {
+    "lean_guest": [
+      "Kernel scheduling/mappings/IPC/authority",
+      "Objects state/hash/revision/sharing",
+      "Launcher release verification, trust, approval and activation",
+      "Vault devices mediation, AEAD format, retention and recovery policies",
+      "Native Workbench/Inspector/Worker/REL code"
+    ],
+    "assembly": [
+      "Architectural boot/traps/memory/fence/syscall primitives",
+      "Separate x86-64 and ARM64 generic interpreters and documented Linux byte/block/entropy adapters"
+    ],
+    "host_bootstrap": [
+      "Pinned Lean IR elaboration/optimization and proof kernel",
+      "LLVM assembly/link/objcopy",
+      "OpenSSL explicit publisher signing/keygen",
+      "Python transport and disclosed source extraction/semantic validation/build/export tooling"
+    ]
+  },
+  "limits": [
+    "Development RV64IM/Sv39/legacy virtio subset, not completed LT-Machine-v1",
+    "12 process slots including idle and three trusted/service roles; bounded profile quotas",
+    "64KiB per object,64 records,256 grants; source profile capacities",
+    "One selected retained snapshot per vault root; no persistent app approvals or grants",
+    "Raw32-byte key provisioning; no passphrase KDF or key rotation implementation",
+    "Regular explicit development backing files, no physical external-drive or live hot-unplug validation",
+    "Nonce uniqueness and boot identity separation probabilistic; no trusted freshness against whole-store rollback",
+    "Logical deletion invalidates roots, not secure erasure of ciphertext or disclosed copies",
+    "Host and compiler/emulator/device implementation trusted; no complete binary/memory/crypto/storage proof",
+    "Host build/sign remains bootstrap; no completed native IDE or full Lean heap/closure/GC runtime",
+    "No native ARM64 hardware, independently administered builder or distributed node evidence",
+    "Graphical desktop, federation/catalog admission, remaining applications, privacy networks/payments/testnet and server durability incomplete"
+  ],
+  "requirements_advanced": [
+    "OS-001\u2013006",
+    "OS-008\u2013009",
+    "DAT-001\u2013004",
+    "SDK-001\u2013005",
+    "STORE-001\u2013004",
+    "VAULT-001\u2013002",
+    "selected VAULT-004",
+    "REL-001\u2013006",
+    "REL-TEST-01",
+    "PROOF-001\u2013003 source properties only"
+  ],
+  "next_dependency": "Graphical launcher/workbench on the same IPC and object graph; bounded multi-object retention and richer structured SDK values alongside it",
+  "historical_evidence_preserved": "campaign-001.json",
+  "documentation_checks": {
+    "html_files": 13,
+    "local_references_checked": 104,
+    "result": "pass",
+    "evidence_json_parses": true,
+    "prohibited_README_or_Markdown": false
+  }
+}

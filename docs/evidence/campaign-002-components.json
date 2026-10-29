@@ -1,0 +1,367 @@
+{
+  "schema": 1,
+  "scope": "Focused executed component checks; distinct images/environments, not full release assurance",
+  "compiler": {
+    "command": "PYTHONPATH=tools:. python3 -c \"import driver; from Compiler.check import check; check(driver)\"",
+    "result": "pass",
+    "environment": "QEMU RISC-V reference on Linux x86-64",
+    "observed_effect_result": 22,
+    "cases": [
+      "optimized typed wrappers/inlined StateM I/O ordering",
+      "conditional/helper/discarded-result effects",
+      "fixed-width arithmetic and tail recursion",
+      "SHA-256 lengths 0,3,55,56,64,256,65536",
+      "oversize no-write",
+      "unsupported String rejected"
+    ]
+  },
+  "aead": {
+    "command": "PYTHONPATH=tools:. python3 -c \"import driver; from Compiler.aead_check import check,check_boundaries; check(driver); check_boundaries(driver)\"",
+    "result": "pass",
+    "environment": "QEMU RISC-V reference on Linux x86-64",
+    "cases": [
+      "RFC8439 ciphertext and tag vector",
+      "authenticate before plaintext release; tampered tag leaves sentinel unchanged",
+      "empty/17/65536-byte messages",
+      "AAD0/17/256 and independent integer oracle",
+      "oversize no-write"
+    ]
+  },
+  "device": {
+    "result": "DEVICE CHECK PASS",
+    "checks": [
+      {
+        "backend": "qemu",
+        "check": "actual UART stdin RX/LSR/echo",
+        "result": "pass"
+      },
+      {
+        "backend": "qemu",
+        "check": "8-sector OUT/IN/FLUSH, device bounds, entropy and queue wrap",
+        "result": "pass"
+      },
+      {
+        "backend": "qemu",
+        "check": "explicit read-only request denied without mutation",
+        "result": "pass"
+      },
+      {
+        "backend": "qemu",
+        "check": "no implicit block backing; entropy still available",
+        "result": "pass"
+      },
+      {
+        "backend": "x86_64",
+        "check": "actual UART stdin RX/LSR/echo",
+        "result": "pass"
+      },
+      {
+        "backend": "x86_64",
+        "check": "8-sector OUT/IN/FLUSH, device bounds, entropy and queue wrap",
+        "result": "pass"
+      },
+      {
+        "backend": "x86_64",
+        "check": "explicit read-only request denied without mutation",
+        "result": "pass"
+      },
+      {
+        "backend": "x86_64",
+        "check": "no implicit block backing; entropy still available",
+        "result": "pass"
+      },
+      {
+        "backend": "aarch64",
+        "check": "actual UART stdin RX/LSR/echo",
+        "result": "pass"
+      },
+      {
+        "backend": "aarch64",
+        "check": "8-sector OUT/IN/FLUSH, device bounds, entropy and queue wrap",
+        "result": "pass"
+      },
+      {
+        "backend": "aarch64",
+        "check": "explicit read-only request denied without mutation",
+        "result": "pass"
+      },
+      {
+        "backend": "aarch64",
+        "check": "no implicit block backing; entropy still available",
+        "result": "pass"
+      },
+      {
+        "backend": "x86_64",
+        "check": "out-of-RAM DMA fails device without host memory access",
+        "result": "pass"
+      },
+      {
+        "backend": "x86_64",
+        "check": "real host short read becomes guest I/O error",
+        "result": "pass"
+      },
+      {
+        "backend": "x86_64",
+        "check": "missing explicit backing fails; file is not created",
+        "result": "pass"
+      },
+      {
+        "backend": "aarch64",
+        "check": "out-of-RAM DMA fails device without host memory access",
+        "result": "pass"
+      },
+      {
+        "backend": "aarch64",
+        "check": "real host short read becomes guest I/O error",
+        "result": "pass"
+      },
+      {
+        "backend": "aarch64",
+        "check": "missing explicit backing fails; file is not created",
+        "result": "pass"
+      }
+    ],
+    "image_sha256": "feb055a0bffd988943a9bd5f70e854dca245794fbf1b8b21bba719716ce677d8",
+    "uart_image_sha256": "1e83d837bc7164a46b2a3c16498d342bc2e7db78dc374b082b29fc36d0decb76",
+    "environment": "Linux x86-64; ARM64 assembly executable runs under qemu-aarch64",
+    "limits": [
+      "Entropy freshness is a functioning-source check, not a statistical quality or security proof.",
+      "Transport polling is implemented; PLIC/virtio interrupt delivery is outside this subset."
+    ]
+  },
+  "device_timeout_reset": {
+    "result": "DEVICE TIMEOUT CHECK PASS",
+    "checks": [
+      {
+        "backend": "qemu",
+        "check": "timeout fails transport closed until explicit driver reset",
+        "result": "pass"
+      },
+      {
+        "backend": "x86_64",
+        "check": "timeout fails transport closed until explicit driver reset",
+        "result": "pass"
+      },
+      {
+        "backend": "aarch64",
+        "check": "timeout fails transport closed until explicit driver reset",
+        "result": "pass"
+      }
+    ],
+    "image_sha256": "657c6e3447e5b827e483122601ae64ae60639255914b9363cdeffd94c73bd15d"
+  },
+  "release_boundaries": {
+    "schema": 1,
+    "backend": "qemu",
+    "image_sha256": "6c8a9979bf46a33e03b8edbd8d39a421393139c7521de5479c16ac479cdc1c5e",
+    "native_binary_sha256": "85fd416f2293c8646ccaa3422b5ef35fac9187f608b066b5cefca3731efc12e1",
+    "result": "pass",
+    "checks": [
+      {
+        "check": "publisher trusted for project B cannot stage a signed project A candidate",
+        "result": "pass",
+        "rejection": "guest rejected command22, status1"
+      },
+      {
+        "check": "fresh approved B-signed A update is rejected by existing publisher pin; active A and native reads survive",
+        "result": "pass",
+        "candidate_inspection": "accepted",
+        "fresh_exact_approval": "accepted",
+        "activation": "guest rejected command24, status1"
+      },
+      {
+        "check": "actual guest rejects signed header: reserved-tail",
+        "result": "pass",
+        "envelope_sha256": "62dc62637f47beebd7e17ea34aeea3e243fff5225db3183a7c76bdb067e4db61",
+        "rejection": "guest rejected command22, status1"
+      },
+      {
+        "check": "actual guest rejects signed header: reserved-name-padding",
+        "result": "pass",
+        "envelope_sha256": "e1ed96d3bc337fba0bd26db8bdb5dc2db8dd5f7a9b1d711a372236d063184b1d",
+        "rejection": "guest rejected command22, status1"
+      },
+      {
+        "check": "actual guest rejects signed header: unknown-right-bit",
+        "result": "pass",
+        "envelope_sha256": "a44a22d23a755f7137eb2dfe61603b7ceaeccc8929c535dd4a95da766bfebf9f",
+        "rejection": "guest rejected command22, status1"
+      },
+      {
+        "check": "actual guest rejects signed header: wrong-fixed-header-size",
+        "result": "pass",
+        "envelope_sha256": "d0c0b0a3dec1aede2a63c88a21e5980168cc6888adb8c1b8ac7b3b6cdd668d1d",
+        "rejection": "guest rejected command22, status1"
+      },
+      {
+        "check": "actual guest rejects signed header: wrong-machine-profile",
+        "result": "pass",
+        "envelope_sha256": "5f5e57cca3dc2b5a56474bb4635a81bffefc8cecacff57cac42aab2dd865878b",
+        "rejection": "guest rejected command22, status1"
+      },
+      {
+        "check": "actual guest rejects signed header: wrong-runtime-profile",
+        "result": "pass",
+        "envelope_sha256": "ced45a78c8e07fb3acb0c682802d71fb78a8b73d96e14bb66678e4e2baca1fdb",
+        "rejection": "guest rejected command22, status1"
+      },
+      {
+        "check": "actual guest rejects signed header: wrong-ipc-profile",
+        "result": "pass",
+        "envelope_sha256": "37771b185d385ba76621fcea11acc36e8fb9efce575ab8fddcc8e2bf909e90a6",
+        "rejection": "guest rejected command22, status1"
+      },
+      {
+        "check": "actual guest rejects signed header: unsupported-dependencies",
+        "result": "pass",
+        "envelope_sha256": "cae47e5bf7f9c6ac1b72e5699a131b64dec4a68ec4d2d58c7708548ac9e2f160",
+        "rejection": "guest rejected command22, status1"
+      },
+      {
+        "check": "actual guest rejects signed header: unsupported-dependency-lock",
+        "result": "pass",
+        "envelope_sha256": "7cbc31aec3cc5dffeda688894563e8794c734c6fc4b75bccf845c50609c13fda",
+        "rejection": "guest rejected command22, status1"
+      },
+      {
+        "check": "actual guest rejects signed header: wrong-entry-count",
+        "result": "pass",
+        "envelope_sha256": "17b9e2e1c78706d1bff237c11e75d06171112db2dbe41b61d58c4b9a1b6e9162",
+        "rejection": "guest rejected command22, status1"
+      },
+      {
+        "check": "actual guest rejects signed header: wrong-data-profile",
+        "result": "pass",
+        "envelope_sha256": "b700152d5b94c40bbce934b170f33435fdb6409b4935f022864130b18802aba9",
+        "rejection": "guest rejected command22, status1"
+      },
+      {
+        "check": "actual guest rejects signed header: wrong-stack-profile",
+        "result": "pass",
+        "envelope_sha256": "fc6bc15609425434b99651aab8c7c9c2b648c2c30010cde9aa32d2743418f5ac",
+        "rejection": "guest rejected command22, status1"
+      },
+      {
+        "check": "actual guest rejects signed header: wrong-entry-address",
+        "result": "pass",
+        "envelope_sha256": "73cadea7d8d8b6187aecb13e6dc0a9905ddf9f21380516a6691b19623d2c1795",
+        "rejection": "guest rejected command22, status1"
+      },
+      {
+        "check": "actual guest rejects envelope boundary: truncated-code",
+        "result": "pass",
+        "envelope_sha256": "e39d5b930fea2e439fa8e5524f24ff5d4c0855e19dee0feb11bfa7586f05e06f",
+        "rejection": "guest rejected command22, status1"
+      },
+      {
+        "check": "actual guest rejects envelope boundary: unaligned-code-length",
+        "result": "pass",
+        "envelope_sha256": "246c814ef05b500744dcf96e6a579550423a5bf4284da53fad0721153b8047da",
+        "rejection": "guest rejected command22, status1"
+      },
+      {
+        "check": "actual guest rejects envelope boundary: truncated-fixed-header",
+        "result": "pass",
+        "envelope_sha256": "f8f0491b455ecb0dfd5f7a70eb20772148616f8cf33a795cc1493f2ebd20501b",
+        "rejection": "guest rejected command20, status1"
+      },
+      {
+        "check": "actual guest rejects envelope boundary: trailing-code-bytes",
+        "result": "pass",
+        "envelope_sha256": "63f54a117d11f67c2b5378dac4a6b50084f486a1c1daeaad7643f041290cc057",
+        "rejection": "guest rejected command22, status1"
+      },
+      {
+        "check": "actual guest rejects envelope boundary: old-128-byte-header-layout",
+        "result": "pass",
+        "envelope_sha256": "eb528bb4f521d4f054f866c9d457cbb8754c34413caa053f2ec246979ddeaafe",
+        "rejection": "guest rejected command22, status1"
+      },
+      {
+        "check": "actual guest rejects envelope boundary: signature-before-header-layout",
+        "result": "pass",
+        "envelope_sha256": "c6a81c50e3ceb5915667b512e42e8f4e09049f587491c820378f2c0b4d4d01e8",
+        "rejection": "guest rejected command22, status1"
+      },
+      {
+        "check": "active release, process rights and native/launcher selected-object reads remain unchanged after every rejection",
+        "result": "pass",
+        "retained_instance": 14686709796170629380,
+        "selected_sha256": "94b7c715843cecf3d02278fff182b1231386e52be2bb0fbaba74f321bb24aa7d"
+      }
+    ],
+    "transport_log": "build/release-boundaries/run-1793255621708490280/transport.log",
+    "publisher_key_ids": {
+      "a": "788fc56e1535aa36fbab5218a71818f5e135aebfcc30442faa501decb3285fd8",
+      "b": "27d5ae357a4a46a7e4fbc5c815a72817e0ee852f84f7f6b1eb80d39ec6e66273"
+    },
+    "project": "release-boundary-a",
+    "baseline_release_id": "682f32f689887c8b721acb3f8e41b9cd9437123ee28150ef10a7fbaebe9e502a",
+    "candidate_release_id": "ad7c0b58a62fbcfc4dcbf79765dd9ffc2534b9caaf321f3cb9d2989893e8bfa9",
+    "selected_sha256": "94b7c715843cecf3d02278fff182b1231386e52be2bb0fbaba74f321bb24aa7d",
+    "baseline_instance": 14686709796170629380,
+    "os_image_unchanged": true
+  },
+  "framing": {
+    "backend": "qemu",
+    "image": "6c8a9979bf46a33e03b8edbd8d39a421393139c7521de5479c16ac479cdc1c5e",
+    "checks": [
+      "noise/escape bytes resynchronize; no console execution",
+      "exact last request replay; conflicting duplicate denied",
+      "oversize length and unknown critical flags rejected",
+      "truncated payload times out and parser recovers"
+    ]
+  },
+  "host_build": {
+    "valid_import_forms": [
+      "leading indentation",
+      "newline after import",
+      "nested blockcomment"
+    ],
+    "dependencies_cleanly_compiled": true,
+    "app_name_guest_path": "/home/sreekumaar/Desktop/LemmaTrix/build/live/apps/guest.bin",
+    "os_image_unchanged": true,
+    "os_image_sha256": "6c8a9979bf46a33e03b8edbd8d39a421393139c7521de5479c16ac479cdc1c5e",
+    "client_binary_sha256": "0f692d11eed700b6cac22c4428b6f4aa8046930d547fdfdd3e3f02f61673a27f",
+    "client_binary_size": 228
+  },
+  "host_transport": {
+    "result": "pass",
+    "checks": [
+      "nonreading frontend with unbounded guest output cannot freeze portal acceptance",
+      "128KiB host input flood cannot freeze output drain/replacement client"
+    ],
+    "method": "isolated fake ready guest for transport-only backpressure, not guest execution evidence",
+    "input_queue_bound": 16384,
+    "output_queue_bound": 131072
+  },
+  "source_proof_dependencies": [
+    "'Guest.Policy.revoked_denies' depends on axioms: [propext, Quot.sound]",
+    "'Guest.Policy.stale_denies' depends on axioms: [propext, Quot.sound]",
+    "'Guest.Policy.missing_right_denies' depends on axioms: [propext, Quot.sound]",
+    "'Guest.Policy.denied_preserves_generation' does not depend on any axioms",
+    "'Guest.VaultPolicy.wallet_denied' depends on axioms: [propext, Quot.sound]",
+    "'Guest.VaultPolicy.messenger_denied' depends on axioms: [propext, Quot.sound]",
+    "'Guest.VaultPolicy.unprivileged_denied' depends on axioms: [propext, Quot.sound]",
+    "'Guest.VaultPolicy.denied_preserves_generation' depends on axioms: [propext, Quot.sound]"
+  ],
+  "source_proof_scope": "Policy predicates and Vault commit helper only; no theorem for imperative storage, emulators, crypto implementation or source-to-binary chain",
+  "log_commitments": {
+    "compiler-check.log": {
+      "sha256": "50fc5f50831d17a4f0f97550a2efa09ee5aa0f28354232655d40a01256cf3974",
+      "bytes": 523
+    },
+    "aead-check.log": {
+      "sha256": "2f624e0ff8293a25d0c355f820ac0c42bb8b6e8cc57d30d26113a1b0059b8d4a",
+      "bytes": 558
+    },
+    "aead-boundary.log": {
+      "sha256": "8c101e3b108ff6403f58dd81706c443f20e5c79c5e91be70fda21afb9bdb9e46",
+      "bytes": 262484
+    },
+    "live/proof-dependencies.log": {
+      "sha256": "dc2c28029a6a64be2566861ff290f130c89eb813eef942d51eb427a461871619",
+      "bytes": 613
+    }
+  }
+}

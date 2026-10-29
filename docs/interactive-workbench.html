@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Native workbench and live source-first REL</title><style>:root{color-scheme:light dark}body{font:17px/1.6 system-ui,sans-serif;max-width:76rem;margin:3rem auto;padding:0 1.5rem}pre{overflow:auto;padding:1rem;background:#8882}table{border-collapse:collapse;width:100%}th,td{border:1px solid #888;padding:.6rem;text-align:left;vertical-align:top}code{overflow-wrap:anywhere}</style></head><body>
+<nav><a href="index.html">Documentation</a> · <a href="development.html">Build/run</a> · <a href="machine-abi.html">Machine and ABI</a> · <a href="objects-vault.html">Objects and Vault</a></nav>
+<h1>Native workbench and live source-first REL</h1>
+<p>The native Workbench, Inspector and Worker are separately compiled Lean user programs. They receive commands through kernel IPC and call the user-mode Objects service under their own process instance and declared rights. The host control tool transports requests; it does not implement their object operations. Personal object state remains in guest RAM unless the separate encrypted Objects retention path is explicitly authorized.</p>
+<h2>Native client commands</h2>
+<p>Build the running platform with <code>./lt live-build</code>. The build also creates <code>build/live/workbench.bin</code>, <code>inspector.bin</code> and <code>worker.bin</code>. Publish and install these through the same publisher envelope and exact-capability approval workflow as any application; no client release is embedded in the boot image. See <a href="development.html">the command guide</a>.</p>
+<table><thead><tr><th>Client</th><th>Operation</th><th>Actual behavior</th></tr></thead><tbody>
+<tr><td>Workbench</td><td>20, handle, argument A=1 or 2</td><td>Streams an uppercase or lowercase ROT13 transformation into a new immutable object revision.</td></tr>
+<tr><td>Workbench</td><td>23, handle, A=offset, B=bytes deleted, replacement payload</td><td>Creates a revision containing the unchanged prefix, arbitrary replacement bytes and unchanged suffix. Replacement is at most 512 bytes; the resulting object is at most 65,536 bytes. This supports insertion, deletion and arbitrary bounded edits rather than one fixed transformation.</td></tr>
+<tr><td>Inspector</td><td>22, handle</td><td>Returns actual metadata, type, parent object identity, length, granted rights and SHA-256.</td></tr>
+<tr><td>Worker</td><td>21, handle</td><td>Streams content and computes ASCII-whitespace word count and LF count. Reply words 1, 2 and 3 contain words, bytes and LFs; the payload contains the content SHA-256.</td></tr>
+</tbody></table>
+<p>All clients can forward Objects operations 1–14 for direct API use and negative checks. The service still checks each client's actual kernel-supplied rights and scoped handle. A read-only Inspector cannot obtain revision authority by calling the raw create or commit opcodes. Client command endpoints accept only the trusted launcher's kernel-supplied administrator identity.</p>
+<p>Grant a source handle to the Workbench with rights 13 (read, revise and share). Its successful edit returns a new handle explicitly delegated back to the launcher. Existing source bytes remain unchanged. The owner grant reflects the client's declared rights; it cannot manufacture rights that were not approved. Process instance numbers and handles are session-local, and stopped/restarted process instances require fresh grants.</p>
+<pre><code># Use the exact process instance and object handles printed by your session:
+./lt ctl --socket /tmp/lt.sock share "$SOURCE_HANDLE" --to "$WORKBENCH_INSTANCE" --rights 13
+./lt ctl --socket /tmp/lt.sock app "$WORKBENCH_INSTANCE" --operation 23 \
+  --handle "$WORKBENCH_SOURCE_GRANT" --a 10 --b 3 --data replacement.bin
+./lt ctl --socket /tmp/lt.sock metadata "$NEW_LAUNCHER_HANDLE"
+./lt ctl --socket /tmp/lt.sock export "$NEW_LAUNCHER_HANDLE" --output edited.bin</code></pre>
+<h2>Restricted source-first REL</h2>
+<p><code>./lt rel-live</code> accepts the same explicit source grammar as <code>tools/rel.py</code>: one Python <code>transform_byte</code> function that conditionally rotates a bounded interval of byte values. Imports, calls, arbitrary loops, attributes and other source effects are rejected. Extraction compares the validated original source with the semantic model on all 256 byte values. This is a narrow source-first component workflow, not a general Python compiler or the complete REL application.</p>
+<p>The live path imports the actual source bytes as a Source object and the canonical semantic record as its child Object. An edit uses Workbench operation 23 inside the running guest. The tool then exports and validates the resulting bytes, SHA-256 and parent identity before updating an explicitly requested host project snapshot. Build reads the authoritative running object again; changing a local JSON head alone does not change the selected guest object.</p>
+<pre><code># A live session and an installed native Workbench must already be running.
+mkdir -p build/live-rel
+./lt rel-live import examples/rel/rotation.py --socket /tmp/lt.sock \
+  --output build/live-rel/project --license CC0-1.0 \
+  --authorization 'Authorized use of the repository local source fixture'
+./lt rel-live edit build/live-rel/project --socket /tmp/lt.sock \
+  --workbench "$WORKBENCH_INSTANCE" --shift 7
+
+# Generate your own explicit publisher key with OS entropy; keep it on the host.
+./lt release keygen --private build/live-rel/publisher.pem --public build/live-rel/publisher-public.pem
+./lt rel-live build build/live-rel/project --socket /tmp/lt.sock \
+  --sign-key build/live-rel/publisher.pem --name rel-rotation --version 1.0.0 \
+  --output build/live-rel/rotation-1.ltexe</code></pre>
+<p>Build generates real Lean functions from the selected semantic values, compiles them with the normal freestanding backend and signs a publisher-owned release envelope. The native component accepts operation 24 and transforms arbitrary brokered input up to 64 KiB in 512-byte chunks. It never substitutes a host-computed result. The same project name retains a release-parent chain; later builds must increase the version and use the same publisher identity or explicitly use a separately named fork.</p>
+<pre><code># Inspect and authorize the exact produced release before activation:
+./lt ctl --socket /tmp/lt.sock trust --project rel-rotation --public build/live-rel/publisher-public.pem
+./lt ctl --socket /tmp/lt.sock inspect build/live-rel/rotation-1.ltexe
+./lt ctl --socket /tmp/lt.sock approve "$RELEASE_ID" --rights 127
+./lt ctl --socket /tmp/lt.sock activate
+./lt ctl --socket /tmp/lt.sock start "$RELEASE_SLOT"
+
+# Use the resulting native process instance:
+./lt rel-live compare build/live-rel/project --socket /tmp/lt.sock --instance "$REL_INSTANCE"
+./lt rel-live run build/live-rel/project --socket /tmp/lt.sock --instance "$REL_INSTANCE" \
+  --input authorized-input.bin --output authorized-output.bin
+./lt rel-live export build/live-rel/project --socket /tmp/lt.sock \
+  --output build/live-rel/exported-project --release build/live-rel/rotation-1.ltexe \
+  --public-key build/live-rel/publisher-public.pem</code></pre>
+<p><code>compare</code> actually sends all 256 byte values to the selected running native process through Objects IPC and checks its exported result against the edited semantic model. Its evidence distinguishes original extraction equivalence from intentional semantic changes. <code>run</code> accepts arbitrary bounded input, preserves brokered source lineage and writes plaintext output only to an explicitly selected export path. <code>export</code> preserves source, semantic revisions, verified authoritative bytes, lineage and optional authenticated release files. Its <code>reconstruct/</code> directory includes the generated Lean and normal build inputs with a bounded JSON reconstruction recipe.</p>
+<h2>Executed round-trip evidence</h2>
+<p>The live x86 acceptance run on image <code>b82d325e8b46d1a3858ebd70b7ae22a82f7fdd5a1b30a7bdf7b10a4311b95e1b</code> imported the repository source fixture, executed its original native consumer on all 256 byte inputs, patched the semantic shift from 5 to 7 through Workbench and executed the newly published native consumer on the same 256 inputs. Both comparisons passed and their output hashes differed as intended. The run checked semantic-object, broker-object and authenticated-release parent continuity, processed an additional arbitrary binary input and exported the edited project. Rebuilding only from that export produced the same native binary bytes with the configured toolchain. The machine-readable report is generated at <code>build/live-rel-evidence.json</code>; this is execution evidence for that image and toolchain.</p>
+<h2>Limits and trust boundary</h2>
+<p>The user-mode service, IPC, generated native computation and local release path are executable development components. Source parsing, semantic validation, build orchestration and publisher signing remain disclosed host tooling. Host project snapshots and explicit exports are ordinary source artifacts; they are not an encrypted personal vault and do not establish physical external-drive erasure. After an ephemeral reset, their old handles must not be reused; reimport source to obtain new scoped authority.</p>
+<p>REL records are limited to 4 KiB, source import to 16 KiB, byte input/output to 64 KiB and semantic ancestry to 32 revisions. Native code is limited to 64 KiB and uses the current scalar/effects runtime subset. A SHA-256 proves content integrity, not publisher identity; publisher signatures, technical compatibility and local capability approval remain separate checks. Source-to-binary compilation is unverified. Comparing all byte values proves the selected finite transform behavior, not arbitrary program safety, independent-builder reproducibility or full MVP release-gate completion.</p>
+</body></html>

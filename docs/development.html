@@ -1,38 +1,92 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Build and use the executable platform</title><style>:root{color-scheme:light dark}body{font:17px/1.6 system-ui,sans-serif;max-width:76rem;margin:3rem auto;padding:0 1.5rem}pre{overflow:auto;padding:1rem;background:#8882}code{overflow-wrap:anywhere}table{border-collapse:collapse;width:100%}td,th{border:1px solid #888;padding:.6rem;text-align:left;vertical-align:top}aside{border-left:4px solid #b87a18;padding:0 1rem}</style></head><body><nav><a href="index.html">Documentation</a> · <a href="development.html">Commands</a> · <a href="machine-abi.html">Machine/ABI</a> · <a href="implementation-status.html">Status and assurance</a></nav><h1>Build and use the executable platform</h1>
-<p>Development milestone, 28 October 2026. Run commands from the checkout root. Python 3.11 or later orchestrates the Linux host build. Host emulators currently use the Linux syscall ABI; macOS and Windows adapters are not implemented. Guest application, kernel, policy, SHA-256 and RSA verification logic are Lean-authored; there is no Linux guest or upstream C/C++ runtime in the guest.</p>
-<h2>Pinned tools and ordinary builds</h2>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Live platform commands and native development</title><style>:root{color-scheme:light dark}body{font:17px/1.6 system-ui,sans-serif;max-width:76rem;margin:3rem auto;padding:0 1.5rem}pre{overflow:auto;padding:1rem;background:#8882}code{overflow-wrap:anywhere}table{border-collapse:collapse}td,th{border:1px solid #888;padding:.6rem;text-align:left;vertical-align:top}</style></head><body><nav><a href="index.html">Documentation</a> · <a href="machine-abi.html">Machine/ABI</a> · <a href="implementation-status.html">Status/evidence</a> · <a href="interactive-workbench.html">Workbench and REL</a> · <a href="objects-vault.html">Vault format</a></nav>
+<h1>Live platform commands and native development</h1>
+<p>Campaign 002, 28 October 2026. Commands run from the repository root on a Linux host. The native text management service and applications execute in the Lean guest. Python transports framed bytes and invokes disclosed host compilers/signers. This is a development profile, not the complete desktop MVP.</p>
+<h2>Setup, incremental build and long-lived session</h2>
 <pre><code>./lt setup
 ./lt doctor
 ./lt build
+# Optional full rebuild from guest sources: ./lt build --clean
 ./lt emulators
-./lt run --backend qemu
-./lt run --backend x86_64
-./lt run --backend aarch64
-./lt demo
-./lt check</code></pre>
-<p><code>setup</code> uses Nix substitution only for missing exact store paths in <code>toolchain.lock.json</code>; it does not change system configuration. Alternatively install the exact pinned versions and supply <code>LT_LEAN</code>, <code>LT_CLANG</code>, <code>LT_LD_LLD</code>, <code>LT_LLVM_OBJCOPY</code>, <code>LT_LLVM_NM</code>, <code>LT_QEMU_SYSTEM_RISCV64</code>, <code>LT_QEMU_AARCH64</code>, and <code>LT_OPENSSL</code>. Exact Nix cache availability on a new machine is not established by the local evidence. Tool versions are checked; ordinary builds never fetch dependencies. Lean/Lake 4.34.1, LLVM 20.1.8, QEMU 11.1.1 and OpenSSL 3.6.3 are pinned. <code>lake build</code> checks the Lean project with the pinned Lake on PATH; <code>./lt build</code> performs the freestanding link.</p>
-<p><code>build/guest.bin</code> is the shared raw image; <code>build/image.sha256</code> records its identity. <code>demo</code> rebuilds and runs the integrated guest, ISA, source-change and rejection checks. <code>check</code> additionally runs guest compiler/arithmetic/SHA/RSA and host package checks. Evidence is in <code>build/acceptance.json</code>, <code>build/checks/</code>, <code>build/compiler-check.log</code> and <code>build/signature-check.log</code>. ARM64 execution uses an actual Linux ARM64 assembly executable under <code>qemu-aarch64</code> on x86-64; it is not native ARM64 performance evidence.</p>
-<h2>Import and native SDK template</h2>
-<pre><code>./lt build --text 'a new project input'
-./lt build --text-file /absolute/path/to/input.txt
-./lt run --backend x86_64
-./lt app --module Examples.NativeUtility --name native-utility</code></pre>
-<aside><p>Imports are explicit UTF-8 development inputs, at most 256 bytes, embedded into the generated host image. Host input files, build artifacts and printed terminal/test output remain host data. A fresh boot discards derived guest objects, grants and package generations, then imports the original fixture again. No encrypted vault, host erasure or deletion of original inputs is claimed. Do not use private data in retained development logs.</p></aside>
-<p>Copy <code>Examples/NativeUtility.lean</code> inside the checkout to develop an app. Keep the <code>Guest.appMain(initial : UInt64)</code> entry for the tracked startup. The SDK handles object read/revision and bounded buffers through actual syscalls. The present ABI is scalar; handles carry runtime type/scope checks rather than a completed collection of distinct static SDK types. All primitives require <code>@[never_extract]</code> and explicit sequencing tokens; the build disables upstream closed-expression extraction. Unsupported heap/string/closure/runtime features fail with diagnostics.</p>
-<h2>Sign, inspect, export and run a package</h2>
-<pre><code>./lt package keygen --private build/developer.pem --public build/developer.pub
-./lt package create --name native-utility --version 1.0.0   --elf build/native-utility.elf --binary build/native-utility.bin   --source Examples/NativeUtility.lean --source Guest/SDK.lean   --source Guest/Primitives.lean --source lean-toolchain   --source toolchain.lock.json --source Compiler/Main.lean --source runtime/app.S --source runtime/primitives.S --source runtime/app.ld --source tools/driver.py --source tools/packaging.py --source tools/capsule.py --capability object.read   --capability object.create --capability object.revise --capability console.write   --sign-key build/developer.pem --output build/native-utility.ltpkg
-./lt package check build/native-utility.ltpkg --allow-development   --trust-key build/developer.pub --approve-cap object.read   --approve-cap object.create --approve-cap object.revise --approve-cap console.write
-./lt package export build/native-utility.ltpkg --output build/exported-utility   --allow-development --trust-key build/developer.pub   --approve-cap object.read --approve-cap object.create   --approve-cap object.revise --approve-cap console.write
-./lt run --package build/native-utility.ltpkg --allow-development   --trust-key build/developer.pub --approve-cap object.read   --approve-cap object.create --approve-cap object.revise --approve-cap console.write   --text 'inspect this native object' --backend x86_64</code></pre>
-<p>Key generation requires OS entropy and refuses existing outputs. Package creation/export also refuse overwriting outputs. The exported source snapshot, manifest, ELF and raw image retain their hashes. Full reconstruction additionally requires the platform checkout with the matching SDK/runtime source; this package format does not yet bind a platform Git revision; export is not an independent builder attestation. The checker validates canonical bounded encoding, source/rights metadata, exact ELF/raw correspondence, static dependency closure, compatibility, signatures and capability approval. Only statically linked dependency-free packages are implemented; unsupported dependency graphs are rejected.</p>
-<p>The outer release uses host Ed25519 verification. The explicit development bootstrap converts its approved native image into an RSA-2048 capsule under the publicly distributed development fixture key; the guest independently verifies that capsule and the actual code hash. That second signature does not establish the original maintainer identity inside the guest. Custom package runs disable the scripted peer/update demo and grant only the capsule's declared object rights. All releases remain development-only, without federated admission or production trust.</p>
-<h2>Source-first REL fixture</h2>
-<pre><code>./lt rel import --source examples/rel/rotation.py --output build/rel-project   --license CC0-1.0 --authorization 'original local fixture'
-./lt rel build build/rel-project --name rel-component --version 1.0.0   --sign-key build/developer.pem --public-key build/developer.pub   --backend qemu --backend x86_64 --text 'Authorized source input'
-./lt rel edit build/rel-project --shift 7
-./lt rel build build/rel-project --name rel-component --version 1.1.0   --sign-key build/developer.pem --public-key build/developer.pub   --backend x86_64 --backend aarch64 --text 'Authorized source input'
-./lt rel check</code></pre>
-<p>The restricted Python AST fixture becomes an editable, content-addressed semantic object. Host tooling regenerates Lean, compiles and signs it, imports it through the same package path, and compares actual guest bytes with the authorized source baseline. Modified behavior is explicitly recorded as different. The extractor supports one bounded byte-transform grammar, not arbitrary Python. It is not a native IDE, Creative Suite, Luanti or Lugaru implementation.</p>
+./lt run --backend qemu --socket /tmp/lt.sock
+# Other terminals can connect repeatedly to the same running guest:
+./lt ctl --socket /tmp/lt.sock ping
+./lt ctl --socket /tmp/lt.sock processes
+./lt ctl --socket /tmp/lt.sock shutdown</code></pre>
+<p>Choose <code>--backend x86_64</code> for the native x86-64 assembly executable, or <code>--backend aarch64</code> for the ARM64 assembly executable under qemu-aarch64 on this host. Each loads the same <code>build/live/guest.bin</code>; identity is in <code>build/live/image.sha256</code>. The session has no batch timeout or instruction budget. The socket is explicitly named, mode 0600, one active transport connection at a time, and is removed on exit. The guest owns all application, package, object and vault policy/state. Closing a client connection leaves the guest running. Incomplete UART frames time out and resynchronize. New trusted input cancels a pending launcher-to-client request so inspection/stop remains usable; already committed service operations are not undone. Request identifiers support exact last-response replay and reject conflicting duplicates. <code>ctl cancel</code> abandons package staging. There is no implicit backing disk. Avoid private inputs in development logs.</p>
+<p>Lean 4.34.1, LLVM 20.1.8, QEMU 11.1.1 and OpenSSL 3.6.3 remain pinned in <code>toolchain.lock.json</code>. Setup first accepts available pinned tools; otherwise it attempts the recorded Nix store substitutions. Another checkout can supply matching tools through PATH or <code>LT_LEAN</code>, <code>LT_CLANG</code>, <code>LT_LD_LLD</code>, <code>LT_LLVM_OBJCOPY</code>, <code>LT_LLVM_NM</code>, <code>LT_QEMU_SYSTEM_RISCV64</code>, <code>LT_QEMU_AARCH64</code>, <code>LT_OPENSSL</code>. Nix cache availability and independent builders are not established. Ordinary builds never download. Application artifacts live under <code>build/live/apps/</code> so an app name cannot replace the OS image. Module and artifact content keys include transitive imports, build flags/templates and pinned tool identity, and reuse unchanged dependencies; an application build does not rebuild or alter the OS image.</p>
+<h2>Explicit publisher provisioning and post-boot installation</h2>
+<pre><code>./lt release keygen --private build/publisher.pem --public build/publisher.pub
+./lt app --module Guest.LiveApps --entry Guest.LiveApps.workbenchMain --name workbench
+./lt release create --binary build/live/apps/workbench.bin --project workbench --version 1.0.0 \
+  --sign-key build/publisher.pem --source Guest/LiveApps.lean --source Guest/LiveSDK.lean \
+  --right object.read --right object.create --right object.revise --right object.share \
+  --right object.revoke --right object.enumerate --right object.export \
+  --license NOASSERTION --output build/workbench.ltrel
+./lt ctl --socket /tmp/lt.sock trust --project workbench --public build/publisher.pub
+./lt ctl --socket /tmp/lt.sock inspect build/workbench.ltrel
+# Substitute the inspected release_id; 127 is the exact declared object-rights mask:
+./lt ctl --socket /tmp/lt.sock approve RELEASE_ID --rights 127
+./lt ctl --socket /tmp/lt.sock activate
+# Substitute the returned release slot (one-based), then retain the returned full instance:
+./lt ctl --socket /tmp/lt.sock start SLOT
+./lt ctl --socket /tmp/lt.sock processes</code></pre>
+<p><code>inspect</code> transports the complete candidate into bounded guest staging and asks the guest to authenticate it. Approval names the exact immutable release identity and exact mask. <code>activate</code> revalidates trust and signature before committing. For an already reviewed candidate, <code>./lt ctl --socket /tmp/lt.sock install build/workbench.ltrel --approve-release RELEASE_ID --rights 127</code> stages, compares the exact declared identity/mask, and commits through the same guest approval path. Omitting approval only stages and displays metadata. There is no public development key fallback on this path. RSA-2048/SHA-256 publisher signatures are received and verified by the guest, with keys explicitly scoped to a project. Source/manifest/license/evidence roots are signed commitments; the guest does not prove the build chain or independently check every referenced claim. The JSON sidecar remains an exportable host artifact.</p>
+<p>Build Inspector and Worker using entries <code>Guest.LiveApps.inspectorMain</code> and <code>Guest.LiveApps.workerMain</code>; sign separate projects <code>inspector</code> and <code>worker</code> with their chosen exact rights. Read-only inspection needs <code>object.read</code> (1); a worker that only computes statistics also needs 1. Provision each project trust explicitly, inspect, approve, activate and start. All three can stay running alongside the services. Code is statically linked: no fabricated runtime dependency resolver is present.</p>
+<h2>Objects, edits, sharing and export</h2>
+<pre><code>./lt ctl --socket /tmp/lt.sock import /absolute/path/source.txt --kind 1
+./lt ctl --socket /tmp/lt.sock metadata OBJECT_HANDLE
+./lt ctl --socket /tmp/lt.sock share OBJECT_HANDLE --to WORKBENCH_INSTANCE --rights 13
+# Use the returned recipient grant, not the launcher's handle:
+./lt ctl --socket /tmp/lt.sock edit WORKBENCH_INSTANCE WORKBENCH_GRANT \
+  --offset 0 --delete 5 --replacement /absolute/path/replacement.txt
+./lt ctl --socket /tmp/lt.sock metadata NEW_LAUNCHER_HANDLE
+./lt ctl --socket /tmp/lt.sock export NEW_LAUNCHER_HANDLE --output /absolute/path/new-export.txt
+./lt ctl --socket /tmp/lt.sock share NEW_LAUNCHER_HANDLE --to INSPECTOR_INSTANCE --rights 1
+./lt ctl --socket /tmp/lt.sock app INSPECTOR_INSTANCE --operation 22 --handle INSPECTOR_GRANT
+./lt ctl --socket /tmp/lt.sock app WORKER_INSTANCE --operation 21 --handle WORKER_GRANT
+./lt ctl --socket /tmp/lt.sock revoke OBJECT_HANDLE --grant WORKBENCH_GRANT
+./lt ctl --socket /tmp/lt.sock drop OBJECT_HANDLE</code></pre>
+<p>Import/export use sequential chunks of at most 512 bytes, support objects up to 65536 bytes, and verify SHA-256 before publication. An edit streams a new revision and returns a launcher-scoped handle; metadata includes the immutable parent object ID and content hash. Use <code>ctl list</code>, <code>ctl stats</code> and <code>ctl objects-gc</code> to inspect the authorized scope and collect dead-owner objects/grants. Each replacement is at most 512 bytes; the resulting object remains at most 64 KiB. Sharing limits rights to both the sender's grant and the actual recipient instance's approved rights. Revocation removes future service access, not plaintext already copied. Workbench supports arbitrary byte patches; Inspector returns metadata; Worker counts ASCII words/LFs and reports a content digest. Worker input needs its own read grant. These are independent native clients, not host transformations.</p>
+<p>Rights are distinct: read 1, create 2, revise 4, share 8, revoke/drop 16, enumerate 32, explicit export 64, console 128. A read recipient can inspect/read content but cannot use the explicit export operation without 64. Disclosure of plaintext inherently permits copying; the export bit is an API authorization boundary, not DRM. Applications cannot call launcher commands; console requires 128 and is escaped into identity-tagged ASCII hex, so application output cannot form a management approval frame. The SDK supplies typed erased handles/buffers/results and effect sequencing, but general Lean heap values, closures, strings and GC remain unsupported.</p>
+<h2>Independent lifecycle, update and rollback</h2>
+<pre><code>./lt ctl --socket /tmp/lt.sock stop INSTANCE
+./lt ctl --socket /tmp/lt.sock restart INSTANCE --release-slot SLOT
+# Build/sign version 1.1.0 separately, with --parent PREVIOUS_RELEASE_ID:
+./lt ctl --socket /tmp/lt.sock inspect build/workbench-1.1.ltrel
+./lt ctl --socket /tmp/lt.sock approve NEW_RELEASE_ID --rights 127
+./lt ctl --socket /tmp/lt.sock activate
+./lt ctl --socket /tmp/lt.sock active workbench
+./lt ctl --socket /tmp/lt.sock rollback workbench
+./lt ctl --socket /tmp/lt.sock revoke-release RELEASE_ID
+./lt ctl --socket /tmp/lt.sock untrust PUBLISHER_KEY_ID
+./lt ctl --socket /tmp/lt.sock gc
+./lt ctl --socket /tmp/lt.sock service-restart OBJECTS_OR_VAULT_INSTANCE</code></pre>
+<p>Activation changes the default release for future starts; existing instances keep their private immutable code until explicitly stopped/restarted. Updates bind the current active release as parent. A downgrade is rejected by ordinary activation. Explicit rollback switches to the retained compatible, unrevoked and currently trusted previous release. All candidates, including escalations, require exact fresh approval. Version, release identity, activation transaction generation and process incarnation are separate. Garbage collection drops unreferenced retained code only when no live process executes it. Service restart destroys its volatile state and invalidates its old grants/keys. Object service restart loses ephemeral objects; vault recovery requires a fresh unlock and import. Application death does not cause unrelated updates or rollbacks.</p>
+<h2>Explicit development vault</h2>
+<pre><code>./lt vault-init /absolute/path/objects.img --key-out /absolute/path/objects.key
+./lt run --backend qemu --socket /tmp/lt-vault.sock --vault /absolute/path/objects.img
+./lt ctl --socket /tmp/lt-vault.sock vault unlock --key /absolute/path/objects.key
+./lt ctl --socket /tmp/lt-vault.sock vault status
+# Approves exactly the selected committed object snapshot:
+./lt ctl --socket /tmp/lt-vault.sock vault retain OBJECT_HANDLE
+./lt ctl --socket /tmp/lt-vault.sock vault lock
+./lt ctl --socket /tmp/lt-vault.sock shutdown
+# Restart using the same explicitly attached image, then explicitly unlock/recover:
+./lt run --backend qemu --socket /tmp/lt-vault.sock --vault /absolute/path/objects.img
+./lt ctl --socket /tmp/lt-vault.sock vault unlock --key /absolute/path/objects.key
+./lt ctl --socket /tmp/lt-vault.sock vault recover
+./lt ctl --socket /tmp/lt-vault.sock vault delete
+./lt ctl --socket /tmp/lt-vault.sock shutdown</code></pre>
+<p><code>vault-init</code> refuses existing paths; it creates an explicitly labeled regular development image and optionally a mode-0600 32-byte raw key from OS entropy. No password KDF or passphrase support is claimed. This bounded format retains one selected object (including metadata and digest) at a time; a later retain transaction replaces that retained root. Other objects, session grants, applications, trust keys and package approvals remain ephemeral. Recovery imports authenticated selected bytes into a fresh session with new identities and no restored old grants. Use <code>--vault-readonly</code> to exercise write failures. Without an attached unlocked vault all normal object/package operations remain usable and ephemeral.</p>
+<p>ChaCha20-Poly1305 authenticated encryption, fresh device entropy, two bank/root generations and explicit block flushes provide the documented crash boundary. Wallet and Messenger domains are denied; apps receive no key or mount. Logical deletion invalidates both roots and flushes; ciphertext may remain on media or copies. Lock wipes accessible broker key/plaintext buffers, but it does not erase previously disclosed object copies. To detach, lock then stop the session and omit <code>--vault</code> on restart. Live physical hot-unplug and physical external-drive validation are not implemented. See <a href="objects-vault.html">format, assumptions and failure semantics</a>.</p>
+<h2>Checks and historical workflow</h2>
+<pre><code>./lt check
+# Focus a development pass without rebuilding:
+python3 tests/live_acceptance.py --help
+# Focused guest release decoder/signer boundary checks (current image):
+python3 tests/release_boundaries.py
+# Historical scripted campaign-001 regression remains explicit:
+./lt fixture-check</code></pre>
+<p>The current check drives the live portal against a fixed image. See <a href="implementation-status.html">executed evidence and exact environments</a>. Component checks also cover compiler effect order, AEAD known-answer/boundary cases, device errors and scoped policy proofs. Recorded historical evidence is <a href="evidence/campaign-001.json">campaign-001.json</a>; <a href="history/campaign-001-development.html">the historical command guide</a> preserves the earlier finite demonstration. Legacy host Ed25519 packages and publicly keyed capsules are fixtures, not an alternative ordinary installation authority. A host build/sign loop is disclosed bootstrap work, not a completed native IDE, desktop, federation, network or independent-builder result.</p>
 </body></html>
