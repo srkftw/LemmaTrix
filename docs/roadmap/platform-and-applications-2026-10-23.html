@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LemmaTrix — Revised platform and application list, 23 October 2026</title>
+<style>
+:root{color-scheme:light dark}body{font:17px/1.65 system-ui,sans-serif;max-width:76rem;margin:3rem auto;padding:0 1.5rem}h1,h2{line-height:1.25}aside{border-left:4px solid #888;padding:.5rem 1.2rem}nav a{display:inline-block;margin:0 .65rem .5rem 0}.source{font:14px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;tab-size:4}section{border-top:1px solid #888;margin-top:2rem;padding-top:1rem}a{overflow-wrap:anywhere}@media print{nav{display:none}section{break-before:page}.source{font-size:9pt}}
+</style>
+</head>
+<body>
+<header>
+<p><a href="../index.html">Source register</a> · <a href="../specs/lemmatrixos-mvp-v0.2.html">Governing MVP specification</a> · <a href="../documentation-policy.html">Documentation policy</a></p>
+<h1>LemmaTrix — Revised platform and application list</h1>
+<p>23 October 2026 · Historical platform vision and broader application roadmap</p>
+<aside>
+<p><strong>Precedence:</strong> The <a href="../specs/lemmatrixos-mvp-v0.2.html">28 October 2026 MVP specification v0.2</a> governs conflicting release scope. The source below retains its original “MVP design targets” wording as historical text; this does not reinstate superseded launch commitments.</p>
+<p><strong>Provenance:</strong> HTML transcription of all accessible extracted text of <code>lemmaTrixAppList.pdf</code>, which the available source reports as 7 pages. Original printed footers use a 9-page denominator and occur inside the extracted page blocks; they are retained below. The final available page was visually checked and ends with Data Stewardship and Preservation. No bibliography resolving the numbered reference markers was present in the accessible text. No missing pages, reference list, or source wording have been invented. The original PDF bytes were not exportable and are not archived here. Whitespace and line wrapping may differ; this is not a visual facsimile.</p>
+</aside>
+<nav aria-label="Indexed source pages"><a href="#page-1">1</a><a href="#page-2">2</a><a href="#page-3">3</a><a href="#page-4">4</a><a href="#page-5">5</a><a href="#page-6">6</a><a href="#page-7">7</a></nav>
+</header>
+<main id="source-transcription">
+<section id="page-1"><h2>Indexed source page 1</h2><pre class="source">
+LemmaTrix
+Revised platform and application list · 23 October 2026
+
+Scope. MVP design targets
+
+1. Platform and shared architecture
+• Canonical system
+   – An open-source, monolingual Lean 4 operating system and native application suite targeting one
+     versioned RISC-V machine contract. LemmaTrix is independent of Lemma One hardware; clients, servers
+     and clusters share protocols, not identical persistence or resource requirements.
+   – Keep guest operating-system code, applications and security policies in Lean. Specify the freestanding
+     runtime, compiler backend and machine primitives explicitly: stock Lean native execution includes
+                                                                                                                     [1]
+     non-Lean components, so ordinary Lean compilation alone does not satisfy this requirement.
+• Formally speciﬁed security, not an absolute security promise
+   – Require machine-checked proofs of named properties: memory isolation, capability enforcement,
+     authorized persistence, signing policy, protocol state transitions and monetary integrity. State each
+     theorem's assumptions, protected information, allowed disclosures and excluded channels. Reject
+     admitted proofs and undisclosed axioms in release evidence.
+   – Connect source-level proofs to shipped binaries through veriﬁed compilation or checked translation, and
+     publish the remaining trusted computing base. Hardware, ﬁrmware, boot code, accelerators and side
+                                                                                                           [1] [2]
+     channels require explicit treatment; writing an app in Lean does not itself prove it secure.
+• ARM and x86/x86-64 editions
+   – Distribute the same RISC-V guest with a host-speciﬁc emulator written in pure assembly, as requested.
+     Treat this emulator and its host adapters as explicit exceptions to the monolingual guest rule. Different
+     host instruction sets require different implementations.
+   – Prove or validate guest-instruction, memory, interrupt and device semantics. Assembly is not inherently
+     faster or safer. Hosted execution depends on the host OS; bare-metal emulation additionally requires its
+     own boot and device-support layer.
+• Amnesiac sessions plus a persistent vault
+   – Run disposable application and service instances. On personal systems, persist only explicitly approved,
+     schema-checked records in an encrypted external-drive vault, divided into Wallet, Messenger and
+     Objects. Imports become approved Objects; applications never receive unrestricted vault mounts.
+   – Wallet holds spending authority and ﬁnancial records; Messenger holds contacts, conversations and
+     approved private-agent memory; Objects holds documents, media, code, models and settings. Separate
+     keys and access policies for each domain.
+   – Server editions must explicitly retain paid-for objects, mailboxes, databases and ledger state. Use
+     authorized persistent object stores with retention policies, not a claim that durable services forget
+                                                                                                                       [3]
+     everything. Shutdown cannot erase copies already held by hosts, recipients or remote providers.
+• Lean-deﬁned conﬁguration and packages
+   – Provide a Lean conﬁguration language, dependency locking, isolated builds, immutable package graphs,
+     signed caches, atomic generations, rollback and garbage collection. Test build reproducibility
+     independently. Preserve full functional parity as a goal, but deﬁne it through a versioned feature
+                    [4] [18]
+     checklist.
+
+LemmaTrix | Revised platform and application list | 23 October 2026 1 / 9
+LEMMATRIX
+</pre></section>
+<section id="page-2"><h2>Indexed source page 2</h2><pre class="source">
+   – Distinguish parity with Nix's package semantics, NixOS conﬁguration and the Nixpkgs software
+     collection. A Lean DSL cannot by itself make existing Linux binaries run or turn non-Lean packages into
+     veriﬁed Lean applications.
+• Compartmentalization and authority
+   – Adopt Qubes-style security domains and Whonix-style separation of applications from network access.
+     Use narrow typed capabilities, a dedicated network broker and a separate signing service without
+     network authority. Isolate devices, parsers, build tools, apps and agents; prohibit ambient root or
+                             [5] [6]
+     raw-network access.
+• LemmaNET: four explicit transport modes
+   – Provide low-latency onion routing for interactive use; delayed, padded mixing for stronger metadata
+     protection; encrypted bulk-object transport for media and datasets; and private high-throughput cluster
+     links for tightly coupled jobs. Specify the anonymity and trust contract of each mode; bulk encryption
+     alone does not hide communicating endpoints.
+   – Implement the required Tor protocol surface in Lean and test interoperability. Treat compatibility with
+     Tor and a new LemmaNET anonymity design as separate deliverables. Never silently fall back from a
+                                                         [7]
+     privacy-preserving route to a direct connection.
+   – Limit social/library discovery to participating LemmaTrix peers and user-selected federations, as
+     previously requested. This is a discovery boundary, not proof that participants are honest or that a
+                                   [10]
+     hostile state cannot join.
+• LemmaCoin and the application contract
+   – Keep the independent, permissionless, privacy-native L1 with self-custody, mandatory shielded
+     payments, private/public contracts, no secret trusted setup, post-quantum security targets and
+     cryptographic agility. Audit the entire cryptographic stack; post-quantum signatures alone do not
+     establish post-quantum privacy or proof security. NIST standards address particular primitives, not a
+                             [9]
+     complete blockchain.
+   – Give apps shared typed payment intents, fee ceilings, idempotent retries, escrow, refunds, subscriptions
+     and bounded delegation. Use consensus for scarce rights and settlement, not every message or video
+     chunk. Federation administrators cannot change monetary consensus.
+   – Claims of superiority to Solana, Monero or Cardano remain comparative test requirements: use matched
+     hardware, workload, adversary model, decentralization constraints and end-to-end measurements, not
+     isolated headline numbers.
+
+2. Consumer applications
+• Feed
+   – Federated short posts, long-form publishing, newsletters, short video and subscriptions, combining the
+     requested Mastodon, Substack and TikTok workﬂows. Support votes, LemmaCoin tips and paid
+     memberships.
+   – Federations may set disclosed rules and fees, moderate content and offer sandboxed extensions. Provide
+     user-chosen ranking, portable accounts/content, blocking and appeals. Keep paid promotion separate
+     from reputation; purchased votes are not evidence of truth.
+• Library
+   – A uniﬁed ﬁlm, television, music, audiobook, ebook, course and video-game library with streaming,
+     downloads, synchronization and creator publishing. Target the requested Netﬂix/Spotify/iBooks
+     experience and Prowlarr/Radarr/Sonarr-style indexing, tracking and acquisition workﬂows within
+     the permitted peer/federation scope.
+</pre></section>
+<section id="page-3"><h2>Indexed source page 3</h2><pre class="source">
+LemmaTrix | Revised platform and application list | 23 October 2026 2 / 9
+LEMMATRIX
+
+   – For games, add installation, updates, approved save objects, controller proﬁles, mods, achievements,
+     multiplayer discovery and optional remote play. Connect native game publishing to Creative Suite and
+     dAppStore. Hosting a foreign game ﬁle does not make it runnable, Lean-native or formally veriﬁed.
+   – Use encrypted content-addressed objects, peer delivery, separate storage/retrieval contracts, provider
+     reputation, transparent fees and federation moderation. Track distribution permissions and revenue
+     splits. Availability requires funded replicas; plaintext recipients can copy content, and moderation cannot
+                                        [15]
+     recall every existing copy.
+• E-commerce
+   – A decentralized, trust-minimized market for goods and services, with private discovery, quotes,
+     LemmaCoin payment, escrow, milestones, delivery evidence, returns, refunds and bounded appeals. – Use
+     transaction-backed reputation, bonds, exposure limits and independent dispute resolution. Make abuse
+     economically unattractive under a stated adversary model; do not promise cryptographic proof of physical
+                                                                                    [10] [11]
+     delivery, honest reviews or the authenticity of a real-world item.
+• Wallet
+   – Show available, pending and escrowed funds; create and scan invoices; pay, receive, tip and manage
+     subscriptions. Display asset, recipient, amount, maximum fees and delegated permissions in a trusted
+     conﬁrmation interface.
+   – Separate viewing from spending; support recovery, key rotation, selective disclosure and explicit ﬁnality
+     states. Receiving an invoice while ofﬂine is not independent veriﬁcation of settlement. Do not give apps
+     or agents wallet keys.
+• Messenger
+   – End-to-end encrypted, decentralized, onion-routed store-and-forward text, groups, voice notes, ﬁles and
+     recorded video, with replicated encrypted mailboxes and explicit retention.
+   – Add live voice/video as a separate interactive mode with stated bandwidth, latency and metadata
+     trade-offs. Require forward secrecy, recovery after compromise under deﬁned assumptions, device
+                                                                                                             [7] [8]
+     revocation and abuse controls; do not imply that live calls inherit delayed-mix anonymity.
+• Agent
+   – A personal assistant running in its own disposable LemmaTrix compartment, with model choice, tool use,
+     scheduled workﬂows, browser interaction, approved memory, subagents and remote task execution.
+     Deﬁne OpenClaw parity through a dated capability checklist rather than an undeﬁned promise to exceed
+                [14]
+     it.
+   – Route actions through deterministic capability and budget checks. Scope permissions by recipient, object,
+     amount and expiry; require trusted conﬁrmation for high-impact actions. Treat prompts, retrieved
+     content, models and generated code as untrusted. Prove conﬁnement, not universal judgment or factual
+                       [14]
+     accuracy.
+• Gig
+   – A decentralized marketplace for rides, shopping, courier work, local services and unattended handoffs,
+     with quotes, matching, route coordination, escrow, cancellation, safety contacts and disputes. – Reveal
+     exact locations only to necessary participants and only when needed. Support scoped qualiﬁcations and
+     transaction-backed reputation. Physical meetings, delivery addresses and movement necessarily disclose
+     information to counterparties; market participants cannot be promised anonymity from everyone.
+• Markets
+</pre></section>
+<section id="page-4"><h2>Indexed source page 4</h2><pre class="source">
+   – Prediction markets and forecast bounties for precisely speciﬁed claims: deﬁne the outcome, deadline,
+     evidence sources, resolution procedure, appeals and an invalid/ambiguous-outcome rule before trading.
+
+LemmaTrix | Revised platform and application list | 23 October 2026 3 / 9
+LEMMATRIX
+
+   – Separate cryptographically veriﬁable events from external facts. Reputation-weighted voting is a dispute
+     mechanism, not a truth proof. Limit exposure relative to resolver security; account for bribery, collusion,
+                                                                               [11]
+     thin liquidity and incentives to inﬂuence the event itself.
+                                                                 2
+   – For forecast bounties, a score such as 1 - (p - y) , with forecast p and binary outcome y, rewards honest
+     probabilities in expectation under risk neutrality and truthful, uninﬂuenceable resolution. This does not
+     make every trading mechanism truth-revealing.
+• Mobile
+   – iOS and Android companion clients for secure remote access to a personal LemmaTrix computer or
+     server, especially Feed, Commerce, Wallet and Gig. Support device pairing, revocation, reconnects,
+     bounded ofﬂine state and explicit transaction status.
+   – Keep portable app logic in the canonical guest; disclose native transport, display, notiﬁcation and signing
+     adapters. A thin client is an access mode, not a fully veriﬁed native OS. A compromised phone or desktop
+                                                                                                                  [2] [3]
+     host can observe its own input/output; closing a browser tab is not certiﬁed erasure.
+• dAppStore
+   – Federated catalogs of signed Lean application packages, with reproducible builds, dependency graphs,
+     capability manifests, update policy, security advisories and rollback. Support developer publishing
+     without a single mandatory catalog operator.
+   – Label assurance per property and version: speciﬁcation, proof, audit and reproducibility evidence. Only
+     policy-approved apps may persist approved objects. Sandbox package building and proof checking; a
+                                                                                      [1] [18]
+     signed package or Lean source ﬁle is not automatically safe.
+
+3. Producer and infrastructure applications
+• Server Edition and resource marketplace
+   – Separate validator/full-node, proof-generation, compute, storage, retrieval/streaming, seeding, mailbox,
+     relay, indexing and update-mirror roles. Operators may combine roles, but keep their keys, permissions,
+     economics and failure domains distinct.
+   – Offer compute jobs, AI/world-model inference and training, model access, datasets, hosting and storage
+     through versioned service contracts. Bind execution claims to program/model and input commitments,
+     output, numeric semantics, randomness policy and deadlines. Specify accelerator behavior and allowed
+     numerical tolerances.
+   – Use zero-knowledge execution proofs where the deﬁned workload supports them at an acceptable cost.
+     Distinguish correct execution, private inputs, private model weights and useful output; these are
+                                                                                                               [12]
+     separate guarantees. A proof that an AI model ran does not prove its answer true.
+   – For private outsourced inputs, specify homomorphic encryption, secure multiparty computation or an
+     explicitly hardware-trusted mode; zero-knowledge alone is insufﬁcient. Benchmark each mode. Where
+     the strict no-provider-trust requirement is not met, mark that workload unsupported rather than calling
+                       [12] [13]
+     it trustless.
+   – Compensate storage, streaming, relay, ISP and satellite operators for contracted, measurable service. A
+     machine's mere presence earns no automatic revenue. Distinguish storage audits from actual timely
+                                                                                                                      [15]
+     retrieval, and reject self-dealing trafﬁc or fake demand as evidence of economic value.
+   – For closed-weight models, sell conﬁdential inference access or explicitly licensed weight transfer. A
+</pre></section>
+<section id="page-5"><h2>Indexed source page 5</h2><pre class="source">
+     provider that receives ordinary plaintext weights can copy them. Separate proof delivery, output
+     availability and payment, with timeouts and refunds for failure.
+
+LemmaTrix | Revised platform and application list | 23 October 2026 4 / 9
+LEMMATRIX
+
+• Business
+   – Storefronts, inventory, invoicing, accounting, customer relationship management, subscriptions,
+     procurement, business-to-business commerce and enterprise versions of Messenger, Markets and
+     collaboration tools.
+   – Add employee roles, multisignature treasury controls, approval workﬂows, order reconciliation,
+     supply-chain records and privacy-preserving audit exports. Organizational records require
+     deliberate durable storage; neither amnesia nor a blockchain substitutes for recordkeeping.
+• GigWork
+   – The provider interface for Gig: service listings, availability, bids, dispatch, navigation, milestones,
+     proof-of-handoff evidence, earnings, disputes and scoped qualiﬁcations.
+   – Keep reputation contextual and transaction-backed, with appeals and controlled migration. A new
+     pseudonym must not automatically inherit trusted status; avoid a universal public identity that links
+                                                           [10]
+     someone's social, ﬁnancial and work activity.
+• Creative Suite
+   – An integrated Lean-native suite for raster/vector graphics, photography, 3D modeling, animation,
+     rendering, game creation, audio recording, synthesis, composition, mixing, video editing, compositing and
+     color work.
+   – Preserve full workﬂow-parity ambitions with Blender, Photoshop, Avid, FL Studio, Ableton, REAPER,
+     DaVinci Resolve, Unreal Engine and Unity. Deﬁne product versions and executable acceptance tests for
+     features, formats, ﬁdelity, latency and interchange; parity means demonstrated workﬂows, not identical
+     source code.
+   – Include a game engine and editor: 2D/3D scenes, rendering/shaders, animation, physics, audio, user
+     interfaces, gameplay logic, visual scripting lowered to Lean, navigation, networking, multiplayer servers,
+     proﬁling, asset pipelines, XR and deployment. Track the reference engines through a versioned feature
+                 [23] [24]
+     matrix.
+   – Connect shared assets, collaborative editing, remote rendering and game-server hosting to Library and
+     the resource marketplace. Benchmark frame times, input latency and supported hardware; real-time
+                                                                                                      [8]
+     multiplayer and remote play must declare their anonymity/latency trade-offs.
+   – Deﬁne a Lean-authored accelerator interface and generated device-code policy. RISC-V CPU emulation
+     alone does not supply competitive GPU rendering or real-time audio. Existing foreign-language plugins
+     are not automatically compatible with a pure-Lean native suite.
+• IDE, Forge and Cloud Studio
+   – Lean 4 editing, debugging, proﬁling, theorem proving, version control, code review, issues,
+     documentation, reproducible builds and continuous integration. Attach proof obligations and security
+     evidence to releases.
+   – Restore the earlier decentralized platform-as-a-service idea: deploy isolated services, queues, databases
+     and workﬂows with typed secrets, budgets, storage policies, rollback and privacy-ﬁltered observability.
+     Offer deterministic replay and emulator-based tests against the canonical RISC-V contract.
+• Reverse Engineering, Porting and Model Lab
+</pre></section>
+<section id="page-6"><h2>Indexed source page 6</h2><pre class="source">
+   – An agent-assisted development environment for understanding software from other operating systems,
+     reconstructing interfaces and porting useful behavior into Lean-native LemmaTrix applications. Prefer
+     available source and speciﬁcations; otherwise combine disassembly, decompilation, tracing, debugging,
+     format/API analysis and differential tests.
+   – Run untrusted binaries, installers and analysis agents in isolated disposable emulators without wallet
+     keys, vault mounts or unrestricted networking. Track the target ISA, operating-system interfaces,
+
+LemmaTrix | Revised platform and application list | 23 October 2026 5 / 9
+LEMMATRIX
+
+     dependencies and external services. Classify outputs separately as inspected artifacts, tested Lean ports
+     or ports with named machine-checked proofs.
+   – For models, support weight import, inference-runtime porting, quantization, ﬁne-tuning and
+     teacher-student distillation as distinct workﬂows. Record tokenizer, architecture, operators,
+     precision, datasets and evaluation distribution. Distillation trains a new model; it is not decompilation
+                                               [20]
+     or a guarantee of identical behavior.
+   – Let users publish, seed, host or sell code, games, model packages and inference services to other
+     LemmaTrix users through Forge, Library, dAppStore and the resource marketplace. Attach signed
+     content hashes, provenance, licences, dependency manifests, test/proof evidence and documented
+     limitations.
+   – Place catalog admission, hosting, seeding, blocking, notices and appeals under federation/operator policy,
+     not a mandatory global content authority. Federations may adopt different policies under applicable law.
+     Separate the technical ability to analyze an artifact from permission to execute, modify or redistribute it;
+                                                                            [21] [22]
+     federation governance cannot itself confer legal immunity.
+• CAD, CAE and Manufacturing Suite
+   – Parametric geometry, assemblies, drawings, computer-aided manufacturing,
+     structural/thermal/ﬂuid/electromagnetic analysis, electronics/PCB/ASIC design, product-lifecycle
+     management, digital twins and manufacturing handoff.
+   – Specify units, geometric tolerances, boundary conditions, solver precision, convergence/error evidence
+     and model provenance. A correct numerical implementation does not prove that its physical model is
+     accurate.
+   – Integrate equipment only through separately assured control gateways, qualiﬁed authorization and
+     independent safety interlocks. Treat industrial, energy and biomedical work as specialized modules, not
+     unrestricted agent-controlled physical actuation.
+
+4. Additional ideas
+• Privacy, Identity and Recovery Center — proposed application under Settings
+   – A single place to inspect capabilities, compartment identities, network modes, persistent records and
+     agent authority. Provide key rotation, device revocation, encrypted vault backup, optional threshold
+     recovery, restore drills and selective disclosure. Preserve the three vault domains rather than adding a
+     general-purpose persistence escape hatch.
+• Governance, Credentials and Disputes — potential, cross-application
+   – Shared federation rules, scoped credentials, moderation, appeals, resolver selection and
+     conﬂict-of-interest checks for Feed, Library, Commerce, Gig and Markets. Support user migration and
+     federation forks. Keep moderation authority separate from custody and consensus; portable credentials
+     must not silently create a globally linkable identity.
+• Lemma School
+</pre></section>
+<section id="page-7"><h2>Indexed source page 7</h2><pre class="source">
+   – Textbooks, structured courses, adaptive tutoring, exercises with teacher/sysadmin tools and forkable
+     local school infrastructure. Separate an explanation model from deterministic assessment
+   • Research and Scientiﬁc Lab — Extension on CAD
+   – Evidence-linked research, reproducible notebooks, datasets, model training/evaluation, materials and
+     molecular/protein simulation, quantum workﬂows and digital twins. Record uncertainty, provenance
+     and resource limits. Use the compute marketplace without equating a veriﬁed execution trace with a
+     validated experiment or successful treatment.
+
+LemmaTrix | Revised platform and application list | 23 October 2026 6 / 9
+LEMMATRIX
+
+• Workspace and Collaboration
+   – Private documents, spreadsheets, notes, calendar, contacts and project coordination, with ofﬂine-ﬁrst
+     editing, permissions and encrypted synchronization. Store records as approved vault objects; expose
+     narrow tools to Agent rather than giving it unrestricted access.
+• Data Stewardship and Preservation — proposed application under Settings
+   – A user-facing manager for encrypted backups, versioning, export, replicas, expiring shares, retention and
+     funded long-term preservation. Track key custody, provider independence, renewal and retrieval tests.
+     Integrate it with Library, Research and Business rather than rebuilding storage management in every app.
+</pre></section>
+</main>
+</body>
+</html>
