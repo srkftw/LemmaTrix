@@ -6,6 +6,7 @@ import Guest.ForgeArchive
 import Guest.RemoteBuild
 import Guest.ForgeFederation
 import Guest.ForgeSubscription
+import Guest.ForgeCache
 namespace Guest.Forge
 open Guest.LiveSDK
 open Guest.ProjectSDK
@@ -19,6 +20,8 @@ def localName : UInt64 := 0x6e1200
 def remoteName : UInt64 := 0x6e1300
 def logical : UInt64 := 0x6e1400
 def importedName : UInt64 := 0x6e1500
+def offeredHead : UInt64 := 0x6e1600
+def offeredName : UInt64 := 0x6e1640
 def packet : UInt64 := 0x6f4000
 def received : UInt64 := 0x6f5000
 def pins : UInt64 := 0x6f6000
@@ -42,10 +45,11 @@ def packetHeader (kind transaction a b c d root t : UInt64) : UInt64 :=
   let t := store64 (packet+48) c t
   let t := store64 (packet+56) d t
   copy root (packet+64) 32 t
+def progress (t : UInt64) : UInt64 := store64 (st+408) (load64 (st+400) t+1000000) t
 def sendPacket (grant bytes t : UInt64) : UInt64 :=
   if load64 (st+80) t != 0 then message 7 t else
     let r := Guest.NetworkSDK.send grant 1 packet bytes t
-    if r != 64 || status r != 0 then message 8 r else store64 (st+80) (result r) r
+    if r != 64 || status r != 0 then message 8 r else progress (store64 (st+80) (result r) r)
 def pollSend (t : UInt64) : UInt64 :=
   let handle := load64 (st+80) t
   if handle == 0 then t else
@@ -90,7 +94,10 @@ def prepare (t : UInt64) : UInt64 :=
       let r := freeze (load64 (st+24) t) localHead t
       if r != 160 || status r != 0 then message 2 r else
         let root := result r
-        let t := store64 (st+32) root r
+        let t := copy localHead offeredHead 32 r
+        let t := copy localName offeredName 64 t
+        let t := store64 (st+480) (load64 (st+168) t) t
+        let t := store64 (st+32) root t
         let r := enumerate root 0 0 0 t
         if r == error then message 3 r else
           let oldGrant := load64 (st+16) r
@@ -98,11 +105,11 @@ def prepare (t : UInt64) : UInt64 :=
           let grant := networkGrant localHead t
           if grant == error then message 8 grant else message 4 (store64 (st+16) grant grant)
 def sendMetadata (t : UInt64) : UInt64 :=
-    let t := packetHeader 2 0 (load64 (st+40) t) (load64 (st+48) t) (load64 (st+168) t) 0 localHead t
-    let t := copy localName (packet+96) 64 t
+    let t := packetHeader 2 0 (load64 (st+40) t) (load64 (st+48) t) (load64 (st+480) t) 3 offeredHead t
+    let t := copy offeredName (packet+96) 64 t
     let t := copy logical (packet+160) 32 t
     let t := sendPacket (load64 (st+8) t) 192 t
-    if load64 (st+80) t != 0 && Guest.ForgeFederation.ready localHead t then
+    if load64 (st+80) t != 0 && Guest.ForgeFederation.ready offeredHead t then
       store64 (Guest.ForgeFederation.st+32) 2 t else t
 def advertise (t : UInt64) : UInt64 :=
   let t := prepare t
@@ -137,14 +144,18 @@ def fetch (t : UInt64) : UInt64 :=
       let t := copy (selectedRoot+48) importedName (nameLength+17) (zero importedName 8 t)
       let r := importBegin selectedRoot 1 (load64 (st+144) t) (load64 (st+152) t) t
       if r < 64 || status r != 0 then message 3 r else
-        let t := store64 (st+112) (result r) r
+        let t := Guest.ForgeCache.begin remoteHead r
+        let t := store64 (st+112) (result r) t
         let id := load64 (st+96) t+1
         let t := store64 (st+96) id t
         let t := store64 (st+232) id t
         let t := store64 (st+120) 0 t
+        let t := store64 (st+432) 0 t
         let t := store64 (st+224) 0 t
         let t := store64 (st+128) 0 t
-        let t := packetHeader 3 id 0 0 0 0 remoteHead t
+        let profile := if load64 (st+448) t == 3 then 2 else 0
+        let t := store64 (st+464) profile t
+        let t := packetHeader 3 id profile 0 0 0 remoteHead t
         message 5 (sendPacket grant 96 t)
 
 def requestFetch (t : UInt64) : UInt64 :=
@@ -161,18 +172,18 @@ def sender (t : UInt64) : UInt64 :=
   let ordinal := load64 (st+64) t
   let transaction := load64 (st+104) t
   if phase == 1 then
-    let t := packetHeader 4 transaction (load64 (st+40) t) (load64 (st+48) t) 0 0 localHead t
+    let t := packetHeader 4 transaction (load64 (st+40) t) (load64 (st+48) t) 0 0 offeredHead t
     store64 (st+56) 2 (sendPacket (load64 (st+16) t) 96 t)
   else if phase == 2 then
     if ordinal == load64 (st+40) t then
-      let t := packetHeader 7 transaction ordinal (load64 (st+48) t) 0 0 localHead t
+      let t := packetHeader 7 transaction ordinal (load64 (st+48) t) 0 0 offeredHead t
       store64 (st+56) 4 (sendPacket (load64 (st+16) t) 96 t)
     else
       let row := record ordinal
-      let t := packetHeader 5 transaction ordinal (load64 (row+16) t) (load64 (row+8) t) (load64 (row+120) t) localHead t
+      let t := packetHeader 5 transaction ordinal (load64 (row+16) t) (load64 (row+8) t) (load64 (row+120) t) offeredHead t
       let t := copy (row+24) (packet+96) 96 t
       let t := store64 (st+72) 0 t
-      store64 (st+56) 3 (sendPacket (load64 (st+16) t) 192 t)
+      store64 (st+56) (if load64 (st+456) t == 2 then 5 else 3) (sendPacket (load64 (st+16) t) 192 t)
   else if phase == 3 then
     let row := record ordinal
     let offset := load64 (st+72) t
@@ -182,7 +193,7 @@ def sender (t : UInt64) : UInt64 :=
       let r := read (load64 row t) offset n t
       if r != 64+n || status r != 0 then message 8 (store64 (st+56) 0 r) else
         let t := copy (wire+64) (received+1024) n r
-        let t := packetHeader 6 transaction ordinal offset n 0 localHead t
+        let t := packetHeader 6 transaction ordinal offset n 0 offeredHead t
         let t := copy (received+1024) (packet+96) n t
         store64 (st+72) (offset+n) (sendPacket (load64 (st+16) t) (96+n) t)
   else t
@@ -193,6 +204,7 @@ def failImport (t : UInt64) : UInt64 :=
   let t := store64 (st+368) (load64 (st+224) t) t
   let transaction := load64 (st+112) t
   let t := if transaction == 0 then t else importAbort transaction t
+  let t := Guest.ForgeCache.abort t
   message 9 (store64 (st+112) 0 t)
 def validFrame (length t : UInt64) : Bool :=
   length >= 96 && length <= 720 && load64 received t == magic && load64 (received+8) t == 1
@@ -202,6 +214,117 @@ def observeAdmission (t : UInt64) : UInt64 :=
     let t := Guest.ForgeSubscription.observe Guest.ForgeFederation.remote pins (load64 (st+400) t) t
     if Guest.ForgeSubscription.status t != 3 then t else
       store64 (Guest.ForgeFederation.st+56) 3 (store64 (Guest.ForgeFederation.st+72) 9 t)
+def accept1 (length transaction a b c t : UInt64) : UInt64 :=
+  if length != 96 || load64 (st+32) t == 0 || load64 (st+80) t != 0 then message 9 t else sendMetadata t
+
+def accept2 (length transaction a b c t : UInt64) : UInt64 :=
+  if length != 192 || a == 0 || a > 24 || b == 0 || b > 1048576 || c == 0 || c > 63 ||
+    !Guest.ProjectGraph.validName (received+96) c 63 t then message 9 t else
+  if load64 (st+112) t != 0 then message 7 t else
+  let t := Guest.ForgeFederation.metadata t
+  let t := copy (received+64) remoteHead 32 t
+  let t := copy (received+96) remoteName 64 t
+  let t := store64 (st+448) (load64 (received+56) t) t
+  let t := store64 (st+144) a t
+  let t := store64 (st+152) b t
+  message 6 (store64 (st+160) c t)
+
+def accept9 (length transaction a b c t : UInt64) : UInt64 :=
+  if length != 608 || load64 (st+144) t == 0 || !equal (received+64) remoteHead 32 t then message 9 t else
+  let t := Guest.ForgeFederation.decision (received+96) remoteHead transaction t
+  store64 (st+248) 1 t
+
+def accept10 (length transaction a b c t : UInt64) : UInt64 :=
+  if length != 352 || load64 (st+144) t == 0 || !equal (received+64) remoteHead 32 t then message 9 t else
+  let t := Guest.ForgeFederation.signature (received+96) remoteHead transaction t
+  store64 (st+248) 1 (observeAdmission t)
+
+def accept13 (length transaction a b c t : UInt64) : UInt64 :=
+  if length != 128 || load64 (st+200) t != 1 || !Guest.ForgeFederation.enabled t ||
+    Guest.ProjectGraph.allZero (received+96) 32 t || transaction != load64 (received+96) t then message 9 t else
+  let active := load64 (Guest.ForgeFederation.st+208) t
+  let same := equal (received+64) (Guest.ForgeFederation.st+224) 32 t && equal (received+96) (Guest.ForgeFederation.st+256) 32 t
+  if active > 0 && active < 4 && !same then message 7 t else
+  if active == 4 && same && Guest.ForgeFederation.ready localHead t then
+    store64 (Guest.ForgeFederation.st+32) 1 t
+  else if active > 0 && active < 4 && same then t else
+    let t := copy (received+64) (Guest.ForgeFederation.st+224) 32 t
+    let t := copy (received+96) (Guest.ForgeFederation.st+256) 32 t
+    store64 (Guest.ForgeFederation.st+208) 1 t
+
+def accept3 (length transaction a b c t : UInt64) : UInt64 :=
+  if length != 96 || load64 (st+32) t == 0 || !equal (received+64) offeredHead 32 t ||
+    load64 (st+56) t != 0 || load64 (st+80) t != 0 then message 9 t else
+  let t := store64 (st+456) (if a == 2 then 2 else 0) t
+  let t := store64 (st+104) transaction t
+  let t := store64 (st+64) 0 t
+  message 5 (store64 (st+56) 1 t)
+
+def accept8 (length transaction a b c t : UInt64) : UInt64 :=
+  if length != 96 || transaction != load64 (st+104) t || !equal (received+64) offeredHead 32 t then message 9 t else
+  message 10 (store64 (st+56) 0 t)
+
+def accept12 (length transaction a b c t : UInt64) : UInt64 :=
+  if length != 96 || transaction != load64 (st+104) t || !equal (received+64) offeredHead 32 t then t else
+    let t := store64 (st+56) 0 t
+    let t := copy offeredHead (st+512) 32 t
+    store64 (st+424) transaction (store64 (st+416) 2 t)
+
+def accept11 (length transaction a b c t : UInt64) : UInt64 :=
+  if length != 96 || transaction != load64 (st+424) t || !equal (received+64) (st+512) 32 t then t else store64 (st+416) 0 t
+
+def accept14 (kind length transaction a b c t : UInt64) : UInt64 :=
+  if length != 128 || transaction != load64 (st+104) t || !equal (received+64) offeredHead 32 t || load64 (st+56) t != 5 ||
+    a != load64 (st+64) t || !equal (received+96) (record a+24) 32 t then message 9 t else
+  if kind == 14 then store64 (st+56) 3 t else
+    store64 (st+56) 2 (store64 (st+64) (a+1) t)
+
+def accept4 (length transaction a b c t : UInt64) : UInt64 :=
+  if length == 96 && a == load64 (st+144) t && b == load64 (st+152) t then t else failImport t
+
+def accept5 (length transaction a b c t : UInt64) : UInt64 :=
+  if length != 192 || a != load64 (st+120) t || load64 (st+224) t != 0 then failImport t else
+  let r := importOfferVersion (load64 (st+112) t) a b c (received+96) (load64 (received+56) t) t
+  if r != 64 || status r != 0 then failImport r else
+    let t := store64 (st+128) c r
+    if load64 (st+464) t != 2 then
+      if c == 0 then store64 (st+120) (a+1) t else t
+    else
+      let t := Guest.ForgeCache.offer a b (load64 (received+56) t) c (received+96) t
+      if Guest.ForgeCache.active t then t else
+        let t := store64 (st+432) 14 t
+        let t := store64 (st+440) a t
+        if c != 0 then t else
+          let t := Guest.ForgeCache.complete a t
+          if Guest.ForgeCache.active t then t else store64 (st+120) (a+1) t
+
+def accept6 (length transaction a b c t : UInt64) : UInt64 :=
+  if length != 96+c || c == 0 || c > 512 || a != load64 (st+120) t || b != load64 (st+224) t then failImport t else
+  let r := importAppend (load64 (st+112) t) a b (received+96) c t
+  if r != 64 || status r != 0 then failImport r else
+    let offset := b+c
+    let t := store64 (st+224) (if offset == load64 (st+128) r then 0 else offset) r
+    if offset != load64 (st+128) t then t else
+    if load64 (st+464) t != 2 then store64 (st+120) (a+1) t else
+      let t := Guest.ForgeCache.complete a t
+      if Guest.ForgeCache.active t then t else store64 (st+120) (a+1) t
+
+def accept7 (length transaction a b c t : UInt64) : UInt64 :=
+  if length != 96 || a != load64 (st+144) t || a != load64 (st+120) t || load64 (st+224) t != 0 then failImport t else
+  let r := importCommit (load64 (st+112) t) t
+  if r != 72 || status r != 0 || result r != 1 then failImport r else
+    let root := load64 (wire+64) r
+    let t := store64 (st+24) root r
+    let t := store64 (st+112) 0 t
+    let t := if load64 (st+200) t == 1 && load64 (Guest.ForgeFederation.st+208) t == 2 && equal remoteHead (Guest.ForgeFederation.st+224) 32 t then
+      store64 (Guest.ForgeFederation.st+208) 3 t else t
+    let shell := syscall 97 4 0 0 0 t
+    let t := delegate root shell 127 shell
+    let launcher := syscall 97 1 0 0 0 t
+    let t := delegate root launcher 127 launcher
+    let t := packetHeader 8 transaction 0 0 0 0 remoteHead t
+    message 11 (sendPacket (load64 (st+16) t) 96 t)
+
 def accept (length t : UInt64) : UInt64 :=
   if !validFrame length t then message 9 t else
   let kind := load64 (received+16) t
@@ -209,84 +332,27 @@ def accept (length t : UInt64) : UInt64 :=
   let a := load64 (received+32) t
   let b := load64 (received+40) t
   let c := load64 (received+48) t
+  let t := progress t
   let t := store64 (st+320) kind t
   let t := store64 (st+328) a t
   let t := store64 (st+336) b t
   let t := store64 (st+344) c t
-  if kind == 1 then
-    if length != 96 || load64 (st+32) t == 0 || load64 (st+80) t != 0 then message 9 t else sendMetadata t
-  else if kind == 2 then
-    if length != 192 || a == 0 || a > 24 || b == 0 || b > 1048576 || c == 0 || c > 63 ||
-      !Guest.ProjectGraph.validName (received+96) c 63 t then message 9 t else
-    if load64 (st+112) t != 0 then message 7 t else
-    let t := Guest.ForgeFederation.metadata t
-    let t := copy (received+64) remoteHead 32 t
-    let t := copy (received+96) remoteName 64 t
-    let t := store64 (st+144) a t
-    let t := store64 (st+152) b t
-    message 6 (store64 (st+160) c t)
-  else if kind == 9 then
-    if length != 608 || load64 (st+144) t == 0 || !equal (received+64) remoteHead 32 t then message 9 t else
-    let t := Guest.ForgeFederation.decision (received+96) remoteHead transaction t
-    store64 (st+248) 1 t
-  else if kind == 10 then
-    if length != 352 || load64 (st+144) t == 0 || !equal (received+64) remoteHead 32 t then message 9 t else
-    let t := Guest.ForgeFederation.signature (received+96) remoteHead transaction t
-    store64 (st+248) 1 (observeAdmission t)
-  else if kind == 13 then
-    if length != 128 || load64 (st+200) t != 1 || !Guest.ForgeFederation.enabled t ||
-      Guest.ProjectGraph.allZero (received+96) 32 t || transaction != load64 (received+96) t then message 9 t else
-    let active := load64 (Guest.ForgeFederation.st+208) t
-    let same := equal (received+64) (Guest.ForgeFederation.st+224) 32 t && equal (received+96) (Guest.ForgeFederation.st+256) 32 t
-    if active > 0 && active < 4 && !same then message 7 t else
-    if active == 4 && same && Guest.ForgeFederation.ready localHead t then
-      store64 (Guest.ForgeFederation.st+32) 1 t
-    else if active > 0 && active < 4 && same then t else
-      let t := copy (received+64) (Guest.ForgeFederation.st+224) 32 t
-      let t := copy (received+96) (Guest.ForgeFederation.st+256) 32 t
-      store64 (Guest.ForgeFederation.st+208) 1 t
-  else if kind == 3 then
-    if length != 96 || load64 (st+32) t == 0 || !equal (received+64) localHead 32 t ||
-      load64 (st+56) t != 0 || load64 (st+80) t != 0 then message 9 t else
-    let t := store64 (st+104) transaction t
-    let t := store64 (st+64) 0 t
-    message 5 (store64 (st+56) 1 t)
-  else if kind == 8 then
-    if length != 96 || transaction != load64 (st+104) t || !equal (received+64) localHead 32 t then message 9 t else
-    message 10 (store64 (st+56) 0 t)
-  else if load64 (st+112) t == 0 || transaction != load64 (st+232) t || !equal (received+64) remoteHead 32 t then message 9 t else
-  if kind == 4 then
-    if length == 96 && a == load64 (st+144) t && b == load64 (st+152) t then t else failImport t
-  else
-  if kind == 5 then
-    if length != 192 || a != load64 (st+120) t || load64 (st+224) t != 0 then failImport t else
-    let r := importOfferVersion (load64 (st+112) t) a b c (received+96) (load64 (received+56) t) t
-    if r != 64 || status r != 0 then failImport r else
-      let t := store64 (st+128) c r
-      if c == 0 then store64 (st+120) (a+1) t else t
-  else if kind == 6 then
-    if length != 96+c || c == 0 || c > 512 || a != load64 (st+120) t || b != load64 (st+224) t then failImport t else
-    let r := importAppend (load64 (st+112) t) a b (received+96) c t
-    if r != 64 || status r != 0 then failImport r else
-      let offset := b+c
-      let t := store64 (st+224) (if offset == load64 (st+128) r then 0 else offset) r
-      store64 (st+120) (a+(if offset == load64 (st+128) t then 1 else 0)) t
-  else if kind == 7 then
-    if length != 96 || a != load64 (st+144) t || a != load64 (st+120) t || load64 (st+224) t != 0 then failImport t else
-    let r := importCommit (load64 (st+112) t) t
-    if r != 72 || status r != 0 || result r != 1 then failImport r else
-      let root := load64 (wire+64) r
-      let t := store64 (st+24) root r
-      let t := store64 (st+112) 0 t
-      let t := if load64 (st+200) t == 1 && load64 (Guest.ForgeFederation.st+208) t == 2 && equal remoteHead (Guest.ForgeFederation.st+224) 32 t then
-        store64 (Guest.ForgeFederation.st+208) 3 t else t
-      let shell := syscall 97 4 0 0 0 t
-      let t := delegate root shell 127 shell
-      let launcher := syscall 97 1 0 0 0 t
-      let t := delegate root launcher 127 launcher
-      let t := packetHeader 8 transaction 0 0 0 0 remoteHead t
-      message 11 (sendPacket (load64 (st+16) t) 96 t)
-  else failImport t
+  if kind == 1 then accept1 length transaction a b c t else
+  if kind == 2 then accept2 length transaction a b c t else
+  if kind == 9 then accept9 length transaction a b c t else
+  if kind == 10 then accept10 length transaction a b c t else
+  if kind == 13 then accept13 length transaction a b c t else
+  if kind == 3 then accept3 length transaction a b c t else
+  if kind == 8 then accept8 length transaction a b c t else
+  if kind == 12 then accept12 length transaction a b c t else
+  if kind == 11 then accept11 length transaction a b c t else
+  if kind == 14 || kind == 15 then accept14 kind length transaction a b c t else
+  if load64 (st+112) t == 0 || transaction != load64 (st+232) t || !equal (received+64) remoteHead 32 t then message 9 t else
+  if kind == 4 then accept4 length transaction a b c t else
+  if kind == 5 then accept5 length transaction a b c t else
+  if kind == 6 then accept6 length transaction a b c t else
+  if kind == 7 then accept7 length transaction a b c t else
+  failImport t
 def receiveOne (grant t : UInt64) : UInt64 :=
   if grant == 0 then t else
     let r := Guest.NetworkSDK.receive grant t
@@ -316,9 +382,13 @@ def projectPortal (t : UInt64) : UInt64 :=
           let t := copy (wire+96) localName 64 t
           message 1 (store64 (st+168) (load64 (wire+16) t) t)
 def configure (length t : UInt64) : UInt64 :=
-  if length != 128 || load64 (st+80) t != 0 || load64 (st+112) t != 0 ||
+  if length != 128 || load64 (st+80) t != 0 || load64 (st+112) t != 0 || load64 (st+56) t != 0 || Guest.ForgeArchive.active t ||
     load64 (command+40) t > 1 || (load64 (command+40) t == 1 && (load64 (command+16) t != 2 || load64 (command+32) t == 0)) then error else
     let t := Guest.ForgeSubscription.disable t
+    let oldMetadata := load64 (st+8) t
+    let oldRoot := load64 (st+16) t
+    let t := if oldMetadata == 0 then t else Guest.NetworkSDK.revoke oldMetadata t
+    let t := if oldRoot == 0 then t else Guest.NetworkSDK.revoke oldRoot t
     let t := copy (command+64) pins 64 t
     let t := zero (pins+64) 4 t
     let t := store64 (st+200) (load64 (command+16) t) t
@@ -330,7 +400,7 @@ def configure (length t : UInt64) : UInt64 :=
       let t := store64 (st+8) g g
       let t := store64 st 1 t
       let t := if load64 (st+32) t == 0 then t else
-        let grant := networkGrant localHead t
+        let grant := networkGrant offeredHead t
         if grant == error then store64 (st+16) 0 grant else store64 (st+16) grant grant
       let t := if load64 (st+280) t == 1 then Guest.ForgeArchive.inspect (load64 (st+216) t) t else t
       let t := zero wire 8 t
@@ -354,6 +424,7 @@ def pollControl (t : UInt64) : UInt64 :=
       else if op == 58 && n == 96 then Guest.ForgeFederation.inspect n else
       if op == 59 && n == 96 then Guest.ForgeFederation.inspectLocal n else
       if op == 60 && n == 96 then Guest.ForgeSubscription.inspect n else
+      if op == 62 && n == 96 then 144+copy Guest.ForgeCache.st (wire+64) 80 (zero wire 8 n) else
       if op == 61 && admin && n == 96 then
         if Guest.ForgeArchive.active n || load64 (st+264) n != 0 then error else
           let t := Guest.ForgeArchive.init n
@@ -711,6 +782,7 @@ def draw (surface t : UInt64) : UInt64 :=
   let t := Guest.Raster.hex (load64 (st+200) t) 2 330 328 0xd8e6ed 0x101b25 t
   let t := Guest.Raster.hex (load64 (st+208) t) 2 360 328 0xd8e6ed 0x101b25 t
   let t := Guest.Raster.hex (load64 (st+216) t) 16 390 328 0xd8e6ed 0x101b25 t
+  let t := Guest.ForgeCache.view t
   let t := store64 (st+248) 0 t
   Guest.Raster.upload surface 0 901120 0 t
 
@@ -718,13 +790,46 @@ def cancel (t : UInt64) : UInt64 :=
   let rs := Guest.RemoteBuild.state t
   let t := if rs == 1 || rs == 2 || rs == 7 then Guest.RemoteBuild.cancel t else t
   let t := if Guest.ForgeArchive.active t then Guest.ForgeArchive.cancel t else t
-  let job := load64 (st+80) t
-  let t := if job == 0 then t else Guest.NetworkSDK.cancel job t
   let transaction := load64 (st+112) t
   let t := if transaction == 0 then t else importAbort transaction t
-  let t := store64 (st+80) 0 t
+  let t := if transaction == 0 then t else
+    let t := copy remoteHead (st+512) 32 t
+    store64 (st+424) (load64 (st+232) t) (store64 (st+416) 1 t)
+  let t := Guest.ForgeCache.abort t
   let t := store64 (st+112) 0 t
   message 12 (store64 (st+176) 0 (store64 (st+56) 0 t))
+def cancellationTick (clock t : UInt64) : UInt64 :=
+  let deadline := load64 (st+408) t
+  let t := if deadline != 0 && clock >= deadline then
+    let t := store64 (st+408) 0 t
+    let transaction := load64 (st+112) t
+    let t := if transaction == 0 then t else importAbort transaction t
+    let t := Guest.ForgeCache.abort t
+    message 12 (store64 (st+112) 0 (store64 (st+56) 0 (store64 (st+416) 0 t)))
+    else t
+  let phase := load64 (st+416) t
+  if phase == 0 || load64 (st+80) t != 0 then t else
+    let t := packetHeader (if phase == 1 then 12 else 11) (load64 (st+424) t) 0 0 0 0 (st+512) t
+    let t := sendPacket (load64 (st+16) t) 96 t
+    if load64 (st+80) t == 0 then t else store64 (st+416) 0 t
+def cacheTick (t : UInt64) : UInt64 :=
+  let transaction := load64 (st+112) t
+  if transaction == 0 || load64 (st+464) t != 2 then t else
+    let phase := load64 (Guest.ForgeCache.st+32) t
+    let r := if phase == 0 then t else Guest.ForgeCache.pump transaction t
+    if r == error then failImport r else
+    let t := if phase != 0 && !Guest.ForgeCache.active r then
+      let ordinal := load64 (Guest.ForgeCache.st+16) r
+      let t := store64 (st+120) (ordinal+1) r
+      if phase != 2 then t else store64 (st+432) 15 (store64 (st+440) ordinal t)
+      else r
+    let ack := load64 (st+432) t
+    if ack == 0 || load64 (st+80) t != 0 then t else
+      let ordinal := load64 (st+440) t
+      let t := packetHeader ack (load64 (st+232) t) ordinal 0 0 0 remoteHead t
+      let t := copy (Guest.ForgeCache.row ordinal) (packet+96) 32 t
+      let t := sendPacket (load64 (st+16) t) 128 t
+      if load64 (st+80) t == 0 then t else store64 (st+432) 0 t
 def inspectInstall (t : UInt64) : UInt64 :=
   let root := load64 (st+24) t
   if root == 0 || load64 (st+192) t != 0 then message 2 t else
@@ -843,7 +948,7 @@ def federationTick (t : UInt64) : UInt64 :=
         if r == error then message 14 r else store64 (Guest.ForgeFederation.st+208) 4 r
       else t
     let before := Guest.ForgeFederation.localPhase t
-    let t := Guest.ForgeFederation.poll localHead t
+    let t := Guest.ForgeFederation.poll offeredHead t
     let t := if before != Guest.ForgeFederation.localPhase t then store64 (st+248) 1 t else t
     if load64 (st+80) t != 0 then t else
     let phase := Guest.ForgeFederation.sendPhase t
@@ -853,15 +958,15 @@ def federationTick (t : UInt64) : UInt64 :=
         let t := copy (Guest.ForgeFederation.st+256) (packet+96) 32 t
         let t := sendPacket (load64 (st+8) t) 128 t
         if load64 (st+80) t == 0 then t else store64 (Guest.ForgeFederation.st+32) 0 t
-    else if !Guest.ForgeFederation.ready localHead t then t else
+    else if !Guest.ForgeFederation.ready offeredHead t then t else
     if phase == 1 then sendMetadata t else
     if phase == 2 then
-      let t := packetHeader 9 (load64 (Guest.ForgeFederation.st+24) t) 0 0 0 0 localHead t
+      let t := packetHeader 9 (load64 (Guest.ForgeFederation.st+24) t) 0 0 0 0 offeredHead t
       let t := copy Guest.ForgeFederation.localDescriptor (packet+96) 512 t
       let t := sendPacket (load64 (st+8) t) 608 t
       if load64 (st+80) t == 0 then t else store64 (Guest.ForgeFederation.st+32) 3 t
     else if phase == 3 then
-      let t := packetHeader 10 (load64 (Guest.ForgeFederation.st+24) t) 0 0 0 0 localHead t
+      let t := packetHeader 10 (load64 (Guest.ForgeFederation.st+24) t) 0 0 0 0 offeredHead t
       let t := copy (Guest.ForgeFederation.localDescriptor+512) (packet+96) 256 t
       let t := sendPacket (load64 (st+8) t) 352 t
       if load64 (st+80) t == 0 then t else store64 (Guest.ForgeFederation.st+32) 0 t
@@ -905,12 +1010,14 @@ partial def loop (surface count t : UInt64) : UInt64 :=
     let t := store64 (st+400) count t
     let t := remoteTick count t
     let t := pollSend t
+    let t := cancellationTick count t
+    let t := cacheTick t
     let t := federationTick t
     let t := subscriptionTick count t
     let t := if load64 (st+176) t == 1 && load64 (st+80) t == 0 then requestFetch (store64 (st+176) 0 t) else t
     let t := projectPortal t
     let t := receiveOne (load64 (st+8) t) t
-    let t := receiveOne (load64 (st+16) t) t
+    let t := if Guest.ForgeCache.active t then t else receiveOne (load64 (st+16) t) t
     sender t
   let t := if count%512 == 0 && (load64 (st+112) t != 0 || load64 (st+56) t != 0) then store64 (st+248) 1 t else t
   let event := if surface == 0 then Guest.Effects.effectValue 0 t else syscall 90 (self t) 0 0 0 t
@@ -918,8 +1025,8 @@ partial def loop (surface count t : UInt64) : UInt64 :=
   let t := if surface != 0 && load64 (st+248) t != 0 then draw surface t else t
   loop surface (count+1) (syscall 9 0 0 0 0 t)
 def main (initial : UInt64) : UInt64 :=
-  let t := Guest.ForgeSubscription.disable (Guest.ForgeArchive.init (Guest.ForgeFederation.init (zero st 128 initial)))
+  let t := Guest.ForgeSubscription.disable (Guest.ForgeArchive.init (Guest.ForgeFederation.init (Guest.ForgeCache.init (zero st 128 initial))))
   let surface := syscall 80 0 0 0 0 t
   if surface == error then syscall 10 1 0 0 0 surface else loop surface 0 (draw surface surface)
-def serverMain (initial : UInt64) : UInt64 := loop 0 0 (Guest.ForgeSubscription.disable (Guest.ForgeArchive.init (Guest.ForgeFederation.init (zero st 128 initial))))
+def serverMain (initial : UInt64) : UInt64 := loop 0 0 (Guest.ForgeSubscription.disable (Guest.ForgeArchive.init (Guest.ForgeFederation.init (Guest.ForgeCache.init (zero st 128 initial)))))
 end Guest.Forge

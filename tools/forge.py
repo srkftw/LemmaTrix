@@ -12,7 +12,7 @@ def configure(client,instance,credentials,role='client',policy='portable',store_
  request=struct.pack('<8Q',1,0,roles.index(role),policies.index(policy)+1,store_grant,int(recover_and_seed),0,1)+peer+service
  raw=client.request(150,struct.pack('<Q',instance)+request)
  if len(raw)!=64 or struct.unpack_from('<Q',raw)[0]:raise ValueError('native Forge configuration denied')
- return {'instance':instance,'role':role,'policy':policy,'peer':peer.hex(),'service':service.hex(),'server_store_grant':store_grant,'recover_and_seed':recover_and_seed,'native_controls':'F1 admission details; F2 scope; F3 metadata; F4 offer; F5 fetch; F6 install; F7 remote request; F8 server save; F9 inspect/recover; F10 remote approval; F11 federation publish; Esc cancel','signing_authority':'none','personal_retention':'ephemeral; server retention requires a separately granted purpose2 store'}
+ return {'instance':instance,'role':role,'policy':policy,'peer':peer.hex(),'service':service.hex(),'server_store_grant':store_grant,'recover_and_seed':recover_and_seed,'native_controls':'F1 admission details; F2 scope; F3 metadata; F4 offer; F5 fetch; F6 install; F7 remote request; F8 server save; F9 inspect/recover; F10 remote approval; F11 federation publish; S metadata subscription; Esc cancel','signing_authority':'none','personal_retention':'ephemeral; server retention requires a separately granted purpose2 store'}
 
 def federation_configure(client,instance,identity,policy=1,enabled=True):
  identity=network.digest(identity) if enabled else bytes(32)
@@ -38,6 +38,12 @@ def subscription_inspect(client,instance):
  q=struct.unpack_from('<8Q',raw,64)
  return {'subscribed':bool(q[0]),'next_local_turn':q[1],'backoff_turns':q[2],'sequence':q[3],'state':q[4],'metadata_queries':q[5],'logical_project_id':raw[128:160].hex(),'publication_id':raw[160:192].hex(),'federation_id':raw[192:224].hex(),'peer_id':raw[224:256].hex(),'desired_root':raw[256:288].hex(),'execution_approved':False,'personal_retention':False}
 
+def cache_inspect(client,instance):
+ raw=client.request(150,struct.pack('<Q',instance)+struct.pack('<8Q',62,0,0,0,0,0,0,1))
+ if len(raw)!=144 or struct.unpack_from('<Q',raw)[0]:raise ValueError('native verified cache inspection unavailable')
+ q=struct.unpack_from('<10Q',raw,64)
+ return {'allocated_bytes':q[0],'ordinal':q[2],'offset':q[3],'phase':q[4],'validated_bytes':q[6],'reused_bytes':q[7],'skipped_records':q[9],'durable':False,'capabilities_reused':False}
+
 def inspect(client,instance):
  raw=client.request(150,struct.pack('<Q',instance)+struct.pack('<8Q',2,0,0,0,0,0,0,1))
  if len(raw)!=320 or struct.unpack_from('<Q',raw)[0]:raise ValueError('native Forge unavailable')
@@ -52,6 +58,7 @@ def main(argv=None):
  q=sub.add_parser('federation');q.add_argument('--identity',default='');q.add_argument('--policy',choices=('portable','native-restricted'),default='portable');q.add_argument('--disable',action='store_true')
  q=sub.add_parser('admission');q.add_argument('--local',action='store_true')
  sub.add_parser('subscription')
+ sub.add_parser('cache')
  sub.add_parser('inspect')
  a=p.parse_args(argv);c=live.Client(a.socket)
  try:
@@ -59,6 +66,7 @@ def main(argv=None):
   elif a.command=='federation':result=federation_configure(c,a.instance,a.identity,1 if a.policy=='portable' else 2,not a.disable)
   elif a.command=='admission':result=federation_inspect(c,a.instance,a.local)
   elif a.command=='subscription':result=subscription_inspect(c,a.instance)
+  elif a.command=='cache':result=cache_inspect(c,a.instance)
   else:result=inspect(c,a.instance)
  finally:c.close()
  print(json.dumps(result,indent=2));return 0
