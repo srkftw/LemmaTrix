@@ -400,5 +400,25 @@
       },
       "failure": "80ms key-edge timing and 200ms post-name redraw delay did not preserve the intended source burst. Frame called editor-ready by harness still lacked the bottom project-name prompt, unlike native x86. Startup/full-redraw pacing was not observed before subsequent input; exact queue-loss mechanism not established. Final affected run must wait for actual rendered readiness, not just process state or any changed frame."
     }
+  },
+  "guest_cursor": {
+    "image_sha256": "367f004fe5f55a9217a49cba3d451d27f0a70e254435a0cd299951b4a27a192a",
+    "environment": "Native x86-64 assembly interpreter; raw evdev FIFO and completed GPU frame transport",
+    "result": "pass",
+    "executed": [
+      "Booted actual guest Lean compositor and inspected visible 7x7 arrow",
+      "Moved real pointer320,200 ->50,70 ->639,399",
+      "Opened trusted launcher modal by actual Alt-F9, then moved pointer100,80 within modal",
+      "Asserted original background restored and bottom-right cursor clipped to one pixel",
+      "Asserted all changed pixels for ordinary movement and modal movement lay only in old/new clipped cursor rectangles"
+    ],
+    "frames": {
+      "initial": "6348d9dc3698e56f13069d41f213a3b131e8df15b26e0f3f5344810b2e7f98ef",
+      "moved": "b247a39630d07a0d479e973056b1ea1e38dd5efb26dca731d7bbdd6f4abcfa5a",
+      "clipped": "274d9e8ff8da05e6f54e0ddf57246bd530323db5cf5cf867564b5ff378ecaa6c",
+      "modal": "90924c9c24d2853d864720776fcbd6a3ee62106b2cd19085d8c694e29c614ea7",
+      "modal_moved": "c3ca931e37d879a22940f913e851cc18709d0d47cd5434f16b8374b99d7baef7"
+    },
+    "limits": "Headless device-driven rendered-frame evidence; no claim of physical pointer/display hardware validation."
   }
 }
