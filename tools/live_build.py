@@ -4,7 +4,7 @@ from pathlib import Path
 import driver
 ROOT=driver.ROOT
 B=ROOT/'build/live'
-MODULES=['Primitives','Policy','DevicePrimitives','Devices','GraphicsDevice','Effects','Structured','LiveMemory','ServiceSHA256','ServiceHash','ServiceSignature','LiveSDK','VaultCrypto','VaultPolicy','Vault','Objects','LiveApps','LiveKernel','Launcher','Raster','Labels','Compositor','BuildJobs','Desktop','TextTools']
+MODULES=['Primitives','Policy','DevicePrimitives','Devices','GraphicsDevice','Effects','Structured','LiveMemory','ServiceSHA256','ServiceHash','ServiceSignature','LiveSDK','VaultCrypto','VaultPolicy','Vault','Objects','LiveApps','LiveKernel','Launcher','Raster','Labels','Compositor','BuildJobs','Desktop','TextTools','Network']
 def content(paths):
  h=hashlib.sha256()
  for p in paths:h.update(str(p.relative_to(ROOT)).encode());h.update(p.read_bytes())
@@ -77,7 +77,7 @@ def build(clean=False):
   for path in (ROOT/'Guest').glob('*.olean'):path.unlink()
  for name in MODULES:compile_module('Guest.'+name)
  kernel=artifact('Guest.LiveKernel','Guest.Live.kernelMain','kernel',True)
- services=[artifact('Guest.Launcher','Guest.Launcher.main','launcher',wide=True),artifact('Guest.Objects','Guest.Objects.main','objects',wide=True),artifact('Guest.Vault','Guest.Vault.appMain','vault',wide=True),artifact('Guest.Compositor','Guest.Compositor.main','compositor',wide=True),artifact('Guest.BuildJobs','Guest.BuildJobs.main','build-jobs',wide=True)]
+ services=[artifact('Guest.Launcher','Guest.Launcher.main','launcher',wide=True),artifact('Guest.Objects','Guest.Objects.main','objects',wide=True),artifact('Guest.Vault','Guest.Vault.appMain','vault',wide=True),artifact('Guest.Compositor','Guest.Compositor.main','compositor',wide=True),artifact('Guest.BuildJobs','Guest.BuildJobs.main','build-jobs',wide=True),artifact('Guest.Network','Guest.Network.main','network',wide=True)]
  for name in ['workbench','inspector','worker']:artifact('Guest.LiveApps','Guest.LiveApps.'+name+'Main',name)
  data=bytearray(0x600000)
  part=kernel.read_bytes();data[:len(part)]=part
@@ -86,7 +86,7 @@ def build(clean=False):
   part=path.read_bytes()
   if len(part)>262144:raise RuntimeError(f'{path.name} exceeds256KiB code')
   offset=0x300000+(pid-1)*262144;data[offset:offset+len(part)]=part
-  rights={1:0x1000000ff,2:0,3:1,4:127,5:127}[pid]
+  rights={1:0x1000000ff,2:0,3:127,4:127,5:127,6:0}[pid]
   struct.pack_into('<QQ',data,0x200000+pid*32,len(part),rights)
  try:
   import build_jobs

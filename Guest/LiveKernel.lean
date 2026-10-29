@@ -466,6 +466,13 @@ def dispatch (p op h ptr n v t : UInt64) : UInt64 :=
     -- Trusted compositor cursor readback: a single bounded pixel row only.
     if p != 4 || n == 0 || n > 28 || n%4 != 0 || h%4 != 0 || h > 1024000 || n > 1024000-h || h%2560+n > 2560 || !validFor p ptr n 28 t then err else
       copy (0x80f00000+h) (physical p ptr) n t
+  else if op == 111 then
+    -- Fresh fork namespaces are minted by Objects; no application is granted
+    -- raw entropy/device access or a reusable local capability as an identity.
+    if p != 2 || n != 32 || !(valid ptr 32 32 || (ptr >= 0x600000 && ptr <= 0xdfffe0)) then err else
+      let r := Devices.random 0x80e0a000 32 t
+      let destination := if ptr >= 0x600000 then 0x84000000+ptr-0x600000 else physical p ptr
+      if r == 0 then copy 0x80e0a000 destination 32 r else err
   else if op == 100 then
     if p != 5 || n != 32 || !validFor p ptr 32 32 t then err else copy 0x80200400 (physical p ptr) 32 t
   else if op == 101 then

@@ -27,7 +27,7 @@ lt_finish:
  li t0,0x100000
  li t1,0x5555
  beqz a0,1f
- li t1,0x3333
+ li t1,0x13333
 1: sw t1,0(t0)
 2: j 2b
 .globl lt_load32, lt_store32, lt_device_fence, lt_effect_value

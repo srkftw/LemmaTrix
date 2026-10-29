@@ -4,6 +4,7 @@ import Guest.ServiceHash
 import Guest.VaultCrypto
 import Guest.VaultPolicy
 import Guest.ProjectVault
+import Guest.ServerStore
 namespace Guest.Vault
 open Guest.LiveSDK
 -- One explicitly authorized Objects record per vault. Dual authenticated roots select
@@ -229,13 +230,14 @@ def recoverChunk (offset count t : UInt64) : UInt64 :=
       let t := describe 0 count t
       if count == 0 then t else 64+count+copy (plaintext+offset) (wire+64) count t
 
-def dispatch (rights length t : UInt64) : UInt64 :=
+def dispatch (caller rights length t : UInt64) : UInt64 :=
   if length < 64 || load64 (command+56) t != 1 then describe 2 0 t else
     let op := load64 command t
     let domain := load64 (command+16) t
+    if op >= 230 && op <= 239 then ServerStore.dispatch caller rights length t else
     if !VaultPolicy.authorized rights domain then describe 1 0 t else
       if op == 200 then unlock length t
-      else if op >= 210 && op <= 216 then
+      else if op >= 210 && op <= 217 then
         if load64 state t != 1 then describe 3 0 t else ProjectVault.dispatch op length t
       else if length != 64 then describe 2 0 t
       else if op == 201 then lock t
@@ -249,9 +251,10 @@ def dispatch (rights length t : UInt64) : UInt64 :=
 partial def loop (t : UInt64) : UInt64 :=
   let received := receive 3 t
   let token := load64 (incoming+8) received
+  let caller := load64 incoming received
   let rights := load64 (incoming+16) received
   let length := if received >= 32 then received-32 else 0
-  let replyLength := dispatch rights length received
+  let replyLength := dispatch caller rights length received
   let t := zero incoming 128 replyLength
   let t := LiveSDK.reply token replyLength t
   loop t
