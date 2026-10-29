@@ -1,5 +1,5 @@
 """Explicit guest graph import/export and host bootstrap job boundary."""
-import argparse,hashlib,json,struct,sys
+import argparse,hashlib,json,struct,sys,time
 from pathlib import Path,PurePosixPath
 import live
 MAGIC=0x31464e4d544c
@@ -35,12 +35,18 @@ def decode_manifest(data):
  if entries!=sorted(entries) or len({x[0] for x in entries})!=len(entries):raise ValueError('manifest ordering')
  return entries
 
-def roots(client):
+def project_identity(client,root):
+ fields,data=client.objects(34,root)
+ if len(data)!=128:raise ValueError('logical project identity response missing')
+ return data[96:128].hex()
+
+def roots(client,include_identity=False):
  answer=[];cursor=0
  while cursor<64:
   f,data=client.objects(23,a=cursor)
   if not f[1]:break
   answer.append(dict(cap=f[1],name=data[32:32+f[2]].decode(),head=data[:32].hex()))
+  if include_identity:answer[-1]['project_id']=project_identity(client,f[1])
   if f[3]<=cursor:raise ValueError('root cursor did not advance')
   cursor=f[3]
  return answer
@@ -56,18 +62,49 @@ def snapshot(client,root,head=None):
   files[name]=client.read_object(handle,True)
  return identity,files
 
-def build_bridge(client,outputdir,module='Main',entry='Main.main'):
- import build_jobs
+def queued_build(client):
  raw=client.request(160,struct.pack('<8Q',2,0,0,0,0,0,0,1))
- if len(raw)<160 or struct.unpack_from('<Q',raw)[0]:raise ValueError('no queued build job')
- f=struct.unpack_from('<8Q',raw);jobid,service,root,profile=f[1],f[3],f[4],f[5]
- head=raw[64:96].hex();expected_compiler=raw[128:160].hex()
- actual,files=snapshot(client,root,head)
- if actual!=head:raise ValueError('frozen source root mismatch')
- 
+ if len(raw)<64:raise ValueError('short build queue response')
+ status=struct.unpack_from('<Q',raw)[0]
+ if status==6:return None
+ if status or len(raw)!=192:raise ValueError('invalid queued build job')
+ return raw
+
+def frozen_build(client,raw):
+ f=struct.unpack_from('<8Q',raw)
+ job=dict(job_id=f[1],job_service=f[3],source_root_capability=f[4],runtime_profile=f[5],source_root=raw[64:96].hex(),toolchain_id=raw[128:160].hex())
+ if not job['job_id'] or not job['job_service'] or not job['source_root_capability'] or job['runtime_profile']!=2:raise ValueError('incompatible graphical build job')
+ meta,data=client.objects(29,job['source_root_capability'])
+ if meta[2]>63 or meta[5]!=1 or data[:32].hex()!=job['source_root']:raise ValueError('queued job does not identify its immutable frozen root')
+ job['project_name']=data[32:32+meta[2]].decode('ascii')
+ return job
+
+def compile_frozen(job,files,outputdir):
+ import build_jobs
+ result=build_jobs.build_source_snapshot(files,module='Main',entry='Main.main',profile=job['runtime_profile'],jobid=job['job_id'],rootid=job['source_root'],outputdir=outputdir)
+ if result.get('toolchain_id')!=job['toolchain_id']:raise ValueError('guest frozen compiler/toolchain commitment differs; build result not returned')
+ result['guest_session']={k:job[k] for k in ('job_service','job_id','source_root_capability','project_name')}
+ result['delivered']=False
+ return result
+
+def save_build(result,outputdir):
+ outputdir=Path(outputdir);outputdir.mkdir(parents=True,exist_ok=True)
+ (outputdir/'job.result.json').write_text(json.dumps(result,indent=2)+'\n')
+
+def build_bridge(client,outputdir,module='Main',entry='Main.main',defer_result=False):
  if module!='Main' or entry!='Main.main':raise ValueError('graphical jobs freeze the fixed Main.main recipe')
- result=build_jobs.build_source_snapshot(files,module=module,entry=entry,profile=profile,jobid=jobid,rootid=head,outputdir=outputdir)
- if result.get('toolchain_id')!=expected_compiler:raise ValueError('guest frozen compiler/toolchain commitment differs; build result not returned')
+ raw=queued_build(client)
+ if raw is None:raise ValueError('no queued build job')
+ job=frozen_build(client,raw)
+ actual,files=snapshot(client,job['source_root_capability'],job['source_root'])
+ if actual!=job['source_root']:raise ValueError('frozen source root mismatch')
+ result=compile_frozen(job,files,outputdir)
+ if not defer_result:complete_build(client,result)
+ save_build(result,outputdir)
+ return result
+
+def complete_build(client,result):
+ session=result['guest_session'];jobid=int(session['job_id']);service=int(session['job_service']);profile=int(result['runtime_profile']);head=result['source_root']
  located=result.get('diagnostics',[])
  diagnostic=(f"{located[0]['path']}:{located[0]['line']}:{located[0]['column']}: {located[0]['message']}" if located else result.get('diagnostic_text',''))
  diag=diagnostic.encode('utf-8')[:512]
@@ -77,10 +114,8 @@ def build_bridge(client,outputdir,module='Main',entry='Main.main'):
  payload=struct.pack('<8Q',3,jobid,service,2 if result['status']=='ok' else 3,0,profile,len(diag),1)+bytes.fromhex(head)+bytes.fromhex(artifact)+bytes.fromhex(result['request_digest'])+bytes.fromhex(result['toolchain_id'])+diag
  accepted=client.request(160,payload)
  if len(accepted)<128 or struct.unpack_from('<Q',accepted)[0]:raise ValueError('guest rejected stale/wrong source build response')
- outputdir=Path(outputdir);outputdir.mkdir(parents=True,exist_ok=True)
- result['guest_session']={'job_service':service,'job_id':jobid,'source_root_capability':root}
- path=outputdir/'job.result.json';path.write_text(json.dumps(result,indent=2)+'\n')
- return result
+ result['delivered']=True
+ return accepted
 
 def publish_result(result_path,key,name,version,output,parent=None,*,client=None,rights=768,attach_root=None):
  import releases,packaging as pkg
@@ -155,22 +190,121 @@ def publish_result(result_path,key,name,version,output,parent=None,*,client=None
  shell_root=client.objects(27,published_root,shell,127)[0][1] if shell else 0
  result=releases.inspect(envelope,manifest=signed_manifest)
  result['content']={'release_node':release_node_id,'release_handle':release_handle,'binary_manifest':binary_id,'build_node':build_ids[:32].hex(),'evidence_node':evidence_ids[:32].hex(),'source_root':r['source_root'],'snapshot_root':published_root,'snapshot_head':snapshot_id,'snapshot_name':encoded.decode('ascii'),'shell_root_capability':shell_root,'attached_to_selected_root':attached,'guest_present_commitments_checked':True,'publisher_signature':'requires Launcher verification under current local trust','installed':False}
+ Path(str(output)+'.content.json').write_text(json.dumps({'schema':1,'session_only':True,'release_handle':release_handle,'release_id':envelope[160:192].hex(),'snapshot_head':snapshot_id},indent=2)+'\n')
  return result
+
+def failed_job(job,message):
+ # A rejected scope or unavailable bootstrap is an attributable failed result,
+ # never a compilation claim or permission to sign its input.
+ request={'schema':1,'recipe':'lemmatrix-worker-rejection-1','job_id':str(job['job_id']),'source_root':job['source_root'],'runtime_profile':2,'toolchain_id':job['toolchain_id'],'diagnostic':message}
+ return {**request,'status':'error','diagnostics':[],'diagnostic_text':message[:512],
+  'request_digest':hashlib.sha256(b'LT-BUILD-JOB-REJECTION-1\0'+json.dumps(request,sort_keys=True,separators=(',',':')).encode()).hexdigest(),
+  'guest_session':{k:job[k] for k in ('job_service','job_id','source_root_capability','project_name')},'delivered':False,'compiled':False}
+
+def version_tuple(value):
+ import re
+ if not re.fullmatch(r'(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)',value):raise ValueError('canonical major.minor.patch version required')
+ fields=tuple(map(int,value.split('.')))
+ if max(fields)>0xffffffff:raise ValueError('version exceeds32-bit bound')
+ return fields
+
+def next_version(value):
+ fields=list(value)
+ for i in (2,1,0):
+  if fields[i]<0xffffffff:fields[i]+=1;return tuple(fields)
+  fields[i]=0
+ raise ValueError('release version space exhausted')
+
+def current_release(client,name):
+ import releases
+ try:raw=client.request(29,releases.project(name))
+ except ValueError as error:
+  if str(error)=='guest rejected command29, status1':return None
+  raise
+ if len(raw)!=512 or raw[128:160]!=releases.project(name):raise ValueError('current active release identity mismatch')
+ return {'release_id':raw[160:192].hex(),'version':struct.unpack_from('<3Q',raw,72)}
+
+def serve(socket,project,sign_key,output,version='0.1.0',poll_interval=.5):
+ import releases
+ releases.project(project)
+ if not sign_key.is_file():raise ValueError('explicit publisher signing key does not exist')
+ # Key parsing stays in the publisher process, before any untrusted elaboration.
+ import capsule
+ capsule.modulus(sign_key)
+ counter=version_tuple(version);output=Path(output).resolve();output.mkdir(parents=True,exist_ok=True)
+ delay=max(.1,min(float(poll_interval),5.0));backoff=delay
+ def report(event,**fields):print(json.dumps(dict(event=event,project=project,**fields),sort_keys=True),flush=True)
+ report('ready',recipe='Main.main/profile2',rights=768,signing='explicit host key, outside compilation sandbox',approval='F12 review required')
+ try:
+  while True:
+   client=None;job=None
+   try:
+    client=live.Client(socket,timeout=240);raw=queued_build(client)
+    if raw is None:
+     client.close();client=None;time.sleep(delay);continue
+    job=frozen_build(client,raw)
+    directory=output/('session-'+str(job['job_service']))/('job-'+str(job['job_id']))
+    directory.mkdir(parents=True,exist_ok=True)
+    if job['project_name']!=project:
+     result=failed_job(job,'Publisher worker scope denied: frozen project '+repr(job['project_name'])+' does not match '+repr(project)+'. No source exported or signed.')
+     complete_build(client,result);save_build(result,directory)
+     report('rejected',job=job['job_id'],reason=result['diagnostic_text']);continue
+    actual,files=snapshot(client,job['source_root_capability'],job['source_root'])
+    if actual!=job['source_root']:raise ValueError('frozen source root mismatch')
+    client.close();client=None
+    report('building',job=job['job_id'],source_root=job['source_root'])
+    result=compile_frozen(job,files,directory)
+    client=live.Client(socket,timeout=240)
+    complete_build(client,result);save_build(result,directory)
+    if result['status']!='ok':
+     report('diagnostic',job=job['job_id'],source_root=job['source_root'],status=result['status'],diagnostics=result.get('diagnostics',[]),message=result.get('diagnostic_text','')[:2048]);continue
+    active=current_release(client,project)
+    selected=max(counter,next_version(active['version'])) if active else counter
+    parent=active['release_id'] if active else None
+    release_path=directory/('release-'+'.'.join(map(str,selected))+'.ltrel')
+    # CAS attachment is optional. A completed build of A does not replace head B.
+    current=next((r for r in roots(client) if r['name']==project and r['head']==job['source_root']),None)
+    published=publish_result(directory/'job.result.json',sign_key,project,'.'.join(map(str,selected)),release_path,parent,client=client,rights=768,attach_root=current['cap'] if current else None)
+    counter=next_version(selected)
+    staged=client.stage(release_path)
+    if staged['release_id']!=published['release_id']:raise ValueError('staged release differs from signed result')
+    report('staged',job=job['job_id'],source_root=job['source_root'],release=published['release_id'],version=published['version'],parent=parent,path=str(release_path),signature_verified=staged['guest_signature_verified'],material_checked=staged.get('guest_material_commitments_checked',False),installed=False,approval='Review F12, then physical Enter')
+    backoff=delay
+   except (EOFError,OSError,ValueError,RuntimeError) as error:
+    # A disconnected/stale job cannot be signed or silently rebound to a new
+    # session. Bootstrap failures leave an attributable failed job when possible.
+    if job is not None:
+     try:
+      if client:client.close()
+      client=live.Client(socket,timeout=30)
+      failed=failed_job(job,'Bootstrap worker failed: '+str(error));complete_build(client,failed);save_build(failed,directory)
+     except (EOFError,OSError,ValueError,RuntimeError):pass
+    report('error',job=job['job_id'] if job else None,message=str(error)[:2048]);time.sleep(backoff);backoff=min(backoff*2,5.0)
+   finally:
+    if client:client.close()
+ except KeyboardInterrupt:report('stopped')
+ return 0
 
 def main(argv=None):
  p=argparse.ArgumentParser(description='Canonical guest Project roots; explicit byte import/export')
  p.add_argument('--socket',type=Path,required=True);s=p.add_subparsers(dest='cmd',required=True)
  s.add_parser('list')
- a=s.add_parser('build');a.add_argument('--output',type=Path,required=True);a.add_argument('--module',default='Main');a.add_argument('--entry',default='Main.main')
+ a=s.add_parser('serve',help='explicit persistent sandbox build and scoped publisher worker; never auto-approves');a.add_argument('--project',required=True);a.add_argument('--sign-key',type=Path,required=True);a.add_argument('--output',type=Path,required=True);a.add_argument('--version',default='0.1.0');a.add_argument('--poll-interval',type=float,default=.5)
+ a=s.add_parser('build');a.add_argument('--output',type=Path,required=True);a.add_argument('--module',default='Main');a.add_argument('--entry',default='Main.main');a.add_argument('--defer-result',action='store_true')
+ a=s.add_parser('complete');a.add_argument('result',type=Path)
  a=s.add_parser('publish');a.add_argument('result',type=Path);a.add_argument('--sign-key',type=Path,required=True);a.add_argument('--name',required=True);a.add_argument('--version',required=True);a.add_argument('--parent');a.add_argument('--rights',type=lambda x:int(x,0),default=768);a.add_argument('--attach-root',type=int);a.add_argument('--output',type=Path,required=True)
  a=s.add_parser('import');a.add_argument('directory',type=Path);a.add_argument('--name',required=True);a.add_argument('--root',type=int,default=0);a.add_argument('--expected')
  a=s.add_parser('export');a.add_argument('--root',type=int,required=True);a.add_argument('--head');a.add_argument('--output',type=Path,required=True)
  a=s.add_parser('share');a.add_argument('--root',type=int,required=True);a.add_argument('--to',type=int,required=True);a.add_argument('--rights',type=int,default=127)
- args=p.parse_args(argv);client=live.Client(args.socket)
+ args=p.parse_args(argv)
+ if args.cmd=='serve':return serve(args.socket,args.project,args.sign_key,args.output,args.version,args.poll_interval)
+ client=live.Client(args.socket)
  try:
-  if args.cmd=='build':print(json.dumps(build_bridge(client,args.output,args.module,args.entry),indent=2))
+  if args.cmd=='build':print(json.dumps(build_bridge(client,args.output,args.module,args.entry,args.defer_result),indent=2))
+  elif args.cmd=='complete':
+   result=json.loads(args.result.read_text());complete_build(client,result);args.result.write_text(json.dumps(result,indent=2)+'\n');print(result['source_root'])
   elif args.cmd=='publish':print(json.dumps(publish_result(args.result,args.sign_key,args.name,args.version,args.output,args.parent,client=client,rights=args.rights,attach_root=args.attach_root),indent=2))
-  elif args.cmd=='list':print(json.dumps(roots(client),indent=2))
+  elif args.cmd=='list':print(json.dumps(roots(client,include_identity=True),indent=2))
   elif args.cmd=='share':print(client.objects(27,args.root,args.to,args.rights)[0][1])
   elif args.cmd=='import':
    directory=args.directory.resolve();entries=[];total=0
