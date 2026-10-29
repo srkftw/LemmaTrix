@@ -61,7 +61,7 @@ def configure(client,path):
 
 def status(client):
  f,_=call(client,7)
- return {'protocol_version':1,'profile':'Noise_NNpsk0_25519_ChaChaPoly_SHA256','session_phase':f[1],'endpoint_authenticated':f[1]==3,'configured_role':{0:'unconfigured',1:'client',2:'server'}.get(f[2],'invalid'),'device_status':f[3],'broker_ticks':f[4],'last_error':f[5],'traffic_privacy':'direct endpoints visible; no anonymity','modes_available':['encrypted_bulk']}
+ return {'protocol_version':1,'profile':'Noise_NNpsk0_25519_ChaChaPoly_SHA256','session_phase':f[1],'endpoint_authenticated':f[1]==3,'configured_role':{0:'unconfigured',1:'client',2:'server'}.get(f[2],'invalid'),'device_status':f[3],'broker_ticks':f[4],'last_error':f[5],'inbox_records':f[6],'traffic_privacy':'direct endpoints visible; no anonymity','modes_available':['encrypted_bulk']}
 
 def main(argv=None):
  p=argparse.ArgumentParser(description='Explicit ordered Noise relationship provisioning; private files contain a PSK')

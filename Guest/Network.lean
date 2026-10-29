@@ -32,8 +32,14 @@ partial def queued (i t : UInt64) : UInt64 :=
   if i == 8 then error else if load64 (jobAt i) t == 1 then i else queued (i+1) t
 partial def freeInbox (i t : UInt64) : UInt64 :=
   if i == 4 then error else if load64 (inbox i) t == 0 then i else freeInbox (i+1) t
-partial def findInbox (id i t : UInt64) : UInt64 :=
-  if i == 4 then error else if load64 (inbox i) t == id then i else findInbox id (i+1) t
+partial def oldestInbox (id i selected t : UInt64) : UInt64 :=
+  if i == 4 then selected else
+    let p := inbox i
+    let before := selected == error || load64 (p+1008) t < load64 (inbox selected+1008) t
+    oldestInbox id (i+1) (if load64 p t == id && before then i else selected) t
+def findInbox (id i t : UInt64) : UInt64 := oldestInbox id i error t
+partial def inboxCount (i count t : UInt64) : UInt64 :=
+  if i == 4 then count else inboxCount (i+1) (count+(if load64 (inbox i) t == 0 then 0 else 1)) t
 partial def equal (a b n t : UInt64) : Bool :=
   if n == 0 then true else if load8 a t != load8 b t then false else equal (a+1) (b+1) (n-1) t
 partial def nonzero (p n v t : UInt64) : UInt64 :=
@@ -51,6 +57,7 @@ def disconnect (reason t : UInt64) : UInt64 :=
   let t := zero rx 256 t
   let t := zero plain 256 t
   let t := zero 0x60b000 512 t
+  let t := store64 (st+120) 0 t
   let t := failJobs 0 t
   let t := zero 0x608000 128 t
   let t := store64 (st+32) 0 t
@@ -91,7 +98,7 @@ def fresh (t : UInt64) : UInt64 :=
     let t := copy pins Guest.Noise.binding 96 r
     let t := copy (pins+96) Guest.Noise.psk 32 t
     let t := Guest.Noise.initHandshake (load64 (st+8) t) t
-    let t := store64 (st+96) (now t+10000) t
+    let t := store64 (st+96) (now t+100000) t
     let t := store64 (st+104) (now t+100000) t
     if load64 (st+8) t == 1 then
       let t := Guest.Noise.writeFirst (tx+2) t
@@ -125,6 +132,9 @@ def acceptRecord (n t : UInt64) : UInt64 :=
         let g := grantAt selected
         let p := inbox vacant
         let t := store64 p (load64 (g+8) vacant) vacant
+        let sequence := load64 (st+120) t+1
+        let t := store64 (st+120) sequence t
+        let t := store64 (p+1008) sequence t
         let t := store64 (p+8) length t
         let t := copy (plain+48) (p+16) length t
         charge g length t
@@ -334,6 +344,7 @@ def dispatch (caller rights length t : UInt64) : UInt64 :=
     let t := store64 (wire+16) (load64 (st+8) t) t
     let t := store64 (wire+24) (syscall 101 0 0 0 0 t) t
     let t := store64 (wire+32) (now t) t
+    let t := store64 (wire+48) (inboxCount 0 0 t) t
     64+store64 (wire+40) (load64 (st+80) t) t
   else if op == 8 && length == 64 then
     let selected := findGrant handle caller 0 t

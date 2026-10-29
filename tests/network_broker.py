@@ -37,7 +37,7 @@ def run_pair(client_backend,server_backend,size=4097):
     if not hasattr(authenticated,'last') or time.monotonic()-authenticated.last>5:
      print('Noise state',statuses,flush=True);authenticated.last=time.monotonic()
     return all(status['endpoint_authenticated'] for status in statuses)
-   wait_until(authenticated)
+   wait_until(authenticated,300)
    grants=[]
    for i,c in enumerate(clients):
     peer=pin_server if i==0 else pin_client
@@ -46,6 +46,20 @@ def run_pair(client_backend,server_backend,size=4097):
      f,_=network.call(c,2,a=3,b=bad_mode,c=262144,d=65536,e=100000,data=pin+service+root+struct.pack('<Q',1),allow_error=True)
      assert f[0]==expected,(bad_mode,f)
     f,_=network.call(c,2,a=3,b=3,c=max(size*3,8192),d=65536,e=100000,data=peer+service+root+struct.pack('<Q',1));grants.append(f[1])
+   # Fill the bounded inbox, drain low slots, refill them while older high
+   # slots remain. Physical slot reuse must not reorder the authenticated stream.
+   bursts=[('fifo-'+str(i)).encode() for i in range(6)]
+   def enqueue_bytes(chunk):
+    f,_=network.call(clients[0],3,grants[0],a=1,data=chunk)
+    wait_until(lambda:network.call(clients[0],4,f[1])[0][2]==3)
+   for chunk in bursts[:4]:enqueue_bytes(chunk)
+   wait_until(lambda:network.status(clients[1])['inbox_records']==4)
+   first=[network.call(clients[1],6,grants[1])[1] for _ in range(2)]
+   assert first==bursts[:2],('initial FIFO order',first)
+   for chunk in bursts[4:]:enqueue_bytes(chunk)
+   wait_until(lambda:network.status(clients[1])['inbox_records']==4)
+   rest=[network.call(clients[1],6,grants[1])[1] for _ in range(4)]
+   assert rest==bursts[2:],('reused inbox slots reordered records',rest)
    payload=bytes((i*179+23)%256 for i in range(size));received=bytearray()
    for offset in range(0,len(payload),700):
     chunk=payload[offset:offset+700]
@@ -70,7 +84,7 @@ def run_pair(client_backend,server_backend,size=4097):
    assert wait_until(reverse)==reply
    network.call(clients[0],8,grants[0])
    f,_=network.call(clients[0],3,grants[0],a=1,data=b'denied',allow_error=True);assert f[0]==3
-   return {'client_backend':client_backend,'server_backend':server_backend,'guest_image_sha256':hashlib.sha256((ROOT/'build/live/guest.bin').read_bytes()).hexdigest(),'profile':'Noise_NNpsk0_25519_ChaChaPoly_SHA256','payload_bytes':len(received),'payload_sha256':hashlib.sha256(received).hexdigest(),'bidirectional_authenticated_records':'pass','denied_privacy_mode_wrong_peer_stale_grant':'pass','scope':'actual guest broker transport; no application/graph acceptance claim'}
+   return {'client_backend':client_backend,'server_backend':server_backend,'guest_image_sha256':hashlib.sha256((ROOT/'build/live/guest.bin').read_bytes()).hexdigest(),'profile':'Noise_NNpsk0_25519_ChaChaPoly_SHA256','payload_bytes':len(received),'payload_sha256':hashlib.sha256(received).hexdigest(),'bidirectional_authenticated_records':'pass','bounded_inbox_slot_reuse_preserves_FIFO':'pass','denied_privacy_mode_wrong_peer_stale_grant':'pass','scope':'actual guest broker transport; no application/graph acceptance claim'}
   except BaseException:
    for log in logs:log.flush()
    for path in directory.glob('guest*.log'):print(path.name,path.read_text(errors='replace')[-4000:],file=sys.stderr)
