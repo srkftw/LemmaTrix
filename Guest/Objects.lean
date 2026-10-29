@@ -821,6 +821,23 @@ partial def sortForkEntries (r count i j t : UInt64) : UInt64 :=
       copy (checkpointOriginal+256) b 128 t else t
     sortForkEntries r count i (j+1) t
 
+-- Only a Release directly selected by this immutable Manifest names the fork
+-- point. Sealed typed records have already passed checkRelease; archival parents
+-- and arbitrary incoming display claims never supply the release commitment.
+partial def selectedForkRelease (manifest index found t : UInt64) : UInt64 :=
+  if index == load64 (manifest+272) t then Guest.Effects.effectValue found t else
+    let e := manifest+288+index*128
+    if load64 e t != 13 then selectedForkRelease manifest (index+1) found t else
+    if found != error then error else
+      let node := ProjectGraph.findNode (e+16) 13 0 t
+      if node == error then error else
+        let r := recordAt node
+        if load64 (r+224) t != 1 || ProjectGraph.nodeSchema r t != 1 ||
+          load64 (r+32) t < 1376 || load64 (r+272) t != 4 || load64 (r+280) t < 832 ||
+          load64 (r+800) t != 0x31544e43524c544c || load64 (r+808) t != 1 ||
+          load64 (r+816) t != 768 || load64 (r+864) t != 0x3253454c544c || load64 (r+872) t != 2 then error else
+            selectedForkRelease manifest (index+1) r t
+
 def forkRoot (caller rights length t : UInt64) : UInt64 :=
   let h := load64 (command+8) t
   let n := load64 (command+16) t
@@ -839,6 +856,9 @@ def forkRoot (caller rights length t : UInt64) : UInt64 :=
       let t := zero j 256 t
       let t := copy (root+128) checkpointOriginal 32 t
       let t := copy (ProjectGraph.logicalIdAt (recordAt origin) t) (checkpointOriginal+32) 32 t
+      let upstreamRelease := selectedForkRelease old 0 error t
+      let t := zero (checkpointOriginal+64) 4 t
+      let t := if upstreamRelease == error then t else copy (upstreamRelease+1024) (checkpointOriginal+64) 32 t
       let t := copy (command+96) (checkpointOriginal+96) 32 t
       let entropy := syscall 111 0 (checkpointOriginal+128) 32 0 t
       if entropy != 0 then respond 7 0 0 0 entropy else
@@ -861,7 +881,7 @@ def forkRoot (caller rights length t : UInt64) : UInt64 :=
               let t := store64 (d+8) 1 t
               let t := copy (checkpointOriginal+32) (d+16) 32 t
               let t := copy checkpointOriginal (d+48) 32 t
-              let t := zero (d+80) 4 t
+              let t := copy (checkpointOriginal+64) (d+80) 32 t
               let t := copy (checkpointOriginal+96) (d+112) 32 t
               let t := copy (checkpointOriginal+128) (d+144) 32 t
               let t := ServiceHash.sha256At hashScratch (lineage+256) 208 (lineage+128) t

@@ -179,11 +179,19 @@ def publish_result(result_path,key,name,version,output,parent=None,*,client=None
  # must also be checked before the bootstrap signer sees a request, rather than
  # relying only on later Release graph rejection.
  publisher_id=hashlib.sha256(releases.capsule.modulus(key)).digest()
- for _,kind,identity in source_entries:
+ origin=source_handle
+ for _ in range(64):
+  origin_meta,origin_ids=client.objects(21,origin)
+  if origin_meta[4]!=11:raise ValueError('canonical signing origin is not a Manifest')
+  if origin_meta[5]==2 or origin_ids[32:64]==bytes(32):
+   origin_entries=decode_manifest(client.read_object(origin));break
+  origin=resolve(client,session['source_root_capability'],origin_ids[32:64].hex())
+ else:raise ValueError('canonical signing origin exceeds bounded ancestry')
+ for _,kind,identity in origin_entries:
   if kind==15:
    lineage=client.read_object(resolve(client,session['source_root_capability'],identity))
    if len(lineage)!=208 or struct.unpack_from('<Q',lineage,32)[0]!=0x314b524f46544c or lineage[144:176]!=publisher_id:
-    raise ValueError('selected signing key is not the publisher authorized by this canonical Fork')
+    raise ValueError('selected signing key is not the publisher authorized by this canonical Fork lineage')
  records=[dict(path=m['path'],sha256=m['sha256'],size=m['bytes']) for m in r['source_files']]
  evidence=[dict(kind='host-sandbox-build',job_id=r['job_id'],source_root=r['source_root'],request_digest=r['request_digest'],toolchain_id=r['toolchain_id'],binary_sha256=r['artifact']['sha256'],source_to_binary='unverified')]
  envelope,signed_manifest=releases.make(artifact,name,version,rights,key,parent=parent,license='NOASSERTION',evidence=evidence,profile=r['runtime_profile'],source_records_override=records,logical_project_id=session['project_id'])

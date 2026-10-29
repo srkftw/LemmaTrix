@@ -181,19 +181,30 @@ def commitProject (t : UInt64) : UInt64 :=
     let t := artifactEntries 0 t
     let t := sortManifestEntries total 0 1 t
     let t := copy 0x6ec000 (0x6f0020+total*128) detail t
-    let h := saveBytes 0x6f0000 (32+total*128+detail) 11 (load64 (st+32) t) t
-    if h == error then message 24 t else
-      let r := publish h (load64 (st+24) t) 0x6e1000 0x6e1040 (load64 (st+48) t) t
-      if r == error || status r != 0 then message 24 r else
-        let root := result r
-        let t := store64 (st+24) root r
-        let t := store64 (st+32) h t
-        let t := copy (wire+64) 0x6e1000 32 t
-        let launcher := Guest.syscall 97 1 0 0 0 t
-        let t := delegate root launcher 127 t
-        let shell := Guest.syscall 97 4 0 0 0 t
-        let t := delegate root shell 127 t
-        message 25 (commitFlags 0 t)
+    let bytes := 32+total*128+detail
+    let previous := load64 (st+32) t
+    let r := if previous == 0 then error else Guest.LiveSDK.metadata previous t
+    let sameLength := r == 96 && status r == 0 && load64 (wire+16) r == bytes
+    let checked := if sameLength then loadChunks previous 0x6f4000 bytes 0 r else r
+    -- Saving unchanged canonical bytes must preserve the exact selected revision.
+    -- Compare the complete bounded Manifest, including names, removed entries,
+    -- attached lineage/releases and details, rather than relying on dirty flags.
+    if sameLength && checked != error && Guest.ProjectGraph.equal 0x6f0000 0x6f4000 bytes checked then
+      message 25 (commitFlags 0 checked)
+    else
+      let h := saveBytes 0x6f0000 bytes 11 (load64 (st+32) checked) checked
+      if h == error then message 24 t else
+        let r := publish h (load64 (st+24) t) 0x6e1000 0x6e1040 (load64 (st+48) t) t
+        if r == error || status r != 0 then message 24 r else
+          let root := result r
+          let t := store64 (st+24) root r
+          let t := store64 (st+32) h t
+          let t := copy (wire+64) 0x6e1000 32 t
+          let launcher := Guest.syscall 97 1 0 0 0 t
+          let t := delegate root launcher 127 t
+          let shell := Guest.syscall 97 4 0 0 0 t
+          let t := delegate root shell 127 t
+          message 25 (commitFlags 0 t)
 
 partial def openFiles (root manifest count i sources artifacts t : UInt64) : UInt64 :=
   if i == count then

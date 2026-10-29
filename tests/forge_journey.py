@@ -76,7 +76,7 @@ class Node:
   assert name in rows,(name,rows)
   for _ in range(rows.index(name)):self.ui.press(108);time.sleep(.1)
   self.ui.press(28)
-  wait(lambda:self.inspect()['selected_root'],'trusted selected root')
+  wait(lambda:self.inspect()['status']==1 and rendered_text(self.ui.frame(),140,168,len(name))==name,'trusted selected project delivered to native Forge')
 
 def import_project(node):
  c=node.client()
