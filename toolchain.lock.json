@@ -1,0 +1,20 @@
+{
+  "lean": "4.34.1",
+  "llvm": "20.1.8",
+  "qemu": "11.1.1",
+  "isa": "rv64im",
+  "abi": "lp64",
+  "firmware": "none: tracked runtime/boot.S enters M mode directly",
+  "nix_store": {
+    "lean": "/nix/store/ysdqz5kaw8paig5v5q8d94yg6lkk0pkf-lean4-4.34.1/bin/lean",
+    "clang": "/nix/store/85bhhpb74hj2644vizwyqrsgldf1yf8f-clang-20.1.8/bin/clang",
+    "ld.lld": "/nix/store/kavf1x7bf1j36jlnybs5am32lca7gw8a-lld-20.1.8/bin/ld.lld",
+    "llvm-objcopy": "/nix/store/2rqn5n8cihb3nkhbk5vwbygbpipz0xaq-llvm-20.1.8/bin/llvm-objcopy",
+    "llvm-nm": "/nix/store/2rqn5n8cihb3nkhbk5vwbygbpipz0xaq-llvm-20.1.8/bin/llvm-nm",
+    "llvm-readelf": "/nix/store/2rqn5n8cihb3nkhbk5vwbygbpipz0xaq-llvm-20.1.8/bin/llvm-readelf",
+    "qemu-system-riscv64": "/nix/store/9ihv5zpj6l7fl12mdcxrbmiih3wgrmhw-qemu-11.1.1/bin/qemu-system-riscv64",
+    "qemu-aarch64": "/nix/store/9ihv5zpj6l7fl12mdcxrbmiih3wgrmhw-qemu-11.1.1/bin/qemu-aarch64",
+    "openssl": "/nix/store/xq2vp20ar9vq7awvgacwqsj6z96r0xg7-openssl-3.6.3-bin/bin/openssl"
+  },
+  "openssl": "3.6.3"
+}

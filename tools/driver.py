@@ -1,0 +1,181 @@
+import argparse, hashlib, json, os, shutil, subprocess, sys
+from pathlib import Path
+ROOT = Path(__file__).resolve().parent.parent
+LOCK = json.loads((ROOT/'toolchain.lock.json').read_text())
+BUILD = ROOT/'build'
+
+def tool(name):
+    candidate = os.environ.get('LT_'+name.upper().replace('-','_').replace('.','_')) or LOCK['nix_store'].get(name)
+    if candidate and Path(candidate).exists(): return candidate
+    candidate = shutil.which(name)
+    if candidate: return candidate
+    raise RuntimeError(f'Missing {name}; install version pinned in toolchain.lock.json or set LT_{name.upper().replace("-","_").replace(".","_")}')
+
+def validate_toolchain():
+    requirements={'lean':LOCK['lean'],'clang':LOCK['llvm'],'ld.lld':LOCK['llvm'],
+                  'llvm-objcopy':LOCK['llvm'],'qemu-system-riscv64':LOCK['qemu'],'openssl':LOCK['openssl']}
+    versions={}
+    for name,expected in requirements.items():
+        r=subprocess.run([tool(name), 'version' if name=='openssl' else '--version'],capture_output=True,text=True,check=True)
+        version=(r.stdout+r.stderr).strip()
+        if expected not in version: raise RuntimeError(f'{name}: expected pinned{expected}, got {version}')
+        versions[name]=version
+    return versions
+
+def run(args, **kw):
+    return subprocess.run([str(x) for x in args], cwd=ROOT, check=True, **kw)
+
+def lean(args):
+    env = dict(os.environ, LEAN_PATH=str(ROOT), PATH=str(Path(tool('lean')).parent)+':'+os.environ['PATH'])
+    run([tool('lean'), '-Dcompiler.extract_closed=false', *args], env=env)
+
+def asm(src, out, target='riscv64-unknown-elf'):
+    opts = ['-march=rv64im', '-mabi=lp64', '-mno-relax'] if target.startswith('riscv') else []
+    run([tool('clang'), '-target', target, *opts, '-c', src, '-o', out])
+
+def compile_guest(module, roots, prefix, startup, script):
+    src = BUILD/(prefix+'.S')
+    lean(['--run','Compiler/Main.lean',module,str(src),*roots])
+    objects=[]
+    for i,path in enumerate([src,ROOT/startup,ROOT/'runtime/primitives.S']):
+        out=BUILD/f'{prefix}.{i}.o';asm(path,out);objects.append(out)
+    elf=BUILD/(prefix+'.elf')
+    run([tool('ld.lld'), '-m','elf64lriscv','--no-relax','-T',script,*objects,'-o',elf])
+    undefined=run([tool('llvm-nm'),'-u',elf],capture_output=True,text=True).stdout
+    if undefined.strip(): raise RuntimeError('Unresolved guest symbols: '+undefined)
+    run([tool('llvm-objcopy'),'-O','binary',elf,BUILD/(prefix+'.bin')])
+
+def build(text='LemmaTrix source objects\n', package=None, policy=None):
+    BUILD.mkdir(exist_ok=True)
+    versions=validate_toolchain()
+    (BUILD/'toolchain-versions.json').write_text(json.dumps(versions,indent=2)+'\n')
+    lean(['-o','Guest/Primitives.olean','Guest/Primitives.lean'])
+    lean(['-o','Guest/SDK.olean','Guest/SDK.lean'])
+    lean(['-o','Guest/Policy.olean','Guest/Policy.lean'])
+    lean(['-o','Guest/SHA256.olean','Guest/SHA256.lean'])
+    lean(['-o','Guest/Signature.olean','Guest/Signature.lean'])
+    lean(['-o','Guest/Package.olean','Guest/Package.lean'])
+    for module in ['Kernel','Workbench','Observer']:
+        lean(['-o',f'Guest/{module}.olean',f'Guest/{module}.lean'])
+    compile_guest('Guest.Kernel',['Guest.kernelMain','Guest.trapDispatch'],'kernel','runtime/boot.S','runtime/kernel.ld')
+    for module,prefix in [('Workbench','workbench'),('Observer','observer')]:
+        compile_guest('Guest.'+module,['Guest.appMain'],prefix,'runtime/app.S','runtime/app.ld')
+    compile_guest('Guest.Workbench',['Guest.appV2'],'workbench-v2','runtime/app2.S','runtime/app.ld')
+    content=text.encode('utf-8')
+    if len(content)>256: raise RuntimeError('Import text exceeds 256 bytes')
+    data=bytearray(0xaa0000+0x10200)
+    for off,name in [(0,'kernel'),(0x500000,'observer')]:
+        part=(BUILD/(name+'.bin')).read_bytes();data[off:off+len(part)]=part
+    data[0x800000:0x800008]=len(content).to_bytes(8,'little');data[0x800008:0x800008+len(content)]=content
+    import capsule
+    key=capsule.development_key()
+    trust=capsule.modulus(key)
+    data[0x810000:0x810100]=trust
+    data[0x811000:0x811008]=(7).to_bytes(8,'little')
+    data[0x811008:0x811010]=(1).to_bytes(8,'little')
+    for offset,name,version,opts in [(0xa00000,'workbench',1,{}),(0xa20000,'workbench-v2',2,{}),(0xa40000,'workbench-v2',3,{'tamper':True}),(0xa60000,'workbench-v2',3,{'caps':15}),(0xa80000,'workbench-v2',3,{'runtime':99}),(0xaa0000,'workbench-v2',3,{'signature_tamper':True})]:
+        raw=(BUILD/(name+'.bin')).read_bytes()
+        record=bytearray(capsule.build_capsule(raw,version,opts.get('caps',7),opts.get('runtime',1),key))
+        if opts.get('tamper'): record[128]^=1
+        if opts.get('signature_tamper'): record[capsule.SIGNATURE_OFFSET]^=1
+        data[offset:offset+len(record)]=record
+        (BUILD/(name+('-bad' if opts else '')+'.ltcap')).write_bytes(record)
+    if package is not None:
+        policy=policy or {}
+        record=capsule.from_package(package,1,key,**policy)
+        data[0xa00000:0xa00000+len(record)]=record
+        mask=int.from_bytes(record[48:56],'little')
+        data[0x811000:0x811008]=mask.to_bytes(8,'little')
+        data[0x811008:0x811010]=(0).to_bytes(8,'little')
+    (BUILD/'guest.bin').write_bytes(data)
+    digest=hashlib.sha256(data).hexdigest()
+    (BUILD/'image.sha256').write_text(digest+'  guest.bin\n')
+    print('IMAGE',digest,flush=True)
+
+def emulators():
+    for arch,target in [('x86_64','x86_64-linux-gnu'),('aarch64','aarch64-linux-gnu')]:
+        obj=BUILD/(arch+'.o');asm(ROOT/f'emulator/{arch}.S',obj,target)
+        run([tool('ld.lld'),'-static','-e','_start',obj,'-o',BUILD/('lt-'+arch)])
+
+def backend(name):
+    image=BUILD/'guest.bin'
+    if name=='qemu':
+        args=[tool('qemu-system-riscv64'),'-M','virt','-cpu','rv64','-m','16M','-smp','1','-bios','none','-nographic','-monitor','none','-kernel',image]
+    elif name=='x86_64':args=[BUILD/'lt-x86_64',image]
+    else:args=[tool('qemu-aarch64'),BUILD/'lt-aarch64',image]
+    r=subprocess.run([str(x) for x in args],cwd=ROOT,timeout=45,capture_output=True,text=True)
+    print(r.stdout,end='');print(r.stderr,end='',file=sys.stderr)
+    if r.returncode:raise RuntimeError(f'{name} guest exited{r.returncode}')
+    return r.stdout
+
+def main():
+    os.chdir(ROOT)
+    if len(sys.argv)>1 and sys.argv[1] in ('package','capsule','rel'):
+        import importlib
+        module=importlib.import_module({'package':'packaging','capsule':'capsule','rel':'rel'}[sys.argv[1]])
+        sys.exit(module.main(sys.argv[2:]))
+    p=argparse.ArgumentParser(description='LemmaTrix freestanding development commands; see docs/index.html')
+    p.add_argument('command',choices=['doctor','build','run','demo','check','emulators','app','setup'])
+    p.add_argument('--backend',choices=['qemu','x86_64','aarch64'],default='qemu')
+    p.add_argument('--text',default='LemmaTrix source objects\n')
+    p.add_argument('--text-file',type=Path)
+    p.add_argument('--package',type=Path)
+    p.add_argument('--trust-key',type=Path,action='append',default=[])
+    p.add_argument('--approve-cap',action='append',default=[])
+    p.add_argument('--allow-development',action='store_true')
+    p.add_argument('--module',default='Examples.NativeUtility')
+    p.add_argument('--name',default='native-utility')
+    a=p.parse_args()
+    try:
+        if a.text_file:
+            with a.text_file.open('rb') as stream: content=stream.read(257)
+            if len(content)>256: raise RuntimeError('Import exceeds256bytes')
+            a.text=content.decode('utf-8')
+        policy=dict(allow_development=a.allow_development,trust_keys=a.trust_key,
+                    approved_caps=a.approve_cap,require_signature=True)
+        if a.command=='doctor':
+            for name,version in validate_toolchain().items():print(name,version,tool(name))
+        elif a.command=='setup':
+            paths=sorted(set(str(Path(value).parent.parent) for value in LOCK['nix_store'].values()))
+            missing=[path for path in paths if not Path(path).exists()]
+            if missing:
+                nix=shutil.which('nix-store')
+                if not nix:raise RuntimeError('Install Nix or supply exact pinned tools via LT_* variables; see docs/development.html')
+                run([nix,'--realise',*missing])
+            validate_toolchain()
+            print('Pinned dependencies ready; ordinary builds perform no downloads')
+        elif a.command=='build':build(a.text,a.package,policy)
+        elif a.command=='emulators':emulators()
+        elif a.command=='app':
+            if not a.name.replace('-','').isalnum(): raise RuntimeError('App output name must use letters, digits and hyphens')
+            source=Path(a.module.replace('.','/')+'.lean')
+            if not source.resolve().is_relative_to(ROOT) or not source.is_file(): raise RuntimeError('Module source must exist inside this checkout')
+            BUILD.mkdir(exist_ok=True)
+            for part in ['Primitives','SDK']:
+                lean(['-o',f'Guest/{part}.olean',f'Guest/{part}.lean'])
+            lean(['-o',str(source.with_suffix('.olean')),str(source)])
+            compile_guest(a.module,['Guest.appMain'],a.name,'runtime/app.S','runtime/app.ld')
+        elif a.command=='run':
+            if a.package:build(a.text,a.package,policy)
+            backend(a.backend)
+        elif a.command=='demo':
+            build(a.text);emulators()
+            sys.path.insert(0,str(ROOT/'tests'))
+            import acceptance
+            acceptance.main()
+        elif a.command=='check':
+            build(a.text);emulators()
+            sys.path.insert(0,str(ROOT/'tests'))
+            import acceptance
+            acceptance.main()
+            from Compiler.check import check
+            import driver
+            check(driver)
+            from Compiler.signature_check import check as signature_check
+            signature_check(driver)
+            import package_checks
+            package_checks.main()
+            import rel
+            print(rel.check())
+    except (RuntimeError,ValueError,AssertionError,OSError,subprocess.CalledProcessError,subprocess.TimeoutExpired) as e:
+        print('lt:',e,file=sys.stderr);sys.exit(1)
