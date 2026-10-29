@@ -33,6 +33,12 @@ _start:
  str x0, [x19, #MTIMECMP]
  mov x0, #0xa00000000
  setcsr x0, 0x300
+ addr x1, server_fd
+ mov x0, #-1
+ str x0, [x1]
+ addr x1, network_fd
+ mov x0, #-1
+ str x0, [x1]
  addr x1, vault_fd
  mov x0, #-1
  str x0, [x1]
@@ -69,6 +75,16 @@ parse_arguments:
  cbnz x0, argument_input
  add x2, x25, #1
  ldr x0, [x18, x2, lsl #3]
+ addr x1, server_arg
+ bl argument_equal
+ cbnz x0, argument_server
+ add x2, x25, #1
+ ldr x0, [x18, x2, lsl #3]
+ addr x1, network_arg
+ bl argument_equal
+ cbnz x0, argument_network
+ add x2, x25, #1
+ ldr x0, [x18, x2, lsl #3]
  addr x1, vault_arg
  bl argument_equal
  cbz x0, usage
@@ -83,6 +99,29 @@ parse_arguments:
  str x0, [x3]
  add x25, x25, #1
  b parse_arguments
+argument_network:
+ add x25, x25, #1
+ cmp x25, x24
+ b.hs usage
+ add x2, x25, #1
+ ldr x1, [x18, x2, lsl #3]
+ mov x0, #0
+1: ldrb w2, [x1], #1
+ cbz w2, 2f
+ sub w2, w2, #48
+ cmp w2, #9
+ b.hi usage
+ mov x3, #10
+ madd x0, x0, x3, x2
+ cmp x0, #1023
+ b.hi usage
+ b 1b
+2: cmp x0, #3
+ b.lo usage
+ addr x1, network_fd
+ str x0, [x1]
+ add x25, x25, #1
+ b parse_arguments
 argument_readonly:
  addr x0, vault_readonly
  mov w1, #1
@@ -95,6 +134,9 @@ argument_interactive:
  strb w1, [x0]
  add x25, x25, #1
  b parse_arguments
+argument_server:
+ addr x3, server_path
+ b argument_adapter_path
 argument_display:
  addr x3, display_path
  b argument_adapter_path
@@ -183,6 +225,35 @@ vault_open_flags:
  addr x1, vault_sectors
  str x0, [x1]
 vault_opened:
+ addr x1, server_path
+ ldr x1, [x1]
+ cbz x1, server_opened
+ mov x0, #-100
+ mov x2, #2
+ mov x3, #0
+ mov x8, #56
+ svc #0
+ cmp x0, #0
+ b.lt vault_error
+ addr x1, server_fd
+ str x0, [x1]
+ addr x1, host_stat
+ mov x8, #80
+ svc #0
+ cbnz x0, vault_error
+ addr x1, host_stat
+ ldr w0, [x1, #16]
+ and w0, w0, #0xf000
+ cmp w0, #0x8000
+ b.ne vault_error
+ ldr x0, [x1, #48]
+ cbz x0, vault_error
+ tst x0, #511
+ b.ne vault_error
+ lsr x0, x0, #9
+ addr x1, server_sectors
+ str x0, [x1]
+server_opened:
  bl graphics_open_adapters
  b step
 argument_equal:
@@ -1455,6 +1526,8 @@ virtio_read:
  sub x5, x0, x3
  lsr x6, x5, #12
  and x5, x5, #4095
+ cmp x6, #5
+ b.eq network_read
  cmp x6, #2
  b.lo 1f
  cmp x6, #5
@@ -1469,8 +1542,11 @@ virtio_read:
  b.eq virtio_id
  cmp x5, #12
  b.eq virtio_vendor
+ cmp x6, #6
+ b.eq 2f
  cmp x6, #2
  b.hs virtio_zero
+2:
  cmp x5, #0x10
  b.eq virtio_features
  cmp x5, #0x34
@@ -1496,10 +1572,18 @@ virtio_version:
  mov x0, #1
  b load_return
 virtio_id:
+ cmp x6, #6
+ b.eq virtio_server_id
  cmp x6, #1
  b.eq virtio_rng_id
  cbnz x6, virtio_zero
  devget x0, vault_fd
+ cmp x0, #0
+ b.lt virtio_zero
+ mov x0, #2
+ b load_return
+virtio_server_id:
+ devget x0, server_fd
  cmp x0, #0
  b.lt virtio_zero
  mov x0, #2
@@ -1513,6 +1597,8 @@ virtio_vendor:
 virtio_features:
  ldr w0, [x9]
  cbnz w0, virtio_zero
+ cmp x6, #6
+ b.eq virtio_server_features
  cbnz x6, virtio_zero
  mov x0, #0x200
  addr x1, vault_readonly
@@ -1520,6 +1606,9 @@ virtio_features:
  cbz w1, virtio_features_return
  orr x0, x0, #32
 virtio_features_return:
+ b load_return
+virtio_server_features:
+ mov x0, #0x200
  b load_return
 virtio_queue_max:
  ldr w0, [x9, #16]
@@ -1536,10 +1625,21 @@ virtio_status:
  ldr w0, [x9, #36]
  b load_return
 virtio_capacity_low:
+ cmp x6, #6
+ b.ne 1f
+ devget w0, server_sectors
+ b load_return
+1:
  cbnz x6, virtio_zero
  devget w0, vault_sectors
  b load_return
 virtio_capacity_high:
+ cmp x6, #6
+ b.ne 1f
+ devget x0, server_sectors
+ lsr x0, x0, #32
+ b load_return
+1:
  cbnz x6, virtio_zero
  devget x0, vault_sectors
  lsr x0, x0, #32
@@ -1552,13 +1652,18 @@ virtio_write:
  sub x5, x0, x3
  lsr x6, x5, #12
  and x5, x5, #4095
+ cmp x6, #5
+ b.eq network_write
  cmp x6, #2
  b.lo 1f
  cmp x6, #5
  b.lo modern_write
 1:
+ cmp x6, #6
+ b.eq 2f
  cmp x6, #2
  b.hs store_return
+2:
  devset w6, virtio_number
  addr x9, virtio_states
  add x9, x9, x6, lsl #6
@@ -1638,7 +1743,11 @@ virtio_ack:
 virtio_write_status:
  cbz w1, virtio_reset
  ldr w0, [x9, #4]
- cbnz x6, virtio_status_rng
+ cmp x6, #6
+ b.ne 1f
+ mov w2, #0x200
+ b virtio_status_feature_mask
+1: cbnz x6, virtio_status_rng
  mov w2, #0x200
  addr x3, vault_readonly
  ldrb w3, [x3]
@@ -1804,6 +1913,19 @@ virtio_chain_bad:
  ret
 virtio_block:
  stp x30, xzr, [sp, #-16]!
+ devget x0, vault_fd
+ devget x1, vault_sectors
+ addr x2, vault_readonly
+ ldrb w2, [x2]
+ devget w3, virtio_number
+ cmp w3, #6
+ b.ne 1f
+ devget x0, server_fd
+ devget x1, server_sectors
+ mov w2, #0
+1: devset x0, block_active_fd
+ devset x1, block_active_sectors
+ devset w2, block_active_readonly
  devget x10, request_descriptor
  ldrh w0, [x10, #12]
  cmp w0, #1
@@ -1828,9 +1950,15 @@ virtio_block:
  cbz w2, virtio_block_fatal
  cmp w2, #4096
  b.hi virtio_block_fatal
+ devget w0, request_type
+ cmp w0, #8
+ b.eq 1f
  tst w2, #511
  b.ne virtio_block_fatal
- devset w2, request_length
+ b 2f
+1: cmp w2, #20
+ b.ne virtio_block_fatal
+2: devset w2, request_length
  ldrh w0, [x10, #12]
  devset w0, request_flags
  ldr x0, [x10]
@@ -1853,10 +1981,12 @@ virtio_block_status:
  devset x0, request_status
  mov w0, #1
  devset w0, request_used
- devget x0, vault_fd
+ devget x0, block_active_fd
  cmp x0, #0
  b.lt virtio_block_error
  devget w0, request_type
+ cmp w0, #8
+ b.eq virtio_block_identity
  cmp w0, #4
  b.eq virtio_block_flush
  cbz w0, virtio_block_input
@@ -1865,7 +1995,7 @@ virtio_block_status:
  devget w0, request_flags
  cmp w0, #1
  b.ne virtio_block_error
- addr x0, vault_readonly
+ addr x0, block_active_readonly
  ldrb w0, [x0]
  cbnz w0, virtio_block_error
  b virtio_block_bounds
@@ -1875,7 +2005,7 @@ virtio_block_input:
  b.ne virtio_block_error
 virtio_block_bounds:
  devget x3, request_sector
- devget x0, vault_sectors
+ devget x0, block_active_sectors
  cmp x3, x0
  b.hs virtio_block_error
  sub x0, x0, x3
@@ -1884,7 +2014,7 @@ virtio_block_bounds:
  cmp x1, x0
  b.hi virtio_block_error
  lsl x3, x3, #9
- devget x0, vault_fd
+ devget x0, block_active_fd
  devget x1, request_buffer
  mov x8, #67
  devget w4, request_type
@@ -1900,8 +2030,26 @@ virtio_block_io:
  add w0, w0, #1
  devset w0, request_used
  b virtio_block_ok
+virtio_block_identity:
+ devget w0, request_flags
+ cmp w0, #3
+ b.ne virtio_block_error
+ devget x0, request_buffer
+ addr x1, objects_serial
+ devget w2, virtio_number
+ cmp w2, #6
+ b.ne 1f
+ addr x1, server_serial
+1: mov x2, #20
+2: ldrb w3, [x1], #1
+ strb w3, [x0], #1
+ subs x2, x2, #1
+ b.ne 2b
+ mov w0, #21
+ devset w0, request_used
+ b virtio_block_ok
 virtio_block_flush:
- devget x0, vault_fd
+ devget x0, block_active_fd
  mov x8, #82
  svc #0
  cbnz x0, virtio_block_error
@@ -1962,6 +2110,7 @@ uart_poll_done:
  ret
 
 #include "graphics_aarch64.inc"
+#include "network_aarch64.inc"
 
 .section .rodata
 usage_msg: .ascii "usage: lemmatrix-arm64 guest.bin [--interactive] [--vault backing.img] [--vault-readonly] [--display-out frame.bgrx] [--input-events events.evdev]\n"
@@ -1995,7 +2144,7 @@ vault_sectors: .skip 8
 host_stat: .skip 128
 stdin_poll: .skip 8
 zero_timeout: .skip 16
-virtio_states: .skip 128
+virtio_states: .skip 512
 virtio_current: .skip 8
 virtio_number: .skip 4
 queue_size: .skip 4
@@ -2016,3 +2165,16 @@ request_flags: .skip 4
 .balign 4096
 ram: .skip RAM_SIZE
 .section .note.GNU-stack,"",@progbits
+
+.section .rodata
+server_arg: .asciz "--server-store"
+objects_serial: .ascii "lt-objects-v1\0\0\0\0\0\0\0"
+server_serial: .ascii "lt-server-v1\0\0\0\0\0\0\0\0"
+.section .bss
+.balign 8
+server_path: .skip 8
+server_fd: .skip 8
+server_sectors: .skip 8
+block_active_fd: .skip 8
+block_active_sectors: .skip 8
+block_active_readonly: .skip 8

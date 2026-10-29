@@ -22,7 +22,13 @@ partial def discover (index token : UInt64) : UInt64 :=
     let version := load32 (base+4) token
     let valid := load32 base token == 0x74726976 && (version == 1 || version == 2)
     let id := if valid then load32 (base+8) token else 0
-    let token := if id == 2 then store64 state base token else token
+    let token := if id == 2 then
+      let count := load64 (state+96) token
+      if count >= 8 then token else
+      let token := store64 (state+128+count*8) base token
+      store64 (state+96) (count+1) token
+      else token
+    let token := if id == 3 && version == 2 && load64 (state+32) token == 0 then store64 (state+32) base token else token
     let token := if id == 4 then store64 (state+8) base token else token
     discover (index+1) token
 
@@ -75,25 +81,19 @@ def setup (base queue token : UInt64) : UInt64 :=
     let token := store32 (base+0x70) 15 token
     store64 (queue+128) 1 token
 
-def init (token : UInt64) : UInt64 :=
-  let token := clear state 16 token
-  let token := discover 0 token
-  let token := setup (load64 state token) blockQueue token
-  setup (load64 (state+8) token) randomQueue token
-
 def descriptor (p address length flags next token : UInt64) : UInt64 :=
   let token := store64 p address token
   store64 (p+8) (length + flags*0x100000000 + next*0x1000000000000) token
 
 partial def wait (base used expected remaining token : UInt64) : UInt64 :=
   if remaining == 0 then error else
-  if (load32 (base+0x70) token &&& 128) != 0 then error else
+  if (load32 (base+0x70) token &&& 192) != 0 then error else
   if read16 (used+2) token == expected then 0 else wait base used expected (remaining-1) token
 
 def submit (base queue counter token : UInt64) : UInt64 :=
   -- A timed-out request may still own its DMA buffers. Refuse further work
   -- until init explicitly resets the transport and queue together.
-  if base == 0 || (load32 (base+0x70) token &&& 128) != 0 then error else
+  if base == 0 || (load32 (base+0x70) token &&& 192) != 0 then error else
   let index := load64 counter token
   let expected := (index+1) &&& 65535
   let token := write16 (queue+132+(index &&& 7)*2) 0 token
@@ -111,17 +111,19 @@ def submit (base queue counter token : UInt64) : UInt64 :=
     let token := store32 (base+0x64) 1 token
     result+token
 
-def capacity (token : UInt64) : UInt64 :=
-  let base := load64 state token
+def capacityPurpose (purpose token : UInt64) : UInt64 :=
+  let base := load64 (if purpose == 1 then state else state+80) token
   if base == 0 then 0 else load32 (base+0x100) token + (load32 (base+0x104) token)*0x100000000
 
-def block (operation sector buffer bytes token : UInt64) : UInt64 :=
-  let base := load64 state token
+def blockPurpose (purpose operation sector buffer bytes token : UInt64) : UInt64 :=
+  let base := load64 (if purpose == 1 then state else state+80) token
+  let queue := if purpose == 1 then blockQueue else 0x80e0c000
+  let counter := if purpose == 1 then state+16 else state+88
   let supported := operation == 0 || operation == 1 || operation == 4
   let bounded := buffer >= blockBuffer && buffer <= blockBuffer+4096 && bytes <= 4096 && bytes <= blockBuffer+4096-buffer
   let count := bytes / 512
-  let total := capacity token
-  let valid := supported && base != 0 && bounded &&
+  let total := capacityPurpose purpose token
+  let valid := (purpose == 1 || purpose == 2) && supported && base != 0 && bounded &&
     (if operation == 4 then bytes == 0 else bytes > 0 && bytes % 512 == 0 && sector < total && count <= total-sector)
   if !valid then error else
     let token := store32 (base+0x14) 0 token
@@ -130,14 +132,18 @@ def block (operation sector buffer bytes token : UInt64) : UInt64 :=
     let token := store64 request operation token
     let token := store64 (request+8) sector token
     let token := store8 statusByte 255 token
-    let token := descriptor blockQueue request 16 1 1 token
+    let token := descriptor queue request 16 1 1 token
     let token :=
-      if operation == 4 then descriptor (blockQueue+16) statusByte 1 2 0 token
+      if operation == 4 then descriptor (queue+16) statusByte 1 2 0 token
       else
-        let token := descriptor (blockQueue+16) buffer bytes (if operation == 0 then 3 else 1) 2 token
-        descriptor (blockQueue+32) statusByte 1 2 0 token
-    let completed := submit base blockQueue (state+16) token
+        let token := descriptor (queue+16) buffer bytes (if operation == 0 then 3 else 1) 2 token
+        descriptor (queue+32) statusByte 1 2 0 token
+    let completed := submit base queue counter token
     if completed == 0 && load8 statusByte completed == 0 then 0 else error
+
+def capacity (token : UInt64) : UInt64 := capacityPurpose 1 token
+
+def block (operation sector buffer bytes token : UInt64) : UInt64 := blockPurpose 1 operation sector buffer bytes token
 
 def random (buffer length token : UInt64) : UInt64 :=
   let base := load64 (state+8) token
@@ -149,4 +155,180 @@ def random (buffer length token : UInt64) : UInt64 :=
     let completed := submit base randomQueue (state+24) token
     let actual := load32 (randomQueue+4104+(index &&& 7)*8) completed
     if completed == 0 && actual == length then 0 else error
+-- Device-purpose binding is out-of-band operator configuration, not disk order.
+-- GET_ID serial must exactly equal one of these twenty-byte padded profile IDs.
+def identifyBlock (base token : UInt64) : UInt64 :=
+  let token := setup base blockQueue token
+  let token := clear 0x80e0b000 4 token
+  let token := store64 (state+112) 0 token
+  let token := store64 request 8 token
+  let token := store64 (request+8) 0 token
+  let token := store8 statusByte 255 token
+  let token := descriptor blockQueue request 16 1 1 token
+  let token := descriptor (blockQueue+16) 0x80e0b000 20 3 2 token
+  let token := descriptor (blockQueue+32) statusByte 1 2 0 token
+  let result := submit base blockQueue (state+112) token
+  if result != 0 || load8 statusByte result != 0 then 0 else
+  if load64 0x80e0b000 token == 7162247753407231084 && load64 0x80e0b008 token == 212436087668 && load32 0x80e0b010 token == 0 then 1 else
+  if load64 0x80e0b000 token == 7311156825132201068 && load64 0x80e0b008 token == 829828466 && load32 0x80e0b010 token == 0 then 2 else 0
+
+partial def bindBlocks (index token : UInt64) : UInt64 :=
+  if index == load64 (state+96) token then token else
+  let base := load64 (state+128+index*8) token
+  let purpose := identifyBlock base token
+  let target := if purpose == 1 then state else state+80
+  let duplicate := if purpose == 1 then 1 else 2
+  let token := if purpose == 0 then store32 (base+0x70) 0 token else
+    if load64 target token != 0 || load64 (state+104) token &&& duplicate != 0 then
+      let old := load64 target token
+      let token := if old != 0 then store32 (old+0x70) 0 token else token
+      let token := store32 (base+0x70) 0 token
+      let token := store64 target 0 token
+      store64 (state+104) (load64 (state+104) token ||| duplicate) token
+    else store64 target base token
+  bindBlocks (index+1) token
+
+def storageInit (token : UInt64) : UInt64 :=
+  let token := clear state 32 token
+  let token := discover 0 token
+  let token := bindBlocks 0 token
+  let token := store64 (state+16) 0 token
+  let token := store64 (state+88) 0 token
+  let token := setup (load64 state token) blockQueue token
+  let token := setup (load64 (state+80) token) 0x80e0c000 token
+  setup (load64 (state+8) token) randomQueue token
+
+-- LT-Stream-v1: modern virtio-console singleport, direct split queues only.
+-- At most one descriptor per direction is outstanding. All DMA is kernel-owned.
+def streamRX : UInt64 := 0x80e10000
+def streamTX : UInt64 := 0x80e12000
+def streamIn : UInt64 := 0x80e14000
+def streamOut : UInt64 := 0x80e14400
+
+def streamQueue (base index queue token : UInt64) : UInt64 :=
+  let token := store32 (base+0x30) index token
+  if load32 (base+0x34) token < 8 then error else
+  let token := clear queue 1024 token
+  let token := store32 (base+0x38) 8 token
+  let token := store32 (base+0x80) queue token
+  let token := store32 (base+0x84) 0 token
+  let token := store32 (base+0x90) (queue+128) token
+  let token := store32 (base+0x94) 0 token
+  let token := store32 (base+0xa0) (queue+4096) token
+  let token := store32 (base+0xa4) 0 token
+  store32 (base+0x44) 1 token
+
+def streamPost (base token : UInt64) : UInt64 :=
+  let token := descriptor streamRX streamIn 1024 2 0 token
+  let index := (load64 (state+48) token+1) &&& 65535
+  let token := write16 (streamRX+132+((index-1) &&& 7)*2) 0 token
+  let token := deviceFence token
+  let token := write16 (streamRX+130) index token
+  let token := store64 (state+48) index token
+  let token := deviceFence token
+  store32 (base+0x50) 0 token
+
+def streamInit (token : UInt64) : UInt64 :=
+  let base := load64 (state+32) token
+  if base == 0 then 0 else
+  let token := store32 (base+0x70) 0 token
+  if awaitReset base 10000 token == error then error else
+  let epoch := load64 (state+40) token+1
+  let token := clear (state+40) 5 token
+  let token := store64 (state+200) 0 token
+  let token := store64 (state+40) epoch token
+  let token := clear streamIn 256 token
+  let token := store32 (base+0x70) 3 token
+  let token := store32 (base+0x14) 1 token
+  if load32 (base+0x10) token &&& 1 == 0 then error else
+  let token := store32 (base+0x24) 0 token
+  let token := store32 (base+0x20) 0 token
+  let token := store32 (base+0x24) 1 token
+  let token := store32 (base+0x20) 1 token
+  let token := store32 (base+0x70) 11 token
+  if load32 (base+0x70) token &&& 8 == 0 then error else
+  let token := streamQueue base 0 streamRX token
+  if token == error then error else
+  let token := streamQueue base 1 streamTX token
+  if token == error then error else
+  let token := store32 (base+0x70) 15 token
+  streamPost base token
+
+def init (token : UInt64) : UInt64 :=
+  let token := storageInit token
+  let result := streamInit token
+  if result == error then
+    let base := load64 (state+32) token
+    if base == 0 then token else store32 (base+0x70) 128 token
+  else token
+
+def streamStatus (token : UInt64) : UInt64 :=
+  let base := load64 (state+32) token
+  if base == 0 then 0 else
+  let status := load32 (base+0x70) token
+  if status &&& 192 != 0 || status &&& 15 != 15 then error else
+  (load64 (state+40) token <<< 32) ||| 3
+
+def streamFail (base token : UInt64) : UInt64 :=
+  let token := store32 (base+0x70) 128 token
+  error+token
+
+partial def bytesCopy (source target length token : UInt64) : UInt64 :=
+  if length == 0 then token else bytesCopy (source+1) (target+1) (length-1) (store8 target (load8 source token) token)
+
+def streamRead (target length token : UInt64) : UInt64 :=
+  let base := load64 (state+32) token
+  if base == 0 || streamStatus token == error || length == 0 || length > 1024 then error else
+  let token := store32 (base+0x50) 0 token
+  let token := deviceFence token
+  let used := read16 (streamRX+4098) token
+  let posted := load64 (state+48) token
+  if used != posted && used != ((posted-1) &&& 65535) then streamFail base token else
+  let remaining := load64 (state+64) token
+  let expected := load64 (state+48) token
+  let token := if remaining == 0 && read16 (streamRX+4098) token == expected then
+    let head := load32 (streamRX+4100+((expected-1) &&& 7)*8) token
+    let actual := load32 (streamRX+4104+((expected-1) &&& 7)*8) token
+    if head != 0 || actual == 0 || actual > 1024 then streamFail base token else
+    let token := store64 (state+56) 0 token
+    store64 (state+64) actual token
+    else token
+  if token == error then error else
+  let remaining := load64 (state+64) token
+  if remaining == 0 then 0 else
+  let count := if remaining < length then remaining else length
+  let offset := load64 (state+56) token
+  let token := bytesCopy (streamIn+offset) target count token
+  let token := store64 (state+56) (offset+count) token
+  let token := store64 (state+64) (remaining-count) token
+  let token := store32 (base+0x64) 1 token
+  let token := if remaining == count then streamPost base token else token
+  count+token
+
+def streamWrite (source length token : UInt64) : UInt64 :=
+  let base := load64 (state+32) token
+  if base == 0 || streamStatus token == error || length == 0 || length > 1024 then error else
+  let submitted := load64 (state+72) token
+  let token := store32 (base+0x50) 1 token
+  let token := deviceFence token
+  let completed := read16 (streamTX+4098) token
+  if completed != submitted && completed != ((submitted-1) &&& 65535) then streamFail base token else
+  if completed != submitted then 0 else
+  let token := if submitted != 0 then
+    let head := load32 (streamTX+4100+((submitted-1) &&& 7)*8) token
+    let actual := load32 (streamTX+4104+((submitted-1) &&& 7)*8) token
+    if head != 0 || actual > load64 (state+200) token then streamFail base token else token
+    else token
+  if token == error then error else
+  let token := bytesCopy source streamOut length token
+  let token := descriptor streamTX streamOut length 0 0 token
+  let next := (submitted+1) &&& 65535
+  let token := write16 (streamTX+132+(submitted &&& 7)*2) 0 token
+  let token := deviceFence token
+  let token := write16 (streamTX+130) next token
+  let token := store64 (state+72) next token
+  let token := store64 (state+200) length token
+  let token := deviceFence token
+  let token := store32 (base+0x50) 1 token
+  length+token
 end Guest.Devices

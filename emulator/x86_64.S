@@ -30,6 +30,8 @@
 _start:
     cmp qword ptr [rsp], 2
     jb usage
+    mov qword ptr [rip+server_fd], -1
+    mov qword ptr [rip+network_fd], -1
     mov qword ptr [rip+vault_fd], -1
     mov qword ptr [rip+display_fd], -1
     mov qword ptr [rip+input_fd], -1
@@ -60,6 +62,16 @@ parse_arguments:
     test eax, eax
     jnz argument_input
     mov rdi, [r9+rbx*8+8]
+    lea rsi, [rip+server_arg]
+    call argument_equal
+    test eax, eax
+    jnz argument_server
+    mov rdi, [r9+rbx*8+8]
+    lea rsi, [rip+network_arg]
+    call argument_equal
+    test eax, eax
+    jnz argument_network
+    mov rdi, [r9+rbx*8+8]
     lea rsi, [rip+vault_arg]
     call argument_equal
     test eax, eax
@@ -73,6 +85,29 @@ parse_arguments:
     mov [rip+vault_path], rax
     inc rbx
     jmp parse_arguments
+argument_network:
+    inc rbx
+    cmp rbx, r8
+    jae usage
+    mov rsi, [r9+rbx*8+8]
+    xor eax, eax
+1:  movzx edx, byte ptr [rsi]
+    test dl, dl
+    jz 2f
+    sub edx, 48
+    cmp edx, 9
+    ja usage
+    imul eax, eax, 10
+    add eax, edx
+    cmp eax, 1023
+    ja usage
+    inc rsi
+    jmp 1b
+2:  cmp eax, 3
+    jb usage
+    mov [rip+network_fd], rax
+    inc rbx
+    jmp parse_arguments
 argument_readonly:
     mov byte ptr [rip+vault_readonly], 1
     inc rbx
@@ -81,6 +116,9 @@ argument_interactive:
     mov byte ptr [rip+interactive], 1
     inc rbx
     jmp parse_arguments
+argument_server:
+    lea rdx, [rip+server_path]
+    jmp argument_adapter_path
 argument_display:
     lea rdx, [rip+display_path]
     jmp argument_adapter_path
@@ -177,6 +215,34 @@ vault_open_flags:
     shr rax, 9
     mov [rip+vault_sectors], rax
 vault_opened:
+    mov rdi, [rip+server_path]
+    test rdi, rdi
+    jz server_opened
+    mov esi, 2
+    xor edx, edx
+    mov eax, 2
+    syscall
+    test rax, rax
+    js vault_error
+    mov [rip+server_fd], rax
+    mov rdi, rax
+    lea rsi, [rip+host_stat]
+    mov eax, 5
+    syscall
+    test rax, rax
+    js vault_error
+    mov eax, [rip+host_stat+24]
+    and eax, 0xf000
+    cmp eax, 0x8000
+    jne vault_error
+    mov rax, [rip+host_stat+48]
+    test rax, rax
+    jz vault_error
+    test eax, 511
+    jnz vault_error
+    shr rax, 9
+    mov [rip+server_sectors], rax
+server_opened:
     call graphics_open_adapters
     lea r12, [rip+regs]
     mov r14d, RAM_BASE
@@ -1621,6 +1687,8 @@ virtio_read:
     mov r8d, eax
     shr r8d, 12
     and eax, 4095
+    cmp r8d, 5
+    je network_read
     cmp r8d, 2
     jb 1f
     cmp r8d, 5
@@ -1638,8 +1706,11 @@ virtio_read:
     je virtio_id
     cmp eax, 12
     je virtio_vendor
+    cmp r8d, 6
+    je 2f
     cmp r8d, 2
     jae virtio_zero
+2:
     cmp eax, 0x10
     je virtio_features
     cmp eax, 0x34
@@ -1664,11 +1735,18 @@ virtio_version:
     mov eax, 1
     ret
 virtio_id:
+    cmp r8d, 6
+    je virtio_server_id
     cmp r8d, 1
     je virtio_rng_id
     test r8d, r8d
     jnz virtio_zero
     cmp qword ptr [rip+vault_fd], 0
+    jl virtio_zero
+    mov eax, 2
+    ret
+virtio_server_id:
+    cmp qword ptr [rip+server_fd], 0
     jl virtio_zero
     mov eax, 2
     ret
@@ -1681,6 +1759,8 @@ virtio_vendor:
 virtio_features:
     cmp dword ptr [rdi], 0
     jne virtio_zero
+    cmp r8d, 6
+    je virtio_server_features
     test r8d, r8d
     jnz virtio_zero
     mov eax, 0x200 /* VIRTIO_BLK_F_FLUSH */
@@ -1688,6 +1768,9 @@ virtio_features:
     je virtio_features_return
     or eax, 32
 virtio_features_return:
+    ret
+virtio_server_features:
+    mov eax, 0x200
     ret
 virtio_queue_max:
     cmp dword ptr [rdi+16], 0
@@ -1704,11 +1787,21 @@ virtio_status:
     mov eax, [rdi+36]
     ret
 virtio_capacity_low:
+    cmp r8d, 6
+    jne 1f
+    mov eax, [rip+server_sectors]
+    ret
+1:
     test r8d, r8d
     jnz virtio_zero
     mov eax, [rip+vault_sectors]
     ret
 virtio_capacity_high:
+    cmp r8d, 6
+    jne 1f
+    mov eax, [rip+server_sectors+4]
+    ret
+1:
     test r8d, r8d
     jnz virtio_zero
     mov eax, [rip+vault_sectors+4]
@@ -1720,13 +1813,18 @@ virtio_write:
     mov r8d, eax
     shr r8d, 12
     and eax, 4095
+    cmp r8d, 5
+    je network_write
     cmp r8d, 2
     jb 1f
     cmp r8d, 5
     jb modern_write
 1:
+    cmp r8d, 6
+    je 2f
     cmp r8d, 2
     jae virtio_write_done
+2:
     mov [rip+virtio_number], r8d
     mov r9d, r8d
     shl r9d, 6
@@ -1811,7 +1909,11 @@ virtio_write_status:
     jz virtio_reset
     /* Reject negotiation of unimplemented features. */
     mov eax, [rdi+4]
-    cmp dword ptr [rip+virtio_number], 0
+    cmp dword ptr [rip+virtio_number], 6
+    jne 1f
+    mov ecx, 0x200
+    jmp virtio_status_feature_mask
+1:  cmp dword ptr [rip+virtio_number], 0
     jne virtio_status_rng
     mov ecx, 0x200
     cmp byte ptr [rip+vault_readonly], 0
@@ -1972,6 +2074,17 @@ virtio_chain_bad:
     stc
     ret
 virtio_block:
+    mov rax, [rip+vault_fd]
+    mov rdx, [rip+vault_sectors]
+    movzx ecx, byte ptr [rip+vault_readonly]
+    cmp dword ptr [rip+virtio_number], 6
+    jne 1f
+    mov rax, [rip+server_fd]
+    mov rdx, [rip+server_sectors]
+    xor ecx, ecx
+1:  mov [rip+block_active_fd], rax
+    mov [rip+block_active_sectors], rdx
+    mov [rip+block_active_readonly], cl
     mov rsi, [rip+request_descriptor]
     cmp word ptr [rsi+12], 1
     jne virtio_block_fatal
@@ -1994,9 +2107,14 @@ virtio_block:
     jz virtio_block_fatal
     cmp eax, 4096
     ja virtio_block_fatal
+    cmp dword ptr [rip+request_type], 8
+    je 1f
     test eax, 511
     jnz virtio_block_fatal
-    mov [rip+request_length], eax
+    jmp 2f
+1:  cmp eax, 20
+    jne virtio_block_fatal
+2:  mov [rip+request_length], eax
     movzx eax, word ptr [rsi+12]
     mov [rip+request_flags], eax
     mov rax, [rsi]
@@ -2017,9 +2135,11 @@ virtio_block_status:
     jc virtio_block_fatal
     mov [rip+request_status], rax
     mov dword ptr [rip+request_used], 1
-    cmp qword ptr [rip+vault_fd], 0
+    cmp qword ptr [rip+block_active_fd], 0
     jl virtio_block_error
     mov eax, [rip+request_type]
+    cmp eax, 8
+    je virtio_block_identity
     cmp eax, 4
     je virtio_block_flush
     cmp eax, 0
@@ -2028,7 +2148,7 @@ virtio_block_status:
     jne virtio_block_unsupported
     cmp dword ptr [rip+request_flags], 1
     jne virtio_block_error
-    cmp byte ptr [rip+vault_readonly], 0
+    cmp byte ptr [rip+block_active_readonly], 0
     jne virtio_block_error
     jmp virtio_block_bounds
 virtio_block_input:
@@ -2036,7 +2156,7 @@ virtio_block_input:
     jne virtio_block_error
 virtio_block_bounds:
     mov r10, [rip+request_sector]
-    mov rax, [rip+vault_sectors]
+    mov rax, [rip+block_active_sectors]
     cmp r10, rax
     jae virtio_block_error
     sub rax, r10
@@ -2045,7 +2165,7 @@ virtio_block_bounds:
     cmp rdx, rax
     ja virtio_block_error
     shl r10, 9
-    mov rdi, [rip+vault_fd]
+    mov rdi, [rip+block_active_fd]
     mov rsi, [rip+request_buffer]
     mov edx, [rip+request_length]
     mov eax, 17 /* pread64 */
@@ -2061,8 +2181,20 @@ virtio_block_io:
     inc eax
     mov [rip+request_used], eax
     jmp virtio_block_ok
+virtio_block_identity:
+    cmp dword ptr [rip+request_flags], 3
+    jne virtio_block_error
+    mov rdi, [rip+request_buffer]
+    lea rsi, [rip+objects_serial]
+    cmp dword ptr [rip+virtio_number], 6
+    jne 1f
+    lea rsi, [rip+server_serial]
+1:  mov ecx, 20
+    rep movsb
+    mov dword ptr [rip+request_used], 21
+    jmp virtio_block_ok
 virtio_block_flush:
-    mov rdi, [rip+vault_fd]
+    mov rdi, [rip+block_active_fd]
     mov eax, 74
     syscall
     test rax, rax
@@ -2084,6 +2216,7 @@ virtio_block_fatal:
     jmp virtio_fail
 
 #include "graphics_x86_64.inc"
+#include "network_x86_64.inc"
 
 argument_equal:
     mov al, [rdi]
@@ -2221,7 +2354,7 @@ vault_fd: .skip 8
 vault_sectors: .skip 8
 host_stat: .skip 144
 .balign 8
-virtio_states: .skip 128
+virtio_states: .skip 512
 virtio_current: .skip 8
 virtio_number: .skip 4
 queue_size: .skip 4
@@ -2245,3 +2378,16 @@ hex_buffer: .skip 16
 stdin_poll: .long 0
     .short 1, 0
 .section .note.GNU-stack,"",@progbits
+
+.section .rodata
+server_arg: .asciz "--server-store"
+objects_serial: .ascii "lt-objects-v1\0\0\0\0\0\0\0"
+server_serial: .ascii "lt-server-v1\0\0\0\0\0\0\0\0"
+.section .bss
+.balign 8
+server_path: .skip 8
+server_fd: .skip 8
+server_sectors: .skip 8
+block_active_fd: .skip 8
+block_active_sectors: .skip 8
+block_active_readonly: .skip 8

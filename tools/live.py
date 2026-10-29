@@ -2,31 +2,95 @@
 import argparse,fcntl,hashlib,json,os,select,socket,struct,subprocess,sys,time
 from pathlib import Path
 import driver,releases,capsule
-import stat
+import stat,threading,ipaddress
 MAGIC=b'LT2\0';REPLY=b'LR2\0'
-def args_for(backend,image,vault=None,readonly=False,graphics=None,display="none"):
+def args_for(backend,image,vault=None,readonly=False,graphics=None,display="none",network_fd=None,server_store=None):
  if backend=='qemu':
   args=[driver.tool('qemu-system-riscv64'),'-M','virt','-cpu','rv64','-m','128M','-smp','1','-bios','none','-display',display,'-serial','stdio','-monitor','none','-global','virtio-mmio.force-legacy=false','-kernel',str(image),'-object','rng-random,filename=/dev/urandom,id=lt-rng','-device','virtio-rng-device,rng=lt-rng']
   args+=['-device','virtio-gpu-device,xres=640,yres=400','-device','virtio-keyboard-device','-device','virtio-mouse-device']
   if graphics:args+=['-qmp',f'unix:{graphics},server=on,wait=off']
-  if vault:args+=['-drive',f'file={vault},format=raw,if=none,id=lt-vault'+(',readonly=on' if readonly else ''),'-device','virtio-blk-device,drive=lt-vault']
+  if vault:args+=['-drive',f'file={vault},format=raw,if=none,id=lt-vault'+(',readonly=on' if readonly else ''),'-device','virtio-blk-device,drive=lt-vault,serial=lt-objects-v1']
+  if server_store:args+=['-drive',f'file={server_store},format=raw,if=none,id=lt-server','-device','virtio-blk-device,drive=lt-server,serial=lt-server-v1']
+  if network_fd is not None:args+=['-chardev',f'socket,id=lt-stream,fd={network_fd}','-device','virtio-serial-device,id=lt-streamdev','-device','virtconsole,chardev=lt-stream']
   return args
  args=[str(driver.BUILD/('lt-'+backend)),str(image),'--interactive']
  if backend=='aarch64':args.insert(0,driver.tool('qemu-aarch64'))
  if graphics:args+=['--display-out',str(graphics)+'.bgrx','--input-events',str(graphics)+'.evdev']
  if vault:args+=['--vault',str(vault)]
+ if server_store:args+=['--server-store',str(server_store)]
  if readonly:args+=['--vault-readonly']
+ if network_fd is not None:args += ['--network-fd',str(network_fd)]
  return args
 
-def session(backend,path,vault=None,readonly=False,graphics=None,display="none"):
+class OpaqueStream:
+ """Bounded socket relay. It never decodes guest protocols or chooses objects."""
+ def __init__(self,endpoint,listen=False):
+  self.guest,self.local=socket.socketpair();self.local.setblocking(False)
+  if ':' in endpoint:
+   host,port=endpoint.rsplit(':',1)
+   ipaddress.ip_address(host)
+   if not 1<=int(port)<=65535:raise ValueError('network port outside1..65535')
+  elif listen:raise ValueError('listener requires numericIP:PORT')
+  self.endpoint=endpoint;self.listen=listen;self.closed=threading.Event();self.error=None
+  self.thread=threading.Thread(target=self.run,daemon=True)
+ def start(self):self.thread.start()
+ def close(self):
+  self.closed.set();self.local.close();self.guest.close();self.thread.join(timeout=2)
+ def run(self):
+  remote=None;listener=None;to_remote=bytearray();to_guest=bytearray();retry=0
+  try:
+   if self.listen:
+    host,port=self.endpoint.rsplit(':',1);listener=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+    listener.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1);listener.bind((host,int(port)));listener.listen(1);listener.setblocking(False)
+   while not self.closed.is_set():
+    if remote is None:
+     if listener:
+      active,_,_=select.select([listener],[],[],.05)
+      if active:remote,_=listener.accept();remote.setblocking(False)
+     elif time.monotonic()>=retry:
+      candidate=socket.socket(socket.AF_INET if ':' in self.endpoint else socket.AF_UNIX,socket.SOCK_STREAM);candidate.settimeout(.2)
+      try:candidate.connect((self.endpoint.rsplit(':',1)[0],int(self.endpoint.rsplit(':',1)[1])) if ':' in self.endpoint else self.endpoint);remote=candidate;remote.setblocking(False)
+      except OSError:candidate.close();retry=time.monotonic()+.5
+     if remote is None:self.closed.wait(.02);continue
+    reads=([self.local] if len(to_remote)<65536 else [])+([remote] if len(to_guest)<65536 else [])
+    writes=([remote] if to_remote else [])+([self.local] if to_guest else [])
+    try:
+     ready,writable,_=select.select(reads,writes,[],.05)
+     for source in ready:
+      target=to_remote if source is self.local else to_guest
+      try:data=source.recv(min(16384,65536-len(target)))
+      except BlockingIOError:continue
+      if not data:raise ConnectionError('opaque endpoint disconnected')
+      target.extend(data)
+     for target in writable:
+      pending=to_remote if target is remote else to_guest
+      try:sent=target.send(pending)
+      except BlockingIOError:continue
+      del pending[:sent]
+    except (OSError,ConnectionError):
+     if remote:remote.close()
+     remote=None;to_guest.clear();to_remote.clear();retry=time.monotonic()+.5
+     # Reconnect is a new unauthenticated stream. The guest protocol owns
+     # timeout, fresh entropy, key confirmation and grant reauthorization.
+  except BaseException as error:self.error=str(error)
+  finally:
+   if remote:remote.close()
+   if listener:listener.close()
+
+def session(backend,path,vault=None,readonly=False,graphics=None,display="none",network=None,network_listen=None,server_store=None):
  image=driver.BUILD/'live/guest.bin'
  if not image.exists():raise ValueError('run ./lt live-build first')
  if vault:
   vault=vault.resolve()
   if not vault.is_file():raise ValueError('vault backing must be an explicitly supplied existing image')
+ if server_store:
+  server_store=server_store.resolve()
+  if not server_store.is_file():raise ValueError('server backing must be an explicitly supplied existing image')
+  if vault and os.path.samefile(vault,server_store):raise ValueError('personal and server purposes require distinct backing devices')
  if path.exists():raise ValueError('socket path exists; refusing to replace it')
  server=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM)
  input_path=None;input_fd=None;created_input=False
+ transport=OpaqueStream(network_listen or network, bool(network_listen)) if network or network_listen else None
  try:
   if graphics and backend!='qemu':
    input_path=Path(str(graphics)+'.evdev')
@@ -35,8 +99,10 @@ def session(backend,path,vault=None,readonly=False,graphics=None,display="none")
    # Keep the raw physical-input source open through startup and presenter
    # reconnects. The host transports evdev records; no UI commands live here.
    input_fd=os.open(input_path,os.O_RDWR|os.O_NONBLOCK)
-  process=subprocess.Popen(args_for(backend,image,vault,readonly,graphics,display),stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=None,bufsize=0)
+  if transport:transport.start()
+  process=subprocess.Popen(args_for(backend,image,vault,readonly,graphics,display,transport.guest.fileno() if transport else None,server_store),stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=None,bufsize=0,pass_fds=(transport.guest.fileno(),) if transport else ())
  except BaseException:
+  if transport:transport.close()
   server.close()
   if input_fd is not None:os.close(input_fd)
   if created_input:input_path.unlink(missing_ok=True)
@@ -105,6 +171,7 @@ def session(backend,path,vault=None,readonly=False,graphics=None,display="none")
  finally:
   if client:client.close()
   server.close();path.unlink(missing_ok=True)
+  if transport:transport.close()
   if process.poll() is None:process.terminate();process.wait(timeout=5)
   if input_fd is not None:os.close(input_fd)
   if created_input:input_path.unlink(missing_ok=True)
@@ -199,10 +266,11 @@ def main(argv=None):
  p=argparse.ArgumentParser(description='Live byte portal; guest owns all state and policy')
  sub=p.add_subparsers(dest='mode',required=True)
  s=sub.add_parser('session');s.add_argument('--backend',choices=['qemu','x86_64','aarch64'],default='qemu');s.add_argument('--socket',required=True,type=Path);s.add_argument('--vault',type=Path);s.add_argument('--vault-readonly',action='store_true');s.add_argument('--display',choices=['none','gtk','sdl'],default='none');s.add_argument('--graphics',type=Path,help='QMP socket (QEMU) or raw pixel/input prefix (assembly)')
+ s.add_argument('--network',help='explicit opaque UNIX socket or numeric HOST:PORT endpoint');s.add_argument('--network-listen',help='explicit opaque numeric HOST:PORT listener');s.add_argument('--server-store',type=Path)
  v=sub.add_parser('vault-init');v.add_argument('path',type=Path);v.add_argument('--sectors',type=int,default=512);v.add_argument('--key-out',type=Path)
  c=sub.add_parser('ctl');c.add_argument('--socket',required=True,type=Path);cs=c.add_subparsers(dest='command',required=True)
  for name in ['ping','processes','cancel','gc','objects-gc','list','stats','shutdown']:cs.add_parser(name)
- trust=cs.add_parser('trust');trust.add_argument('--project',required=True);trust.add_argument('--public',required=True,type=Path)
+ trust=cs.add_parser('trust');scope=trust.add_mutually_exclusive_group(required=True);scope.add_argument('--project');scope.add_argument('--project-id',help='canonical graph Project identity for publication scheme3');trust.add_argument('--public',required=True,type=Path)
  untrust=cs.add_parser('untrust');untrust.add_argument('key_id')
  for name in ['inspect','install']:
   a=cs.add_parser(name);a.add_argument('release',type=Path)
@@ -228,7 +296,9 @@ def main(argv=None):
  a=vs.add_parser('unlock');a.add_argument('--key',type=Path,required=True)
  a=vs.add_parser('retain');a.add_argument('handle',type=lambda x:int(x,0))
  args=p.parse_args(argv)
- if args.mode=='session':return session(args.backend,args.socket,args.vault,args.vault_readonly,args.graphics,args.display)
+ if args.mode=='session':
+  if args.network and args.network_listen:raise ValueError('select one network endpoint')
+  return session(args.backend,args.socket,args.vault,args.vault_readonly,args.graphics,args.display,args.network,args.network_listen,args.server_store)
  if args.mode=='vault-init':
   if args.sectors<304:raise ValueError('development Objects vault needs >=304 sectors')
   if args.path.exists() or (args.key_out and args.key_out.exists()):raise ValueError('vault/key output exists; refusing overwrite')
@@ -259,7 +329,9 @@ def main(argv=None):
   elif cmd=='trust':
    # Public key path is used only to export modulus; private material never enters transport.
    modulus=releases.public_modulus(args.public)
-   print(client.request(10,releases.project(args.project)+modulus).hex())
+   project_id=releases.project(args.project) if args.project else hashlib.sha256(b'LT-PUBLICATION-3\0'+bytes.fromhex(args.project_id)+hashlib.sha256(modulus).digest()).digest()
+   if args.project_id and len(bytes.fromhex(args.project_id))!=32:raise ValueError('Project identity must be32bytes')
+   print(client.request(10,project_id+modulus).hex())
   elif cmd=='untrust':print(client.request(11,bytes.fromhex(args.key_id)).hex())
   elif cmd=='inspect':print(json.dumps(client.stage(args.release),indent=2))
   elif cmd=='approve':print(client.request(23,bytes.fromhex(args.release_id)+struct.pack('<Q',args.rights)).hex())
