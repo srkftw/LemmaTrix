@@ -181,6 +181,8 @@ def rpcBudget (caller target endpoint ptr len t : UInt64) : UInt64 :=
   if caller == 4 && target == 1 && ((operation == 24 && len == 8) || (operation == 180 && len == 16)) then 30000
   else if caller >= 7 && target == 4 && len == 64 && operation == 6 &&
       Guest.load64 (physical caller ptr+56) t == 1 then 60000
+  else if target == 2 && len == 64 && (operation == 38 || operation == 43) &&
+      Guest.load64 (physical caller ptr+56) t == 1 then 30000
   else if target == 3 || endpoint == Guest.load64 (state+200) t then 30000
   else 5000
 
