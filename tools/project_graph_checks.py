@@ -28,6 +28,29 @@ def publish(client,name,entries,root=0,expected=bytes(32),parent=0):
  return f[1],identity,manifest
 
 
+def check_identity(client):
+ handles=[];root_caps=[]
+ try:
+  source,source_id=projects.node(client,b'logical project lineage input',10);handles.append(source)
+  root,origin,manifest=publish(client,'identity-check',[('Main.lean',10,source_id)]);handles.append(manifest);root_caps.append(root)
+  alias,_,alias_manifest=publish(client,'identity-alias',[('Main.lean',10,source_id)]);handles.append(alias_manifest);root_caps.append(alias)
+  assert projects.project_identity(client,root)==origin==projects.project_identity(client,alias)
+  root,head,revision=publish(client,'identity-check',[('Renamed.lean',10,source_id)],root,bytes.fromhex(origin),manifest);handles.append(revision)
+  assert projects.project_identity(client,root)==origin
+  unrelated,unrelated_id=projects.node(client,projects.manifest([('Other.lean',10,source_id)]),11);handles.append(unrelated)
+  reject(lambda:client.objects(22,unrelated,root,len('identity-check'),data=bytes.fromhex(head)+b'identity-check'.ljust(64,b'\0')),8)
+  assert projects.snapshot(client,root)[0]==head
+  client.objects(22,revision,root,len('identity-check'),data=bytes.fromhex(head)+b'identity-check'.ljust(64,b'\0'))
+  return dict(checks=['logical Project ID follows stable Manifest origin across exact-parent revision and aliases; unrelated rebase denied; identical-head publication allowed'],project_id=origin,current_head=head,unrelated_head=unrelated_id)
+ finally:
+  for root in reversed(root_caps):
+   try:client.objects(28,root)
+   except ValueError:pass
+  for handle in reversed(handles):
+   try:client.objects(8,handle)
+   except ValueError:pass
+
+
 def check(client,vault=False):
  checks=[]
  source=b'import Guest.ProjectSDK\n-- arbitrary UTF-8 source: '+chr(955).encode()+b'\n'+b'-- source resource\n'*2300
@@ -77,7 +100,7 @@ def check(client,vault=False):
  checks.append('exact-head frozen snapshots are hidden, immutable and reclaimed after teardown')
  private=client.import_object(b'unsaved private object',1)
  private_fields,private_hash=client.objects(5,private)
- result=dict(checks=checks,roots=[dict(cap=root,name='graph-primary',head=newhead),dict(cap=second,name='graph-secondary',head=second_head)],private=private,private_sha256=private_hash.hex(),expected_bytes=len(source)+len(changed)+len(resource)+len(second_data))
+ result=dict(checks=checks,roots=[dict(cap=root,name='graph-primary',head=newhead,project_id=head),dict(cap=second,name='graph-secondary',head=second_head,project_id=second_head)],private=private,private_sha256=private_hash.hex(),expected_bytes=len(source)+len(changed)+len(resource)+len(second_data))
  if vault:
   saved=project_vault.retain(client,[root,second]);inventory=project_vault.inventory(client)
   assert saved['bytes']>65536 and saved['projects']==2
@@ -98,6 +121,8 @@ def verify_recovery(client,expected):
  roots=projects.roots(client)
  assert len(roots)==2
  for root in roots:
+  previous=next(r for r in expected['roots'] if r['name']==root['name'])
+  assert projects.project_identity(client,root['cap'])==previous['project_id']
   actual,files=projects.snapshot(client,root['cap'])
   assert actual==root['head'] and files
  return dict(recovered=recovered,checks=['fresh session restores names, stable identities, complete content and ancestry; stale handles and unsaved private content denied'])
@@ -105,11 +130,11 @@ def verify_recovery(client,expected):
 
 def main(argv=None):
  p=argparse.ArgumentParser(description='Focused real-guest Project/Vault boundary checks')
- p.add_argument('--socket',required=True,type=Path);p.add_argument('--key',type=Path);p.add_argument('--vault',action='store_true');p.add_argument('--recover',type=Path);p.add_argument('--output',type=Path)
+ p.add_argument('--socket',required=True,type=Path);p.add_argument('--key',type=Path);p.add_argument('--vault',action='store_true');p.add_argument('--identity-only',action='store_true');p.add_argument('--recover',type=Path);p.add_argument('--output',type=Path)
  args=p.parse_args(argv);client=live.Client(args.socket)
  try:
   if args.key:project_vault.unlock(client,args.key.read_bytes())
-  result=verify_recovery(client,json.loads(args.recover.read_text())) if args.recover else check(client,args.vault)
+  result=check_identity(client) if args.identity_only else verify_recovery(client,json.loads(args.recover.read_text())) if args.recover else check(client,args.vault)
   if args.output:args.output.write_text(json.dumps(result,indent=2)+'\n')
   print(json.dumps(result,indent=2))
  finally:client.close()
