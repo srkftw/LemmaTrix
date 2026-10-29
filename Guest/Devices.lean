@@ -200,10 +200,10 @@ def storageInit (token : UInt64) : UInt64 :=
 
 -- LT-Stream-v1: modern virtio-console singleport, direct split queues only.
 -- At most one descriptor per direction is outstanding. All DMA is kernel-owned.
-def streamRX : UInt64 := 0x80e10000
-def streamTX : UInt64 := 0x80e12000
-def streamIn : UInt64 := 0x80e14000
-def streamOut : UInt64 := 0x80e14400
+def streamRX : UInt64 := 0x80e20000
+def streamTX : UInt64 := 0x80e22000
+def streamIn : UInt64 := 0x80e24000
+def streamOut : UInt64 := 0x80e24400
 
 def streamQueue (base index queue token : UInt64) : UInt64 :=
   let token := store32 (base+0x30) index token

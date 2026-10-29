@@ -8,14 +8,14 @@ partial def probeWrite (p n fuel t : UInt64) : UInt64 :=
 partial def probeLoop (remaining fuel t : UInt64) : UInt64 :=
   if remaining == 0 then
     -- The last accepted TX must complete before terminating the machine.
-    let result := probeWrite 0x80e16000 1 100000 t
+    let result := probeWrite 0x80e26000 1 100000 t
     let t := store8 0x10000000 78 (store8 0x10000000 79 t)
     finish (if result == 1 then 0+t else 1)
   else if fuel == 0 then finish 1 else
-  let count := Devices.streamRead 0x80e16000 (if remaining < 113 then remaining else 113) t
+  let count := Devices.streamRead 0x80e26000 (if remaining < 113 then remaining else 113) t
   if count == Devices.error then finish 1 else
   if count == 0 then probeLoop remaining (fuel-1) t else
-  let sent := probeWrite 0x80e16000 count 100000 t
+  let sent := probeWrite 0x80e26000 count 100000 t
   if sent != count then finish 1 else probeLoop (remaining-count) fuel t
 
 def transportMain (initial : UInt64) : UInt64 :=
