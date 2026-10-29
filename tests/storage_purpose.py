@@ -10,19 +10,19 @@ def build():
  (ROOT/'build/storage-purpose-boot.S').write_text('.option norvc\n.section .text.boot\n.globl _start\n_start:\n li sp,0x800ff000\n li a0,0\n call lt_Guest_storagePurposeMain\n1: j 1b\n')
  driver.compile_guest('tests.fixtures.StoragePurposeProbe',['Guest.storagePurposeMain'],'storage-purpose-probe','build/storage-purpose-boot.S','runtime/kernel.ld')
 
-def check(backend,wrong=False):
+def check(backend,wrong=False,readonly=False):
  with tempfile.TemporaryDirectory() as d:
   vault=Path(d)/'objects.img';server=Path(d)/'server.img';vault.write_bytes(bytes(512*512));server.write_bytes(bytes(1024*512))
   a,b=socket.socketpair()
-  args=live.args_for(backend,ROOT/'build/storage-purpose-probe.bin',vault=vault,server_store=server,network_fd=b.fileno())
+  args=live.args_for(backend,ROOT/'build/storage-purpose-probe.bin',vault=vault,server_store=server,network_fd=b.fileno(),server_readonly=readonly)
   if wrong:
    assert backend=='qemu'
-   args=[x.replace('serial=lt-server-v1','serial=unknown-store') for x in args]
+   args=[x.replace('serial=lt-server-v1','serial=lt-objects-v1' if wrong=='duplicate' else 'serial=unknown-store') for x in args]
   p=subprocess.run(args,stdin=subprocess.DEVNULL,capture_output=True,timeout=45,pass_fds=(b.fileno(),));a.close();b.close()
   expected=bytes((i*173+47)%256 for i in range(512))
   assert vault.read_bytes()==bytes(512*512),(backend,'objects changed')
-  assert server.read_bytes()[1536:2048]==(bytes(512) if wrong else expected),(backend,p.returncode,p.stdout,p.stderr)
-  assert (p.stdout==b'' if wrong else p.returncode==0 and p.stdout==b'S'),(backend,p.returncode,p.stdout,p.stderr)
-  return {'backend':backend,'wrong_purpose':wrong,'status':'passed','objects_sha256':hashlib.sha256(vault.read_bytes()).hexdigest()}
+  assert server.read_bytes()[1536:2048]==(bytes(512) if wrong or readonly else expected),(backend,p.returncode,p.stdout,p.stderr)
+  assert (p.stdout==b'' if wrong else p.returncode==0 and p.stdout==(b'D' if readonly else b'S')),(backend,p.returncode,p.stdout,p.stderr)
+  return {'backend':backend,'wrong_purpose':wrong,'readonly':readonly,'status':'passed','objects_sha256':hashlib.sha256(vault.read_bytes()).hexdigest()}
 if __name__=='__main__':
- build();print(json.dumps([check(x) for x in ['qemu','x86_64','aarch64']]+[check('qemu',True)],indent=2))
+ build();print(json.dumps([check(x) for x in ['qemu','x86_64','aarch64']]+[check('qemu',True),check('qemu','duplicate')]+[check(x,readonly=True) for x in ['qemu','x86_64','aarch64']],indent=2))

@@ -75,6 +75,11 @@ parse_arguments:
  cbnz x0, argument_input
  add x2, x25, #1
  ldr x0, [x18, x2, lsl #3]
+ addr x1, server_readonly_arg
+ bl argument_equal
+ cbnz x0, argument_server_readonly
+ add x2, x25, #1
+ ldr x0, [x18, x2, lsl #3]
  addr x1, server_arg
  bl argument_equal
  cbnz x0, argument_server
@@ -130,6 +135,12 @@ argument_readonly:
  b parse_arguments
 argument_interactive:
  addr x0, interactive
+ mov w1, #1
+ strb w1, [x0]
+ add x25, x25, #1
+ b parse_arguments
+argument_server_readonly:
+ addr x0, server_readonly
  mov w1, #1
  strb w1, [x0]
  add x25, x25, #1
@@ -230,6 +241,11 @@ vault_opened:
  cbz x1, server_opened
  mov x0, #-100
  mov x2, #2
+ addr x3, server_readonly
+ ldrb w3, [x3]
+ cbz w3, 1f
+ mov x2, #0
+1:
  mov x3, #0
  mov x8, #56
  svc #0
@@ -1609,6 +1625,10 @@ virtio_features_return:
  b load_return
 virtio_server_features:
  mov x0, #0x200
+ addr x1, server_readonly
+ ldrb w1, [x1]
+ cbz w1, load_return
+ orr x0, x0, #32
  b load_return
 virtio_queue_max:
  ldr w0, [x9, #16]
@@ -1746,6 +1766,10 @@ virtio_write_status:
  cmp x6, #6
  b.ne 1f
  mov w2, #0x200
+ addr x3, server_readonly
+ ldrb w3, [x3]
+ cbz w3, virtio_status_feature_mask
+ orr w2, w2, #32
  b virtio_status_feature_mask
 1: cbnz x6, virtio_status_rng
  mov w2, #0x200
@@ -1922,7 +1946,8 @@ virtio_block:
  b.ne 1f
  devget x0, server_fd
  devget x1, server_sectors
- mov w2, #0
+ addr x2, server_readonly
+ ldrb w2, [x2]
 1: devset x0, block_active_fd
  devset x1, block_active_sectors
  devset w2, block_active_readonly
@@ -2178,3 +2203,8 @@ server_sectors: .skip 8
 block_active_fd: .skip 8
 block_active_sectors: .skip 8
 block_active_readonly: .skip 8
+
+.section .rodata
+server_readonly_arg: .asciz "--server-store-readonly"
+.section .bss
+server_readonly: .skip 1

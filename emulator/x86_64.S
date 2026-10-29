@@ -62,6 +62,11 @@ parse_arguments:
     test eax, eax
     jnz argument_input
     mov rdi, [r9+rbx*8+8]
+    lea rsi, [rip+server_readonly_arg]
+    call argument_equal
+    test eax, eax
+    jnz argument_server_readonly
+    mov rdi, [r9+rbx*8+8]
     lea rsi, [rip+server_arg]
     call argument_equal
     test eax, eax
@@ -114,6 +119,10 @@ argument_readonly:
     jmp parse_arguments
 argument_interactive:
     mov byte ptr [rip+interactive], 1
+    inc rbx
+    jmp parse_arguments
+argument_server_readonly:
+    mov byte ptr [rip+server_readonly], 1
     inc rbx
     jmp parse_arguments
 argument_server:
@@ -219,6 +228,10 @@ vault_opened:
     test rdi, rdi
     jz server_opened
     mov esi, 2
+    cmp byte ptr [rip+server_readonly], 0
+    je 1f
+    xor esi, esi
+1:
     xor edx, edx
     mov eax, 2
     syscall
@@ -1771,7 +1784,10 @@ virtio_features_return:
     ret
 virtio_server_features:
     mov eax, 0x200
-    ret
+    cmp byte ptr [rip+server_readonly], 0
+    je 1f
+    or eax, 32
+1:  ret
 virtio_queue_max:
     cmp dword ptr [rdi+16], 0
     jne virtio_zero
@@ -1912,6 +1928,9 @@ virtio_write_status:
     cmp dword ptr [rip+virtio_number], 6
     jne 1f
     mov ecx, 0x200
+    cmp byte ptr [rip+server_readonly], 0
+    je virtio_status_feature_mask
+    or ecx, 32
     jmp virtio_status_feature_mask
 1:  cmp dword ptr [rip+virtio_number], 0
     jne virtio_status_rng
@@ -2081,7 +2100,7 @@ virtio_block:
     jne 1f
     mov rax, [rip+server_fd]
     mov rdx, [rip+server_sectors]
-    xor ecx, ecx
+    movzx ecx, byte ptr [rip+server_readonly]
 1:  mov [rip+block_active_fd], rax
     mov [rip+block_active_sectors], rdx
     mov [rip+block_active_readonly], cl
@@ -2391,3 +2410,8 @@ server_sectors: .skip 8
 block_active_fd: .skip 8
 block_active_sectors: .skip 8
 block_active_readonly: .skip 8
+
+.section .rodata
+server_readonly_arg: .asciz "--server-store-readonly"
+.section .bss
+server_readonly: .skip 1

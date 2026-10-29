@@ -4,13 +4,13 @@ from pathlib import Path
 import driver,releases,capsule
 import stat,threading,ipaddress
 MAGIC=b'LT2\0';REPLY=b'LR2\0'
-def args_for(backend,image,vault=None,readonly=False,graphics=None,display="none",network_fd=None,server_store=None):
+def args_for(backend,image,vault=None,readonly=False,graphics=None,display="none",network_fd=None,server_store=None,server_readonly=False):
  if backend=='qemu':
   args=[driver.tool('qemu-system-riscv64'),'-M','virt','-cpu','rv64','-m','128M','-smp','1','-bios','none','-display',display,'-serial','stdio','-monitor','none','-global','virtio-mmio.force-legacy=false','-kernel',str(image),'-object','rng-random,filename=/dev/urandom,id=lt-rng','-device','virtio-rng-device,rng=lt-rng']
   args+=['-device','virtio-gpu-device,xres=640,yres=400','-device','virtio-keyboard-device','-device','virtio-mouse-device']
   if graphics:args+=['-qmp',f'unix:{graphics},server=on,wait=off']
   if vault:args+=['-drive',f'file={vault},format=raw,if=none,id=lt-vault'+(',readonly=on' if readonly else ''),'-device','virtio-blk-device,drive=lt-vault,serial=lt-objects-v1']
-  if server_store:args+=['-drive',f'file={server_store},format=raw,if=none,id=lt-server','-device','virtio-blk-device,drive=lt-server,serial=lt-server-v1']
+  if server_store:args+=['-drive',f'file={server_store},format=raw,if=none,id=lt-server'+(',readonly=on' if server_readonly else ''),'-device','virtio-blk-device,drive=lt-server,serial=lt-server-v1']
   if network_fd is not None:args+=['-chardev',f'socket,id=lt-stream,fd={network_fd}','-device','virtio-serial-device,id=lt-streamdev','-device','virtconsole,chardev=lt-stream']
   return args
  args=[str(driver.BUILD/('lt-'+backend)),str(image),'--interactive']
@@ -18,6 +18,7 @@ def args_for(backend,image,vault=None,readonly=False,graphics=None,display="none
  if graphics:args+=['--display-out',str(graphics)+'.bgrx','--input-events',str(graphics)+'.evdev']
  if vault:args+=['--vault',str(vault)]
  if server_store:args+=['--server-store',str(server_store)]
+ if server_readonly:args+=['--server-store-readonly']
  if readonly:args+=['--vault-readonly']
  if network_fd is not None:args += ['--network-fd',str(network_fd)]
  return args
@@ -77,7 +78,7 @@ class OpaqueStream:
    if remote:remote.close()
    if listener:listener.close()
 
-def session(backend,path,vault=None,readonly=False,graphics=None,display="none",network=None,network_listen=None,server_store=None):
+def session(backend,path,vault=None,readonly=False,graphics=None,display="none",network=None,network_listen=None,server_store=None,server_readonly=False):
  image=driver.BUILD/'live/guest.bin'
  if not image.exists():raise ValueError('run ./lt live-build first')
  if vault:
@@ -100,7 +101,7 @@ def session(backend,path,vault=None,readonly=False,graphics=None,display="none",
    # reconnects. The host transports evdev records; no UI commands live here.
    input_fd=os.open(input_path,os.O_RDWR|os.O_NONBLOCK)
   if transport:transport.start()
-  process=subprocess.Popen(args_for(backend,image,vault,readonly,graphics,display,transport.guest.fileno() if transport else None,server_store),stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=None,bufsize=0,pass_fds=(transport.guest.fileno(),) if transport else ())
+  process=subprocess.Popen(args_for(backend,image,vault,readonly,graphics,display,transport.guest.fileno() if transport else None,server_store,server_readonly),stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=None,bufsize=0,pass_fds=(transport.guest.fileno(),) if transport else ())
  except BaseException:
   if transport:transport.close()
   server.close()
@@ -266,7 +267,7 @@ def main(argv=None):
  p=argparse.ArgumentParser(description='Live byte portal; guest owns all state and policy')
  sub=p.add_subparsers(dest='mode',required=True)
  s=sub.add_parser('session');s.add_argument('--backend',choices=['qemu','x86_64','aarch64'],default='qemu');s.add_argument('--socket',required=True,type=Path);s.add_argument('--vault',type=Path);s.add_argument('--vault-readonly',action='store_true');s.add_argument('--display',choices=['none','gtk','sdl'],default='none');s.add_argument('--graphics',type=Path,help='QMP socket (QEMU) or raw pixel/input prefix (assembly)')
- s.add_argument('--network',help='explicit opaque UNIX socket or numeric HOST:PORT endpoint');s.add_argument('--network-listen',help='explicit opaque numeric HOST:PORT listener');s.add_argument('--server-store',type=Path)
+ s.add_argument('--network',help='explicit opaque UNIX socket or numeric HOST:PORT endpoint');s.add_argument('--network-listen',help='explicit opaque numeric HOST:PORT listener');s.add_argument('--server-store',type=Path);s.add_argument('--server-store-readonly',action='store_true')
  v=sub.add_parser('vault-init');v.add_argument('path',type=Path);v.add_argument('--sectors',type=int,default=512);v.add_argument('--key-out',type=Path)
  c=sub.add_parser('ctl');c.add_argument('--socket',required=True,type=Path);cs=c.add_subparsers(dest='command',required=True)
  for name in ['ping','processes','cancel','gc','objects-gc','list','stats','shutdown']:cs.add_parser(name)
@@ -298,7 +299,7 @@ def main(argv=None):
  args=p.parse_args(argv)
  if args.mode=='session':
   if args.network and args.network_listen:raise ValueError('select one network endpoint')
-  return session(args.backend,args.socket,args.vault,args.vault_readonly,args.graphics,args.display,args.network,args.network_listen,args.server_store)
+  return session(args.backend,args.socket,args.vault,args.vault_readonly,args.graphics,args.display,args.network,args.network_listen,args.server_store,args.server_store_readonly)
  if args.mode=='vault-init':
   if args.sectors<304:raise ValueError('development Objects vault needs >=304 sectors')
   if args.path.exists() or (args.key_out and args.key_out.exists()):raise ValueError('vault/key output exists; refusing overwrite')
