@@ -34,36 +34,6 @@ def response (j t : UInt64) : UInt64 :=
     let t := copy (j+256) (wire+128) (load64 (j+40) t) t
     128+load64 (j+40) t+t
 
-def enqueue (caller root t : UInt64) : UInt64 :=
-  let slot := freeJob 0 t
-  if slot == error || load64 st t >= 65535 then fail 4 t else
-  if load64 (st+64) t != 1 then fail 7 t else
-    let r := describeRoot root t
-    if r != 160 || status r != 0 || load64 (wire+48) r != caller then fail 1 r else
-      let t := copy (wire+64) 0x610000 32 r
-      let r := freezeExport root 0x610000 t
-      if r != 160 || status r != 0 then fail 1 r else
-        let frozen := result r
-        let t := store64 0x610040 frozen r
-        let r := openHead frozen t
-        if r != 128 || status r != 0 then fail 1 (ProjectSDK.remove frozen r) else
-          let h := result r
-          let t := store64 0x610048 h r
-          let launcher := syscall 97 1 0 0 0 t
-          let r := delegate frozen launcher 65 t
-          if r != 160 || status r != 0 then fail 1 (ProjectSDK.remove frozen r) else
-            let j := job slot
-            let id := load64 st r+1
-            let t := store64 st id r
-            let t := zero j 256 t
-            let t := store64 j 1 t
-            let t := store64 (j+8) id t
-            let t := store64 (j+16) caller t
-            let t := store64 (j+24) frozen t
-            let t := store64 (j+32) (result r) t
-            let t := store64 (j+48) h t
-            let t := copy 0x610000 (j+64) 32 t
-            response j t
 
 def payload : UInt64 := 0x620000
 def detail : UInt64 := 0x621000
@@ -172,6 +142,68 @@ def cancel (j t : UInt64) : UInt64 :=
     let t := if evidence == 0 then t else drop evidence t
     let t := zero j 256 t
     fail 0 t
+
+partial def latestSuccess (caller i newest t : UInt64) : UInt64 :=
+  if i == 4 then newest else
+    let j := job i
+    let id := load64 (j+8) t
+    latestSuccess caller (i+1) (if load64 j t == 2 && load64 (j+16) t == caller && id > newest then id else newest) t
+
+-- At most four slots are searched. Pending jobs and a live caller's most recent
+-- successful result remain intact when later queued builds fail.
+def recyclable (state sameCaller latest dead : Bool) : Bool := state && ((sameCaller && !latest) || dead)
+theorem newest_live_success_preserved : recyclable true true true false = false := by decide
+
+partial def oldestCompleted (caller newest i selected t : UInt64) : UInt64 :=
+  if i == 4 then Guest.Effects.effectValue selected t else
+    let j := job i
+    let completed := load64 j t >= 2
+    let owner := load64 (j+16) t
+    let actual := if completed && owner != caller then syscall 34 owner 0 0 0 t else t
+    let allowed := recyclable completed (owner == caller) (load64 (j+8) actual == newest) (completed && owner != caller && actual == error)
+    let selected := if allowed && (selected == error || load64 (j+8) actual < load64 (job selected+8) actual) then i else selected
+    oldestCompleted caller newest (i+1) selected actual
+
+def reserveJob (caller t : UInt64) : UInt64 :=
+  let vacant := freeJob 0 t
+  if vacant != error then vacant else
+    let selected := oldestCompleted caller (latestSuccess caller 0 0 t) 0 error t
+    if selected == error then error else
+      let cleared := cancel (job selected) selected
+      if cleared != 64 || status cleared != 0 then error else Guest.Effects.effectValue selected cleared
+
+def enqueue (caller root t : UInt64) : UInt64 :=
+  if load64 st t >= 65535 then fail 4 t else
+  if load64 (st+64) t != 1 then fail 7 t else
+    let r := describeRoot root t
+    if r != 160 || status r != 0 || load64 (wire+48) r != caller then fail 1 r else
+      let t := copy (wire+64) 0x610000 32 r
+      let slot := reserveJob caller t
+      if slot == error then fail 4 slot else
+      let r := freezeExport root 0x610000 slot
+      if r != 160 || status r != 0 then fail 1 r else
+        let frozen := result r
+        let t := store64 0x610040 frozen r
+        let r := openHead frozen t
+        if r != 128 || status r != 0 then fail 1 (ProjectSDK.remove frozen r) else
+          let h := result r
+          let t := store64 0x610048 h r
+          let launcher := syscall 97 1 0 0 0 t
+          let r := delegate frozen launcher 65 t
+          if r != 160 || status r != 0 then fail 1 (ProjectSDK.remove frozen r) else
+            let j := job slot
+            let id := load64 st r+1
+            let t := store64 st id r
+            let t := zero j 256 t
+            let t := store64 j 1 t
+            let t := store64 (j+8) id t
+            let t := store64 (j+16) caller t
+            let t := store64 (j+24) frozen t
+            let t := store64 (j+32) (result r) t
+            let t := store64 (j+48) h t
+            let t := copy 0x610000 (j+64) 32 t
+            response j t
+
 
 def artifactGrants (j caller t : UInt64) : UInt64 :=
   if load64 j t != 2 || load64 (j+224) t == 0 || load64 (j+232) t == 0 then fail 6 t else
