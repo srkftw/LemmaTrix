@@ -199,7 +199,7 @@
       "consumer": "faca7f8ec21fdcaceafb9b34e1219f56bf0e6976a4332b5b5cd8921d5cca64cb",
       "reopened": "ca49dff188f42983e6eaf74b090d547070b8cf8d124a1c008017bdca7428d004"
     },
-    "consumer_caveat": "After typing19 characters at120ms key edges and waiting400ms, actual frame had processed only4 characters inde, with correct bytes4/words1. This proves separate native computation on received input, not completion of the full queued19-character input. Per-key full redraw latency was reported and a later app fix coalesces input before repaint.",
+    "consumer_caveat": "After typing20 characters at120ms key edges and waiting400ms, actual frame had processed only4 characters inde, with correct bytes4/words1. This proves separate native computation on received input, not completion of the full queued20-character input. Per-key full redraw latency was reported and a later app fix coalesces input before repaint.",
     "earlier_attempt": {
       "result": "failed to observe running editor within90s after raw Enter",
       "capture": "Trusted modal was captured; emulator stderr empty. The harness did not retain final process/candidate state.",
