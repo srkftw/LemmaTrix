@@ -4,7 +4,7 @@ from pathlib import Path,PurePosixPath
 import driver
 ROOT=driver.ROOT
 MAX_FILES=128;MAX_INPUT=4*1024*1024
-SDK_MODULES=['Guest.Primitives','Guest.Structured','Guest.Effects','Guest.LiveSDK','Guest.LiveMemory','Guest.Raster']
+SDK_MODULES=['Guest.Primitives','Guest.Structured','Guest.Effects','Guest.LiveSDK','Guest.LiveMemory','Guest.Keyboard','Guest.Raster']
 RECIPE='lemmatrix-lean-rv64-structured-2'
 
 def sha(data):return hashlib.sha256(data).hexdigest()
@@ -74,6 +74,13 @@ def _diagnostics(text,manifest,rootid):
   if m and m[1] in ids:records.append({'path':m[1],'line':int(m[2]),'column':int(m[3]),'source_id':ids[m[1]],'source_root':rootid,'message':m[4][:2048]})
   if len(records)>=32:break
  return records
+
+def compiler_identity():
+ sdk_files=[ROOT/(n.replace('.','/')+'.lean') for n in SDK_MODULES]+[ROOT/'Compiler/Main.lean',ROOT/'runtime/primitives.S',ROOT/'runtime/app.ld',ROOT/'runtime/app2.ld',ROOT/'tools/build_sandbox_runner.py',ROOT/'tools/build_jobs.py']
+ entries={str(p.relative_to(ROOT)):p.read_bytes() for p in sdk_files}
+ sdk_digest=sha(canonical([{'path':name,'sha256':sha(data)} for name,data in entries.items()]))
+ tools,closure=_toolchain()
+ return sha(canonical({'lock':driver.LOCK,'closure':closure,'tools':tools,'sdk_digest':sdk_digest,'recipe':RECIPE}))
 
 def build_source_snapshot(files,*,entry,module,profile,jobid,rootid,outputdir):
  """Build only frozen files. The caller must obtain them from an authorized root.

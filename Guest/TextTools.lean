@@ -1,4 +1,7 @@
-import Guest.Desktop
+import Guest.Keyboard
+import Guest.Raster
+import Guest.LiveSDK
+import Guest.Structured
 import Guest.LiveApps
 namespace Guest.TextTools
 open Guest.LiveSDK Guest.Raster
@@ -166,7 +169,7 @@ def key (code down t : UInt64) : UInt64 :=
   else if down == 0 then t else
     let shift := load64 (st+16) t
     let ctrl := load64 (st+24) t
-    let c := Guest.Desktop.scanCode code shift
+    let c := Guest.Keyboard.scanCode code shift
     if code == 1 then store64 (st+40) 0 t
     else if ctrl == 1 && code == 22 then uppercase input (load64 st t) (store64 (st+40) 0 t)
     else if ctrl == 1 && code == 38 then store64 (st+96) 0 (store64 (st+8) 0 (store64 st 0 (store64 (st+40) 0 t)))
@@ -208,7 +211,7 @@ partial def loop (endpoint surface t : UInt64) : UInt64 :=
     let ev := Guest.Structured.event (packed >>> 48) ((packed >>> 32) &&& 65535) 0 0 0 (packed &&& 0xffffffff)
     let t := match eventCode ev with
       | .ok code => key code ev.sequence t
-      | .error _ => if ev.kind == 65535 then store64 (st+16) 0 (store64 (st+24) 0 t) else t
+      | .error _ => if ev.kind == 65535 || packed == 0x300000000 then store64 (st+16) 0 (store64 (st+24) 0 t) else t
     let t := if packed >>> 48 == 1 && (packed &&& 0xffffffff) != 0 then draw surface t else t
     loop endpoint surface t
 
