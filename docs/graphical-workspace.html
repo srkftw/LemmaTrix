@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Native graphical creator workspace</title><style>:root{color-scheme:light dark}body{font:17px/1.6 system-ui,sans-serif;max-width:78rem;margin:3rem auto;padding:0 1.5rem}pre{overflow:auto;background:#8882;padding:1rem}table{border-collapse:collapse;width:100%}td,th{border:1px solid #888;padding:.6rem;text-align:left;vertical-align:top}code{overflow-wrap:anywhere}</style></head><body>
+<nav><a href="index.html">Documentation</a> · <a href="graphics-input.html">Devices</a> · <a href="structured-runtime.html">Runtime</a> · <a href="project-graph.html">Graph and vault</a> · <a href="build-sandbox.html">Build isolation</a></nav>
+<h1>Native graphical creator workspace</h1>
+<p>Campaign 003 extends the existing live development implementation. Guest rendering, input policy, editing, graph validation, build-job binding, release authentication and encrypted storage execute as freestanding Lean/RV64. This remains an LT development profile, not completed LT-Machine-v1 conformance or the complete v0.2 MVP.</p>
+<h2>Build and start</h2>
+<pre>./lt setup
+./lt doctor
+./lt build
+# A from-source verification build is available as ./lt build --clean.
+./lt emulators
+./lt run --backend qemu --socket /tmp/lt.sock --graphics /tmp/lt.qmp --display gtk
+# Assembly backends use a raw pixel file and ephemeral input FIFO:
+./lt run --backend x86_64 --socket /tmp/lt.sock --graphics /tmp/lt-display
+# In another terminal, with a Python installation containing Tk:
+./lt display --graphics /tmp/lt-display
+# ARM64 assembly on an x86 host:
+./lt run --backend aarch64 --socket /tmp/lt.sock --graphics /tmp/lt-display</pre>
+<p>The QEMU graphics endpoint is QMP. A headless device client is available in <a href="../tests/graphical_devices.py">tests/graphical_devices.py</a>; it sends hardware input and reads pixels. QEMU can also present its scanout through an explicitly selected display adapter. UART remains a separate management/recovery interface. The assembly presenter transports pixels and raw events and implements no widgets, editor, approvals or project semantics.</p>
+<h2>Explicit publisher and native applications</h2>
+<pre>./lt release keygen --private build/publisher.pem --public build/publisher.pub
+./lt app --profile 2 --module Guest.Desktop --entry Guest.Desktop.main --name editor
+./lt release create --profile 2 --binary build/live/apps/editor.bin \
+ --project native-editor --version 0.3.5 --sign-key build/publisher.pem \
+ --source-base . --source Guest/Desktop.lean --source Guest/Structured.lean \
+ --right object.read --right object.create --right object.revise --right object.share \
+ --right object.revoke --right object.enumerate --right object.export \
+ --right display.surface --right input.focus --output build/editor.ltrel
+./lt ctl --socket /tmp/lt.sock trust --project native-editor --public build/publisher.pub
+./lt ctl --socket /tmp/lt.sock inspect build/editor.ltrel
+# In the graphical workspace: F12, inspect the exact candidate, then Enter.
+./lt app --profile 2 --module Guest.TextTools --entry Guest.TextTools.main --name text-tools
+./lt release create --profile 2 --binary build/live/apps/text-tools.bin \
+ --project text-tools --version 0.3.5 --sign-key build/publisher.pem \
+ --source-base . --source Guest/TextTools.lean --right object.read \
+ --right display.surface --right input.focus --output build/text-tools.ltrel
+./lt ctl --socket /tmp/lt.sock trust --project text-tools --public build/publisher.pub
+./lt ctl --socket /tmp/lt.sock inspect build/text-tools.ltrel</pre>
+<p>Use F12 and Enter for the second package too. Keys are provisioned explicitly; these commands never select the public development fixture key. The host signer is a separate boundary from the compiler and the guest's local execution approval. A saved Release graph node grants neither trust nor installation authority.</p>
+<h2>Controls and bounded editor</h2>
+<table><thead><tr><th>Surface</th><th>Actual controls</th></tr></thead><tbody>
+<tr><td>Trusted shell</td><td>Alt-Tab switches focus. F12 inspects the current authenticated staged package; Enter approves its exact ID and rights and starts it. Alt-F9 shows installed generations and actual process states; arrows select, Enter starts, S stops the focused incarnation, R restarts it as the selected release, B explicitly rolls back the selected project, Escape closes. Trusted chrome cannot be covered by an app.</td></tr>
+<tr><td>Editor</td><td>F1 new project; F2 cycles scoped projects or opens the trusted project portal, Shift-F2 chooses through that portal; F3 next file; F4 immutable commit with expected-head comparison; F5 freeze and queue a build; Shift-F5 cancels a pending job; F6 inspects actual type/schema, grant mask, payload digest, complete stable IDs, parent and logical Project identity, or navigates a failed compiler diagnostic; Tab cycles Source, manifest, latest Build and retained Release/Evidence records; F7 add, F8 rename, F9 remove; F10 requests an exact encrypted snapshot confirmation. Mouse selects a file/caret. Arrow/Home/End/Page keys navigate; Shift-left/right select, Ctrl-A selects all, Backspace/Delete erase, Ctrl-Z/Ctrl-Y provide one bounded undo/redo step. Ctrl-E opens the selected accent.txt resource as the bounded decimal schema consumed by the sample: Up/Down adjust, Enter applies, Escape cancels. Applying the same value leaves source untouched; returning intentionally to a previous value creates new lineage when committed.</td></tr>
+<tr><td>Text Tools</td><td>Independent private text, live word/byte/LF statistics, uppercase/clear controls and separately authorized immutable-object inspection. The shell does not perform its computation. See <a href="text-tools.html">the application contract</a>.</td></tr>
+</tbody></table>
+<p>The editor supports eight working files, each at most 32 KiB; graph members may be 64 KiB. Names are canonical bounded ASCII relative paths. Payload bytes preserve UTF-8, navigation/deletion avoid continuation-byte boundaries, and non-ASCII glyphs have a limited fallback renderer. ASCII upper/lowercase are distinct. The viewport shows 78 source columns and 25 lines; long lines remain intact but there is no horizontal viewport yet. Keyboard entry is the documented ASCII scan-code subset. This is a bounded editor with one undo snapshot, not the complete Lean language-server IDE or professional Unicode shaping. Dirty working memory, immutable session commits and an acknowledged encrypted snapshot are different states.</p>
+<h2>Project import and exact build</h2>
+<pre>./lt project --socket /tmp/lt.sock import examples/creator --name creator
+./lt project --socket /tmp/lt.sock list
+# Editor: Shift-F2, choose creator, Enter; F3 selects Util.lean.
+# Provision the chosen publisher once for this current session:
+./lt ctl --socket /tmp/lt.sock trust --project creator --public build/publisher.pub
+# Persistent disclosed bootstrap worker, in another terminal:
+./lt project --socket /tmp/lt.sock serve --project creator \
+ --sign-key build/publisher.pem --version 1.0.0 --output build/creator-worker
+# Native editor: F4 commit, F5 build; diagnostics appear in the editor.
+# Success is staged by the worker; F12 reviews its exact authority, Enter runs.
+# The worker never auto-trusts or approves. Ctrl-C stops it.
+
+# Alternatively use the one-shot explicit bootstrap boundaries after F5:
+./lt project --socket /tmp/lt.sock build --output build/creator-job
+./lt project --socket /tmp/lt.sock publish build/creator-job/job.result.json \
+ --sign-key build/publisher.pem --name creator --version 1.0.0 \
+ --rights 768 --output build/creator-1.ltrel
+./lt ctl --socket /tmp/lt.sock trust --project creator --public build/publisher.pub
+./lt ctl --socket /tmp/lt.sock inspect build/creator-1.ltrel
+# F12 then Enter: local exact approval, installation, and native execution.</pre>
+<p>The fixed recipe is module Main, entry Main.main, resource profile 2. Lean elaboration, executable metaprograms, backend generation, assembler and linker run inside the <a href="build-sandbox.html">OS-enforced build sandbox</a>. Only the frozen project and approved SDK/toolchain closure enter it. The guest binds a completion to the job, current service incarnation, frozen source, profile and precommitted compiler identity. Build/Evidence records remain attached to that source even when the editor advances. Correctness of source-to-binary translation is an explicit builder assertion, not a guest proof.</p>
+<p>The creator sample is a real multi-module application with over 64 KiB of UTF-8 resources. Resource files participate in elaboration inside the sandbox. Its independent native computation accepts keyboard input: changing Util.Weight from 3 to 7 changes the score for <code>cat123</code> from 20 to 24. Publishing imports actual source, Build, Evidence, binary chunks and Release material into the typed guest graph. Manifest/source/evidence/license and binary commitments are checked. Guest validation reconstructs canonical source metadata from actual typed Source paths, hashes and lengths and the fixed evidence array from actual Build fields; signed semantic substitutions fail; publisher authenticity remains the Launcher verifier's separate decision.</p>
+<p>Publish a later version with <code>--parent PREVIOUS_RELEASE_ID</code>; stage and approve its exact new envelope through F12. Existing instances keep running. Alt-F9/B performs explicit rollback to the retained previous trusted generation. Publishing content does not install it. A published project snapshot has its own named root; an optional explicit <code>--attach-root ROOT_CAP</code> only attaches when the current source head still matches the built revision, otherwise the source remains unchanged and a separate published snapshot is preserved.</p>
+<h2>Encrypted multi-project retention</h2>
+<pre>./lt vault-init build/objects-v2.img --sectors 24576 --key-out build/objects.key
+./lt run --backend qemu --socket /tmp/lt.sock --graphics /tmp/lt.qmp --vault build/objects-v2.img
+./lt ctl --socket /tmp/lt.sock vault unlock --key build/objects.key
+# Editor F10: inspect name/root/object count/bytes; Enter retains this exact snapshot.
+# Explicit management equivalent for selected named roots:
+./lt project-vault --socket /tmp/lt.sock save ROOT_CAP OTHER_ROOT_CAP
+./lt project-vault --socket /tmp/lt.sock inspect
+./lt ctl --socket /tmp/lt.sock vault lock
+./lt ctl --socket /tmp/lt.sock shutdown
+# Restart with the same explicitly attached image, then:
+./lt ctl --socket /tmp/lt.sock vault unlock --key build/objects.key
+./lt project-vault --socket /tmp/lt.sock recover</pre>
+<p>The v2 vault keeps up to six selected named roots and their complete authorized closure, bounded to 64 nodes and 4 MiB aggregate. Immutable temporary roots freeze selection before storage work. Later saves preserve other selected names. Recovery authenticates all members, stages canonical typed records and publishes the complete root set atomically with fresh operational capabilities. Source names, IDs, shared references and selected ancestry survive; app processes, input history, private memory, publisher trust, keys and install approvals do not.</p>
+<p>Version 1 development images are not silently reformatted. New v2 extents require a larger explicitly allocated backing; old single-object extents remain distinct. Both write/flush boundaries must complete before durability is acknowledged. Alternating authenticated generations recover an old or new complete snapshot after interruption. There is no whole-store rollback protection without trusted freshness, password KDF, automatic history pruning, physical-drive validation or host-erasure claim. Without a vault the same session workflow is ephemeral.</p>
+<p>Actual integrated execution, artifact identities, interruption boundaries and backend limits are recorded in <a href="campaign-003.html">the campaign 003 report</a> and its <a href="evidence/campaign-003.json">machine-readable record</a>.</p>
+<h2>Execution boundaries and remaining gates</h2>
+<p>Lean supplies the kernel, device policy, compositor, editor, native apps, Objects graph, build-job service, release verifier, vault and cryptography. Assembly implements boot/traps/primitives and the two CPU/device emulators. Host adapters present raw pixels/events and block/entropy bytes. Host Lean/LLVM compile inside an isolated explicit bootstrap job; a separately selected host key signs. No Linux runtime is loaded into native guest applications.</p>
+<p>This advances OS-002/004/005/006/007/008/009, SDK-001/002/003, IDE-001/003, DAT-001/003/004, VAULT-001/002/004, FORGE-001/002 and source-first REL foundations. Interactive theorem states, native self-hosting, independent builders/operators, federation, Library, communications, privacy routing, LemmaCoin and physical ARM64/vault evidence remain incomplete. Unsupported network/privacy/payment modes remain unavailable. Source proofs are scoped source-level claims; neither the compiler nor the full platform is verified.</p>
+</body></html>

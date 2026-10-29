@@ -1,6 +1,10 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Live platform commands and native development</title><style>:root{color-scheme:light dark}body{font:17px/1.6 system-ui,sans-serif;max-width:76rem;margin:3rem auto;padding:0 1.5rem}pre{overflow:auto;padding:1rem;background:#8882}code{overflow-wrap:anywhere}table{border-collapse:collapse}td,th{border:1px solid #888;padding:.6rem;text-align:left;vertical-align:top}</style></head><body><nav><a href="index.html">Documentation</a> · <a href="machine-abi.html">Machine/ABI</a> · <a href="implementation-status.html">Status/evidence</a> · <a href="interactive-workbench.html">Workbench and REL</a> · <a href="objects-vault.html">Vault format</a></nav>
 <h1>Live platform commands and native development</h1>
+<section><h2>Campaign 003 graphical workspace</h2><p>The current increment extends the campaign-002 contracts below. See the <a href="graphical-workspace.html">native creator workflow and commands</a>, <a href="graphics-input.html">modern graphics/input and bounded surfaces</a>, <a href="structured-runtime.html">structured runtime</a>, <a href="project-graph.html">canonical graph and v2 project vault</a>, and <a href="build-sandbox.html">isolated build protocol</a>. Earlier image hashes and campaign-002 validation below are historical evidence, not newly executed checks. No complete MVP release gate is claimed.</p></section>
+<p><a href="campaign-003.html">Campaign003 executed workflow, current evidence and limits</a> supersedes the historical observations below for the changed creator path.</p>
+<details><summary>Preserved campaign-002 contract and evidence</summary>
+
 <p>Campaign 002, 28 October 2026. Commands run from the repository root on a Linux host. The native text management service and applications execute in the Lean guest. Python transports framed bytes and invokes disclosed host compilers/signers. This is a development profile, not the complete desktop MVP.</p>
 <h2>Setup, incremental build and long-lived session</h2>
 <pre><code>./lt setup
@@ -89,4 +93,5 @@ python3 tests/release_boundaries.py
 # Historical scripted campaign-001 regression remains explicit:
 ./lt fixture-check</code></pre>
 <p>The current check drives the live portal against a fixed image. See <a href="implementation-status.html">executed evidence and exact environments</a>. Component checks also cover compiler effect order, AEAD known-answer/boundary cases, device errors and scoped policy proofs. Recorded historical evidence is <a href="evidence/campaign-001.json">campaign-001.json</a>; <a href="history/campaign-001-development.html">the historical command guide</a> preserves the earlier finite demonstration. Legacy host Ed25519 packages and publicly keyed capsules are fixtures, not an alternative ordinary installation authority. A host build/sign loop is disclosed bootstrap work, not a completed native IDE, desktop, federation, network or independent-builder result.</p>
+</details>
 </body></html>

@@ -1,0 +1,1223 @@
+{
+  "schema": "LT-campaign-003-integration-evidence-1",
+  "date": "2026-10-29",
+  "branch": "codex/graphical-project-workspace",
+  "reviewed_implementation_head": "ca69f03c8395573360a5912c9ed13ad8dabbba29",
+  "final_guest_source_change": "f1cae85a7e502a129d73a4c68613dac4138c7c58",
+  "evidence_basis_commit": "bb1cb2bb46ad3ebce22414ff22bff0643d4c441c",
+  "scope": "Connected bounded native creator development increment. No full v0.2 MVP gate or LT-Machine-v1 conformance claim. Campaign-002 evidence is preserved history, not newly executed validation.",
+  "final_guest": {
+    "path": "build/live/guest.bin",
+    "bytes": 6291456,
+    "sha256": "b15927561181c31720e8a9cc6385cc2db381b6e3ed25745798d08443deaa9971",
+    "compiler_commitment": "e457c91de6b19cf243306b5961c203cdec1c44470dba356c51872e7fd8394ade",
+    "profile": "LT live development; RV64IM/lp64, Sv39; resource profile2; no firmware",
+    "component_identities": {
+      "kernel": {
+        "bytes": 118288,
+        "sha256": "d3218a922f8b3c97218e3f4421ff0fa4a9a78de631a5314a95690c174295aaa9"
+      },
+      "launcher": {
+        "bytes": 101472,
+        "sha256": "5ec34ef371965eed09392e369e96b77cd7b6f6260d8884ae8cf4402edb2f88ee"
+      },
+      "objects": {
+        "bytes": 179688,
+        "sha256": "559654500bd36912bd5da52e05e061abb285fad9f50d120ec7486986aef26850"
+      },
+      "vault": {
+        "bytes": 86280,
+        "sha256": "001b3ad4a8a13e11e92c40c1e22c446cac7c4e1ef94d8443fe439b99b5b38493"
+      },
+      "compositor": {
+        "bytes": 138500,
+        "sha256": "cdac699c319a26ab462ba2e6ac4fe389ab9cbe84bfd81fbbeb0c37f9adc1c05e"
+      },
+      "build-jobs": {
+        "bytes": 28640,
+        "sha256": "5e34162193abf7ca7c6cb10bcaba1026457f46d0e1b1c882ccfca51189ed15a6"
+      }
+    },
+    "clean_rebuild": {
+      "command": "./lt build --clean",
+      "log": "build/campaign003-clean-build.log",
+      "status": "pass",
+      "image_byte_identity_matches_executed_journey": true,
+      "sha256": "b15927561181c31720e8a9cc6385cc2db381b6e3ed25745798d08443deaa9971",
+      "log_sha256": "85bd02d43a9ca3c23a07d5af5e72e894b3b8b212d1cedf37ffccad9d31db295c",
+      "output": [
+        "Lean IR → RV64IM: 78 definitions → /home/sreekumaar/Desktop/LemmaTrix/build/live/kernel.S",
+        "Lean IR → RV64IM: 81 definitions → /home/sreekumaar/Desktop/LemmaTrix/build/live/launcher.S",
+        "Lean IR → RV64IM: 129 definitions → /home/sreekumaar/Desktop/LemmaTrix/build/live/objects.S",
+        "Lean IR → RV64IM: 115 definitions → /home/sreekumaar/Desktop/LemmaTrix/build/live/vault.S",
+        "Lean IR → RV64IM: 78 definitions → /home/sreekumaar/Desktop/LemmaTrix/build/live/compositor.S",
+        "Lean IR → RV64IM: 48 definitions → /home/sreekumaar/Desktop/LemmaTrix/build/live/build-jobs.S",
+        "Lean IR → RV64IM: 31 definitions → /home/sreekumaar/Desktop/LemmaTrix/build/live/workbench.S",
+        "Lean IR → RV64IM: 31 definitions → /home/sreekumaar/Desktop/LemmaTrix/build/live/inspector.S",
+        "Lean IR → RV64IM: 31 definitions → /home/sreekumaar/Desktop/LemmaTrix/build/live/worker.S",
+        "LIVE IMAGE b15927561181c31720e8a9cc6385cc2db381b6e3ed25745798d08443deaa9971"
+      ]
+    }
+  },
+  "toolchain": {
+    "lean": "4.34.1",
+    "llvm": "20.1.8",
+    "qemu": "11.1.1",
+    "isa": "rv64im",
+    "abi": "lp64",
+    "firmware": "none: tracked runtime/boot.S enters M mode directly",
+    "openssl": "3.6.3"
+  },
+  "native_application_artifacts": [
+    {
+      "name": "native-editor",
+      "version": "0.3.5",
+      "resource_profile": 2,
+      "rights": 895,
+      "release_id": "542f517559b6e4631aca8f5475838730d1ede4d949813579893f91be44c8c928",
+      "path": "build/editor-003-5.ltrel",
+      "package_sha256": "35b1bab99a6e1aeafa03a1696c3c8cf1d387ef9f9d824452b8fefbc44e799332",
+      "code_bytes": 201792,
+      "code_sha256": "6cd69798079a184e583f182d3284d1bf7a4d9dc304a56ad0589324b65cfd328c"
+    },
+    {
+      "name": "text-tools",
+      "version": "0.3.5",
+      "resource_profile": 2,
+      "rights": 769,
+      "release_id": "eae21afb36890bbcfe1fcf69ff6b9869480370436595af4126151f815b86070e",
+      "path": "build/text-tools-003-5.ltrel",
+      "package_sha256": "70967cad254d46be3d0d3e95fdbf80fae7cc152a621af098aee81bcb1dbc3fa0",
+      "code_bytes": 53448,
+      "code_sha256": "bf5ccabe0ea24236eba06db067d54f032d1e97f6392c318112f7aacd7b83b288"
+    },
+    {
+      "name": "creator",
+      "version": "1.0.0",
+      "release_id": "21a824d6c32cccf3bb15cb5061ee7c570af87654b76d65bccca8e7e28e1031cc",
+      "binary_sha256": "e601f870451442efde69c290534a45d4f7f9baf1dad7d32512108a67c315e138",
+      "raw_input": "cat123",
+      "rendered_score_decimal": 20
+    },
+    {
+      "name": "creator",
+      "version": "1.0.1",
+      "release_id": "68e45749fe0aa8b0c9b00f0d0a5b0a14a478c7d564f16e606ef50c31b6efb4bc",
+      "binary_sha256": "d854d32152e760498b04a0a1cfda44e07cbcbf1928a52a12b80402b799ecf048",
+      "raw_input": "cat123",
+      "rendered_score_decimal": 24
+    }
+  ],
+  "publisher_authority": {
+    "provisioning": "Explicit campaign publisher, current-session project-scoped guest trust, original publisher verifier, fresh raw-device gesture bound to exact release/rights; separate host signer",
+    "key_id": "00eba405d43e9a3f86774025e79597ccedb139fdbe162cd5470b6572afb03271",
+    "public_key_file_sha256": "d9c44b133ea76eb64c8ae6a6c6b6d2a2fd7082af2c75f5333188ab1889f00db5",
+    "private_key_excluded": true,
+    "public_fixture_fallback": false
+  },
+  "final_qemu_journey": {
+    "command": "python3 tests/creator_journey.py --editor build/editor-003-5.ltrel --text-tools build/text-tools-003-5.ltrel --public build/campaign003-publisher.pub --key <explicit-campaign-publisher-private-key> --vault build/creator-release-candidate-vault.img --vault-key <explicit-vault-key> --output build/creator-release-candidate",
+    "vault_initialization": "./lt vault-init build/creator-release-candidate-vault.img --sectors 24576 --key-out <explicit-vault-key>",
+    "environment": "Native x86-64 Linux host, QEMU11.1.1 RV64 reference; headless QMP keyboard/pointer through modern virtio input, actual guest-drawn GPU framebuffer",
+    "source_record": "build/creator-release-candidate/journey.json",
+    "result": "pass",
+    "execution": {
+      "image": "b15927561181c31720e8a9cc6385cc2db381b6e3ed25745798d08443deaa9971",
+      "backend": "qemu",
+      "checks": [
+        {
+          "check": "graphical boot",
+          "result": "pass",
+          "frame": "6348d9dc3698e56f13069d41f213a3b131e8df15b26e0f3f5344810b2e7f98ef"
+        },
+        {
+          "check": "device approved and started separately signed editor",
+          "result": "pass",
+          "release": "542f517559b6e4631aca8f5475838730d1ede4d949813579893f91be44c8c928",
+          "instance": 3456790899038617862
+        },
+        {
+          "check": "keyboard created committed multi-file notes project",
+          "result": "pass",
+          "root": "e1d03abf1ccbd513c5d9ee01ce4cccc4ef6afb506f60ea44cdecbac6c3b989e7"
+        },
+        {
+          "check": "independent graphical application retains arbitrary private input",
+          "result": "pass",
+          "instance": 3456790899038617863,
+          "frame": "6617e2e6db229fe69a7c4d74a49dc6eacc4ba36f8fb7292e695a9c497a3fbe22",
+          "rendered_words": 3,
+          "rendered_bytes": 20,
+          "rendered_lf": 0
+        },
+        {
+          "check": "native structured resource editing preserves semantic lineage",
+          "result": "pass",
+          "original": "69d8274c92d5b2c829e55d5e3f5359b7c652b13160d138eec5d7e99623a72f2b",
+          "changed": "3a4163f8d4ccbbee339d1b511b26e6dbc5ddd660dc97c7b6ce384725389283d8",
+          "reconstructed": "d8b3091b70aeeede1587fcc0bc513f94d25febe1dc857bffa025ee35312f7e22"
+        },
+        {
+          "check": "native Inspector reads Source and manifest identities",
+          "result": "pass",
+          "head": "d8b3091b70aeeede1587fcc0bc513f94d25febe1dc857bffa025ee35312f7e22",
+          "source_frame": "55e1c5eeda3a2ca72b1d35510527c8d742f426aadb79afd27b2437742927c569",
+          "manifest_frame": "057f8318a9c36f3c506a3ce8ec080292c9ffb6806684ee439cdad9364dabd233"
+        },
+        {
+          "check": "exact resource-backed build and checked Release graph",
+          "result": "pass",
+          "source": "6692f8151042250ffae57e8a17c867380be88fe08002c4751d8544dadd25760f",
+          "binary": "e601f870451442efde69c290534a45d4f7f9baf1dad7d32512108a67c315e138",
+          "content": {
+            "release_node": "b4379215131f6645d37fcd876e3706266821f168c634541b2ee7d55a588db3ae",
+            "release_handle": 3456790903333585188,
+            "binary_manifest": "4015153455758f925cc9d3d592eb6b2f7b1ee90658985ec4fbe1fed9ec571652",
+            "build_node": "3c34123421b61b7c9127d2ec9d29e1f7eec4d41b16cd9bb9f024038a3c75971b",
+            "evidence_node": "968239ace7d9c946b0258d05db44adf2a49189cd1001b1d768eaa335001843da",
+            "source_root": "6692f8151042250ffae57e8a17c867380be88fe08002c4751d8544dadd25760f",
+            "snapshot_root": 3456790903333585163,
+            "snapshot_head": "7bb87d6ade8ab6008f3121cb818aec596ae18c6aaadac7e02e7b85776bd2bd43",
+            "snapshot_name": "creator-release-1.0.0",
+            "shell_root_capability": 3456790903333585164,
+            "attached_to_selected_root": false,
+            "guest_present_commitments_checked": true,
+            "publisher_signature": "requires Launcher verification under current local trust",
+            "installed": false
+          }
+        },
+        {
+          "check": "first compiled app accepts real keyboard input",
+          "result": "pass",
+          "release": "21a824d6c32cccf3bb15cb5061ee7c570af87654b76d65bccca8e7e28e1031cc",
+          "instance": 3456790899038617864,
+          "frame": "a347bd3687076debff7f1bfe3dee0bd3eebc3fd4fea23b55e12bd7b929eb1d94",
+          "rendered_score": "00000014"
+        },
+        {
+          "check": "located compiler error and delayed exact-source result preserve newer edits",
+          "result": "pass",
+          "built": "95f710197d6a5a8ba8d889fae4872538bf2635ce529c6a20abe02355a9a8126a",
+          "newer": "1974136bc4e1b13338159b08efa61ae7a1b4a73efad2cf72b7263a96321c1bae",
+          "diagnostics": [
+            {
+              "path": "Util.lean",
+              "line": 6,
+              "column": 23,
+              "source_id": "07a2380b96d0920fc5aa53a9042a940466349bf90d7ae8930ef2fbd1f9d831dd",
+              "source_root": "95f710197d6a5a8ba8d889fae4872538bf2635ce529c6a20abe02355a9a8126a",
+              "message": "error(lean.unknownIdentifier): Unknown identifier `missing`"
+            }
+          ]
+        },
+        {
+          "check": "edited multi-module code updates native application without OS rebuild",
+          "result": "pass",
+          "binary": "d854d32152e760498b04a0a1cfda44e07cbcbf1928a52a12b80402b799ecf048",
+          "release": "68e45749fe0aa8b0c9b00f0d0a5b0a14a478c7d564f16e606ef50c31b6efb4bc",
+          "instance": 3456790899038617865,
+          "frame": "4fd56065b7fb1c969705033f1dffbbecec109e9f885fac0ebce0101628a2de8b",
+          "rendered_score": "00000018"
+        },
+        {
+          "check": "explicit graphical rollback preserves existing app instances",
+          "result": "pass"
+        },
+        {
+          "check": "two F10 approved complete named graphs durably retained",
+          "result": "pass",
+          "saved": {
+            "generation": 2,
+            "nodes": 27,
+            "projects": 2,
+            "bytes": 135295
+          },
+          "heads": {
+            "notes": "e1d03abf1ccbd513c5d9ee01ce4cccc4ef6afb506f60ea44cdecbac6c3b989e7",
+            "creator": "04f243c6e7c946e9a7ef81422967cf1b9ffa56395841d0ee73cf9bd29eaddd82"
+          }
+        },
+        {
+          "check": "restart recovery preserves names/complete graph/lineage with fresh authority",
+          "result": "pass",
+          "restored": {
+            "generation": 2,
+            "bytes": 135295,
+            "nodes": 27,
+            "roots": [
+              {
+                "name": "creator",
+                "head": "04f243c6e7c946e9a7ef81422967cf1b9ffa56395841d0ee73cf9bd29eaddd82",
+                "cap": 17133031586384576768
+              },
+              {
+                "name": "notes",
+                "head": "e1d03abf1ccbd513c5d9ee01ce4cccc4ef6afb506f60ea44cdecbac6c3b989e7",
+                "cap": 17133031586384576769
+              }
+            ]
+          }
+        },
+        {
+          "check": "freshly approved editor opens recovered project through native trusted picker",
+          "result": "pass",
+          "instance": 17133031582089609478,
+          "head": "04f243c6e7c946e9a7ef81422967cf1b9ffa56395841d0ee73cf9bd29eaddd82",
+          "frame": "bc900071e61a1cd6ca0cc7ddc935aeacf0ab550074996a8b1f0e94c47085f864"
+        }
+      ]
+    },
+    "assertions": "Real input and service output/pixel assertions; no guest memory mutation or UI-private setters. Source/Inspector frames also visually inspected.",
+    "actual_host_builds": [
+      "weight3 real native success",
+      "missing identifier real located compiler error",
+      "weight7 real native success"
+    ],
+    "os_rebuilt_for_project_edits": false
+  },
+  "focused_executions": {
+    "no_vault_worker": {
+      "source_record": "build/creator-ephemeral-final/journey.json",
+      "execution": {
+        "image": "4f4f1ea6be9169a4a9236cd563b3342970838aa584f2e5f9e373ddb9c805db3e",
+        "backend": "qemu",
+        "checks": [
+          {
+            "check": "no-vault real editing/F5 sandbox worker/F12 exact approval/native input",
+            "result": "pass",
+            "source": "eb4aa38d4a1c107aae944d21ed638aaafdc902e2ca187e659934234144089013",
+            "release": "7208e14af86b98cb116d29ffcb97f1171ab16ec26a9803f8c9fc099e7aca7e95",
+            "score": "00000014",
+            "durability": "ephemeral",
+            "worker": {
+              "approval": "Review F12, then physical Enter",
+              "event": "staged",
+              "installed": false,
+              "job": 1,
+              "material_checked": true,
+              "parent": null,
+              "path": "/home/sreekumaar/Desktop/LemmaTrix/build/creator-ephemeral-final/worker/session-12429819385382699269/job-1/release-2.0.0.ltrel",
+              "project": "creator",
+              "release": "7208e14af86b98cb116d29ffcb97f1171ab16ec26a9803f8c9fc099e7aca7e95",
+              "signature_verified": true,
+              "source_root": "5eb6d481af01f3b732b56996347e53ef70f0d84fc4b7dbcde619d6e54cc751e5",
+              "version": "2.0.0"
+            }
+          }
+        ]
+      }
+    },
+    "surface_focus_and_ephemeral_authority": {
+      "source_record": "build/creator-authority-final/journey.json",
+      "execution": {
+        "image": "4f4f1ea6be9169a4a9236cd563b3342970838aa584f2e5f9e373ddb9c805db3e",
+        "backend": "qemu",
+        "checks": [
+          {
+            "check": "ordinary native app cannot forge focus/display/input/approval; stale surface denied",
+            "result": "pass",
+            "checks": 12,
+            "old_instance": 10400988156009644296,
+            "new_instance": 10400988156009644552,
+            "unrelated_app_score": "00000005"
+          },
+          {
+            "check": "no-vault restart discards project and execution authority",
+            "result": "pass"
+          }
+        ]
+      }
+    },
+    "publisher_worker_scope": {
+      "source_record": "build/project-worker-scope/evidence.json",
+      "execution": {
+        "check": "native F5 foreign-name scope denied before export/sign",
+        "image": "4f4f1ea6be9169a4a9236cd563b3342970838aa584f2e5f9e373ddb9c805db3e",
+        "source_root": "36f620ac81b3a19538e192e4c51fd7a5221b36da44b0a3cb143044b7865080e4",
+        "job": "1",
+        "result": "pass",
+        "rendered_diagnostic": "Publisher worker scope denied:",
+        "frame": "355139479829edffaf2ff83f7a7ea7be67dec491aeb5d3ddd4284e36eb56b024",
+        "artifact_absent": true
+      }
+    },
+    "trusted_gui_lifecycle": {
+      "source_record": "build/desktop-lifecycle-final/journey.json",
+      "execution": {
+        "image": "8dfec42445edfea2043c0032c477aa4f670d882d40c4c639485da802e5b8351f",
+        "backend": "qemu",
+        "checks": [
+          {
+            "check": "trusted GUI restart/stop/start preserve named project and independent app state",
+            "result": "pass",
+            "instances": [
+              4387661563650113798,
+              4387661563650114054,
+              4387661563650114310
+            ],
+            "root": "52f1388943bee2edc21f6bac0224c217c23686960e89dc53f6368d9cbfd01247",
+            "text_tools": "independent input 42",
+            "frame": "f6c6716a213a275591e81a7fd8e6f042771d64cf5acb837e5149bfcfce019320"
+          }
+        ]
+      }
+    },
+    "logical_project_identity": {
+      "source_record": "build/creator-identity-final/identity.json",
+      "execution": {
+        "checks": [
+          "logical Project ID follows stable Manifest origin across exact-parent revision and aliases; unrelated rebase denied; identical-head publication allowed"
+        ],
+        "project_id": "8ddfd4140c92a52ed75b4da19b7898bd6ba67b50fcf48d170f9eb1325f099294",
+        "current_head": "757429c2f984ad4e725ea11e50abea55935961322f00048541032d8c03338407",
+        "unrelated_head": "2aab1d41fb7c65e5072837efbc77612ede9dc9d2e4ecdde215d82d038a671879",
+        "image": "4f4f1ea6be9169a4a9236cd563b3342970838aa584f2e5f9e373ddb9c805db3e"
+      }
+    },
+    "bounded_build_job_lifetime": {
+      "source_record": "build/creator-build-lifetime-final/lifetime.json",
+      "execution": {
+        "checks": [
+          "more than four completed success/error iterations recycle bounded old jobs",
+          "queued/failing builds preserve most recent successful result",
+          "native requester receives nonzero readable Build/Evidence grants; obsolete handles and job IDs are revoked",
+          "three pending jobs plus newest success exhaust four slots without eviction"
+        ],
+        "completed_jobs": 11,
+        "artifact_sha256": "d854d32152e760498b04a0a1cfda44e07cbcbf1928a52a12b80402b799ecf048",
+        "source_root": "6a63eb88b055df772d700631547b88be217b5365a08587fe125805ba291a7c1f",
+        "scope": "controlled explicit builder/management assertions over a prior real artifact; no new compiler execution or signature",
+        "image": "4f4f1ea6be9169a4a9236cd563b3342970838aa584f2e5f9e373ddb9c805db3e",
+        "environment": "QEMU11.1.1 RV64 guest, modern virtio MMIO; explicit controlled management/builder fixture over prior native artifact"
+      }
+    },
+    "signed_material_semantics": {
+      "source_record": "build/creator-release-material-final/material.json",
+      "execution": {
+        "checks": [
+          "existing valid signed Release content is readmitted with exact actual source/evidence material",
+          "fresh valid publisher signature and JSON commitments cannot substitute unrelated source claims for actual typed graph material",
+          "fresh valid publisher signature and JSON commitments cannot substitute unrelated evidence claims for actual typed graph material"
+        ],
+        "source_root": "6a63eb88b055df772d700631547b88be217b5365a08587fe125805ba291a7c1f",
+        "binary_sha256": "d854d32152e760498b04a0a1cfda44e07cbcbf1928a52a12b80402b799ecf048",
+        "existing_release_node": "fbe4c0d109988b73e24994027c5ab602dd0e588f6b5bb91aa42b750ff2ea0ec4",
+        "scope": "present source/evidence semantic consistency only; host builder assertions and source-to-binary correctness remain unverified",
+        "compiler_executions": 0,
+        "new_signed_negative_headers": 2,
+        "guest_verified_negative_signatures": 2,
+        "installed": false,
+        "image": "8dfec42445edfea2043c0032c477aa4f670d882d40c4c639485da802e5b8351f",
+        "environment": "QEMU11.1.1 RV64 guest, modern virtio MMIO",
+        "positive_recovered_nodes": 27
+      }
+    },
+    "interrupted_multi_object_retention": {
+      "source_record": "build/creator-retention-material-final/retention.json",
+      "execution": {
+        "image": "8dfec42445edfea2043c0032c477aa4f670d882d40c4c639485da802e5b8351f",
+        "backend": "qemu",
+        "environment": "QEMU RISC-V reference, headless",
+        "source_vault_sha256": "90db5c93e6373b2d16019fd7e790460705e423d2dfd4e054809bfa5e1b69d0d0",
+        "interrupted_vault_sha256": "67597674d7f71ddc208199a8fb0088fb0536a3bc470ac1673c7a7c4be500fd83",
+        "boundary": {
+          "inactive_bank": 1,
+          "observed_sector": 10802,
+          "completed_prior_record_chunks": 2,
+          "commit_roots_unchanged": true,
+          "durability_acknowledged": false
+        },
+        "recovery": {
+          "generation": 2,
+          "graph": {
+            "nodes": 27,
+            "bytes": 135295,
+            "roots": [
+              {
+                "cap": 11050144274929680640,
+                "name": "creator",
+                "head": "04f243c6e7c946e9a7ef81422967cf1b9ffa56395841d0ee73cf9bd29eaddd82",
+                "project_id": "69d8274c92d5b2c829e55d5e3f5359b7c652b13160d138eec5d7e99623a72f2b"
+              },
+              {
+                "cap": 11050144274929680641,
+                "name": "notes",
+                "head": "e1d03abf1ccbd513c5d9ee01ce4cccc4ef6afb506f60ea44cdecbac6c3b989e7",
+                "project_id": "e1d03abf1ccbd513c5d9ee01ce4cccc4ef6afb506f60ea44cdecbac6c3b989e7"
+              }
+            ],
+            "logical_identity_and_ancestry_checked": true
+          },
+          "snapshot": "old",
+          "fresh_authority": true
+        }
+      }
+    },
+    "bounded_graph_worklist": {
+      "source_record": "build/creator-graph-depth-final/depth.json",
+      "execution": {
+        "shapes": [
+          {
+            "source_lineage": 23,
+            "total_nodes": 24,
+            "head": "d4223cce8ae9b33ed12e4982dc1825ec20109a903f0af749f2e0a9d9c83ffbbc",
+            "checks": [
+              "complete root publication",
+              "every ancestor appears in bounded closure",
+              "old/middle/new Source resolution",
+              "root pin protects oldest ancestor",
+              "root survives actual collection and reopen"
+            ]
+          },
+          {
+            "source_lineage": 48,
+            "total_nodes": 49,
+            "head": "ab04bd2d58fdb26e1f5d53118d0d8832593c4d56070783a71f92a416cf8be2f6",
+            "checks": [
+              "complete root publication",
+              "every ancestor appears in bounded closure",
+              "old/middle/new Source resolution",
+              "root pin protects oldest ancestor",
+              "root survives actual collection and reopen"
+            ]
+          }
+        ],
+        "scope": "explicit management graph operations;24-node ordinary quota shape plus49-node administrative stress; no compiler/signing and no resource-profile increase",
+        "image": "b15927561181c31720e8a9cc6385cc2db381b6e3ed25745798d08443deaa9971",
+        "environment": "QEMU11.1.1 RV64 guest; no-vault session; modern virtio MMIO"
+      }
+    },
+    "structured_runtime_component": {
+      "source_record": "build/structured-runtime/evidence.json",
+      "execution": {
+        "schema": 1,
+        "environment": "QEMU RV64 system emulation; actual generated native code in supervisor mode",
+        "binary_sha256": "7f1c36b51932b99750b87206d6b6aae19b34c83ddf3f5aeeb693616917285c95",
+        "cross_module_records": true,
+        "tagged_variants": true,
+        "shared_ownership_and_reuse": true,
+        "bounded_byte_checks_and_utf8_boundaries": true,
+        "allocation_reclamation_cycles": 4096,
+        "result": "pass"
+      }
+    },
+    "build_sandbox_component": {
+      "source_record": "build/build-sandbox/evidence.json",
+      "execution": {
+        "schema": 1,
+        "environment": "native x86-64 Linux user/mount/network/PID namespaces and chroot",
+        "result": "pass",
+        "native_artifact": {
+          "path": "/home/sreekumaar/Desktop/LemmaTrix/build/build-sandbox/valid/app.bin",
+          "sha256": "163d635547eba2ef3067e7201162bbce8e7420c58f162722e3f0ac049ed751ef",
+          "bytes": 308
+        },
+        "exact_multimodule_resource_input": true,
+        "located_real_diagnostic": true,
+        "host_file_read_denied": true,
+        "immutable_input_write_denied": true,
+        "ambient_environment_denied": true,
+        "outbound_network_denied": true,
+        "canonical_path_rejections": true,
+        "toolchain_id": "6529d37deca419c781e696635fde0557cb6d22762db3b7bccb15fb83e40cab7e"
+      }
+    }
+  },
+  "assembly_parity": {
+    "core_graphics_editor_4f4f": {
+      "image_sha256": "4f4f1ea6be9169a4a9236cd563b3342970838aa584f2e5f9e373ddb9c805db3e",
+      "artifacts": {
+        "campaign003-publisher.pub": "d9c44b133ea76eb64c8ae6a6c6b6d2a2fd7082af2c75f5333188ab1889f00db5",
+        "guest.bin": "4f4f1ea6be9169a4a9236cd563b3342970838aa584f2e5f9e373ddb9c805db3e",
+        "editor.ltrel": "35b1bab99a6e1aeafa03a1696c3c8cf1d387ef9f9d824452b8fefbc44e799332",
+        "text-tools.ltrel": "70967cad254d46be3d0d3e95fdbf80fae7cc152a621af098aee81bcb1dbc3fa0"
+      },
+      "scope": "Same immutable image and signed artifacts on both assembly backends. Root completed the full QEMU journey on this same image. A subsequent graph-only material-join validation fix requires a separately identified affected positive recovery/native execution run.",
+      "backends": {
+        "x86_64": {
+          "backend": "x86_64",
+          "image": "4f4f1ea6be9169a4a9236cd563b3342970838aa584f2e5f9e373ddb9c805db3e",
+          "editor_release": "542f517559b6e4631aca8f5475838730d1ede4d949813579893f91be44c8c928",
+          "consumer_release": "eae21afb36890bbcfe1fcf69ff6b9869480370436595af4126151f815b86070e",
+          "root": {
+            "cap": 17517221865620242689,
+            "name": "alpha",
+            "head": "1fa1e032c588bf6efd81235bf6e05de8edb03f3736ecd1e731caca0521d20f26"
+          },
+          "head": "1fa1e032c588bf6efd81235bf6e05de8edb03f3736ecd1e731caca0521d20f26",
+          "files": {
+            "Main.lean": "def parity : UInt64 := 41\n",
+            "Util.lean": "def extra : UInt64 := 7\n"
+          },
+          "frames": {
+            "approval": "eb4dd5a47fa02d4595352975733872cb9ff358617e8b0f867a99490447a41722",
+            "editor": "7e7343bace136f51fbb1960e558d2bc8031e7b89a27d5ee00c442d4017c31ccf",
+            "consumer": "f438d6f86677b854d689f6b7ad1562829e77bf6c7b242f343981b05467c5d17e",
+            "reopened": "a9683181660410e340f73b873b3a3e902ddc9fb3b957a252c0c8af2bd894b4b8"
+          },
+          "processes": [
+            {
+              "instance": 0,
+              "state": 0,
+              "rights": 0,
+              "cause": 0
+            },
+            {
+              "instance": 17517221861325275393,
+              "state": 1,
+              "rights": 4294967551,
+              "cause": 0
+            },
+            {
+              "instance": 17517221861325275394,
+              "state": 3,
+              "rights": 0,
+              "cause": 0
+            },
+            {
+              "instance": 17517221861325275395,
+              "state": 3,
+              "rights": 1,
+              "cause": 0
+            },
+            {
+              "instance": 17517221861325275396,
+              "state": 1,
+              "rights": 127,
+              "cause": 0
+            },
+            {
+              "instance": 17517221861325275397,
+              "state": 3,
+              "rights": 127,
+              "cause": 0
+            },
+            {
+              "instance": 17517221861325275398,
+              "state": 1,
+              "rights": 895,
+              "cause": 0
+            },
+            {
+              "instance": 17517221861325275399,
+              "state": 1,
+              "rights": 769,
+              "cause": 0
+            },
+            {
+              "instance": 17517221861325275144,
+              "state": 0,
+              "rights": 0,
+              "cause": 0
+            },
+            {
+              "instance": 17517221861325275145,
+              "state": 0,
+              "rights": 0,
+              "cause": 0
+            },
+            {
+              "instance": 17517221861325275146,
+              "state": 0,
+              "rights": 0,
+              "cause": 0
+            },
+            {
+              "instance": 17517221861325275147,
+              "state": 0,
+              "rights": 0,
+              "cause": 0
+            }
+          ],
+          "result": "pass",
+          "environment": "Native Linux x86-64 assembly interpreter",
+          "rendered_consumer_assertions": {
+            "header": "TEXT TOOLS / INDEPENDENT NATIVE APPLICATION",
+            "text": "independent input 42",
+            "words": 3,
+            "bytes": 20,
+            "lf": 0
+          },
+          "inspector_scope": "F6 physical input was issued, but timed capture was still editor source. This run does not independently establish Inspector rendering.",
+          "driver_adjustments": "Plain F2 correctly reopens granted roots directly. Additional real Shift-F2 requested the trusted picker. A fresh real Enter followed actual fully rendered TextTools candidate when early Enter had correctly been ignored before arming. Test harness was corrected to gate on actual frames and request Shift-F2."
+        },
+        "aarch64": {
+          "backend": "aarch64",
+          "image": "4f4f1ea6be9169a4a9236cd563b3342970838aa584f2e5f9e373ddb9c805db3e",
+          "editor_release": "542f517559b6e4631aca8f5475838730d1ede4d949813579893f91be44c8c928",
+          "consumer_release": "eae21afb36890bbcfe1fcf69ff6b9869480370436595af4126151f815b86070e",
+          "root": {
+            "cap": 7791810427226161409,
+            "name": "alpha",
+            "head": "1fa1e032c588bf6efd81235bf6e05de8edb03f3736ecd1e731caca0521d20f26"
+          },
+          "head": "1fa1e032c588bf6efd81235bf6e05de8edb03f3736ecd1e731caca0521d20f26",
+          "files": {
+            "Main.lean": "def parity : UInt64 := 41\n",
+            "Util.lean": "def extra : UInt64 := 7\n"
+          },
+          "frames": {
+            "approval": "eb4dd5a47fa02d4595352975733872cb9ff358617e8b0f867a99490447a41722",
+            "editor": "df94bec2afe3754e749daeb948c3f1b709ffa40c22181c0a8091c777a141a2df",
+            "consumer": "127974fc951d7b3ff38107092153ba0ce7c3b79d824010cf9c13e31b9462b19a",
+            "reopened": "c460648f2ef7c6421be202be2b4430c40bc344548da6e8a458ec2d5fc8ded11d"
+          },
+          "processes": [
+            {
+              "instance": 0,
+              "state": 0,
+              "rights": 0,
+              "cause": 0
+            },
+            {
+              "instance": 7791810422931194113,
+              "state": 1,
+              "rights": 4294967551,
+              "cause": 0
+            },
+            {
+              "instance": 7791810422931194114,
+              "state": 3,
+              "rights": 0,
+              "cause": 0
+            },
+            {
+              "instance": 7791810422931194115,
+              "state": 3,
+              "rights": 1,
+              "cause": 0
+            },
+            {
+              "instance": 7791810422931194116,
+              "state": 1,
+              "rights": 127,
+              "cause": 0
+            },
+            {
+              "instance": 7791810422931194117,
+              "state": 3,
+              "rights": 127,
+              "cause": 0
+            },
+            {
+              "instance": 7791810422931194118,
+              "state": 1,
+              "rights": 895,
+              "cause": 0
+            },
+            {
+              "instance": 7791810422931194119,
+              "state": 1,
+              "rights": 769,
+              "cause": 0
+            },
+            {
+              "instance": 7791810422931193864,
+              "state": 0,
+              "rights": 0,
+              "cause": 0
+            },
+            {
+              "instance": 7791810422931193865,
+              "state": 0,
+              "rights": 0,
+              "cause": 0
+            },
+            {
+              "instance": 7791810422931193866,
+              "state": 0,
+              "rights": 0,
+              "cause": 0
+            },
+            {
+              "instance": 7791810422931193867,
+              "state": 0,
+              "rights": 0,
+              "cause": 0
+            }
+          ],
+          "result": "pass",
+          "environment": "AArch64 assembly interpreter under qemu-aarch64 on x86-64; not physical ARM64",
+          "rendered_consumer_assertions": {
+            "header": "TEXT TOOLS / INDEPENDENT NATIVE APPLICATION",
+            "text": "independent input 42",
+            "words": 3,
+            "bytes": 20,
+            "lf": 0
+          },
+          "inspector_scope": "F6 physical input was issued, but timed capture was still editor source. This run does not independently establish Inspector rendering.",
+          "driver_adjustments": "Plain F2 correctly reopens granted roots directly. Additional real Shift-F2 requested the trusted picker. A fresh real Enter followed actual fully rendered TextTools candidate when early Enter had correctly been ignored before arming. Test harness was corrected to gate on actual frames and request Shift-F2."
+        }
+      },
+      "elapsed_seconds": {
+        "x86_64": 319.13,
+        "aarch64": 546.12
+      },
+      "timing_note": "Includes concurrent emulation load, readiness waits and corrected test-driver gestures; not a benchmark. ARM source entry used150ms key edges after actual rendered prompt/status completion.",
+      "shared_stable_head": "1fa1e032c588bf6efd81235bf6e05de8edb03f3736ecd1e731caca0521d20f26",
+      "checks": [
+        "Real virtio raw F12 and fresh Enter approved/installed already-signed apps after boot",
+        "Actual guest glyph pixels gated editor readiness",
+        "Multi-file keyboard entry and commit/export exact source bytes",
+        "Same canonical alpha root on both machines",
+        "Actual independent TextTools text/statistics rendered and inspected",
+        "Raw pointer gesture, focus switch, trusted picker and unchanged committed project reopen"
+      ],
+      "native_interrupted_recovery": {
+        "image": "4f4f1ea6be9169a4a9236cd563b3342970838aa584f2e5f9e373ddb9c805db3e",
+        "backend": "x86_64",
+        "environment": "native x86_64 assembly emulator, headless",
+        "recovery": {
+          "generation": 2,
+          "graph": {
+            "nodes": 27,
+            "bytes": 135295,
+            "roots": [
+              {
+                "cap": 2071706114067529984,
+                "name": "creator",
+                "head": "04f243c6e7c946e9a7ef81422967cf1b9ffa56395841d0ee73cf9bd29eaddd82",
+                "project_id": "69d8274c92d5b2c829e55d5e3f5359b7c652b13160d138eec5d7e99623a72f2b"
+              },
+              {
+                "cap": 2071706114067529985,
+                "name": "notes",
+                "head": "e1d03abf1ccbd513c5d9ee01ce4cccc4ef6afb506f60ea44cdecbac6c3b989e7",
+                "project_id": "e1d03abf1ccbd513c5d9ee01ce4cccc4ef6afb506f60ea44cdecbac6c3b989e7"
+              }
+            ],
+            "logical_identity_and_ancestry_checked": true
+          },
+          "snapshot": "old",
+          "fresh_authority": true
+        }
+      },
+      "arm_interrupted_recovery": {
+        "image": "4f4f1ea6be9169a4a9236cd563b3342970838aa584f2e5f9e373ddb9c805db3e",
+        "backend": "aarch64",
+        "environment": "ARM64 assembly emulator under qemu-aarch64, headless",
+        "recovery": {
+          "generation": 2,
+          "graph": {
+            "nodes": 27,
+            "bytes": 135295,
+            "roots": [
+              {
+                "cap": 915345594787037440,
+                "name": "creator",
+                "head": "04f243c6e7c946e9a7ef81422967cf1b9ffa56395841d0ee73cf9bd29eaddd82",
+                "project_id": "69d8274c92d5b2c829e55d5e3f5359b7c652b13160d138eec5d7e99623a72f2b"
+              },
+              {
+                "cap": 915345594787037441,
+                "name": "notes",
+                "head": "e1d03abf1ccbd513c5d9ee01ce4cccc4ef6afb506f60ea44cdecbac6c3b989e7",
+                "project_id": "e1d03abf1ccbd513c5d9ee01ce4cccc4ef6afb506f60ea44cdecbac6c3b989e7"
+              }
+            ],
+            "logical_identity_and_ancestry_checked": true
+          },
+          "snapshot": "old",
+          "fresh_authority": true
+        }
+      }
+    },
+    "complete_encrypted_recovery_and_editor_8dfe": {
+      "image_sha256": "8dfec42445edfea2043c0032c477aa4f670d882d40c4c639485da802e5b8351f",
+      "scope": "Affected stricter Release13 source/evidence material admission, complete encrypted archive compatibility, fresh editor/compiled-app authority and actual restored GUI content/lineage. Same already-signed artifacts; no compiler/signing rerun.",
+      "vault_fixture": "Separate copies of build/creator-retention-final/interrupted-vault.img; authenticated complete old generation2. New-image QEMU interruption is separately recorded by the parent campaign.",
+      "backends": {
+        "x86_64": {
+          "image": "8dfec42445edfea2043c0032c477aa4f670d882d40c4c639485da802e5b8351f",
+          "backend": "x86_64",
+          "restored": {
+            "nodes": 27,
+            "bytes": 135295,
+            "roots": [
+              {
+                "cap": 11118696681732833536,
+                "name": "creator",
+                "head": "04f243c6e7c946e9a7ef81422967cf1b9ffa56395841d0ee73cf9bd29eaddd82",
+                "project_id": "69d8274c92d5b2c829e55d5e3f5359b7c652b13160d138eec5d7e99623a72f2b"
+              },
+              {
+                "cap": 11118696681732833537,
+                "name": "notes",
+                "head": "e1d03abf1ccbd513c5d9ee01ce4cccc4ef6afb506f60ea44cdecbac6c3b989e7",
+                "project_id": "e1d03abf1ccbd513c5d9ee01ce4cccc4ef6afb506f60ea44cdecbac6c3b989e7"
+              }
+            ]
+          },
+          "source": "c5f0244bbe9649aaec21343867cde8f707fe93bdc51f41463ab54575bbe7ab4f",
+          "source_parent": "0000000000000000000000000000000000000000000000000000000000000000",
+          "manifest": "04f243c6e7c946e9a7ef81422967cf1b9ffa56395841d0ee73cf9bd29eaddd82",
+          "manifest_parent": "6a63eb88b055df772d700631547b88be217b5365a08587fe125805ba291a7c1f",
+          "logical_project": "69d8274c92d5b2c829e55d5e3f5359b7c652b13160d138eec5d7e99623a72f2b",
+          "compiled_release": "68e45749fe0aa8b0c9b00f0d0a5b0a14a478c7d564f16e606ef50c31b6efb4bc",
+          "compiled_input": "cat123",
+          "compiled_score": "00000018",
+          "frames": {
+            "source_inspector": "c910f91aacc6529cb7877b4af5efb4f15609c7d6fb47a640cb8d0d985c528a1f",
+            "manifest_lineage": "f9fd58e0329a002dc66d5c0a08e02359c4965ce9ba58d725b445bd7a26725657",
+            "notes": "f945c165d54f69c7a0b8a8778bc71a1b97750be0194c9a44cf1f6b3bd3194ac1",
+            "compiled": "c968e9308c766fefc8a942e438fb9113feabcfbaa3eeba19a11435dddb991c81"
+          },
+          "phases": {
+            "actual_source_identity_and_parent": 0.01,
+            "actual_manifest_lineage_and_logical_identity": 0.88,
+            "second_named_project_opened": 6.15,
+            "same_compiled_creator_staged": 12.62,
+            "real_compiled_app_input_and_score": 24.11
+          },
+          "result": "pass",
+          "fresh_install_approval": true,
+          "driver_correction": "Continued same owned guest via its existing UART byte pipes after correcting old little-endian Inspector expectation to canonical byte order. No guest memory or UI-private calls.",
+          "full_rendered_id_assertions": "All64 hex digits of Source ID/parent, manifest ID/parent and logical Project ID matched actual frame pixels.",
+          "saved_frame_full_id_matches": [
+            {
+              "frame": "creator-inspector",
+              "y": 132,
+              "id": "c5f0244bbe9649aaec21343867cde8f707fe93bdc51f41463ab54575bbe7ab4f"
+            },
+            {
+              "frame": "creator-inspector",
+              "y": 160,
+              "id": "0000000000000000000000000000000000000000000000000000000000000000"
+            },
+            {
+              "frame": "creator-manifest-lineage",
+              "y": 132,
+              "id": "04f243c6e7c946e9a7ef81422967cf1b9ffa56395841d0ee73cf9bd29eaddd82"
+            },
+            {
+              "frame": "creator-manifest-lineage",
+              "y": 160,
+              "id": "6a63eb88b055df772d700631547b88be217b5365a08587fe125805ba291a7c1f"
+            },
+            {
+              "frame": "creator-manifest-lineage",
+              "y": 216,
+              "id": "69d8274c92d5b2c829e55d5e3f5359b7c652b13160d138eec5d7e99623a72f2b"
+            }
+          ],
+          "early_capture_caveat": [],
+          "complete_compiled_frame": "c968e9308c766fefc8a942e438fb9113feabcfbaa3eeba19a11435dddb991c81",
+          "complete_compiled_pixel_assertions": {
+            "input": "cat123",
+            "score": "00000018",
+            "bytes": "00000006"
+          },
+          "capture_note": "Captured final even-sequence device output remaining after orderly guest shutdown. Earlier captures preceded some asynchronous app upload rows; real-time waits verified the later fields before shutdown."
+        },
+        "aarch64": {
+          "image": "8dfec42445edfea2043c0032c477aa4f670d882d40c4c639485da802e5b8351f",
+          "backend": "aarch64",
+          "restored": {
+            "nodes": 27,
+            "bytes": 135295,
+            "roots": [
+              {
+                "cap": 4383173881171542272,
+                "name": "creator",
+                "head": "04f243c6e7c946e9a7ef81422967cf1b9ffa56395841d0ee73cf9bd29eaddd82",
+                "project_id": "69d8274c92d5b2c829e55d5e3f5359b7c652b13160d138eec5d7e99623a72f2b"
+              },
+              {
+                "cap": 4383173881171542273,
+                "name": "notes",
+                "head": "e1d03abf1ccbd513c5d9ee01ce4cccc4ef6afb506f60ea44cdecbac6c3b989e7",
+                "project_id": "e1d03abf1ccbd513c5d9ee01ce4cccc4ef6afb506f60ea44cdecbac6c3b989e7"
+              }
+            ]
+          },
+          "source": "c5f0244bbe9649aaec21343867cde8f707fe93bdc51f41463ab54575bbe7ab4f",
+          "source_parent": "0000000000000000000000000000000000000000000000000000000000000000",
+          "manifest": "04f243c6e7c946e9a7ef81422967cf1b9ffa56395841d0ee73cf9bd29eaddd82",
+          "manifest_parent": "6a63eb88b055df772d700631547b88be217b5365a08587fe125805ba291a7c1f",
+          "logical_project": "69d8274c92d5b2c829e55d5e3f5359b7c652b13160d138eec5d7e99623a72f2b",
+          "compiled_release": "68e45749fe0aa8b0c9b00f0d0a5b0a14a478c7d564f16e606ef50c31b6efb4bc",
+          "compiled_input": "cat123",
+          "compiled_score": "00000018",
+          "frames": {
+            "source_inspector": "3a6ebbdf00b9061d665b628af946f4916109c08d8a92e3bb2d7df5fdad653ab2",
+            "manifest_lineage": "bd9ad79769b12f50a33765601fa3cbf1669db0008ee382673036f648fdf237ef",
+            "notes": "fc8800f0c7eaa432a24fe73fd9abcb740b9d71c28fd24aea4ed6eab9b85e3c5f",
+            "compiled": "dfdd6df7470a6eed265131af46624f3e79b624deedae7091ad762f914adac849"
+          },
+          "phases": {
+            "actual_source_identity_and_parent": 309.76,
+            "actual_manifest_lineage_and_logical_identity": 317.58,
+            "second_named_project_opened": 345.68,
+            "same_compiled_creator_staged": 384.47,
+            "real_compiled_app_input_and_score": 450.53
+          },
+          "result": "pass",
+          "fresh_install_approval": true,
+          "driver_correction": "Continued same owned guest via its existing UART byte pipes after correcting old little-endian Inspector expectation to canonical byte order. No guest memory or UI-private calls.",
+          "saved_frame_full_id_matches": [
+            {
+              "frame": "creator-inspector",
+              "y": 132,
+              "id": "c5f0244bbe9649aaec21343867cde8f707fe93bdc51f41463ab54575bbe7ab4f"
+            },
+            {
+              "frame": "creator-manifest-lineage",
+              "y": 132,
+              "id": "04f243c6e7c946e9a7ef81422967cf1b9ffa56395841d0ee73cf9bd29eaddd82"
+            },
+            {
+              "frame": "creator-manifest-lineage",
+              "y": 216,
+              "id": "69d8274c92d5b2c829e55d5e3f5359b7c652b13160d138eec5d7e99623a72f2b"
+            }
+          ],
+          "early_capture_caveat": [
+            {
+              "frame": "creator-inspector",
+              "y": 160,
+              "observed": "???????? ???              ???? ????? ????? ??????? ????? ??????",
+              "expected": "0000000000000000000000000000000000000000000000000000000000000000"
+            },
+            {
+              "frame": "creator-manifest-lineage",
+              "y": 160,
+              "observed": "0000000000000000000000000000000000000000000000000000000000000000",
+              "expected": "6a63eb88b055df772d700631547b88be217b5365a08587fe125805ba291a7c1f"
+            }
+          ],
+          "complete_compiled_frame": "bf0e0658252883706484f8001b52d0b38b13cea954ec5da8b28f795447738349",
+          "complete_compiled_pixel_assertions": {
+            "input": "cat123",
+            "score": "00000018",
+            "bytes": "00000006"
+          },
+          "capture_note": "Captured final even-sequence device output remaining after orderly guest shutdown. Earlier captures preceded some asynchronous app upload rows; real-time waits verified the later fields before shutdown."
+        }
+      },
+      "original_session_elapsed_seconds": {
+        "x86_64": {
+          "boot": 1.49,
+          "complete_authenticated_graph_restored": 90.24,
+          "editor_staged": 119.71,
+          "fresh_gui_editor_ready": 129.41,
+          "recovered_creator_opened": 135.51
+        },
+        "aarch64": {
+          "boot": 8.46,
+          "complete_authenticated_graph_restored": 509.58,
+          "editor_staged": 702.48,
+          "fresh_gui_editor_ready": 766.37,
+          "recovered_creator_opened": 809.76
+        }
+      },
+      "completed_compiled_application_body_sha256": "07b319de124d26e268136b1a05f81cf446805909f3aabc739bfa980fa43777ba",
+      "pixel_capture_scope": "Native saved Inspector frames matched all32 bytes of Source ID/parent, manifest ID/parent and logical Project ID. ARM saved frames fully matched Source ID, manifest ID and logical Project ID; real-time waits separately verified the later parent fields. Two early ARM captures precede later upload rows and are marked intermediate, not complete snapshots. Completed Creator2 frames show cat123/bytes6/score18 identically on both backends.",
+      "rendering_limit": "Ordinary application uploads may expose intermediate row updates. Trusted compositor approval frames wait for complete upload/presentation. A bounded application frame-commit API is a concrete future consistency improvement."
+    },
+    "final_affected_traversal_and_native_execution_b159": {
+      "image_sha256": "b15927561181c31720e8a9cc6385cc2db381b6e3ed25745798d08443deaa9971",
+      "scope": "Objects-only iterative64-entry graph marking replaces stack-recursive marking. No format, ABI, device, kernel, compositor, SDK or app change. Focused positive traversal/publication/native execution; complete encrypted/editor cycles above are reused.",
+      "binary_identities": {
+        "image_sha256": "b15927561181c31720e8a9cc6385cc2db381b6e3ed25745798d08443deaa9971",
+        "kernel": {
+          "bytes": 118288,
+          "sha256": "d3218a922f8b3c97218e3f4421ff0fa4a9a78de631a5314a95690c174295aaa9",
+          "identical_to_8dfe": true
+        },
+        "compositor": {
+          "bytes": 138500,
+          "sha256": "cdac699c319a26ab462ba2e6ac4fe389ab9cbe84bfd81fbbeb0c37f9adc1c05e",
+          "identical_to_8dfe": true
+        },
+        "app_packages": {
+          "editor.ltrel": "35b1bab99a6e1aeafa03a1696c3c8cf1d387ef9f9d824452b8fefbc44e799332",
+          "text-tools.ltrel": "70967cad254d46be3d0d3e95fdbf80fae7cc152a621af098aee81bcb1dbc3fa0",
+          "creator-2.ltrel": "7786a176030ff5fdefbc08775296b9c514ac225be05e22c7aa736a1e80927418"
+        },
+        "app_code": {
+          "editor.ltrel": "6cd69798079a184e583f182d3284d1bf7a4d9dc304a56ad0589324b65cfd328c",
+          "text-tools.ltrel": "bf5ccabe0ea24236eba06db067d54f032d1e97f6392c318112f7aacd7b83b288",
+          "creator-2.ltrel": "d854d32152e760498b04a0a1cfda44e07cbcbf1928a52a12b80402b799ecf048"
+        }
+      },
+      "backends": {
+        "x86_64": {
+          "image": "b15927561181c31720e8a9cc6385cc2db381b6e3ed25745798d08443deaa9971",
+          "backend": "x86_64",
+          "graph": {
+            "head": "a00bc47bc5e763804c55d5ad730b0cef0ae8b43eaa0c7699533cdada07a2db11",
+            "logical_project": "b0edd230b9c03629682a06e00b8fd56c420f2db2b8c81efe28b9e2da4878d0db",
+            "nodes": [
+              "58d6bb129268dda322d676adc236f88ce08dbf8db43dc73f453886b61b63424e",
+              "6bdb4cd68dd63a74972b472d369f7db80c9ec8cc88b9d0b26abc68556c3dd070",
+              "6ed7c53b89330ec15bfa6fa9b544e498f554c3305a5a3a7deae1b0b722c46cbf",
+              "a00bc47bc5e763804c55d5ad730b0cef0ae8b43eaa0c7699533cdada07a2db11",
+              "b0edd230b9c03629682a06e00b8fd56c420f2db2b8c81efe28b9e2da4878d0db"
+            ],
+            "files": {
+              "Main.lean": "def base : UInt64 := 42\n",
+              "Shared.lean": "def base : UInt64 := 41\n",
+              "Util.lean": "def helper : UInt64 := 7\n"
+            },
+            "rooted_deletion_denied": true,
+            "shared_edges_and_parent_checked": true
+          },
+          "release": "68e45749fe0aa8b0c9b00f0d0a5b0a14a478c7d564f16e606ef50c31b6efb4bc",
+          "input": "cat123",
+          "bytes": 6,
+          "score": "00000018",
+          "frame": "bcb846281bc3dda25cf4a01c60baf34aff0093d084c27ada6f7cd6e977fb5f05",
+          "phases": {
+            "boot": 0.99,
+            "iterative_publication_closure_open": 1.89,
+            "same_creator2_staged": 8.37,
+            "actual_input_native_score": 19.37
+          },
+          "result": "pass",
+          "scope": "Affected iterative graph worklist positive publication/closure/open plus unchanged already-signed Creator2 physical approval/native execution; no vault crypto or editor cycle repeated."
+        },
+        "aarch64": {
+          "image": "b15927561181c31720e8a9cc6385cc2db381b6e3ed25745798d08443deaa9971",
+          "backend": "aarch64",
+          "graph": {
+            "head": "a00bc47bc5e763804c55d5ad730b0cef0ae8b43eaa0c7699533cdada07a2db11",
+            "logical_project": "b0edd230b9c03629682a06e00b8fd56c420f2db2b8c81efe28b9e2da4878d0db",
+            "nodes": [
+              "58d6bb129268dda322d676adc236f88ce08dbf8db43dc73f453886b61b63424e",
+              "6bdb4cd68dd63a74972b472d369f7db80c9ec8cc88b9d0b26abc68556c3dd070",
+              "6ed7c53b89330ec15bfa6fa9b544e498f554c3305a5a3a7deae1b0b722c46cbf",
+              "a00bc47bc5e763804c55d5ad730b0cef0ae8b43eaa0c7699533cdada07a2db11",
+              "b0edd230b9c03629682a06e00b8fd56c420f2db2b8c81efe28b9e2da4878d0db"
+            ],
+            "files": {
+              "Main.lean": "def base : UInt64 := 42\n",
+              "Shared.lean": "def base : UInt64 := 41\n",
+              "Util.lean": "def helper : UInt64 := 7\n"
+            },
+            "rooted_deletion_denied": true,
+            "shared_edges_and_parent_checked": true
+          },
+          "release": "68e45749fe0aa8b0c9b00f0d0a5b0a14a478c7d564f16e606ef50c31b6efb4bc",
+          "input": "cat123",
+          "bytes": 6,
+          "score": "00000018",
+          "frame": "ac42c404986304ce6dba16f0530e5bf6e4dac1d087a74ff0b151c899462ef9f4",
+          "phases": {
+            "boot": 7.33,
+            "iterative_publication_closure_open": 13.71,
+            "same_creator2_staged": 53.38,
+            "actual_input_native_score": 104.1
+          },
+          "result": "pass",
+          "scope": "Affected iterative graph worklist positive publication/closure/open plus unchanged already-signed Creator2 physical approval/native execution; no vault crypto or editor cycle repeated."
+        }
+      },
+      "completed_compiled_application_body_sha256": "07b319de124d26e268136b1a05f81cf446805909f3aabc739bfa980fa43777ba",
+      "harness_correction": "First attempt treated Objects.drop as relinquishing an operational handle; rooted nodes correctly reject deletion with status8. The corrected focused test asserts that boundary, then opens current/old manifests and checks the complete five-node shared/parent closure. No package was staged in the first attempt.",
+      "environments": {
+        "x86_64": "Native Linux x86-64 assembly interpreter, headless raw evdev/framebuffer transport",
+        "aarch64": "Independent AArch64 assembly interpreter under qemu-aarch64 on x86-64, headless; not physical ARM64"
+      },
+      "no_repeated_work": [
+        "No host compiler or publisher signing",
+        "No crypto-vector rerun",
+        "No repeated49-node platform-independent negative matrix",
+        "No repeated full encrypted or editor approval cycle solely for pure traversal change"
+      ]
+    },
+    "environment_distinction": {
+      "x86_64": "Native Linux x86-64 assembly interpreter",
+      "aarch64": "Independent ARM64 assembly interpreter under qemu-aarch64 on x86-64; not native or physical ARM64"
+    },
+    "reuse": "Same image at each checkpoint and same signed app artifacts across both assembly machines. Final change affects Objects traversal only; no ABI/kernel/compositor/SDK/app change. No repeated host build, signing or crypto vectors for parity.",
+    "raw_evidence_wording": "Occurrences of physical approval in earlier raw records mean genuine raw device-path key/button events. They do not mean physical human-input or display hardware validation."
+  },
+  "component_history": {
+    "graphics": "docs/evidence/campaign-003-graphics.json",
+    "project_graph_and_vault": "docs/evidence/campaign-003-project-graph.json",
+    "independent_text_tools": "docs/evidence/campaign-003-text-tools.json",
+    "earlier_identities_preserved": true,
+    "earlier_failure_followup": "Early rapid-input/parity failures, cursor/stack fault, SYN_REPORT idle boundary and UTF-8/runtime details are recorded with original image identities. Fixed affected paths were rerun; none is relabeled final-image full validation.",
+    "no_vault_driver_correction": "The real sandbox worker/native program assertion passed, then an authority test read its response at the old offset. Corrected only the test oracle, reused the already built signed release, and passed the remaining authority/ephemeral restart checks.",
+    "runtime_isolation_scope": "The focused structured-runtime harness executes actual generated code in QEMU supervisor mode; it is not by itself U-mode isolation evidence."
+  },
+  "execution_boundaries": {
+    "lean_guest": [
+      "kernel isolation/capabilities/device policy",
+      "compositor and trusted chrome/focus/input routing",
+      "editor and Text Tools and compiled Creator applications",
+      "Objects canonical graph/atomic roots/reachability",
+      "build job service and frozen commitments",
+      "Launcher signature/approval/update/rollback",
+      "Objects vault policy/AEAD/streamed storage"
+    ],
+    "assembly": [
+      "startup/traps/primitives/linker contracts",
+      "x86-64 CPU/device emulator",
+      "ARM64 CPU/device emulator"
+    ],
+    "host_adapters": [
+      "raw pixel dimensions/frame completion and evdev byte events",
+      "explicit block/entropy transport",
+      "authorized import/export and authenticated recovery orchestration"
+    ],
+    "host_bootstrap": [
+      "pinned Lean elaboration and RV64 lowering/LLVM assembly/link in OS namespace/chroot sandbox",
+      "separate explicit publisher signer; private key absent from sandbox",
+      "current-session publisher provisioning and vault unlock"
+    ],
+    "signer_or_installer_inside_compiler_sandbox": false
+  },
+  "advanced_requirements_partial": [
+    "OS-002",
+    "OS-003",
+    "OS-004",
+    "OS-005",
+    "OS-006",
+    "OS-007",
+    "OS-008",
+    "OS-009",
+    "SDK-001",
+    "SDK-002",
+    "SDK-003",
+    "IDE-001",
+    "IDE-003",
+    "DAT-001",
+    "DAT-003",
+    "DAT-004",
+    "VAULT-001",
+    "VAULT-002",
+    "VAULT-004",
+    "FORGE-001",
+    "FORGE-002",
+    "REL-001",
+    "REL-003",
+    "REL-004",
+    "REL-005",
+    "CRE-001",
+    "CRE-002"
+  ],
+  "remaining_limits": [
+    "Development machine profile; no completed LT-Machine-v1 or full MVP gates.",
+    "Eight32KiB editor working files, one undo snapshot,78columns25lines viewport; no horizontal viewport or full Unicode shaping/LSP/debugger/theorem state.",
+    "Structured runtime:256 reusable128-byte constructor slots with96-byte payload/eight references/destructor depth16; general closures/upstream heap forms explicitly unsupported.",
+    "64 graph records;24 records/1MiB ordinary producer quota; root pins complete selected history; bounded quota failure preserves committed content. No automatic history checkpoints/pruning.",
+    "Six retained named roots and4MiB closure; version2 explicitly allocated development backing. No implicit host directory vault, whole-store freshness or erasure claim; raw key has no password KDF.",
+    "Initial import/unlock/recovery remain disclosed host byte/management adapters; normal edit/build/approval/lifecycle/retention use native controls.",
+    "Ordinary app row uploads can briefly show intermediate fields. Trusted prompts wait for complete presentation and device input idle.",
+    "Linux namespace/chroot build isolation required and fails closed if unavailable; no self-hosting or independent-builder source-to-binary attestation.",
+    "No physical ARM64, physical keyboard/pointer/display or physical external-vault durability evidence. Tk presenter checked in withdrawn window.",
+    "Federation, guest two-node networking, Library, communications, privacy networks, LemmaCoin and full REL/Server Edition remain incomplete/unavailable; no host HTTP substitute added."
+  ],
+  "next_code_change": "Bounded app frame-commit so Inspector and statistics fields present atomically, followed by native import/unlock/recovery and history checkpointing before explicitly authorized guest two-node graph exchange.",
+  "documentation": "docs/campaign-003.html",
+  "command_guide": "docs/graphical-workspace.html",
+  "documentation_validation": {
+    "html_documents": 20,
+    "local_links_checked": 204,
+    "missing_targets_or_fragments": 0,
+    "utf8_and_html_declarations": "pass",
+    "evidence_json_parse": "pass",
+    "git_diff_check": "pass"
+  }
+}
