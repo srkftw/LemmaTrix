@@ -147,7 +147,7 @@ def epilogue (c : FnContext) : EmitM Unit := do
 def externSymbol (env : Environment) (f : Name) : Except String String := do
   let some (.standard _ s) := (getExternAttrData? env f).bind (getExternEntryFor · `all)
     | throw s!"extern {f} has no explicit freestanding symbol"
-  let permitted := ["lt_load8", "lt_load64", "lt_store8", "lt_store64", "lt_syscall", "lt_finish", "lt_enter_user", "lt_putc", "lt_read_csr", "lt_write_csr", "lt_barrier", "lt_kernel_addr", "lt_app_addr"]
+  let permitted := ["lt_load8", "lt_load32", "lt_load64", "lt_store8", "lt_store32", "lt_store64", "lt_idle_pc", "lt_device_fence", "lt_effect_value", "lt_syscall", "lt_finish", "lt_enter_user", "lt_putc", "lt_read_csr", "lt_write_csr", "lt_barrier", "lt_kernel_addr", "lt_app_addr"]
   if permitted.contains s then
     if !hasNeverExtractAttribute env f then
       throw s!"extern {f} must be marked @[never_extract] to preserve primitive effects through upstream optimization"
@@ -224,7 +224,7 @@ partial def emitBody (env : Environment) (c : FnContext) (b : FnBody) : EmitM Un
   | .ret a => arg "a0" a; epilogue c
   | .jmp j ys =>
     let some (_, ps) := c.joins.find? (fun p => p.1 == j) | fail s!"unknown join point {j.idx}"
-    if ps.size != ys.size || ys.size > 16 then fail "join-point parameter mismatch or more than sixteen parameters"
+    if ps.size != ys.size then fail "join-point parameter mismatch"
     for i in [:ys.size] do
       arg "t0" ys[i]!
       storeOffset "t0" (c.scratch + i*8)
@@ -245,8 +245,10 @@ def emitDecl (env : Environment) (d : Decl) : Except String (Array String) := do
     if !(scalar p.ty) then throw s!"{fn}: parameter {p.x.idx} has unsupported type {repr p.ty}"
   let top := max (maxVar b) (ps.foldl (fun n p => max n p.x.idx) 0)
   let scratch := (top+1)*8
-  let frame := ((scratch + 16*8 + 8 + 15)/16)*16
-  let ctx := {fn, params := ps, frame, scratch, joins := getJoins b}
+  let joins := getJoins b
+  let joinSlots := joins.foldl (fun count jp => max count jp.2.size) 0
+  let frame := ((scratch + joinSlots*8 + 8 + 15)/16)*16
+  let ctx := {fn, params := ps, frame, scratch, joins}
   let action : EmitM Unit := do
     emit s!".section .text.{symbol fn},\"ax\",@progbits"
     emit ".balign 4"

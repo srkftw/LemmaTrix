@@ -4,7 +4,7 @@
  */
 .intel_syntax noprefix
 .equ RAM_BASE, 0x80000000
-.equ RAM_SIZE, 0x1000000
+.equ RAM_SIZE, 0x8000000
 .equ SSTATUS_MASK, 0x80000003000de133
 .equ CSR_SSTATUS, 0x100*8
 .equ CSR_SIE, 0x104*8
@@ -29,7 +29,47 @@
 .global _start
 _start:
     cmp qword ptr [rsp], 2
+    jb usage
+    mov qword ptr [rip+vault_fd], -1
+    mov r8, [rsp]
+    mov r9, rsp
+    mov ebx, 2
+parse_arguments:
+    cmp rbx, r8
+    jae arguments_done
+    mov rdi, [r9+rbx*8+8]
+    lea rsi, [rip+interactive_arg]
+    call argument_equal
+    test eax, eax
+    jnz argument_interactive
+    mov rdi, [r9+rbx*8+8]
+    lea rsi, [rip+readonly_arg]
+    call argument_equal
+    test eax, eax
+    jnz argument_readonly
+    mov rdi, [r9+rbx*8+8]
+    lea rsi, [rip+vault_arg]
+    call argument_equal
+    test eax, eax
+    jz usage
+    inc rbx
+    cmp rbx, r8
+    jae usage
+    cmp qword ptr [rip+vault_path], 0
     jne usage
+    mov rax, [r9+rbx*8+8]
+    mov [rip+vault_path], rax
+    inc rbx
+    jmp parse_arguments
+argument_readonly:
+    mov byte ptr [rip+vault_readonly], 1
+    inc rbx
+    jmp parse_arguments
+argument_interactive:
+    mov byte ptr [rip+interactive], 1
+    inc rbx
+    jmp parse_arguments
+arguments_done:
     mov rdi, [rsp+16]
     xor esi, esi
     xor edx, edx
@@ -63,14 +103,53 @@ load_image:
     add rbp, rax
     cmp rbp, RAM_SIZE
     jb load_image
-    /* An exact RAM-sized file cannot leave room for guest stacks. */
-    jmp image_error
+    /* Check one extra byte so exact-capacity images do not get truncated. */
+    mov rdi, rbx
+    lea rsi, [rip+uart_byte]
+    mov edx, 1
+    xor eax, eax
+    syscall
+    test rax, rax
+    jnz image_error
+    jmp image_loaded
 image_loaded:
     test rbp, rbp
     jz image_error
     mov rdi, rbx
     mov eax, 3
     syscall
+    mov rdi, [rip+vault_path]
+    test rdi, rdi
+    jz vault_opened
+    mov esi, 2 /* explicit existing backing file, no creation */
+    cmp byte ptr [rip+vault_readonly], 0
+    je vault_open_flags
+    xor esi, esi
+vault_open_flags:
+    xor edx, edx
+    mov eax, 2
+    syscall
+    test rax, rax
+    js vault_error
+    mov [rip+vault_fd], rax
+    mov rdi, rax
+    lea rsi, [rip+host_stat]
+    mov eax, 5
+    syscall
+    test rax, rax
+    js vault_error
+    mov eax, [rip+host_stat+24]
+    and eax, 0xf000
+    cmp eax, 0x8000
+    jne vault_error
+    mov rax, [rip+host_stat+48]
+    test rax, rax
+    jz vault_error
+    test eax, 511
+    jnz vault_error
+    shr rax, 9
+    mov [rip+vault_sectors], rax
+vault_opened:
     lea r12, [rip+regs]
     mov r14d, RAM_BASE
     mov qword ptr [rip+privilege], 3
@@ -84,8 +163,11 @@ image_loaded:
     mov r15, 536870912
 run:
     mov rsp, [rip+host_rsp]
+    cmp byte ptr [rip+interactive], 0
+    jne instruction_unbounded
     dec r15
     jz budget_error
+instruction_unbounded:
     inc qword ptr [rip+ticks]
     mov rax, [rip+ticks]
     cmp rax, [rip+timecmp]
@@ -1282,6 +1364,11 @@ phys_read_word:
 phys_read_device:
     cmp dword ptr [rip+access_type], 2
     je page_access_fault
+    cmp rax, 0x10001000
+    jb phys_read_uart
+    cmp rax, 0x10008fff
+    jbe virtio_read
+phys_read_uart:
     cmp rax, 0x10000000
     jb phys_read_clint
     cmp rax, 0x10000007
@@ -1291,11 +1378,64 @@ phys_read_device:
     sub eax, 0x10000000
     cmp eax, 5
     je uart_lsr
+    test eax, eax
+    jz uart_receive
+    cmp eax, 2
+    je uart_no_interrupt
     lea rdx, [rip+uart]
     movzx eax, byte ptr [rdx+rax]
     ret
 uart_lsr:
-    mov eax, 0x60
+    call uart_poll
+    movzx eax, byte ptr [rip+rx_valid]
+    or eax, 0x60
+    ret
+uart_receive:
+    test byte ptr [rip+uart+3], 128
+    jnz uart_divisor
+    call uart_poll
+    xor eax, eax
+    cmp byte ptr [rip+rx_valid], 0
+    je uart_receive_done
+    movzx eax, byte ptr [rip+rx_byte]
+    mov byte ptr [rip+rx_valid], 0
+uart_receive_done:
+    ret
+uart_divisor:
+    movzx eax, byte ptr [rip+uart]
+    ret
+uart_no_interrupt:
+    mov eax, 1
+    ret
+/* Host adapter: poll stdin without blocking the CPU or altering parent fd flags. */
+uart_poll:
+    cmp byte ptr [rip+rx_valid], 0
+    jne uart_poll_done
+    cmp byte ptr [rip+stdin_eof], 0
+    jne uart_poll_done
+    lea rdi, [rip+stdin_poll]
+    mov esi, 1
+    xor edx, edx
+    mov eax, 7
+    syscall
+    cmp rax, 1
+    jne uart_poll_done
+    test word ptr [rip+stdin_poll+6], 1
+    jz uart_poll_done
+    xor edi, edi
+    lea rsi, [rip+rx_byte]
+    mov edx, 1
+    xor eax, eax
+    syscall
+    cmp rax, 1
+    je uart_poll_byte
+    test rax, rax
+    jne uart_poll_done
+    mov byte ptr [rip+stdin_eof], 1
+    ret
+uart_poll_byte:
+    mov byte ptr [rip+rx_valid], 1
+uart_poll_done:
     ret
 phys_read_clint:
     lea rdx, [rip+timecmp]
@@ -1361,6 +1501,11 @@ phys_write_word:
     mov [r8], edx
     ret
 phys_write_device:
+    cmp rax, 0x10001000
+    jb phys_write_not_virtio
+    cmp rax, 0x10008fff
+    jbe virtio_write
+phys_write_not_virtio:
     cmp rax, 0x100000
     je finisher
     cmp rax, 0x10000000
@@ -1437,13 +1582,493 @@ success:
 exit_host:
     mov eax, 60
     syscall
+/* Virtio MMIO legacy transport. Queues are bounded direct descriptors only.
+ * This host adapter translates checked DMA to RAM and Linux pread/pwrite/fsync
+ * or getrandom; all guest protocol and privilege execution stays in assembly.
+ */
+virtio_read:
+    cmp ecx, 4
+    jne page_access_fault
+    sub eax, 0x10001000
+    mov r8d, eax
+    shr r8d, 12
+    and eax, 4095
+    mov r9d, r8d
+    shl r9d, 6
+    lea rdi, [rip+virtio_states]
+    add rdi, r9
+    cmp eax, 0
+    je virtio_magic
+    cmp eax, 4
+    je virtio_version
+    cmp eax, 8
+    je virtio_id
+    cmp eax, 12
+    je virtio_vendor
+    cmp r8d, 2
+    jae virtio_zero
+    cmp eax, 0x10
+    je virtio_features
+    cmp eax, 0x34
+    je virtio_queue_max
+    cmp eax, 0x40
+    je virtio_queue_pfn
+    cmp eax, 0x60
+    je virtio_interrupt
+    cmp eax, 0x70
+    je virtio_status
+    cmp eax, 0x100
+    je virtio_capacity_low
+    cmp eax, 0x104
+    je virtio_capacity_high
+virtio_zero:
+    xor eax, eax
+    ret
+virtio_magic:
+    mov eax, 0x74726976
+    ret
+virtio_version:
+    mov eax, 1
+    ret
+virtio_id:
+    cmp r8d, 1
+    je virtio_rng_id
+    test r8d, r8d
+    jnz virtio_zero
+    cmp qword ptr [rip+vault_fd], 0
+    jl virtio_zero
+    mov eax, 2
+    ret
+virtio_rng_id:
+    mov eax, 4
+    ret
+virtio_vendor:
+    mov eax, 0x4c54
+    ret
+virtio_features:
+    cmp dword ptr [rdi], 0
+    jne virtio_zero
+    test r8d, r8d
+    jnz virtio_zero
+    mov eax, 0x200 /* VIRTIO_BLK_F_FLUSH */
+    cmp byte ptr [rip+vault_readonly], 0
+    je virtio_features_return
+    or eax, 32
+virtio_features_return:
+    ret
+virtio_queue_max:
+    cmp dword ptr [rdi+16], 0
+    jne virtio_zero
+    mov eax, 8
+    ret
+virtio_queue_pfn:
+    mov eax, [rdi+28]
+    ret
+virtio_interrupt:
+    mov eax, [rdi+32]
+    ret
+virtio_status:
+    mov eax, [rdi+36]
+    ret
+virtio_capacity_low:
+    test r8d, r8d
+    jnz virtio_zero
+    mov eax, [rip+vault_sectors]
+    ret
+virtio_capacity_high:
+    test r8d, r8d
+    jnz virtio_zero
+    mov eax, [rip+vault_sectors+4]
+    ret
+virtio_write:
+    cmp ecx, 4
+    jne page_access_fault
+    sub eax, 0x10001000
+    mov r8d, eax
+    shr r8d, 12
+    and eax, 4095
+    cmp r8d, 2
+    jae virtio_write_done
+    mov [rip+virtio_number], r8d
+    mov r9d, r8d
+    shl r9d, 6
+    lea rdi, [rip+virtio_states]
+    add rdi, r9
+    mov [rip+virtio_current], rdi
+    cmp eax, 0x14
+    je virtio_write_feature_sel
+    cmp eax, 0x20
+    je virtio_write_features
+    cmp eax, 0x24
+    je virtio_write_guest_sel
+    cmp eax, 0x28
+    je virtio_write_page
+    cmp eax, 0x30
+    je virtio_write_queue_sel
+    cmp eax, 0x38
+    je virtio_write_queue_num
+    cmp eax, 0x3c
+    je virtio_write_align
+    cmp eax, 0x40
+    je virtio_write_pfn
+    cmp eax, 0x50
+    je virtio_notify
+    cmp eax, 0x64
+    je virtio_ack
+    cmp eax, 0x70
+    je virtio_write_status
+virtio_write_done:
+    ret
+virtio_write_feature_sel:
+    mov [rdi], edx
+    ret
+virtio_write_features:
+    cmp dword ptr [rdi+8], 0
+    jne virtio_features_high
+    mov [rdi+4], edx
+    ret
+virtio_features_high:
+    test edx, edx
+    jnz virtio_fail
+    ret
+virtio_write_guest_sel:
+    mov [rdi+8], edx
+    ret
+virtio_write_page:
+    cmp edx, 4096
+    jne virtio_fail
+    mov [rdi+12], edx
+    ret
+virtio_write_queue_sel:
+    mov [rdi+16], edx
+    ret
+virtio_write_queue_num:
+    cmp dword ptr [rdi+16], 0
+    jne virtio_fail
+    cmp edx, 1
+    jb virtio_fail
+    cmp edx, 8
+    ja virtio_fail
+    lea eax, [rdx-1]
+    test edx, eax
+    jnz virtio_fail
+    mov [rdi+20], edx
+    ret
+virtio_write_align:
+    cmp edx, 4096
+    jne virtio_fail
+    mov [rdi+24], edx
+    ret
+virtio_write_pfn:
+    mov [rdi+28], edx
+    mov dword ptr [rdi+40], 0
+    mov dword ptr [rdi+44], 0
+    ret
+virtio_ack:
+    not edx
+    and [rdi+32], edx
+    ret
+virtio_write_status:
+    test edx, edx
+    jz virtio_reset
+    /* Reject negotiation of unimplemented features. */
+    mov eax, [rdi+4]
+    cmp dword ptr [rip+virtio_number], 0
+    jne virtio_status_rng
+    mov ecx, 0x200
+    cmp byte ptr [rip+vault_readonly], 0
+    je virtio_status_feature_mask
+    or ecx, 32
+virtio_status_feature_mask:
+    not ecx
+    and eax, ecx
+virtio_status_rng:
+    test eax, eax
+    jnz virtio_fail
+    mov [rdi+36], edx
+    ret
+virtio_reset:
+    xor eax, eax
+    mov ecx, 8
+    rep stosq
+    ret
+virtio_fail:
+    mov rdi, [rip+virtio_current]
+    or dword ptr [rdi+36], 128
+    ret
+virtio_notify:
+    test edx, edx
+    jnz virtio_fail
+    test dword ptr [rdi+36], 4
+    jz virtio_fail
+    test dword ptr [rdi+36], 128
+    jnz virtio_write_done
+    cmp dword ptr [rdi+12], 4096
+    jne virtio_fail
+    cmp dword ptr [rdi+24], 4096
+    jne virtio_fail
+    mov eax, [rdi+28]
+    test eax, eax
+    jz virtio_fail
+    shl rax, 12
+    mov [rip+queue_physical], rax
+    mov ecx, 4096
+    call dma_pointer
+    jc virtio_fail
+    mov [rip+queue_host], rax
+    mov rdi, [rip+virtio_current]
+    mov ecx, [rdi+20]
+    test ecx, ecx
+    jz virtio_fail
+    cmp ecx, 8
+    ja virtio_fail
+    mov [rip+queue_size], ecx
+    shl ecx, 4
+    add rax, rcx
+    mov [rip+avail_host], rax
+    mov rax, [rip+queue_physical]
+    add rax, 4096
+    mov ecx, 4096
+    call dma_pointer
+    jc virtio_fail
+    mov [rip+used_host], rax
+    mov rsi, [rip+avail_host]
+    movzx eax, word ptr [rsi+2]
+    mov [rip+avail_target], eax
+    sub ax, [rdi+40]
+    movzx eax, ax
+    cmp eax, [rip+queue_size]
+    ja virtio_fail
+virtio_consume:
+    mov rdi, [rip+virtio_current]
+    movzx eax, word ptr [rdi+40]
+    cmp ax, [rip+avail_target]
+    je virtio_write_done
+    mov ecx, [rip+queue_size]
+    dec ecx
+    and eax, ecx
+    mov rsi, [rip+avail_host]
+    movzx eax, word ptr [rsi+4+rax*2]
+    cmp eax, [rip+queue_size]
+    jae virtio_fail
+    mov [rip+request_head], eax
+    shl eax, 4
+    add rax, [rip+queue_host]
+    mov [rip+request_descriptor], rax
+    cmp dword ptr [rip+virtio_number], 1
+    je virtio_entropy
+    call virtio_block
+    jmp virtio_complete
+virtio_entropy:
+    mov rsi, rax
+    cmp word ptr [rsi+12], 2
+    jne virtio_fail
+    mov ecx, [rsi+8]
+    test ecx, ecx
+    jz virtio_fail
+    cmp ecx, 256
+    ja virtio_fail
+    mov [rip+request_length], ecx
+    mov rax, [rsi]
+    call dma_pointer
+    jc virtio_fail
+    mov rdi, rax
+    mov esi, [rip+request_length]
+    mov edx, 1 /* GRND_NONBLOCK; unavailable entropy fails closed. */
+    mov eax, 318
+    syscall
+    xor ecx, ecx
+    cmp eax, [rip+request_length]
+    cmove ecx, eax
+    mov [rip+request_used], ecx
+virtio_complete:
+    mov rdi, [rip+virtio_current]
+    movzx eax, word ptr [rdi+44]
+    mov ecx, [rip+queue_size]
+    dec ecx
+    and eax, ecx
+    mov rsi, [rip+used_host]
+    lea rsi, [rsi+4+rax*8]
+    mov eax, [rip+request_head]
+    mov [rsi], eax
+    mov eax, [rip+request_used]
+    mov [rsi+4], eax
+    inc word ptr [rdi+44]
+    mov ax, [rdi+44]
+    mov rsi, [rip+used_host]
+    mov [rsi+2], ax
+    inc word ptr [rdi+40]
+    or dword ptr [rdi+32], 1
+    jmp virtio_consume
+/* Check an entire physical DMA span before constructing a host pointer. */
+dma_pointer:
+    cmp ecx, RAM_SIZE
+    ja dma_invalid
+    mov edx, RAM_BASE
+    sub rax, rdx
+    mov edx, RAM_SIZE
+    sub edx, ecx
+    cmp rax, rdx
+    ja dma_invalid
+    add rax, r13
+    clc
+    ret
+dma_invalid:
+    stc
+    ret
+/* Descriptor helper: current chain node rsi; return checked next node rsi. */
+virtio_next:
+    test word ptr [rsi+12], 1
+    jz virtio_chain_bad
+    test word ptr [rsi+12], 0xfffc
+    jnz virtio_chain_bad
+    movzx eax, word ptr [rsi+14]
+    cmp eax, [rip+queue_size]
+    jae virtio_chain_bad
+    shl eax, 4
+    add rax, [rip+queue_host]
+    mov rsi, rax
+    clc
+    ret
+virtio_chain_bad:
+    stc
+    ret
+virtio_block:
+    mov rsi, [rip+request_descriptor]
+    cmp word ptr [rsi+12], 1
+    jne virtio_block_fatal
+    cmp dword ptr [rsi+8], 16
+    jne virtio_block_fatal
+    mov rax, [rsi]
+    mov ecx, 16
+    call dma_pointer
+    jc virtio_block_fatal
+    mov edx, [rax]
+    mov [rip+request_type], edx
+    mov rdx, [rax+8]
+    mov [rip+request_sector], rdx
+    call virtio_next
+    jc virtio_block_fatal
+    cmp dword ptr [rip+request_type], 4
+    je virtio_block_status
+    mov eax, [rsi+8]
+    test eax, eax
+    jz virtio_block_fatal
+    cmp eax, 4096
+    ja virtio_block_fatal
+    test eax, 511
+    jnz virtio_block_fatal
+    mov [rip+request_length], eax
+    movzx eax, word ptr [rsi+12]
+    mov [rip+request_flags], eax
+    mov rax, [rsi]
+    mov ecx, [rip+request_length]
+    call dma_pointer
+    jc virtio_block_fatal
+    mov [rip+request_buffer], rax
+    call virtio_next
+    jc virtio_block_fatal
+virtio_block_status:
+    cmp word ptr [rsi+12], 2
+    jne virtio_block_fatal
+    cmp dword ptr [rsi+8], 1
+    jb virtio_block_fatal
+    mov rax, [rsi]
+    mov ecx, 1
+    call dma_pointer
+    jc virtio_block_fatal
+    mov [rip+request_status], rax
+    mov dword ptr [rip+request_used], 1
+    cmp qword ptr [rip+vault_fd], 0
+    jl virtio_block_error
+    mov eax, [rip+request_type]
+    cmp eax, 4
+    je virtio_block_flush
+    cmp eax, 0
+    je virtio_block_input
+    cmp eax, 1
+    jne virtio_block_unsupported
+    cmp dword ptr [rip+request_flags], 1
+    jne virtio_block_error
+    cmp byte ptr [rip+vault_readonly], 0
+    jne virtio_block_error
+    jmp virtio_block_bounds
+virtio_block_input:
+    cmp dword ptr [rip+request_flags], 3
+    jne virtio_block_error
+virtio_block_bounds:
+    mov r10, [rip+request_sector]
+    mov rax, [rip+vault_sectors]
+    cmp r10, rax
+    jae virtio_block_error
+    sub rax, r10
+    mov edx, [rip+request_length]
+    shr edx, 9
+    cmp rdx, rax
+    ja virtio_block_error
+    shl r10, 9
+    mov rdi, [rip+vault_fd]
+    mov rsi, [rip+request_buffer]
+    mov edx, [rip+request_length]
+    mov eax, 17 /* pread64 */
+    cmp dword ptr [rip+request_type], 0
+    je virtio_block_io
+    mov eax, 18 /* pwrite64 */
+virtio_block_io:
+    syscall
+    cmp eax, [rip+request_length]
+    jne virtio_block_error
+    cmp dword ptr [rip+request_type], 0
+    jne virtio_block_ok
+    inc eax
+    mov [rip+request_used], eax
+    jmp virtio_block_ok
+virtio_block_flush:
+    mov rdi, [rip+vault_fd]
+    mov eax, 74
+    syscall
+    test rax, rax
+    jne virtio_block_error
+virtio_block_ok:
+    mov rax, [rip+request_status]
+    mov byte ptr [rax], 0
+    ret
+virtio_block_error:
+    mov rax, [rip+request_status]
+    mov byte ptr [rax], 1
+    ret
+virtio_block_unsupported:
+    mov rax, [rip+request_status]
+    mov byte ptr [rax], 2
+    ret
+virtio_block_fatal:
+    pop rax /* discard virtio_block return before returning to guest store */
+    jmp virtio_fail
+
+argument_equal:
+    mov al, [rdi]
+    cmp al, [rsi]
+    jne argument_different
+    inc rdi
+    inc rsi
+    test al, al
+    jnz argument_equal
+    mov eax, 1
+    ret
+argument_different:
+    xor eax, eax
+    ret
+vault_error:
+    lea rsi, [rip+vault_message]
+    mov edx, 88
+    jmp error_message
 usage:
     lea rsi, [rip+usage_message]
-    mov edx, 30
+    mov edx, 87
     jmp error_message
 image_error:
     lea rsi, [rip+image_message]
-    mov edx, 64
+    mov edx, 65
     jmp error_message
 budget_error:
     lea rsi, [rip+budget_message]
@@ -1506,9 +2131,9 @@ hex_loop:
     syscall
     ret
 .section .rodata
-usage_message: .ascii "usage: ltemu-x86_64 guest.bin\n"
+usage_message: .ascii "usage: ltemu-x86_64 guest.bin [--interactive] [--vault backing.img] [--vault-readonly]\n"
 usage_end:
-image_message: .ascii "ltemu-x86_64: cannot load nonempty guest image (maximum 16 MiB)\n"
+image_message: .ascii "ltemu-x86_64: cannot load nonempty guest image (maximum 128 MiB)\n"
 image_end:
 budget_message: .ascii "ltemu-x86_64: instruction budget exhausted; pc=0x"
 budget_end:
@@ -1520,6 +2145,10 @@ cause_message: .ascii " cause=0x"
 cause_end:
 tval_message: .ascii " tval=0x"
 tval_end:
+interactive_arg: .asciz "--interactive"
+vault_arg: .asciz "--vault"
+readonly_arg: .asciz "--vault-readonly"
+vault_message: .ascii "ltemu-x86_64: vault must be an explicit existing regular file of whole 512-byte sectors\n"
 hex_digits: .ascii "0123456789abcdef"
 newline: .ascii "\n"
 .section .bss
@@ -1541,5 +2170,38 @@ access_type: .skip 4
 csr_number: .skip 4
 uart: .skip 8
 uart_byte: .skip 1
+interactive: .skip 1
+vault_readonly: .skip 1
+rx_valid: .skip 1
+rx_byte: .skip 1
+stdin_eof: .skip 1
+.balign 8
+vault_path: .skip 8
+vault_fd: .skip 8
+vault_sectors: .skip 8
+host_stat: .skip 144
+.balign 8
+virtio_states: .skip 128
+virtio_current: .skip 8
+virtio_number: .skip 4
+queue_size: .skip 4
+queue_physical: .skip 8
+queue_host: .skip 8
+avail_host: .skip 8
+used_host: .skip 8
+avail_target: .skip 4
+request_head: .skip 4
+request_descriptor: .skip 8
+request_buffer: .skip 8
+request_status: .skip 8
+request_sector: .skip 8
+request_length: .skip 4
+request_used: .skip 4
+request_type: .skip 4
+request_flags: .skip 4
 hex_buffer: .skip 16
+.section .data
+.balign 8
+stdin_poll: .long 0
+    .short 1, 0
 .section .note.GNU-stack,"",@progbits

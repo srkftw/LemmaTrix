@@ -6,9 +6,10 @@ def check(d):
     build.mkdir(exist_ok=True)
     d.lean(['-o','Guest/Primitives.olean','Guest/Primitives.lean'])
     d.lean(['-o','Guest/SHA256.olean','Guest/SHA256.lean'])
+    d.lean(['-o','Guest/Effects.olean','Guest/Effects.lean'])
     d.lean(['-o','Compiler/Checks.olean','Compiler/Checks.lean'])
     d.lean(['--run','Compiler/Main.lean','Compiler.Checks',str(build/'compiler-check.S'),
-            'CompilerChecks.checkScalar','Guest.Hash.sha256'])
+            'CompilerChecks.checkScalar','CompilerChecks.checkEffects','Guest.Hash.sha256'])
     fixture=bytes((i*37+11)%256 for i in range(65536))
     (build/'compiler-input.bin').write_bytes(fixture)
     lengths=[0,3,55,56,64,256,65536]
@@ -29,6 +30,10 @@ _start:
   li sp, 0x80f00000
   li a0, 17
   call lt_CompilerChecks_checkScalar
+  call print_word
+  li a0, 0x80982000
+  li a1, 0
+  call lt_CompilerChecks_checkEffects
   call print_word
 '''+ '\n'.join(commands)+'''
   li a0, 0
@@ -104,7 +109,7 @@ input:
     narrowed=(((x+0xffffffff)&255)+250)&255
     narrowed ^= ((((x+0xffffffff)&0xffffffff)*0xfffffffb)&0xffffffff)
     expected=(100000*100001//2+x)^arithmetic(x,0)^arithmetic(x+5,7)^narrowed^((x+31)*7)^(((x<<((x+48)%64))&mask)>>5)
-    expected_lines=[f'{expected:016x}']+[hashlib.sha256(fixture[:n]).hexdigest() for n in lengths]+['ffffffffffffffff','000000000000005a']
+    expected_lines=[f'{expected:016x}','0000000000000016']+[hashlib.sha256(fixture[:n]).hexdigest() for n in lengths]+['ffffffffffffffff','000000000000005a']
     actual=result.stdout.splitlines()
     (build/'compiler-check.log').write_text(result.stdout+result.stderr)
     if actual!=expected_lines:
@@ -117,4 +122,4 @@ input:
     rejected=subprocess.run([d.tool('lean'),'--run','Compiler/Main.lean','CompilerRejected',str(build/'rejected.S'),'rejectedString'],cwd=root,env=env,capture_output=True,text=True)
     if rejected.returncode==0 or 'fixed-width scalar ABI' not in rejected.stderr:
         raise RuntimeError('Unsupported runtime String was not rejected: '+rejected.stdout+rejected.stderr)
-    print('PASS: scalar source→IR→RV64 execution, 100000 tail calls, seven SHA256 boundary vectors through 65536 bytes, oversize no-write, unsupported String rejection')
+    print('PASS: typed wrappers+inline StateM do effects, scalar source→IR→RV64 execution, 100000 tail calls, seven SHA256 boundary vectors through 65536 bytes, oversize no-write, unsupported String rejection')

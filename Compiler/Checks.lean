@@ -1,4 +1,5 @@
 import Guest.SHA256
+import Guest.Effects
 namespace CompilerChecks
 @[noinline] def arithmetic (x y : UInt64) : UInt64 :=
   ((x*0xfffffffffffffff1 + 71) / y) ^^^ ((x+9) % y)
@@ -17,4 +18,10 @@ partial def sum (n acc : UInt64) : UInt64 :=
 def checkScalar (x : UInt64) : UInt64 :=
   sum 100000 x ^^^ arithmetic x 0 ^^^ arithmetic (x+5) 7 ^^^
   narrow (x+0xffffffff) ^^^ branch x ^^^ ((x <<< (x+48)) >>> 5)
+def checkEffects (base : Guest.Effects.Buffer) (initial : UInt64) : UInt64 :=
+  Guest.Effects.run (do
+    Guest.Effects.write64 base 17
+    let value ← Guest.Effects.read64 base
+    Guest.Effects.write64 ⟨base.address+8⟩ (value+5)
+    Guest.Effects.read64 ⟨base.address+8⟩) initial
 end CompilerChecks

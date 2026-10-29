@@ -30,3 +30,17 @@ lt_finish:
  li t1,0x3333
 1: sw t1,0(t0)
 2: j 2b
+.globl lt_load32, lt_store32, lt_device_fence, lt_effect_value
+lt_load32:
+ lwu a0,0(a0)
+ ret
+lt_store32:
+ sw a1,0(a0)
+ li a0,0
+ ret
+lt_device_fence:
+ fence iorw,iorw
+ li a0,0
+ ret
+lt_effect_value:
+ ret
