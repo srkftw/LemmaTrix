@@ -293,7 +293,7 @@ def publishRoot (caller rights length t : UInt64) : UInt64 :=
   let h := load64 (command+8) t
   let old := load64 (command+16) t
   let n := load64 (command+24) t
-  if length != 160 || !has rights 4 || !grantValid caller h 1 t then respond 1 0 0 0 t else
+  if length != 160 || !has rights 4 || !grantValid caller h 4 t then respond 1 0 0 0 t else
   if old == 0 && !admin rights && ProjectGraph.ownerRoots caller 0 0 0 t >= 4 then respond 4 0 0 0 t else
     let source := grantedRecord h t
     if load64 (source+40) t != 11 || load64 (source+224) t != 1 ||
@@ -308,7 +308,8 @@ def publishRoot (caller rights length t : UInt64) : UInt64 :=
         let checked := ProjectGraph.completeNode ((source-records)/0x11000) t
         if checked == error then respond 2 0 0 0 t else
         let t := checked
-        if ProjectGraph.duplicateRoot caller (command+96) n (if old == 0 then 0 else r) 0 t then respond 8 0 0 0 t else
+        let nameOwner := if old == 0 then caller else load64 (r+8) t
+        if ProjectGraph.duplicateRoot nameOwner (command+96) n (if old == 0 then 0 else r) 0 t then respond 8 0 0 0 t else
           let generation := if old == 0 then load64 (r+16) t+1 else load64 (r+16) t
           let t := if old == 0 then zero r 24 t else t
           let t := store64 r 1 t
@@ -364,7 +365,7 @@ partial def validRestoreEntries (caller i count t : UInt64) : Bool :=
     let e := command+64+i*128
     let h := load64 e t
     let n := load64 (e+8) t
-    if !grantValid caller h 1 t || !ProjectGraph.validName (e+48) n 63 t || !ProjectGraph.allZero (e+48+n) (80-n) t ||
+    if !grantValid caller h 4 t || !ProjectGraph.validName (e+48) n 63 t || !ProjectGraph.allZero (e+48+n) (80-n) t ||
       !validRestoreNames e i t || ProjectGraph.duplicateRoot caller (e+48) n 0 0 t then false else
       let r := grantedRecord h t
       load64 (r+40) t == 11 && load64 (r+224) t == 1 && equal (r+160) (e+16) 32 t && validRestoreEntries caller (i+1) count t
@@ -422,8 +423,8 @@ def graphDispatch (op caller rights length t : UInt64) : UInt64 :=
   let h := load64 (command+8) t
   if op == 30 then restoreRoots caller rights length t else
   if op == 22 then publishRoot caller rights length t else
-  if (op == 25 || op == 32) && length != 96 then respond 2 0 0 0 t else
-  if op != 25 && op != 32 && length != 64 then respond 2 0 0 0 t else
+  if (op == 25 || op == 32 || op == 33) && length != 96 then respond 2 0 0 0 t else
+  if op != 25 && op != 32 && op != 33 && length != 64 then respond 2 0 0 0 t else
   if op == 20 || op == 21 then
     if !has rights 1 || !grantValid caller h 1 t then respond 3 0 0 0 t else
       let r := grantedRecord h t
@@ -437,8 +438,11 @@ def graphDispatch (op caller rights length t : UInt64) : UInt64 :=
         rootReply root (ProjectGraph.grantedRoot root t) (slot+1) t
   else if !has rights 1 || !ProjectGraph.rootValid caller h 1 t then respond 3 0 0 0 t else
     let root := ProjectGraph.grantedRoot h t
-    if op == 32 then
-      if !has rights 2 || !ProjectGraph.rootValid caller h 25 t || !equal (command+64) (root+128) 32 t then respond 8 0 0 0 t else
+    if op == 32 || op == 33 then
+      let required := if op == 33 then 73 else 25
+      let granted := if op == 33 then 89 else 25
+      if op == 33 && (rights &&& 0x200000000) == 0 then respond 1 0 0 0 t else
+      if !has rights 2 || !ProjectGraph.rootValid caller h required t || !equal (command+64) (root+128) 32 t then respond 8 0 0 0 t else
       if !admin rights && ProjectGraph.ownerRoots caller 1 0 0 t >= 2 then respond 4 0 0 0 t else
         let free := ProjectGraph.freeRoot 0 t
         let slot := ProjectGraph.freeRootCap 0 t
@@ -452,7 +456,7 @@ def graphDispatch (op caller rights length t : UInt64) : UInt64 :=
           let t := store64 (r+40) (load64 (root+40) t) t
           let t := store64 (r+48) 1 t
           let t := copy (root+64) (r+64) 96 t
-          let t := ProjectGraph.grantRoot slot caller r (rights &&& 25) t
+          let t := ProjectGraph.grantRoot slot caller r (rights &&& granted) t
           rootReply (ProjectGraph.rootHandle slot t) r (slot+1) t
     else if op == 29 then rootReply h root 0 t else
     if op == 31 then
@@ -495,7 +499,7 @@ def validReserved (op t : UInt64) : Bool :=
   let d := load64 (command+40) t
   let e := load64 (command+48) t
   if e != 0 then false else
-  if op >= 20 && op <= 32 then true else
+  if op >= 20 && op <= 33 then true else
   if op == 1 then true else
   if c != 0 || d != 0 then false else
   if op == 4 || op == 6 || op == 14 then true else
@@ -512,7 +516,7 @@ def dispatch (caller rights length t : UInt64) : UInt64 :=
     if op == 1 then beginObject caller rights length t
     else if op == 2 then appendObject caller rights length t
     else if op == 3 then commitObject caller rights length t
-    else if op >= 20 && op <= 32 then graphDispatch op caller rights length t
+    else if op >= 20 && op <= 33 then graphDispatch op caller rights length t
     else if length != 64 then respond 2 0 0 0 t
     else if op == 4 then readObject caller rights 1 t
     else if op == 5 then metadataObject caller rights t

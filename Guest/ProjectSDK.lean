@@ -24,4 +24,7 @@ def revoke (root delegated t : UInt64) : UInt64 := call 64 (header 31 root deleg
 def freeze (root expected t : UInt64) : UInt64 :=
   let t := header 32 root 0 0 0 0 0 t
   call 96 (copy expected (wire+64) 32 t)
+def freezeExport (root expected t : UInt64) : UInt64 :=
+  let t := header 33 root 0 0 0 0 0 t
+  call 96 (copy expected (wire+64) 32 t)
 end Guest.ProjectSDK
