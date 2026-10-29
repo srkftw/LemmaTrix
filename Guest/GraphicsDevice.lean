@@ -65,6 +65,7 @@ def submit (bytes token : UInt64) : UInt64 :=
   let token := Devices.descriptor queue command bytes 1 1 token
   let token := Devices.descriptor (queue+16) response 64 2 0 token
   let token := Devices.write16 (queue+132+(index &&& 7)*2) 0 token
+  let token := deviceFence token
   let token := Devices.write16 (queue+130) ((index+1) &&& 65535) token
   let token := store64 (state+24) ((index+1) &&& 65535) token
   let token := deviceFence token
@@ -93,7 +94,7 @@ def bootCommand (bytes token : UInt64) : UInt64 :=
   awaitBoot 100000 (submit bytes token)
 
 partial def inputDescriptors (ring buffers index token : UInt64) : UInt64 :=
-  if index == 8 then Devices.write16 (ring+130) 8 token else
+  if index == 8 then Devices.write16 (ring+130) 8 (deviceFence token) else
     let token := Devices.descriptor (ring+index*16) (buffers+index*8) 8 2 0 token
     let token := Devices.write16 (ring+132+index*2) index token
     inputDescriptors ring buffers (index+1) token
@@ -105,6 +106,7 @@ def initInput (base ring buffers token : UInt64) : UInt64 :=
   let token := configureQueue base ring token
   if token == error then token else
   let token := inputDescriptors ring buffers 0 token
+  let token := deviceFence token
   let token := store32 (base+0x70) 15 token
   store32 (base+0x50) 0 (deviceFence token)
 
@@ -194,6 +196,7 @@ def pollInput (base ring buffers counter token : UInt64) : UInt64 :=
   let event := (Devices.read16 p token <<< 48) ||| (Devices.read16 (p+2) token <<< 32) ||| load32 (p+4) token
   let available := Devices.read16 (ring+130) token
   let token := Devices.write16 (ring+132+(available &&& 7)*2) id token
+  let token := deviceFence token
   let token := Devices.write16 (ring+130) ((available+1) &&& 65535) token
   let token := store64 counter ((consumed+1) &&& 65535) token
   let token := store32 (base+0x64) (load32 (base+0x60) token &&& 3) token

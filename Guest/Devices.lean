@@ -97,6 +97,7 @@ def submit (base queue counter token : UInt64) : UInt64 :=
   let index := load64 counter token
   let expected := (index+1) &&& 65535
   let token := write16 (queue+132+(index &&& 7)*2) 0 token
+  let token := deviceFence token
   let token := write16 (queue+130) expected token
   let token := store64 counter expected token
   let token := deviceFence token
