@@ -99,6 +99,12 @@ def hashMatches (p n expected t : UInt64) : UInt64 :=
   let t := ServiceHash.sha256At 0xd00000 p n releaseHash t
   if equal releaseHash expected 32 t then t else error
 
+def validBuildDetail (r t : UInt64) : Bool :=
+  let n := load64 (r+280) t
+  let d := r+288+load64 (r+272) t*128
+  n >= 200 && n <= 712 && load64 d t == 0x31444c4942544c && load64 (d+8) t == 1 &&
+    load64 (d+16) t == 2 && load64 (d+192) t <= 512 && n == 200+load64 (d+192) t
+
 def checkRelease (r t : UInt64) : UInt64 :=
   if load64 (r+272) t != 4 ||
     !releaseEdge r 0 12 0x646c697562 5 t || !releaseEdge r 1 11 0x65646f63 4 t ||
@@ -137,11 +143,20 @@ def checkRelease (r t : UInt64) : UInt64 :=
                           let checked := hashMatches binaryBuffer bytes (h+192) bytes
                           if checked == error then error else
                             let b := recordAt build
-                            let bd := b+288+load64 (b+272) checked*128
-                            if load64 bd checked != 0x31444c4942544c || load64 (bd+16) checked != 2 ||
-                              load64 (bd+40) checked != load64 (h+400) checked ||
-                              !equal (bd+48) (r+688) 32 checked || !equal (bd+80) (h+192) 32 checked then error else
-                              zero binaryBuffer 32768 checked
+                            let ei := findNode (r+560) 14 0 checked
+                            if ei == error then error else
+                              let e := recordAt ei
+                              if load64 (b+272) checked != 2 || load64 (e+272) checked != 1 ||
+                                !releaseEdge b 0 14 0x65636e6564697665 8 checked || !releaseEdge b 1 11 0x656372756f73 6 checked ||
+                                !releaseEdge e 0 11 0x656372756f73 6 checked || !validBuildDetail b checked || !validBuildDetail e checked then error else
+                                let bd := b+544
+                                let ed := e+416
+                                if !equal (b+304) (r+560) 32 checked || !equal (b+432) (r+688) 32 checked ||
+                                  !equal (e+304) (r+688) 32 checked || load64 (b+280) checked != load64 (e+280) checked ||
+                                  !equal bd ed (load64 (b+280) checked) checked ||
+                                  load64 (bd+40) checked != load64 (h+400) checked ||
+                                  !equal (bd+48) (r+688) 32 checked || !equal (bd+80) (h+192) 32 checked then error else
+                                  zero binaryBuffer 32768 checked
 
 def sealNode (caller r t : UInt64) : UInt64 :=
   if !validPayload caller r t then error else
