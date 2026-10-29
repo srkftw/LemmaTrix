@@ -8,7 +8,7 @@ streams, then the operator explicitly provisions a fresh ordered relationship.
 import argparse,hashlib,json,os,select,socket,struct,sys,threading,time
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1];sys.path[:0]=[str(ROOT/'tools'),str(ROOT/'tests')]
-import capsule,forge,network,releases
+import capsule,forge,network,releases,projects
 from forge_journey import Node,wait,import_project
 from forge_replication import authenticate,fetched
 from creator_journey import rendered_text
@@ -122,14 +122,14 @@ def main():
   reused=cache(nodes[2]);assert reused['reused_bytes']>0 and reused['skipped_records']>0,reused
   c=nodes[2].client()
   try:
-   ids=[];cursor=0;root=nodes[2].roots()[0]['cap']
+   ids=[];cursor=0;root=projects.roots(c)[0]['cap']
    while True:
     fields,identities=c.objects(26,root,cursor)
     if not fields[1]:break
     ids.append(identities[:32].hex());cursor=fields[3]
    assert private not in ids
   finally:c.close()
-  frame=wait(lambda:(f if rendered_text((f:=nodes[2].ui.frame()),10,390,31,0x9fc6a5)=='CHECKED / REUSED BYTES (SESSION)' and rendered_text(f,340,390,8)==format(reused['reused_bytes'],'08x') else None),'actual rendered checked and reused session bytes',120)
+  frame=wait(lambda:(f if rendered_text((f:=nodes[2].ui.frame()),10,390,len('CHECKED / REUSED BYTES (SESSION)'),0x9fc6a5)=='CHECKED / REUSED BYTES (SESSION)' and rendered_text(f,340,390,8)==format(reused['reused_bytes'],'08x') else None),'actual rendered checked and reused session bytes',120)
   (nodes[2].path/'checked-reused.ppm').write_bytes(frame.ppm())
   passed('fresh authorized seed and fresh Noise grant reuse verified immutable records before atomic complete publication',head=head,complete=done,cache=reused,previous_publisher_offline=True,private_object_absent=True)
  finally:
