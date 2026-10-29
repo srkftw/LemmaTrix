@@ -109,10 +109,27 @@ def catalog (t : UInt64) : UInt64 :=
     let r := catalogEntry cursor t
     if r != error || cursor == 0 then r else catalogEntry 0 r
 
-def metadata (t : UInt64) : UInt64 :=
-  let t := zero remote 96 t
-  let t := zero (st+56) 5 t
-  store64 (st+96) (load64 (st+96) t+1) t
+-- Recheck the public signed decision in the isolated verifier. This applies
+-- its current monotonic/revocation knowledge and grants no peer authority.
+def verifyRemote (root sequence t : UInt64) : UInt64 :=
+  let r := Guest.RegistrySDK.verify remote root t
+  if r != 832 || status r != 0 || !expected (wire+64) root r then
+    store64 (st+56) 3 (store64 (st+72) 8 r)
+  else
+    let t := copy (wire+64) remote 768 r
+    let t := store64 (st+64) (load64 (wire+8) t) t
+    let t := store64 (st+72) (load64 (wire+16) t) t
+    let t := store64 (st+80) sequence t
+    store64 (st+56) (if Guest.RegistrySDK.admitted (load64 (st+64) t) then 2 else 3) t
+def portable (root t : UInt64) : Bool :=
+  enabled t && (remotePhase t == 2 || (remotePhase t == 3 && load64 (st+72) t <= 6)) && expected remote root t
+-- Signed admission is public portable evidence. Only the exact same immutable
+-- root, chosen federation and policy can reuse it after fresh peer enrollment.
+-- Other metadata clears assembly; old grants/handles never appear here.
+def metadata (root t : UInt64) : UInt64 :=
+  let t := store64 (st+96) (load64 (st+96) t+1) t
+  if portable root t then verifyRemote root (load64 (remote+48) t) t else
+    zero (st+56) 5 (zero remote 96 t)
 
 def decision (p root sequence t : UInt64) : UInt64 :=
   if !enabled t || !expected p root t || sequence != load64 (p+48) t then
@@ -127,16 +144,7 @@ def signature (p root sequence t : UInt64) : UInt64 :=
   if !enabled t || remotePhase t != 1 || sequence != load64 (st+88) t || !expected remote root t then
     store64 (st+56) 3 (store64 (st+72) 7 t)
   else
-    let t := copy p (remote+512) 256 t
-    let r := Guest.RegistrySDK.verify remote root t
-    if r != 832 || status r != 0 || !expected (wire+64) root r then
-      store64 (st+56) 3 (store64 (st+72) 8 r)
-    else
-      let t := copy (wire+64) remote 768 r
-      let t := store64 (st+64) (load64 (wire+8) t) t
-      let t := store64 (st+72) (load64 (wire+16) t) t
-      let t := store64 (st+80) sequence t
-      store64 (st+56) (if Guest.RegistrySDK.admitted (load64 (st+64) t) then 2 else 3) t
+    verifyRemote root sequence (copy p (remote+512) 256 t)
 def init (t : UInt64) : UInt64 := zero st 512 t
 
 def inspect (t : UInt64) : UInt64 :=

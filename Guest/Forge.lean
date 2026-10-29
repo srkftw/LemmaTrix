@@ -237,7 +237,7 @@ def accept2 (length transaction a b c t : UInt64) : UInt64 :=
   if length != 192 || mode > 3 || !sizes || c == 0 || c > 63 ||
     !Guest.ProjectGraph.validName (received+96) c 63 t then message 9 t else
   if load64 (st+112) t != 0 then message 7 t else
-  let t := Guest.ForgeFederation.metadata t
+  let t := Guest.ForgeFederation.metadata (received+64) t
   let t := copy (received+64) remoteHead 32 t
   let t := copy (received+160) remoteLogical 32 t
   let t := copy (received+96) remoteName 64 t
@@ -735,9 +735,7 @@ def statusLabel (id x y color t : UInt64) : UInt64 :=
   else
   t
 
-def draw (surface t : UInt64) : UInt64 :=
-  if Guest.ForgeFederation.enabled t && load64 (Guest.ForgeFederation.st+128) t == 1 then Guest.ForgeFederation.view surface t else
-  let t := Guest.Raster.fill 0 0 640 352 0x101b25 t
+def drawSummary (t : UInt64) : UInt64 :=
   let t := label 0 10 8 0xd8e6ed t
   let t := label 1 10 28 0x9fc6a5 t
   let t := label 2 10 42 0x9fc6a5 t
@@ -772,6 +770,9 @@ def draw (surface t : UInt64) : UInt64 :=
   let t := Guest.Raster.hex (load64 (st+224) t) 8 280 208 0xd8e6ed 0x101b25 t
   let t := label 10 10 230 0xd8e6ed t
   let t := statusLabel (load64 (st+136) t) 60 230 0xe9bc75 t
+  t
+
+def drawFooter (t : UInt64) : UInt64 :=
   let t := store64 (0x414000+0) 7311156824594462790 t
   let t := store64 (0x414000+8) 2314961767583916146 t
   let t := store64 (0x414000+16) 7309469112732760390 t
@@ -821,6 +822,13 @@ def draw (surface t : UInt64) : UInt64 :=
   let t := Guest.Raster.hex (load64 (st+200) t) 2 330 328 0xd8e6ed 0x101b25 t
   let t := Guest.Raster.hex (load64 (st+208) t) 2 360 328 0xd8e6ed 0x101b25 t
   let t := Guest.Raster.hex (load64 (st+216) t) 16 390 328 0xd8e6ed 0x101b25 t
+  t
+
+def draw (surface t : UInt64) : UInt64 :=
+  if Guest.ForgeFederation.enabled t && load64 (Guest.ForgeFederation.st+128) t == 1 then Guest.ForgeFederation.view surface t else
+  let t := Guest.Raster.fill 0 0 640 352 0x101b25 t
+  let t := drawSummary t
+  let t := drawFooter t
   let t := Guest.ForgeCache.view t
   let t := store64 (st+248) 0 t
   Guest.Raster.upload surface 0 901120 0 t
