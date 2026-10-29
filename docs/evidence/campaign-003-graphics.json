@@ -1,0 +1,241 @@
+{
+  "schema": "LT-campaign-003-graphics-evidence-1",
+  "executed_at_local": "2026-10-29 America/Los_Angeles",
+  "scope": "Focused device checks and frozen pre-final integrated UI artifact parity. This is not the complete campaign acceptance journey.",
+  "implementation_commits": [
+    "1585840",
+    "5d40e95",
+    "e124d31",
+    "0b48654"
+  ],
+  "device_probe": {
+    "image_sha256": "6431acfd93eb66b6f4973cac2905e3741dba95577cda80b55ec6cff3dd914efb",
+    "guest_consumer": "Temporary Lean GraphicsProbe compiled through Compiler/Main.lean; boot initialization, solid BGRX presentation, A key, relative X motion7, left button press, real finisher exit0.",
+    "source_artifact": "build/GraphicsProbe.lean (untracked development artifact)",
+    "backends": [
+      {
+        "backend": "qemu",
+        "environment": "Pinned QEMU11.1.1 RISC-V system emulation",
+        "input": "QMP input-send-event routed through virtio-input eventq",
+        "frame": "virtio-gpu screendump",
+        "exit": 0
+      },
+      {
+        "backend": "x86_64",
+        "environment": "Native Linux x86-64 assembly interpreter",
+        "input": "Raw evdev FIFO -> assembly virtio-input eventq",
+        "frame": "Assembly virtio-gpu TRANSFER/FLUSH -> completed BGRX transport",
+        "exit": 0
+      },
+      {
+        "backend": "aarch64",
+        "environment": "Independent AArch64 assembly interpreter under qemu-aarch64 on x86-64",
+        "input": "Raw evdev FIFO -> assembly virtio-input eventq",
+        "frame": "Assembly virtio-gpu TRANSFER/FLUSH -> completed BGRX transport",
+        "exit": 0
+      }
+    ],
+    "normalized_frame": {
+      "width": 640,
+      "height": 400,
+      "format": "B8G8R8X8",
+      "bytes": 1024000,
+      "sha256": "2786473bbb1aeb31e562d1cf2ac00712da98a421ff26acef90fbab5f2214f1c5"
+    },
+    "observed_failure_fixed": "An unaligned store64 at control+44 trapped in both assembly backends; replaced by aligned store32 operations before successful runs.",
+    "transport_probe": {
+      "image_sha256": "8e2e5a7e5ef622942668ab944bef9040c2fa2c5da3c74beaa0097b008c3c4c90",
+      "check": "RNG32 bytes; block write sector1; real flush; clear bounce buffer; read and verify512 bytes",
+      "storage": "Separate explicit disposable4096-byte backing files",
+      "qemu_modern_mmio": "pass",
+      "x86_64_legacy_mmio": "pass",
+      "aarch64_legacy_mmio": "pass"
+    }
+  },
+  "presenter": {
+    "implementation": "tools/pixel_presenter.py",
+    "protocol": "1024000 raw BGRX bytes + u64 odd/in-progress or even/complete sequence; eight-byte little-endian evdev FIFO input; no semantic UI commands",
+    "executed": "PhotoImage conversion/dimensions/pixel check with withdrawn Tk window",
+    "environment": "Python3.14 + Tk9, DISPLAY=:0, screen1920x1200",
+    "observed_pixel_rgb": [
+      51,
+      102,
+      153
+    ],
+    "limitations": [
+      "System Python3.13 lacks tkinter",
+      "No physical keyboard or pointer validation",
+      "No native-app CUA automation was available",
+      "A withdrawn adapter component check is not interactive physical display evidence"
+    ]
+  },
+  "frozen_ui_artifacts": {
+    "guest_image_sha256": "0b5d816983c43abf5dd16ac3516b834fe490b7f7969615871fa5a4f23f980506",
+    "local_copy": "build/parity003/guest-0b5d8169.bin",
+    "editor_package_sha256": "fec27d4bb8623965efbfad262aaa197971d25d45b53b2ba8d649085c84263bd2",
+    "editor_release_id": "c1f9a598fa5534c70648fcd360663764ad773b982ed5ea8c9dc70cdcf312f174",
+    "editor_version": "0.3.1",
+    "editor_profile": 2,
+    "editor_rights": 895,
+    "consumer_package_sha256": "f685b79359f39c5fc47886afd627c7ec0cce9da2b9f86b78723c34d44bb0ae7a",
+    "consumer_release_id": "44317afc16b8eabf91b9983a5a655d460727bd5f9d3a1c85380507c62ad0852a",
+    "consumer_profile": 2,
+    "consumer_rights": 769,
+    "publisher_keys": "Existing explicitly provisioned campaign public keys; no signing or key generation repeated for parity",
+    "reuse": "Exact same guest image and editor package used for both assembly UI attempts"
+  },
+  "native_x86_ui": {
+    "result": "pass for the specifically asserted operations below; consumer full-input and recovery workflow remain outside this run",
+    "latency_seconds": {
+      "publisher_provisioned": 1.13,
+      "editor_stage_complete": 18.19,
+      "trusted_approval_frame": 18.73,
+      "editor_running_observed_after_intentional_dwell": 50.6,
+      "root_commit_observed": 60.52,
+      "snapshot_verified": 60.73,
+      "consumer_stage_complete": 68.6,
+      "consumer_frame": 105.8,
+      "last_assertion": 107.2
+    },
+    "operations": [
+      "Booted graphical desktop",
+      "Explicit host publisher provisioning and byte staging",
+      "Raw F12 opened trusted candidate dialog; inspected real rendered frame",
+      "Raw Enter approved exact editor release/rights and started process slot6",
+      "Raw keyboard created project alpha and edited Main.lean and Util.lean",
+      "Raw F4 published a named root",
+      "Authorized guest snapshot export matched both exact source payloads",
+      "Raw F6 opened inspector and F2 reopened the project",
+      "Existing independent signed TextTools package was staged and GUI-approved",
+      "Raw Alt-Tab switched focus to independent native consumer",
+      "Raw pointer movement/button selected editor file",
+      "Project head and bytes stayed unchanged after independent-app use"
+    ],
+    "project": {
+      "name": "alpha",
+      "head": "1fa1e032c588bf6efd81235bf6e05de8edb03f3736ecd1e731caca0521d20f26",
+      "files": {
+        "Main.lean": "def parity : UInt64 := 41\n",
+        "Util.lean": "def extra : UInt64 := 7\n"
+      }
+    },
+    "processes": [
+      {
+        "instance": 0,
+        "state": 0,
+        "rights": 0,
+        "cause": 0
+      },
+      {
+        "instance": 4474345746123981057,
+        "state": 1,
+        "rights": 4294967551,
+        "cause": 0
+      },
+      {
+        "instance": 4474345746123981058,
+        "state": 3,
+        "rights": 0,
+        "cause": 0
+      },
+      {
+        "instance": 4474345746123981059,
+        "state": 3,
+        "rights": 1,
+        "cause": 0
+      },
+      {
+        "instance": 4474345746123981060,
+        "state": 1,
+        "rights": 127,
+        "cause": 0
+      },
+      {
+        "instance": 4474345746123981061,
+        "state": 3,
+        "rights": 127,
+        "cause": 0
+      },
+      {
+        "instance": 4474345746123981062,
+        "state": 1,
+        "rights": 895,
+        "cause": 0
+      },
+      {
+        "instance": 4474345746123981063,
+        "state": 1,
+        "rights": 769,
+        "cause": 0
+      },
+      {
+        "instance": 4474345746123980808,
+        "state": 0,
+        "rights": 0,
+        "cause": 0
+      },
+      {
+        "instance": 4474345746123980809,
+        "state": 0,
+        "rights": 0,
+        "cause": 0
+      },
+      {
+        "instance": 4474345746123980810,
+        "state": 0,
+        "rights": 0,
+        "cause": 0
+      },
+      {
+        "instance": 4474345746123980811,
+        "state": 0,
+        "rights": 0,
+        "cause": 0
+      }
+    ],
+    "frames": {
+      "approval": "a99715cfd385ca043f90939e0946df0775f6eb7b2f66bf09f4f88b080df27b4a",
+      "editor": "ab1172fbe9e432e9878e0092430e649a9c87a235e9536b4061ef5a5c10c583d8",
+      "consumer": "faca7f8ec21fdcaceafb9b34e1219f56bf0e6976a4332b5b5cd8921d5cca64cb",
+      "reopened": "ca49dff188f42983e6eaf74b090d547070b8cf8d124a1c008017bdca7428d004"
+    },
+    "consumer_caveat": "After typing19 characters at120ms key edges and waiting400ms, actual frame had processed only4 characters inde, with correct bytes4/words1. This proves separate native computation on received input, not completion of the full queued19-character input. Per-key full redraw latency was reported and a later app fix coalesces input before repaint.",
+    "earlier_attempt": {
+      "result": "failed to observe running editor within90s after raw Enter",
+      "capture": "Trusted modal was captured; emulator stderr empty. The harness did not retain final process/candidate state.",
+      "cause": "Not established. A later affected rerun added stable-modal dwell and avoided immediate management polling; it passed. Later UI code also arms approvals only after frame completion and input drain."
+    }
+  },
+  "aarch64_ui": {
+    "result": "partial; multi-file commit parity did not pass",
+    "environment": "AArch64 assembly interpreter under qemu-aarch64, not physical ARM64",
+    "latency_seconds": {
+      "boot_ready": 8.01,
+      "publisher_provisioned": 9.84,
+      "editor_stage_complete": 107.97,
+      "trusted_approval_frame": 111.27,
+      "editor_running_observed": 143.37
+    },
+    "passed": [
+      "Exact frozen guest image booted",
+      "Same signed editor package verified in guest",
+      "Raw F12 produced identical trusted approval frame as native x86",
+      "Raw Enter approved/installed and actual process slot6 state1 rights895 ran",
+      "Actual guest-rendered editor project-name prompt captured"
+    ],
+    "approval_frame_sha256": "a99715cfd385ca043f90939e0946df0775f6eb7b2f66bf09f4f88b080df27b4a",
+    "editor_frame_sha256": "cde204be7f229c5cb80f3d8c2d8df9663c2200f2ff9f9daadbb7de05e9275692",
+    "failed": "The same rapid multi-file typing and F4 sequence did not publish a root within90s. No emulator fault was reported. The harness closed before a final failure-state capture; input/paint backlog is a hypothesis, not an established diagnosis. Newer dirty-row and event-coalescing code was not present in these frozen artifacts."
+  },
+  "remaining_evidence": [
+    "Final integrated image/package parity after newer font, project portal, lifecycle, dirty-row and coalesced-render changes",
+    "Complete restored project behavior on both assembly backends",
+    "Complete QEMU editor/build/install/update/rollback/retention/interruption journey",
+    "Physical ARM64, physical display/input, physical vault and independent-builder evidence"
+  ],
+  "honest_limits": [
+    "No self-hosting claim",
+    "Headless raw-device input and framebuffer checks do not establish physical display hardware support",
+    "No networking, privacy, federation or payment evidence was added by these checks"
+  ]
+}
