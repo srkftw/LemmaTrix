@@ -70,10 +70,10 @@ def main(config_path):
   objects=[]
   for i,src in enumerate(['/work/app.S','/work/start.S','/sdk/runtime/primitives.S']):
    obj=f'/work/{i}.o';run([tools['clang'],'-target','riscv64-unknown-elf','-march=rv64im','-mabi=lp64','-mno-relax','-c',src,'-o',obj]);objects.append(obj)
-  run([tools['ld.lld'],'-m','elf64lriscv','--no-relax','-T','/sdk/runtime/app.ld',*objects,'-o','/work/app.elf'])
+  run([tools['ld.lld'],'-m','elf64lriscv','--no-relax','-T',('/sdk/runtime/app2.ld' if cfg['profile']==2 else '/sdk/runtime/app.ld'),*objects,'-o','/work/app.elf'])
   run([tools['llvm-objcopy'],'-O','binary','/work/app.elf','/work/app.bin'])
   binary=Path('/work/app.bin').read_bytes()
-  if not 0<len(binary)<=65536:raise RuntimeError('native code exceeds profile code limit')
+  if not 0<len(binary)<=(262144 if cfg['profile']==2 else 65536):raise RuntimeError('native code exceeds profile code limit')
   artifact=base64.b64encode(binary).decode()
  except (OSError,RuntimeError) as error:
   status='error'

@@ -4,7 +4,7 @@ from pathlib import Path,PurePosixPath
 import driver
 ROOT=driver.ROOT
 MAX_FILES=128;MAX_INPUT=4*1024*1024
-SDK_MODULES=['Guest.Primitives','Guest.Structured','Guest.Effects','Guest.LiveSDK','Guest.LiveMemory']
+SDK_MODULES=['Guest.Primitives','Guest.Structured','Guest.Effects','Guest.LiveSDK','Guest.LiveMemory','Guest.Raster']
 RECIPE='lemmatrix-lean-rv64-structured-2'
 
 def sha(data):return hashlib.sha256(data).hexdigest()
@@ -86,7 +86,7 @@ def build_source_snapshot(files,*,entry,module,profile,jobid,rootid,outputdir):
  if not re.fullmatch('[A-Za-z0-9_-]{1,96}',str(jobid)):raise ValueError('invalid build job identity')
  snapshot,manifest=source_commitment(files);modules=_modules(files)
  if module not in modules:raise ValueError('entry module absent from snapshot')
- sdk_files=[ROOT/(n.replace('.','/')+'.lean') for n in SDK_MODULES]+[ROOT/'Compiler/Main.lean',ROOT/'runtime/primitives.S',ROOT/'runtime/app.ld',ROOT/'tools/build_sandbox_runner.py',ROOT/'tools/build_jobs.py']
+ sdk_files=[ROOT/(n.replace('.','/')+'.lean') for n in SDK_MODULES]+[ROOT/'Compiler/Main.lean',ROOT/'runtime/primitives.S',ROOT/'runtime/app.ld',ROOT/'runtime/app2.ld',ROOT/'tools/build_sandbox_runner.py',ROOT/'tools/build_jobs.py']
  sdk_entries={str(p.relative_to(ROOT)):p.read_bytes() for p in sdk_files}
  sdk_digest=sha(canonical([{'path':name,'sha256':sha(data)} for name,data in sdk_entries.items()]))
  request={'schema':1,'recipe':RECIPE,'job_id':str(jobid),'source_root':rootid,'snapshot_digest':snapshot,'module':module,'entry':entry,'runtime_profile':profile,'sdk_digest':sdk_digest}
@@ -115,7 +115,7 @@ def build_source_snapshot(files,*,entry,module,profile,jobid,rootid,outputdir):
     if uid and threads and int(uid[1])==os.getuid():uid_tasks+=int(threads[1])
    except (OSError,ValueError):pass
   uid_limit=max(uid_tasks+64,128)
-  cfg={'uid_process_limit':uid_limit,'root':str(newroot),'input':str(inputs),'sdk':str(sdk),'closure':closure,'tools':tools,'sdk_modules':SDK_MODULES,'modules':modules,'module':module,'entry':entry}
+  cfg={'uid_process_limit':uid_limit,'root':str(newroot),'input':str(inputs),'sdk':str(sdk),'closure':closure,'tools':tools,'sdk_modules':SDK_MODULES,'modules':modules,'module':module,'entry':entry,'profile':profile}
   config=stage/'config.json';config.write_bytes(canonical(cfg))
   command=[unshare,'--user','--map-root-user','--mount','--net','--pid','--fork',str(Path(sys.executable).resolve()),str(ROOT/'tools/build_sandbox_runner.py'),str(config)]
   # No inherited environment, stdin, credentials or directory descriptors.
@@ -136,7 +136,7 @@ def build_source_snapshot(files,*,entry,module,profile,jobid,rootid,outputdir):
   if result['status']=='ok':
    try:binary=base64.b64decode(reply['binary_base64'],validate=True)
    except (ValueError,KeyError):result['status']='error';result['diagnostic_text']='invalid sandbox artifact transport';return result
-   if not 0<len(binary)<=65536:result['status']='error';result['diagnostic_text']='artifact exceeds resource profile';return result
+   if not 0<len(binary)<=(262144 if profile==2 else 65536):result['status']='error';result['diagnostic_text']='artifact exceeds resource profile';return result
    path=outputdir/'app.bin';path.write_bytes(binary)
    result['artifact']={'path':str(path),'sha256':sha(binary),'bytes':len(binary)}
  result['evidence_digest']=sha(b'LT-BUILD-EVIDENCE-1\0'+canonical({k:v for k,v in result.items() if k!='artifact'}))
