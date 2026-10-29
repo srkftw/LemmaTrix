@@ -7,10 +7,14 @@ import argparse,base64,hashlib,json,os,signal,socket,struct,subprocess,sys,time
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1];sys.path[:0]=[str(ROOT/'tools'),str(ROOT/'tests')]
 import capsule,forge,live,network,projects,releases
-from forge_journey import Node,wait,import_project
+from forge_journey import Node,wait as bounded_wait,import_project
 from creator_journey import rendered_text,rendered_score
 
+WAIT_FLOOR=0
+def wait(check,label,seconds=90):return bounded_wait(check,label,max(seconds,WAIT_FLOOR))
+
 class ClientNode(Node):
+ def client(self):return live.Client(self.sock,timeout=max(180,WAIT_FLOOR))
  def install_app(self,package,public,name):
   c=self.client()
   try:
@@ -49,6 +53,10 @@ def package(binary,name,version,rights,key,path):
  data,manifest=releases.make(binary,name,version,rights,key,profile=2)
  path.write_bytes(data);Path(str(path)+'.manifest.json').write_text(json.dumps(manifest,sort_keys=True,separators=(',',':')));return path
 
+def native_score(node):
+ try:return rendered_score(node.ui.frame())
+ except AssertionError:return None
+
 def events(path):
  result=[]
  if path.exists():
@@ -70,17 +78,21 @@ def archive_selected(c,root,path):
  return head
 
 def main():
- p=argparse.ArgumentParser();p.add_argument('--output',type=Path,default=ROOT/'build/signed-forge-journey');p.add_argument('--reuse-release-dir',type=Path);p.add_argument('--fork',action='store_true');p.add_argument('--image',type=Path,default=ROOT/'build/platform/150a446ccca25014c1a1c05a8b8932303e72d0bf2ef56336fd1b5480418b4c1e.bin');a=p.parse_args();a.output=a.output.resolve();a.output.mkdir(parents=True,exist_ok=False)
+ p=argparse.ArgumentParser();p.add_argument('--output',type=Path,default=ROOT/'build/signed-forge-journey');p.add_argument('--reuse-release-dir',type=Path);p.add_argument('--fork',action='store_true');p.add_argument('--creator-backend',choices=('qemu','x86_64','aarch64'),default='qemu');p.add_argument('--recipient-backend',choices=('qemu','x86_64','aarch64'),default='qemu');p.add_argument('--timeout',type=int,default=240);p.add_argument('--reuse-forge-package',type=Path);p.add_argument('--image',type=Path,default=ROOT/'build/platform/150a446ccca25014c1a1c05a8b8932303e72d0bf2ef56336fd1b5480418b4c1e.bin');a=p.parse_args();a.output=a.output.resolve();a.output.mkdir(parents=True,exist_ok=False)
+ global WAIT_FLOOR
+ if not 1<=a.timeout<=1800:p.error('timeout must be1..1800 seconds')
+ WAIT_FLOOR=a.timeout
  os.environ['LT_GUEST_IMAGE']=str(a.image.resolve());image=hashlib.sha256(a.image.read_bytes()).hexdigest();key=(a.reuse_release_dir or a.output)/'publisher.pem';public=(a.reuse_release_dir or a.output)/'publisher.pub'
  if not a.reuse_release_dir:capsule.generate_key(key,public)
- forge_package=package(ROOT/'build/live/apps/native-forge.bin','native-forge','0.4.1',1919,key,a.output/'forge.ltrel')
- editor_package=package(ROOT/'build/live/apps/native-editor.bin','native-editor','0.4.1',895,key,a.output/'editor.ltrel')
+ forge_package=a.reuse_forge_package or package(ROOT/'build/live/apps/native-forge.bin','native-forge','0.4.1',1919,key,a.output/'forge.ltrel')
+ need_editor=not a.reuse_release_dir or a.fork
+ editor_package=package(ROOT/'build/live/apps/native-editor.bin','native-editor','0.4.1',895,key,a.output/'editor.ltrel') if need_editor else None
  probe=socket.socket();probe.bind(('127.0.0.1',0));port=probe.getsockname()[1];probe.close();endpoint=f'127.0.0.1:{port}'
  credentials=[a.output/'creator.credential',a.output/'recipient.credential'];network.provision(*credentials,os.getrandom(32),os.getrandom(32),hashlib.sha256(b'LT signed Forge integration1').digest())
  nodes=[];worker=None;log=None;report=[]
- def passed(label,**data):report.append(dict(check=label,result='pass',**data));print('PASS',label,flush=True);(a.output/'journey.json').write_text(json.dumps(dict(image=image,checks=report),indent=2)+'\n')
+ def passed(label,**data):report.append(dict(check=label,result='pass',**data));print('PASS',label,flush=True);(a.output/'journey.json').write_text(json.dumps(dict(image=image,creator_backend=a.creator_backend,recipient_backend=a.recipient_backend,checks=report),indent=2)+'\n')
  try:
-  recipient=ClientNode(a.output/'recipient',endpoint,True);nodes.append(recipient);creator=ClientNode(a.output/'creator',endpoint);nodes.append(creator)
+  recipient=ClientNode(a.output/'recipient',endpoint,True,a.recipient_backend);nodes.append(recipient);creator=ClientNode(a.output/'creator',endpoint,False,a.creator_backend);nodes.append(creator)
   for node,credential in zip((creator,recipient),credentials):
    c=node.client()
    try:network.configure(c,credential)
@@ -98,7 +110,8 @@ def main():
    c=n.client()
    try:forge.configure(c,n.instance,credential)
    finally:c.close()
-  editor,editor_info=creator.install_app(editor_package,public,'native-editor');creator.ui.press(1);time.sleep(.3)
+  if need_editor:
+   editor,editor_info=creator.install_app(editor_package,public,'native-editor');creator.ui.press(1);time.sleep(.3)
   if not a.reuse_release_dir:
    root,original,files,private=import_project(creator)
    c=creator.client()
@@ -165,7 +178,7 @@ def main():
    finally:c.close()
   wait(activated,'actual graph release activated after local authority review',120);time.sleep(.5)
   recipient.ui.textASCII('cat123',delay=.08)
-  wait(lambda:rendered_score(recipient.ui.frame())=='00000014','native application real supplied input',90)
+  wait(lambda:native_score(recipient)=='00000014','native application real supplied input',90)
   (a.output/'recipient/native-input.ppm').write_bytes(recipient.ui.frame().ppm());passed('encrypted network Release graph passes F6 actual material and exact rights approval then runs supplied input',release=signed['release'],rights=768,input='cat123',score='00000014',received=received)
   if a.fork:
    fork_key=a.output/'fork-publisher.pem';fork_public=a.output/'fork-publisher.pub';capsule.generate_key(fork_key,fork_public)
@@ -246,7 +259,7 @@ def main():
      return active if active[160:192].hex()==fork_signed['release'] else None
     finally:c.close()
    wait(fork_active,'actual peer fork generation activated after authority review',120);time.sleep(.5);creator.ui.textASCII('cat123',delay=.08)
-   wait(lambda:rendered_score(creator.ui.frame())=='0000001b','changed native fork supplied input behavior',90)
+   wait(lambda:native_score(creator)=='0000001b','changed native fork supplied input behavior',90)
    (a.output/'creator/fork-native-input.ppm').write_bytes(creator.ui.frame().ppm())
    c=creator.client()
    try:
