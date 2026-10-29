@@ -228,8 +228,8 @@
     "failed": "The same rapid multi-file typing and F4 sequence did not publish a root within90s. No emulator fault was reported. The harness closed before a final failure-state capture; input/paint backlog is a hypothesis, not an established diagnosis. Newer dirty-row and event-coalescing code was not present in these frozen artifacts."
   },
   "remaining_evidence": [
-    "Affected final graph-material image: complete restored editor UI and native package execution on both assembly backends",
-    "Physical ARM64, physical display/input, physical vault and independent-builder evidence remain unavailable"
+    "Physical ARM64 execution, physical display/input, physical vault and independent-builder evidence remain unavailable",
+    "Broader self-hosting, federation, networking/privacy and payment gates remain incomplete; this graphics evidence makes no claims for them"
   ],
   "honest_limits": [
     "No self-hosting claim",
@@ -730,5 +730,308 @@
         "fresh_authority": true
       }
     }
+  },
+  "restored_ui_and_compiled_app_8dfe": {
+    "image_sha256": "8dfec42445edfea2043c0032c477aa4f670d882d40c4c639485da802e5b8351f",
+    "scope": "Affected stricter Release13 source/evidence material admission, complete encrypted archive compatibility, fresh editor/compiled-app authority and actual restored GUI content/lineage. Same already-signed artifacts; no compiler/signing rerun.",
+    "vault_fixture": "Separate copies of build/creator-retention-final/interrupted-vault.img; authenticated complete old generation2. New-image QEMU interruption is separately recorded by the parent campaign.",
+    "backends": {
+      "x86_64": {
+        "image": "8dfec42445edfea2043c0032c477aa4f670d882d40c4c639485da802e5b8351f",
+        "backend": "x86_64",
+        "restored": {
+          "nodes": 27,
+          "bytes": 135295,
+          "roots": [
+            {
+              "cap": 11118696681732833536,
+              "name": "creator",
+              "head": "04f243c6e7c946e9a7ef81422967cf1b9ffa56395841d0ee73cf9bd29eaddd82",
+              "project_id": "69d8274c92d5b2c829e55d5e3f5359b7c652b13160d138eec5d7e99623a72f2b"
+            },
+            {
+              "cap": 11118696681732833537,
+              "name": "notes",
+              "head": "e1d03abf1ccbd513c5d9ee01ce4cccc4ef6afb506f60ea44cdecbac6c3b989e7",
+              "project_id": "e1d03abf1ccbd513c5d9ee01ce4cccc4ef6afb506f60ea44cdecbac6c3b989e7"
+            }
+          ]
+        },
+        "source": "c5f0244bbe9649aaec21343867cde8f707fe93bdc51f41463ab54575bbe7ab4f",
+        "source_parent": "0000000000000000000000000000000000000000000000000000000000000000",
+        "manifest": "04f243c6e7c946e9a7ef81422967cf1b9ffa56395841d0ee73cf9bd29eaddd82",
+        "manifest_parent": "6a63eb88b055df772d700631547b88be217b5365a08587fe125805ba291a7c1f",
+        "logical_project": "69d8274c92d5b2c829e55d5e3f5359b7c652b13160d138eec5d7e99623a72f2b",
+        "compiled_release": "68e45749fe0aa8b0c9b00f0d0a5b0a14a478c7d564f16e606ef50c31b6efb4bc",
+        "compiled_input": "cat123",
+        "compiled_score": "00000018",
+        "frames": {
+          "source_inspector": "c910f91aacc6529cb7877b4af5efb4f15609c7d6fb47a640cb8d0d985c528a1f",
+          "manifest_lineage": "f9fd58e0329a002dc66d5c0a08e02359c4965ce9ba58d725b445bd7a26725657",
+          "notes": "f945c165d54f69c7a0b8a8778bc71a1b97750be0194c9a44cf1f6b3bd3194ac1",
+          "compiled": "c968e9308c766fefc8a942e438fb9113feabcfbaa3eeba19a11435dddb991c81"
+        },
+        "phases": {
+          "actual_source_identity_and_parent": 0.01,
+          "actual_manifest_lineage_and_logical_identity": 0.88,
+          "second_named_project_opened": 6.15,
+          "same_compiled_creator_staged": 12.62,
+          "real_compiled_app_input_and_score": 24.11
+        },
+        "result": "pass",
+        "fresh_install_approval": true,
+        "driver_correction": "Continued same owned guest via its existing UART byte pipes after correcting old little-endian Inspector expectation to canonical byte order. No guest memory or UI-private calls.",
+        "full_rendered_id_assertions": "All64 hex digits of Source ID/parent, manifest ID/parent and logical Project ID matched actual frame pixels.",
+        "saved_frame_full_id_matches": [
+          {
+            "frame": "creator-inspector",
+            "y": 132,
+            "id": "c5f0244bbe9649aaec21343867cde8f707fe93bdc51f41463ab54575bbe7ab4f"
+          },
+          {
+            "frame": "creator-inspector",
+            "y": 160,
+            "id": "0000000000000000000000000000000000000000000000000000000000000000"
+          },
+          {
+            "frame": "creator-manifest-lineage",
+            "y": 132,
+            "id": "04f243c6e7c946e9a7ef81422967cf1b9ffa56395841d0ee73cf9bd29eaddd82"
+          },
+          {
+            "frame": "creator-manifest-lineage",
+            "y": 160,
+            "id": "6a63eb88b055df772d700631547b88be217b5365a08587fe125805ba291a7c1f"
+          },
+          {
+            "frame": "creator-manifest-lineage",
+            "y": 216,
+            "id": "69d8274c92d5b2c829e55d5e3f5359b7c652b13160d138eec5d7e99623a72f2b"
+          }
+        ],
+        "early_capture_caveat": [],
+        "complete_compiled_frame": "c968e9308c766fefc8a942e438fb9113feabcfbaa3eeba19a11435dddb991c81",
+        "complete_compiled_pixel_assertions": {
+          "input": "cat123",
+          "score": "00000018",
+          "bytes": "00000006"
+        },
+        "capture_note": "Captured final even-sequence device output remaining after orderly guest shutdown. Earlier captures preceded some asynchronous app upload rows; real-time waits verified the later fields before shutdown."
+      },
+      "aarch64": {
+        "image": "8dfec42445edfea2043c0032c477aa4f670d882d40c4c639485da802e5b8351f",
+        "backend": "aarch64",
+        "restored": {
+          "nodes": 27,
+          "bytes": 135295,
+          "roots": [
+            {
+              "cap": 4383173881171542272,
+              "name": "creator",
+              "head": "04f243c6e7c946e9a7ef81422967cf1b9ffa56395841d0ee73cf9bd29eaddd82",
+              "project_id": "69d8274c92d5b2c829e55d5e3f5359b7c652b13160d138eec5d7e99623a72f2b"
+            },
+            {
+              "cap": 4383173881171542273,
+              "name": "notes",
+              "head": "e1d03abf1ccbd513c5d9ee01ce4cccc4ef6afb506f60ea44cdecbac6c3b989e7",
+              "project_id": "e1d03abf1ccbd513c5d9ee01ce4cccc4ef6afb506f60ea44cdecbac6c3b989e7"
+            }
+          ]
+        },
+        "source": "c5f0244bbe9649aaec21343867cde8f707fe93bdc51f41463ab54575bbe7ab4f",
+        "source_parent": "0000000000000000000000000000000000000000000000000000000000000000",
+        "manifest": "04f243c6e7c946e9a7ef81422967cf1b9ffa56395841d0ee73cf9bd29eaddd82",
+        "manifest_parent": "6a63eb88b055df772d700631547b88be217b5365a08587fe125805ba291a7c1f",
+        "logical_project": "69d8274c92d5b2c829e55d5e3f5359b7c652b13160d138eec5d7e99623a72f2b",
+        "compiled_release": "68e45749fe0aa8b0c9b00f0d0a5b0a14a478c7d564f16e606ef50c31b6efb4bc",
+        "compiled_input": "cat123",
+        "compiled_score": "00000018",
+        "frames": {
+          "source_inspector": "3a6ebbdf00b9061d665b628af946f4916109c08d8a92e3bb2d7df5fdad653ab2",
+          "manifest_lineage": "bd9ad79769b12f50a33765601fa3cbf1669db0008ee382673036f648fdf237ef",
+          "notes": "fc8800f0c7eaa432a24fe73fd9abcb740b9d71c28fd24aea4ed6eab9b85e3c5f",
+          "compiled": "dfdd6df7470a6eed265131af46624f3e79b624deedae7091ad762f914adac849"
+        },
+        "phases": {
+          "actual_source_identity_and_parent": 309.76,
+          "actual_manifest_lineage_and_logical_identity": 317.58,
+          "second_named_project_opened": 345.68,
+          "same_compiled_creator_staged": 384.47,
+          "real_compiled_app_input_and_score": 450.53
+        },
+        "result": "pass",
+        "fresh_install_approval": true,
+        "driver_correction": "Continued same owned guest via its existing UART byte pipes after correcting old little-endian Inspector expectation to canonical byte order. No guest memory or UI-private calls.",
+        "saved_frame_full_id_matches": [
+          {
+            "frame": "creator-inspector",
+            "y": 132,
+            "id": "c5f0244bbe9649aaec21343867cde8f707fe93bdc51f41463ab54575bbe7ab4f"
+          },
+          {
+            "frame": "creator-manifest-lineage",
+            "y": 132,
+            "id": "04f243c6e7c946e9a7ef81422967cf1b9ffa56395841d0ee73cf9bd29eaddd82"
+          },
+          {
+            "frame": "creator-manifest-lineage",
+            "y": 216,
+            "id": "69d8274c92d5b2c829e55d5e3f5359b7c652b13160d138eec5d7e99623a72f2b"
+          }
+        ],
+        "early_capture_caveat": [
+          {
+            "frame": "creator-inspector",
+            "y": 160,
+            "observed": "???????? ???              ???? ????? ????? ??????? ????? ??????",
+            "expected": "0000000000000000000000000000000000000000000000000000000000000000"
+          },
+          {
+            "frame": "creator-manifest-lineage",
+            "y": 160,
+            "observed": "0000000000000000000000000000000000000000000000000000000000000000",
+            "expected": "6a63eb88b055df772d700631547b88be217b5365a08587fe125805ba291a7c1f"
+          }
+        ],
+        "complete_compiled_frame": "bf0e0658252883706484f8001b52d0b38b13cea954ec5da8b28f795447738349",
+        "complete_compiled_pixel_assertions": {
+          "input": "cat123",
+          "score": "00000018",
+          "bytes": "00000006"
+        },
+        "capture_note": "Captured final even-sequence device output remaining after orderly guest shutdown. Earlier captures preceded some asynchronous app upload rows; real-time waits verified the later fields before shutdown."
+      }
+    },
+    "original_session_elapsed_seconds": {
+      "x86_64": {
+        "boot": 1.49,
+        "complete_authenticated_graph_restored": 90.24,
+        "editor_staged": 119.71,
+        "fresh_gui_editor_ready": 129.41,
+        "recovered_creator_opened": 135.51
+      },
+      "aarch64": {
+        "boot": 8.46,
+        "complete_authenticated_graph_restored": 509.58,
+        "editor_staged": 702.48,
+        "fresh_gui_editor_ready": 766.37,
+        "recovered_creator_opened": 809.76
+      }
+    },
+    "completed_compiled_application_body_sha256": "07b319de124d26e268136b1a05f81cf446805909f3aabc739bfa980fa43777ba",
+    "pixel_capture_scope": "Native saved Inspector frames matched all32 bytes of Source ID/parent, manifest ID/parent and logical Project ID. ARM saved frames fully matched Source ID, manifest ID and logical Project ID; real-time waits separately verified the later parent fields. Two early ARM captures precede later upload rows and are marked intermediate, not complete snapshots. Completed Creator2 frames show cat123/bytes6/score18 identically on both backends.",
+    "rendering_limit": "Ordinary application uploads may expose intermediate row updates. Trusted compositor approval frames wait for complete upload/presentation. A bounded application frame-commit API is a concrete future consistency improvement."
+  },
+  "final_iterative_graph_b159": {
+    "image_sha256": "b15927561181c31720e8a9cc6385cc2db381b6e3ed25745798d08443deaa9971",
+    "scope": "Objects-only iterative64-entry graph marking replaces stack-recursive marking. No format, ABI, device, kernel, compositor, SDK or app change. Focused positive traversal/publication/native execution; complete encrypted/editor cycles above are reused.",
+    "binary_identities": {
+      "image_sha256": "b15927561181c31720e8a9cc6385cc2db381b6e3ed25745798d08443deaa9971",
+      "kernel": {
+        "bytes": 118288,
+        "sha256": "d3218a922f8b3c97218e3f4421ff0fa4a9a78de631a5314a95690c174295aaa9",
+        "identical_to_8dfe": true
+      },
+      "compositor": {
+        "bytes": 138500,
+        "sha256": "cdac699c319a26ab462ba2e6ac4fe389ab9cbe84bfd81fbbeb0c37f9adc1c05e",
+        "identical_to_8dfe": true
+      },
+      "app_packages": {
+        "editor.ltrel": "35b1bab99a6e1aeafa03a1696c3c8cf1d387ef9f9d824452b8fefbc44e799332",
+        "text-tools.ltrel": "70967cad254d46be3d0d3e95fdbf80fae7cc152a621af098aee81bcb1dbc3fa0",
+        "creator-2.ltrel": "7786a176030ff5fdefbc08775296b9c514ac225be05e22c7aa736a1e80927418"
+      },
+      "app_code": {
+        "editor.ltrel": "6cd69798079a184e583f182d3284d1bf7a4d9dc304a56ad0589324b65cfd328c",
+        "text-tools.ltrel": "bf5ccabe0ea24236eba06db067d54f032d1e97f6392c318112f7aacd7b83b288",
+        "creator-2.ltrel": "d854d32152e760498b04a0a1cfda44e07cbcbf1928a52a12b80402b799ecf048"
+      }
+    },
+    "backends": {
+      "x86_64": {
+        "image": "b15927561181c31720e8a9cc6385cc2db381b6e3ed25745798d08443deaa9971",
+        "backend": "x86_64",
+        "graph": {
+          "head": "a00bc47bc5e763804c55d5ad730b0cef0ae8b43eaa0c7699533cdada07a2db11",
+          "logical_project": "b0edd230b9c03629682a06e00b8fd56c420f2db2b8c81efe28b9e2da4878d0db",
+          "nodes": [
+            "58d6bb129268dda322d676adc236f88ce08dbf8db43dc73f453886b61b63424e",
+            "6bdb4cd68dd63a74972b472d369f7db80c9ec8cc88b9d0b26abc68556c3dd070",
+            "6ed7c53b89330ec15bfa6fa9b544e498f554c3305a5a3a7deae1b0b722c46cbf",
+            "a00bc47bc5e763804c55d5ad730b0cef0ae8b43eaa0c7699533cdada07a2db11",
+            "b0edd230b9c03629682a06e00b8fd56c420f2db2b8c81efe28b9e2da4878d0db"
+          ],
+          "files": {
+            "Main.lean": "def base : UInt64 := 42\n",
+            "Shared.lean": "def base : UInt64 := 41\n",
+            "Util.lean": "def helper : UInt64 := 7\n"
+          },
+          "rooted_deletion_denied": true,
+          "shared_edges_and_parent_checked": true
+        },
+        "release": "68e45749fe0aa8b0c9b00f0d0a5b0a14a478c7d564f16e606ef50c31b6efb4bc",
+        "input": "cat123",
+        "bytes": 6,
+        "score": "00000018",
+        "frame": "bcb846281bc3dda25cf4a01c60baf34aff0093d084c27ada6f7cd6e977fb5f05",
+        "phases": {
+          "boot": 0.99,
+          "iterative_publication_closure_open": 1.89,
+          "same_creator2_staged": 8.37,
+          "actual_input_native_score": 19.37
+        },
+        "result": "pass",
+        "scope": "Affected iterative graph worklist positive publication/closure/open plus unchanged already-signed Creator2 physical approval/native execution; no vault crypto or editor cycle repeated."
+      },
+      "aarch64": {
+        "image": "b15927561181c31720e8a9cc6385cc2db381b6e3ed25745798d08443deaa9971",
+        "backend": "aarch64",
+        "graph": {
+          "head": "a00bc47bc5e763804c55d5ad730b0cef0ae8b43eaa0c7699533cdada07a2db11",
+          "logical_project": "b0edd230b9c03629682a06e00b8fd56c420f2db2b8c81efe28b9e2da4878d0db",
+          "nodes": [
+            "58d6bb129268dda322d676adc236f88ce08dbf8db43dc73f453886b61b63424e",
+            "6bdb4cd68dd63a74972b472d369f7db80c9ec8cc88b9d0b26abc68556c3dd070",
+            "6ed7c53b89330ec15bfa6fa9b544e498f554c3305a5a3a7deae1b0b722c46cbf",
+            "a00bc47bc5e763804c55d5ad730b0cef0ae8b43eaa0c7699533cdada07a2db11",
+            "b0edd230b9c03629682a06e00b8fd56c420f2db2b8c81efe28b9e2da4878d0db"
+          ],
+          "files": {
+            "Main.lean": "def base : UInt64 := 42\n",
+            "Shared.lean": "def base : UInt64 := 41\n",
+            "Util.lean": "def helper : UInt64 := 7\n"
+          },
+          "rooted_deletion_denied": true,
+          "shared_edges_and_parent_checked": true
+        },
+        "release": "68e45749fe0aa8b0c9b00f0d0a5b0a14a478c7d564f16e606ef50c31b6efb4bc",
+        "input": "cat123",
+        "bytes": 6,
+        "score": "00000018",
+        "frame": "ac42c404986304ce6dba16f0530e5bf6e4dac1d087a74ff0b151c899462ef9f4",
+        "phases": {
+          "boot": 7.33,
+          "iterative_publication_closure_open": 13.71,
+          "same_creator2_staged": 53.38,
+          "actual_input_native_score": 104.1
+        },
+        "result": "pass",
+        "scope": "Affected iterative graph worklist positive publication/closure/open plus unchanged already-signed Creator2 physical approval/native execution; no vault crypto or editor cycle repeated."
+      }
+    },
+    "completed_compiled_application_body_sha256": "07b319de124d26e268136b1a05f81cf446805909f3aabc739bfa980fa43777ba",
+    "harness_correction": "First attempt treated Objects.drop as relinquishing an operational handle; rooted nodes correctly reject deletion with status8. The corrected focused test asserts that boundary, then opens current/old manifests and checks the complete five-node shared/parent closure. No package was staged in the first attempt.",
+    "environments": {
+      "x86_64": "Native Linux x86-64 assembly interpreter, headless raw evdev/framebuffer transport",
+      "aarch64": "Independent AArch64 assembly interpreter under qemu-aarch64 on x86-64, headless; not physical ARM64"
+    },
+    "no_repeated_work": [
+      "No host compiler or publisher signing",
+      "No crypto-vector rerun",
+      "No repeated49-node platform-independent negative matrix",
+      "No repeated full encrypted or editor approval cycle solely for pure traversal change"
+    ]
   }
 }
