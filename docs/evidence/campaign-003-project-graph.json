@@ -133,5 +133,24 @@
     "image": "4f4f1ea6be9169a4a9236cd563b3342970838aa584f2e5f9e373ddb9c805db3e",
     "environment": "QEMU11.1.1 RV64 guest, modern virtio MMIO; explicit controlled management/builder fixture over prior native artifact",
     "execution": "tools.build_job_checks.check in a separate recovered QEMU session, using the creator root and build/creator-complete/build-weight7/job.result.json"
+  },
+  "release_present_material_semantic_binding": {
+    "checks": [
+      "existing valid signed Release content is readmitted with exact actual source/evidence material",
+      "fresh valid publisher signature and JSON commitments cannot substitute unrelated source claims for actual typed graph material",
+      "fresh valid publisher signature and JSON commitments cannot substitute unrelated evidence claims for actual typed graph material"
+    ],
+    "source_root": "6a63eb88b055df772d700631547b88be217b5365a08587fe125805ba291a7c1f",
+    "binary_sha256": "d854d32152e760498b04a0a1cfda44e07cbcbf1928a52a12b80402b799ecf048",
+    "existing_release_node": "fbe4c0d109988b73e24994027c5ab602dd0e588f6b5bb91aa42b750ff2ea0ec4",
+    "scope": "present source/evidence semantic consistency only; host builder assertions and source-to-binary correctness remain unverified",
+    "compiler_executions": 0,
+    "new_signed_negative_headers": 2,
+    "guest_verified_negative_signatures": 2,
+    "installed": false,
+    "image": "8dfec42445edfea2043c0032c477aa4f670d882d40c4c639485da802e5b8351f",
+    "environment": "QEMU11.1.1 RV64 guest, modern virtio MMIO",
+    "positive_recovered_nodes": 27,
+    "execution": "tools.release_material_checks.check in an isolated QEMU guest after normal recovery of the previous complete fixture; explicit campaign publisher key supplied"
   }
 }
