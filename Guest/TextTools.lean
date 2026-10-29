@@ -242,7 +242,7 @@ partial def loop (endpoint surface t : UInt64) : UInt64 :=
     let t := Guest.Effects.effectValue t oldRow
     let ev := Guest.Structured.event (packed >>> 48) ((packed >>> 32) &&& 65535) 0 0 0 (packed &&& 0xffffffff)
     let t := match eventCode ev with
-      | .ok code => key code ev.sequence t
+      | .ok code => if ev.kind == 1 then key code ev.sequence t else t
       | .error _ => if ev.kind == 65535 || packed == 0x300000000 then store64 (st+16) 0 (store64 (st+24) 0 t) else t
     let t := if packed >>> 48 == 1 && (packed &&& 0xffffffff) != 0 then
         let last := load64 (st+104) t

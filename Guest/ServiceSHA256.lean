@@ -2,7 +2,7 @@ import Guest.Primitives
 namespace Guest.ServiceHash
 -- SHA-256, FIPS 180-4 algorithm and RFC 6234 section 6.2 constants.
 -- Scratch is caller-selected, private, serialized ephemeral memory (640 bytes).
--- No heap, no secret keys, no signing claim. Inputs are limited to 65536 bytes.
+-- No heap, no secret keys, no signing claim. Inputs are limited to 262144 bytes.
 def work (scratch : UInt64) : UInt64 := scratch
 def hashState (scratch : UInt64) : UInt64 := scratch+512
 def roundState (scratch : UInt64) : UInt64 := scratch+576
@@ -149,10 +149,10 @@ partial def outputBytes (scratch : UInt64) (out i t : UInt64) : UInt64 :=
     let w := load64 ((hashState scratch)+(i/4)*8) t
     let b := (w >>> ((3-i%4)*8)) &&& 255
     outputBytes scratch out (i+1) (store8 (out+i) b t)
-/-- Returns an effect token on success, all ones if len > 65536 (without writing memory).
+/-- Returns an effect token on success, all ones if len > 262144 (without writing memory).
     Callers validate physical input/output extents and serialize access to fixed scratch. -/
 def sha256At (scratch : UInt64) (data len out t : UInt64) : UInt64 :=
-  if len > 65536 then 0xffffffffffffffff else
+  if len > 262144 then 0xffffffffffffffff else
     let n := (len+72)/64
     let t := initialState scratch t
     let t := blocks scratch data len (n*64) 0 n t

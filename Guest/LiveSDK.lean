@@ -9,7 +9,9 @@ def chunk : UInt64 := 0x412000
 def digest : UInt64 := 0x413000
 def error : UInt64 := 0xffffffffffffffff
 partial def copy (src dst n t : UInt64) : UInt64 :=
-  if n == 0 then t else copy (src+1) (dst+1) (n-1) (store8 dst (load8 src t) t)
+  if n == 0 then t else
+  if n >= 8 && src%8 == 0 && dst%8 == 0 then copy (src+8) (dst+8) (n-8) (store64 dst (load64 src t) t)
+  else copy (src+1) (dst+1) (n-1) (store8 dst (load8 src t) t)
 partial def zero (p n t : UInt64) : UInt64 :=
   if n == 0 then t else zero (p+8) (n-1) (store64 p 0 t)
 def header (op h a b c d e t : UInt64) : UInt64 :=

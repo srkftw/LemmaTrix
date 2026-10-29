@@ -91,6 +91,8 @@ def recover(client):
    entries+=struct.pack('<2Q',restored[root['head']],len(name))+bytes.fromhex(root['head'])+name.ljust(80,b'\0')
   fields,data=client.objects(30,a=len(saved['projects']),data=entries)
   caps=struct.unpack('<'+'Q'*fields[1],data)
+  process=client.request(2);shell=struct.unpack_from('<Q',process,4*32)[0]
+  for cap in caps:client.objects(27,cap,shell,127)
   return dict(generation=saved['generation'],bytes=saved['bytes'],nodes=len(restored),roots=[dict(**root,cap=cap) for root,cap in zip(saved['projects'],caps)])
  except BaseException:
   # Until op30 succeeds all imports are private, unrooted stages. Abort/drop them

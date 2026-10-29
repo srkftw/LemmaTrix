@@ -119,6 +119,7 @@ def main():
               '  app --module M --entry E --name N   independent native client build\n'
               '  release keygen/create/inspect      publisher-signed envelopes\n'
               '  vault-init IMAGE [--key-out KEY]   explicit development storage\n'
+              '  project / project-vault / display   graphical creator graph/build/vault tools\n'
               '  rel-live ...             native edit / host build / live reimport loop\n'
               '  check                    live integrated acceptance\n'
               '  fixture-build/run/check  historical finite campaign-001 regression')
@@ -139,9 +140,20 @@ def main():
         live_build.build(clean=a.clean);return
     if len(sys.argv)>1 and sys.argv[1] in ('app','live-app'):
         p=argparse.ArgumentParser(description='Incremental native client build; no machine image rebuild')
-        p.add_argument('--module',required=True);p.add_argument('--entry',required=True);p.add_argument('--name',required=True)
+        p.add_argument('--profile',type=int,choices=(1,2),default=1);p.add_argument('--module',required=True);p.add_argument('--entry',required=True);p.add_argument('--name',required=True)
         a=p.parse_args(sys.argv[2:]);import live_build
-        print(live_build.app(a.module,a.entry,a.name));return
+        print(live_build.app(a.module,a.entry,a.name,a.profile));return
+    if len(sys.argv)>1 and sys.argv[1]=='display':
+        p=argparse.ArgumentParser(description='Thin raw pixel/input adapter for assembly backends')
+        p.add_argument('--graphics',type=Path,required=True);a=p.parse_args(sys.argv[2:])
+        python=os.environ.get('LT_PRESENTER_PYTHON',sys.executable)
+        os.execv(python,[python,str(ROOT/'tools/pixel_presenter.py'),'--frame',str(a.graphics)+'.bgrx','--events',str(a.graphics)+'.evdev'])
+    if len(sys.argv)>1 and sys.argv[1]=='project-vault':
+        import project_vault
+        sys.exit(project_vault.main(sys.argv[2:]))
+    if len(sys.argv)>1 and sys.argv[1]=='project':
+        import projects
+        sys.exit(projects.main(sys.argv[2:]))
     if len(sys.argv)>1 and sys.argv[1]=='rel-live':
         import live_rel
         sys.exit(live_rel.main(sys.argv[2:]))

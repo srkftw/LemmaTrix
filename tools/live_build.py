@@ -4,7 +4,7 @@ from pathlib import Path
 import driver
 ROOT=driver.ROOT
 B=ROOT/'build/live'
-MODULES=['Primitives','Policy','DevicePrimitives','Devices','Effects','LiveMemory','ServiceSHA256','ServiceHash','ServiceSignature','LiveSDK','VaultCrypto','VaultPolicy','Vault','Objects','LiveApps','LiveKernel','Launcher']
+MODULES=['Primitives','Policy','DevicePrimitives','Devices','GraphicsDevice','Effects','Structured','LiveMemory','ServiceSHA256','ServiceHash','ServiceSignature','LiveSDK','VaultCrypto','VaultPolicy','Vault','Objects','LiveApps','LiveKernel','Launcher','Raster','Labels','Compositor','BuildJobs','Desktop','TextTools']
 def content(paths):
  h=hashlib.sha256()
  for p in paths:h.update(str(p.relative_to(ROOT)).encode());h.update(p.read_bytes())
@@ -53,10 +53,10 @@ def compile_module(module_name):
  stamp=B/(module_name+'.module.sha256');key=content([path,*deps,ROOT/'lean-toolchain'])+build_identity()
  if not output.exists() or not stamp.exists() or stamp.read_text()!=key:
   driver.lean(['-o',str(output),str(path)]);stamp.write_text(key)
-def artifact(module_name,entry,prefix,kernel=False):
+def artifact(module_name,entry,prefix,kernel=False,wide=False):
  assembly=B/(prefix+'.S');elf=B/(prefix+'.elf');binary=B/(prefix+'.bin')
- files=[*module_inputs(module_name),ROOT/'Compiler/Main.lean',ROOT/'runtime/primitives.S',ROOT/'runtime/live_boot.S' if kernel else ROOT/'runtime/app.S',ROOT/'runtime/kernel.ld' if kernel else ROOT/'runtime/app.ld']
- key=content(files)+entry+build_identity();stamp=B/(prefix+'.sha256')
+ files=[*module_inputs(module_name),ROOT/'Compiler/Main.lean',ROOT/'runtime/primitives.S',ROOT/'runtime/live_boot.S' if kernel else ROOT/'runtime/app.S',ROOT/'runtime/kernel.ld' if kernel else ROOT/('runtime/app2.ld' if wide else 'runtime/app.ld')]
+ key=content(files)+entry+str(wide)+build_identity();stamp=B/(prefix+'.sha256')
  if binary.exists() and stamp.exists() and stamp.read_text()==key:return binary
  driver.lean(['--run','Compiler/Main.lean',module_name,str(assembly),entry,*(['Guest.Live.trapDispatch'] if kernel else [])])
  startup=ROOT/'runtime/live_boot.S'
@@ -65,7 +65,7 @@ def artifact(module_name,entry,prefix,kernel=False):
  objects=[]
  for i,src in enumerate([assembly,startup,ROOT/'runtime/primitives.S']):
   out=B/f'{prefix}.{i}.o';driver.asm(src,out);objects.append(out)
- driver.run([driver.tool('ld.lld'),'-m','elf64lriscv','--no-relax','-T',ROOT/('runtime/kernel.ld' if kernel else 'runtime/app.ld'),*objects,'-o',elf])
+ driver.run([driver.tool('ld.lld'),'-m','elf64lriscv','--no-relax','-T',ROOT/('runtime/kernel.ld' if kernel else ('runtime/app2.ld' if wide else 'runtime/app.ld')),*objects,'-o',elf])
  undefined=driver.run([driver.tool('llvm-nm'),'-u',elf],capture_output=True,text=True).stdout
  if undefined.strip():raise RuntimeError('unresolved live guest symbols:'+undefined)
  driver.run([driver.tool('llvm-objcopy'),'-O','binary',elf,binary]);stamp.write_text(key);return binary
@@ -77,24 +77,30 @@ def build(clean=False):
   for path in (ROOT/'Guest').glob('*.olean'):path.unlink()
  for name in MODULES:compile_module('Guest.'+name)
  kernel=artifact('Guest.LiveKernel','Guest.Live.kernelMain','kernel',True)
- services=[artifact('Guest.Launcher','Guest.Launcher.main','launcher'),artifact('Guest.Objects','Guest.Objects.main','objects'),artifact('Guest.Vault','Guest.Vault.appMain','vault')]
+ services=[artifact('Guest.Launcher','Guest.Launcher.main','launcher',wide=True),artifact('Guest.Objects','Guest.Objects.main','objects',wide=True),artifact('Guest.Vault','Guest.Vault.appMain','vault',wide=True),artifact('Guest.Compositor','Guest.Compositor.main','compositor',wide=True),artifact('Guest.BuildJobs','Guest.BuildJobs.main','build-jobs',wide=True)]
  for name in ['workbench','inspector','worker']:artifact('Guest.LiveApps','Guest.LiveApps.'+name+'Main',name)
  data=bytearray(0x600000)
  part=kernel.read_bytes();data[:len(part)]=part
  import struct
  for pid,path in enumerate(services,1):
   part=path.read_bytes()
-  if len(part)>65536:raise RuntimeError(f'{path.name} exceeds64KiB code')
-  offset=0x300000+(pid-1)*65536;data[offset:offset+len(part)]=part
-  rights={1:0x1000000ff,2:0,3:1}[pid]
+  if len(part)>262144:raise RuntimeError(f'{path.name} exceeds256KiB code')
+  offset=0x300000+(pid-1)*262144;data[offset:offset+len(part)]=part
+  rights={1:0x1000000ff,2:0,3:1,4:127,5:127}[pid]
   struct.pack_into('<QQ',data,0x200000+pid*32,len(part),rights)
+ try:
+  import build_jobs
+  compiler_id=bytes.fromhex(build_jobs.compiler_identity())
+ except (OSError,RuntimeError):compiler_id=bytes(32)
+ data[0x200400:0x200420]=compiler_id
+ (B/'compiler.sha256').write_text(compiler_id.hex()+'\n')
  image=B/'guest.bin';image.write_bytes(data);identity=hashlib.sha256(data).hexdigest()
  (B/'image.sha256').write_text(identity+'  guest.bin\n');print('LIVE IMAGE',identity,flush=True)
  return image
 
-def app(module_name,entry,name):
+def app(module_name,entry,name,profile=1):
  B.mkdir(parents=True,exist_ok=True);driver.validate_toolchain()
  if not re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*',module_name) or not re.fullmatch(r'[a-zA-Z0-9_-]+',name):raise ValueError('invalid module/output name')
  compile_module(module_name)
  (B/'apps').mkdir(parents=True,exist_ok=True)
- return artifact(module_name,entry,'apps/'+name)
+ return artifact(module_name,entry,'apps/'+name,wide=profile==2)

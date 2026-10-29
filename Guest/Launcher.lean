@@ -11,37 +11,6 @@ def project (i : UInt64) : UInt64 := 0x660000+i*128
 def trust (i : UInt64) : UInt64 := 0x620000+i*384
 def hash (src len out t : UInt64) : UInt64 := Guest.ServiceHash.sha256At 0x600200 src len out t
 
-def readByte (t : UInt64) : UInt64 :=
-  let index := Guest.load64 (control+520) t
-  let count := Guest.load64 (control+512) t
-  if index < count && count <= 256 then
-    let t := Guest.store64 (control+520) (index+1) t
-    let value := Guest.load8 (0x414000+index) t
-    keep value (Guest.store8 (0x414000+index) 0 t)
-  else
-    let n := Guest.syscall 40 0 0x414000 256 0 t
-    if n == 0 || n > 256 then
-      let t := Guest.store64 (control+512) 0 n
-      keep err (Guest.store64 (control+520) 0 t)
-    else
-      let t := Guest.store64 (control+512) n n
-      let t := Guest.store64 (control+520) 1 t
-      let value := Guest.load8 0x414000 t
-      keep value (Guest.store8 0x414000 0 t)
-partial def readBytes (dst n i t : UInt64) : UInt64 :=
-  if i == n then t else
-    let c := readByte t
-    if c == err then err else
-      let t := Guest.store8 (dst+i) c t
-      let t := Guest.store64 (control+544) (i+1) t
-      readBytes dst n (i+1) t
-partial def findMagic (matched t : UInt64) : UInt64 :=
-  let c := readByte t
-  if matched == 0 && c == 76 then findMagic 1 t
-  else if matched == 1 && c == 84 then findMagic 2 t
-  else if matched == 2 && c == 50 then findMagic 3 t
-  else if matched == 3 && c == 0 then t
-  else findMagic (if c == 76 then 1 else 0) t
 
 def respond (rid status src len t : UInt64) : UInt64 :=
   let out := 0x416000
@@ -80,11 +49,11 @@ def validate (t : UInt64) : Bool :=
   let size := Guest.load64 (stage+24) t
   let n := Guest.load64 (stage+424) t
   if Guest.load64 stage t != 0x3253454c544c || Guest.load64 (stage+8) t != 2 || Guest.load64 (stage+16) t != 512 ||
-     size == 0 || size > 65536 || size%4 != 0 || Guest.load64 (control+256) t != size+768 ||
-     Guest.load64 (stage+32) t != 0x400000 || Guest.load64 (stage+40) t != 2 || Guest.load64 (stage+48) t != 2 || Guest.load64 (stage+56) t != 2 ||
-     Guest.load64 (stage+64) t > 255 || Guest.load64 (stage+72) t > 0xffffffff || Guest.load64 (stage+80) t > 0xffffffff || Guest.load64 (stage+88) t > 0xffffffff ||
-     Guest.load64 (stage+384) t != 0 || Guest.load64 (stage+392) t != 0 || Guest.load64 (stage+400) t != 1 ||
-     Guest.load64 (stage+408) t != 65536 || Guest.load64 (stage+416) t != 16384 || n == 0 || n > 48 || !nameValid 0 n t ||
+     size == 0 || size > (if Guest.load64 (stage+400) t == 2 then 262144 else 65536) || size%4 != 0 || Guest.load64 (control+256) t != size+768 ||
+     Guest.load64 (stage+32) t != (if Guest.load64 (stage+400) t == 2 then 0x200000 else 0x400000) || Guest.load64 (stage+40) t != 2 || Guest.load64 (stage+48) t != 2 || Guest.load64 (stage+56) t != 2 ||
+     Guest.load64 (stage+64) t > 1023 || Guest.load64 (stage+72) t > 0xffffffff || Guest.load64 (stage+80) t > 0xffffffff || Guest.load64 (stage+88) t > 0xffffffff ||
+     Guest.load64 (stage+384) t != 0 || Guest.load64 (stage+392) t != 0 || (Guest.load64 (stage+400) t != 1 && Guest.load64 (stage+400) t != 2) ||
+     Guest.load64 (stage+408) t != 65536+(if Guest.load64 (stage+400) t == 2 then 2097152 else 0) || Guest.load64 (stage+416) t != 16384 || n == 0 || n > 48 || !nameValid 0 n t ||
      !paddingZero (stage+432+n) (48-n) t || Guest.load64 (stage+480) t != 65537 || !paddingZero (stage+488) 24 t then false else
     let key := findTrust (stage+128) (stage+96) 0 t
     if key == 0 then false else
@@ -140,7 +109,8 @@ def install (t : UInt64) : UInt64 :=
         let t := zero buf 8 t
         let t := Guest.store64 buf size t
         let t := Guest.store64 (buf+8) (Guest.load64 (stage+64) t) t
-        let t := Guest.store64 (buf+16) 0x400000 t
+        let t := Guest.store64 (buf+16) (Guest.load64 (stage+32) t) t
+        let t := Guest.store64 (buf+24) (Guest.load64 (stage+400) t) t
         let status := Guest.syscall 52 slot buf 64 0 t
         if status == err then err else
           let status := uploadCode slot size 0 status
@@ -261,6 +231,25 @@ def recover (t : UInt64) : UInt64 :=
     let got := forward 2 96 t
     if got != 64 || Guest.load64 buf got != 0 then err else restoreChunks (Guest.load64 (buf+8) got) len 0 got
 
+def candidateMaterial (h t : UInt64) : UInt64 :=
+  if Guest.load64 (control+272) t != 1 then err else
+    let t := zero buf 8 t
+    let t := Guest.store64 buf 21 t
+    let t := Guest.store64 (buf+8) h t
+    let t := Guest.store64 (buf+56) 1 t
+    let got := forward 2 64 t
+    if got != 128 || Guest.load64 buf got != 0 || Guest.load64 (buf+32) got != 13 then err else
+      let t := copy (buf+64) (control+336) 32 got
+      let t := zero buf 8 t
+      let t := Guest.store64 buf 4 t
+      let t := Guest.store64 (buf+8) h t
+      let t := Guest.store64 (buf+16) 608 t
+      let t := Guest.store64 (buf+24) 512 t
+      let t := Guest.store64 (buf+56) 1 t
+      let got := forward 2 64 t
+      if got != 576 || Guest.load64 buf got != 0 || !equal (buf+64) stage 512 got then err else
+        result 1 (Guest.store64 (control+304) 1 got)
+
 @[noinline] def commandControl (op len t : UInt64) : UInt64 :=
   if op == 1 then result 2 t
   else if op == 2 then Guest.syscall 42 0 buf 384 0 t
@@ -281,11 +270,31 @@ def recover (t : UInt64) : UInt64 :=
         let t := copy (control+64) buf 32 t
         keep 32 t
   else if op == 11 then if len == 32 then revokeKey buf 0 0 t else err
+  else if op == 12 then
+    if Guest.load64 (control+272) t == 1 then keep 512 (copy stage buf 512 t) else err
+  else if op == 13 then
+    if len != 8 || Guest.load64 buf t >= 16 then err else
+      let r := catalog (Guest.load64 buf t)
+      if Guest.load64 (r+768) t == 1 then keep 512 (copy r buf 512 t) else err
+  else if op == 15 then if len == 8 then candidateMaterial (Guest.load64 buf t) t else err
+  else if op == 16 then result (Guest.load64 (control+304) t) t
+  else if op == 14 then
+    if len != 32 then err else
+      let known := findProject buf 0 t
+      if known == 0 then err else
+        let p := project (known-1)
+        let active := Guest.load64 (p+72) t
+        let previous := Guest.load64 (p+80) t
+        let t := zero buf 16 t
+        let t := Guest.store64 (buf+8) previous t
+        let t := if active > 0 then copy (catalog (active-1)+160) (buf+64) 32 t else t
+        let t := if previous > 0 then copy (catalog (previous-1)+160) (buf+96) 32 t else t
+        keep 128 t
   else err
 
 @[noinline] def commandStage (op len t : UInt64) : UInt64 :=
   if op == 20 then
-    if len != 8 || Guest.load64 buf t < 772 || Guest.load64 buf t > 66304 then err else
+    if len != 8 || Guest.load64 buf t < 772 || Guest.load64 buf t > 262912 then err else
       let size := Guest.load64 buf t
       let t := zero (control+256) 8 t
       let t := Guest.store64 (control+256) size t
@@ -363,9 +372,106 @@ def recover (t : UInt64) : UInt64 :=
       if changed == err then err else result changed changed
   else err
 
+-- Project retention uses an immutable temporary root. A gesture authorizes the
+-- exact stable head displayed by trusted chrome, never whatever is current later.
+def projectTxn : UInt64 := 0x636000
+def projectReply : UInt64 := 0x637000
+
+def projectHeader (op h a b t : UInt64) : UInt64 :=
+  let t := zero buf 8 t
+  let t := Guest.store64 buf op t
+  let t := Guest.store64 (buf+8) h t
+  let t := Guest.store64 (buf+16) a t
+  let t := Guest.store64 (buf+24) b t
+  Guest.store64 (buf+56) 1 t
+
+partial def projectClosureCount (root cursor count bytes t : UInt64) : UInt64 :=
+  if cursor > 64 || count > 64 || bytes > 4194304 then err else
+    let got := forward 2 64 (projectHeader 26 root cursor 0 t)
+    if got < 64 || Guest.load64 buf got != 0 then err else
+      if Guest.load64 (buf+8) got == 0 then
+        let t := Guest.store64 (projectTxn+40) count got
+        Guest.store64 (projectTxn+48) bytes t
+      else
+        let next := Guest.load64 (buf+24) got
+        if got != 128 || next <= cursor || next > 64 then err else
+          projectClosureCount root next (count+1) (bytes+Guest.load64 (buf+16) got) got
+
+def releaseFrozenProject (length t : UInt64) : UInt64 :=
+  if length > 1024 then err else
+    let t := copy buf projectReply length t
+    let root := Guest.load64 (projectTxn+160) t
+    let got := forward 2 64 (projectHeader 28 root 0 0 t)
+    let t := Guest.store64 (projectTxn+160) 0 got
+    if got != 64 || Guest.load64 buf t != 0 then err else
+      keep length (copy projectReply buf length t)
+
+def prepareProject (root exact t : UInt64) : UInt64 :=
+  let t := Guest.store64 (projectTxn+160) 0 t
+  let t := Guest.store64 projectTxn root t
+  let got := forward 2 64 (projectHeader 29 root 0 0 t)
+  if got != 160 || Guest.load64 buf got != 0 then err else
+  if exact == 1 && !equal (buf+64) (projectTxn+8) 32 got then err else
+    let t := copy (buf+64) (projectTxn+8) 32 got
+    let t := Guest.store64 (projectTxn+56) (Guest.load64 (buf+16) t) t
+    let t := Guest.store64 (projectTxn+176) (Guest.load64 (buf+32) t) t
+    let t := copy (buf+96) (projectTxn+64) 64 t
+    let t := projectHeader 32 root 0 0 t
+    let t := copy (projectTxn+8) (buf+64) 32 t
+    let got := forward 2 96 t
+    if got != 160 || Guest.load64 buf got != 0 then err else
+      let frozen := Guest.load64 (buf+8) got
+      let t := Guest.store64 (projectTxn+160) frozen got
+      let counted := projectClosureCount frozen 0 0 0 t
+      if counted == err then
+        keep err (releaseFrozenProject 0 counted)
+      else counted
+
+def describeProjectRetention (root t : UInt64) : UInt64 :=
+  let prepared := prepareProject root 0 t
+  if prepared == err then err else
+    let t := zero buf 20 prepared
+    let t := Guest.store64 (buf+8) root t
+    let t := Guest.store64 (buf+16) (Guest.load64 (projectTxn+40) t) t
+    let t := Guest.store64 (buf+24) (Guest.load64 (projectTxn+48) t) t
+    let t := Guest.store64 (buf+32) (Guest.load64 (projectTxn+56) t) t
+    let t := Guest.store64 (buf+40) (Guest.load64 (projectTxn+176) t) t
+    let t := Guest.store64 (buf+48) 2 t
+    let t := copy (projectTxn+8) (buf+64) 32 t
+    let t := copy (projectTxn+64) (buf+96) 64 t
+    releaseFrozenProject 160 t
+
+def retainProject (root t : UInt64) : UInt64 :=
+  let prepared := prepareProject root 1 t
+  if prepared == err then err else
+    let count := Guest.syscall 42 0 0x418000 384 0 prepared
+    if count != 384 then
+      keep err (releaseFrozenProject 0 count)
+    else
+      let vault := Guest.load64 (0x418000+96) count
+      let frozen := Guest.load64 (projectTxn+160) count
+      let got := forward 2 64 (projectHeader 27 frozen vault 1 count)
+      if got != 160 || Guest.load64 buf got != 0 then
+        keep err (releaseFrozenProject 0 got)
+      else
+        let delegated := Guest.load64 (buf+8) got
+        let t := Guest.store64 (projectTxn+168) delegated got
+        let t := projectHeader 210 0 3 1 t
+        let t := Guest.store64 (buf+64) delegated t
+        let received := forward 3 72 t
+        if received < 64 || received > 1024 then
+          keep err (releaseFrozenProject 0 received)
+        else
+          let t := copy buf projectReply received received
+          let t := projectHeader 31 frozen delegated 0 t
+          let revoked := forward 2 64 t
+          let t := copy projectReply buf received revoked
+          releaseFrozenProject received t
+
 @[noinline] def commandIO (op len t : UInt64) : UInt64 :=
   if op == 70 then Guest.syscall 70 0 0 0 0 t
   else if op == 100 then if len >= 64 && len <= 1024 then forward 2 len t else err
+  else if op == 160 then if len >= 64 && len <= 1024 then forward 5 len t else err
   else if op == 150 then
     if len < 72 || len > 1032 then err else
       let target := Guest.load64 buf t
@@ -373,7 +479,13 @@ def recover (t : UInt64) : UInt64 :=
       forward target (len-8) t
   else if op == 203 then if len == 8 then retain (Guest.load64 buf t) t else err
   else if op == 207 then recover t
-  else if op >= 200 && op <= 206 then
+  else if op == 221 then if len == 8 then describeProjectRetention (Guest.load64 buf t) t else err
+  else if op == 220 then
+    if len != 40 then err else
+      let root := Guest.load64 buf t
+      let t := copy (buf+8) (projectTxn+8) 32 t
+      retainProject root t
+  else if (op >= 200 && op <= 206) || (op >= 210 && op <= 216) then
     if len < 64 || len > 1024 || Guest.load64 buf t != op then err else
       let received := forward 3 len t
       if op == 200 then keep received (zero (buf+64) 4 received) else received
@@ -385,7 +497,73 @@ def command (op len t : UInt64) : UInt64 :=
   else if op < 34 then commandProcess op len t
   else commandIO op len t
 
+def pollGUI (t : UInt64) : UInt64 :=
+  let n := Guest.syscall 36 1 0x410800 1056 0 t
+  if n < 40 || n > 1056 || (Guest.load64 0x410800 n &&& 255) != 4 then n else
+    let token := Guest.load64 0x410808 n
+    let op := Guest.load64 0x410820 n
+    let length := n-40
+    let t := copy 0x410828 buf length n
+    let allowed := op == 2 || op == 3 || op == 12 || op == 13 || op == 24 || op == 25 || op == 26 || op == 27 || op == 28 || op == 29 || op == 14 || op == 16 || op == 202 || op == 212 || op == 221
+    let response := if (op == 23 || op == 220) && length == 48 then
+        let gesture := Guest.load64 (buf+40) t
+        let checked := Guest.syscall 98 gesture 0 0 0 t
+        if checked == err then err else command op 40 checked
+      else if op == 25 && length == 40 then
+        let slot := Guest.load64 buf t
+        if slot == 0 || slot > 16 || !equal (buf+8) (catalog (slot-1)+160) 32 t then err else command op 8 t
+      else if op == 27 && length == 48 then
+        let slot := Guest.load64 (buf+8) t
+        if slot == 0 || slot > 16 || !equal (buf+16) (catalog (slot-1)+160) 32 t then err else command op 16 t
+      else if op == 28 && length == 96 then
+        let known := findProject buf 0 t
+        if known == 0 then err else
+          let p := project (known-1)
+          let active := Guest.load64 (p+72) t
+          let previous := Guest.load64 (p+80) t
+          if active == 0 || previous == 0 || !equal (buf+32) (catalog (active-1)+160) 32 t || !equal (buf+64) (catalog (previous-1)+160) 32 t then err
+          else command op 32 t
+      else if allowed && op != 25 && op != 27 && op != 28 then command op length t else err
+    let t := if response == err || response > 1024 then zero buf 8 response else response
+    let size := if response == err || response > 1024 then 8 else response
+    let t := if size == 8 then Guest.store64 buf err t else t
+    Guest.syscall 32 token buf size 0 t
+
+def readByte (t : UInt64) : UInt64 :=
+  let index := Guest.load64 (control+520) t
+  let count := Guest.load64 (control+512) t
+  if index < count && count <= 256 then
+    let t := Guest.store64 (control+520) (index+1) t
+    let value := Guest.load8 (0x414000+index) t
+    keep value (Guest.store8 (0x414000+index) 0 t)
+  else
+    let n := Guest.syscall 40 0 0x414000 256 0 t
+    if n == 0 || n > 256 then
+      let t := pollGUI n
+      let t := Guest.store64 (control+512) 0 t
+      keep err (Guest.store64 (control+520) 0 t)
+    else
+      let t := Guest.store64 (control+512) n n
+      let t := Guest.store64 (control+520) 1 t
+      let value := Guest.load8 0x414000 t
+      keep value (Guest.store8 0x414000 0 t)
+partial def readBytes (dst n i t : UInt64) : UInt64 :=
+  if i == n then t else
+    let c := readByte t
+    if c == err then err else
+      let t := Guest.store8 (dst+i) c t
+      let t := Guest.store64 (control+544) (i+1) t
+      readBytes dst n (i+1) t
+partial def findMagic (matched t : UInt64) : UInt64 :=
+  let c := readByte t
+  if matched == 0 && c == 76 then findMagic 1 t
+  else if matched == 1 && c == 84 then findMagic 2 t
+  else if matched == 2 && c == 50 then findMagic 3 t
+  else if matched == 3 && c == 0 then t
+  else findMagic (if c == 76 then 1 else 0) t
+
 partial def loop (t : UInt64) : UInt64 :=
+  let t := pollGUI t
   let t := findMagic 0 t
   let t := zero 0x413000 4 t
   let t := Guest.store64 0x413000 0x0032544c t

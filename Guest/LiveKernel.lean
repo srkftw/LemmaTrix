@@ -1,5 +1,6 @@
 import Guest.LiveMemory
 import Guest.Devices
+import Guest.GraphicsDevice
 namespace Guest.Live
 open Guest.LiveMemory
 @[never_extract, extern "lt_idle_pc"] opaque idlePC : UInt64 → UInt64
@@ -8,9 +9,13 @@ def proc (p : UInt64) : UInt64 := state+4096+p*512
 def frame (p : UInt64) : UInt64 := state+65536+p*512
 def queue (p : UInt64) : UInt64 := 0x80c00000+p*16384
 def rx : UInt64 := 0x80d00000
-def code (p : UInt64) : UInt64 := 0x81000000+p*262144
-def physical (p v : UInt64) : UInt64 := code p+65536+v-0x410000
+def code (p : UInt64) : UInt64 := 0x81000000+p*524288
+def arena (p : UInt64) : UInt64 := 0x81800000+p*0x200000
+def physical (p v : UInt64) : UInt64 :=
+  if v >= 0x600000 then arena p+v-0x600000 else code p+262144+v-0x410000
 def valid (ptr len bound : UInt64) : Bool := ptr >= 0x410000 && ptr <= 0x420000 && len <= bound && len <= 0x420000-ptr
+def validFor (p ptr len bound t : UInt64) : Bool :=
+  valid ptr len bound || (Guest.load64 (proc p+96) t == 2 && ptr >= 0x600000 && ptr <= 0x800000 && len <= bound && len <= 0x800000-ptr)
 def identity (p t : UInt64) : UInt64 := Guest.load64 (proc p+8) t*256+p
 def ready (p t : UInt64) : Bool := Guest.load64 (proc p) t == 1
 def emit (c t : UInt64) : UInt64 := Guest.store8 0x10000000 c t
@@ -41,13 +46,17 @@ def tables (p t : UInt64) : UInt64 :=
   let t := Guest.store64 mid (pte 0 207) t
   let t := Guest.store64 (mid+1024) (pte 0x10000000 207) t
   let t := Guest.store64 (mid+16) (pte leaf 1) t
-  let t := pages leaf (code p) 16 219 t
-  let t := pages (leaf+128) (code p+65536) 16 215 t
-  let t := pages (leaf+256) (code p+131072) 4 215 t
+  let wide := p > 0 && Guest.load64 (proc p+80) t < 0x400000
+  let wideLeaf := 0x80130000+p*4096
+  let t := zero wideLeaf 512 t
+  let t := Guest.store64 (mid+8) (pte wideLeaf 1) t
+  let t := if wide then pages wideLeaf (code p) 64 219 t else pages leaf (code p) 16 219 t
+  let t := pages (leaf+128) (code p+262144) 16 215 t
+  let t := pages (leaf+384) (code p+327680) 4 215 t
   if p == 1 then privatePages (mid+24) 0x83000000 2 t
   else if p == 2 then privatePages (mid+24) 0x84000000 4 t
   else if p == 3 then privatePages (mid+24) 0x85000000 2 t
-  else if p == 4 && Guest.load64 (proc p+24) t == 4 then privatePages (mid+24) 0x86000000 8 t
+  else if p >= 4 && Guest.load64 (proc p+96) t == 2 then privatePages (mid+24) (arena p) 1 t
   else t
 
 partial def cancelWaiters (target p t : UInt64) : UInt64 :=
@@ -62,24 +71,27 @@ def clearPrivate (p t : UInt64) : UInt64 :=
   if p == 1 then zero 0x83000000 524288 t
   else if p == 2 then zero 0x84000000 1048576 t
   else if p == 3 then zero 0x85000000 524288 t
+  else if p >= 4 && Guest.load64 (proc p+96) t == 2 then zero (arena p) 262144 t
   else t
 
 def teardown (p why t : UInt64) : UInt64 :=
   let old := identity p t
+  let t := if Guest.load64 (state+128) t == old then Guest.store64 (state+128) 0 t else t
   let t := Guest.store64 (proc p) 5 t
   let t := Guest.store64 (proc p+72) why t
   let t := cancelWaiters old 1 t
   let t := zero (queue p) 2048 t
   let t := clearPrivate p t
-  let t := zero (code p+65536) 18432 t
+  let t := if p >= 6 then zero (0x87200000+(p-5)*0x100000) 112640 t else t
+  let t := zero (code p+262144) 18432 t
   zero (frame p) 34 t
 
 def start (p source len rights entry service t : UInt64) : UInt64 :=
   let generation := Guest.load64 (proc p+8) t
-  if generation >= 0x00ffffffffffffff || (generation &&& 0xffffff) == 0xffffff || len == 0 || len > 65536 || entry < 0x400000 || entry >= 0x400000+len then err else
+  if generation >= 0x00ffffffffffffff || (generation &&& 0xffffff) == 0xffffff || len == 0 || len > 262144 || (entry != 0x200000 && entry != 0x400000) || (entry == 0x400000 && len > 65536) then err else
     let t := zero (proc p) 64 t
     let t := zero (queue p) 2048 t
-    let t := zero (code p) 32768 t
+    let t := zero (code p) 65536 t
     let t := copy source (code p) len t
     let t := zero (frame p) 34 t
     let t := Guest.store64 (proc p+8) (generation+1) t
@@ -87,7 +99,8 @@ def start (p source len rights entry service t : UInt64) : UInt64 :=
     let t := Guest.store64 (proc p+24) service t
     let t := Guest.store64 (proc p+80) entry t
     let t := Guest.store64 (proc p+88) len t
-    let t := Guest.store64 (frame p+16) 0x424000 t
+    let t := Guest.store64 (proc p+96) (if service >= 4 then 2 else 1) t
+    let t := Guest.store64 (frame p+16) 0x434000 t
     let t := Guest.store64 (frame p+256) entry t
     let t := Guest.store64 (frame p+264) 0x20 t
     let t := tables p t
@@ -141,21 +154,29 @@ def wakeSerial (initial : UInt64) : UInt64 :=
 def allowedEndpoint (caller target h t : UInt64) : Bool :=
   if target == 2 then (h == 2 || h == identity target t) && (Guest.load64 (proc caller+16) t &&& 127) != 0
   else if target == 3 then caller == 1 && (h == 3 || h == identity target t)
-  else if target == 1 then false
-  else caller == 1 && h == identity target t
+  else if target == 1 then caller == 4 && (h == 1 || h == identity target t)
+  else if target == 5 then (h == 5 || h == identity target t) && (caller == 1 || (Guest.load64 (proc caller+16) t &&& 256) != 0)
+  else if target == 4 then (h == 4 || h == identity target t) && (Guest.load64 (proc caller+16) t &&& 256) != 0
+  else (caller == 1 || caller == 4) && h == identity target t
+
+def callerRights (caller t : UInt64) : UInt64 :=
+  Guest.load64 (proc caller+16) t ||| (if Guest.load64 (proc caller+24) t == 5 then 0x200000000 else 0)
 
 def deliver (caller target token src len dst t : UInt64) : UInt64 :=
   let out := physical target dst
   let t := Guest.store64 out (identity caller t) t
   let t := Guest.store64 (out+8) token t
-  let t := Guest.store64 (out+16) (Guest.load64 (proc caller+16) t) t
+  let t := Guest.store64 (out+16) (callerRights caller t) t
   let t := Guest.store64 (out+24) 2 t
   copy src (out+32) len t
 
 def call (p endpoint ptr len capacity t : UInt64) : UInt64 :=
   let target := endpoint &&& 255
-  if target == 0 || target >= 12 || target == p || !valid ptr len 1024 || capacity > 1024 || !valid ptr capacity 1024 then err else
+  if target == 0 || target >= 12 || target == p || !validFor p ptr len 1024 t || capacity > 1024 || !validFor p ptr capacity 1024 t then err else
     if !live (identity target t) t || !allowedEndpoint p target endpoint t then err else
+      let t := if target == 1 && Guest.load64 (proc 1) t == 4 then
+        let t := Guest.store64 (frame 1+80) err t
+        Guest.store64 (proc 1) 1 t else t
       let q := queue target
       let count := Guest.load64 (q+16) t
       if count >= 8 || Guest.load64 (state+8) t == err then err else
@@ -182,7 +203,7 @@ def call (p endpoint ptr len capacity t : UInt64) : UInt64 :=
           let slot := q+64+(tail%8)*1088
           let t := Guest.store64 slot (identity p t) t
           let t := Guest.store64 (slot+8) serial t
-          let t := Guest.store64 (slot+16) (Guest.load64 (proc p+16) t) t
+          let t := Guest.store64 (slot+16) (callerRights p t) t
           let t := Guest.store64 (slot+24) len t
           let t := copy (physical p ptr) (slot+32) len t
           let t := Guest.store64 (q+8) (tail+1) t
@@ -227,7 +248,7 @@ partial def reply (sender token ptr len p t : UInt64) : UInt64 :=
     else reply sender token ptr len (p+1) t
 
 def release (index : UInt64) : UInt64 := 0x80b10000+index*256
-def releaseCode (index : UInt64) : UInt64 := 0x87000000+index*65536
+def releaseCode (index : UInt64) : UInt64 := 0x86400000+index*262144
 partial def usedRelease (index p t : UInt64) : Bool :=
   if p == 12 then false else
     (Guest.load64 (proc p) t > 0 && Guest.load64 (proc p) t < 5 && Guest.load64 (proc p+112) t == index+1) || usedRelease index (p+1) t
@@ -258,11 +279,13 @@ def dispatch (p op h ptr n v t : UInt64) : UInt64 :=
   else if op == 9 then t
   else if op == 10 then teardown p h t
   else if op == 30 then call p h ptr n v t
+  else if op == 36 then
+    if (h == p || h == identity p t) && Guest.load64 (queue p+16) t > 0 then receive p ptr n 8 t else 0
   else if op == 31 then
     if h == p || h == identity p t then receive p ptr n 8 t else err
   else if op == 32 then reply p h ptr n 1 t
   else if op == 34 then
-    if p <= 3 && live h t then Guest.load64 (proc (h &&& 255)+16) t else err
+    if p <= 5 && live h t then Guest.load64 (proc (h &&& 255)+16) t else err
   else if op == 35 then identity p t
   else if op == 40 then
     if p != 1 || !valid ptr n 256 || n == 0 then err else
@@ -279,12 +302,15 @@ def dispatch (p op h ptr n v t : UInt64) : UInt64 :=
     if p == 1 && valid ptr 384 384 then 384+inspectProcesses 0 (physical p ptr) t else err
   else if op == 50 then
     if p != 1 || h >= 16 || Guest.load64 (release h) t != 1 then err else
-      let slot := if ptr == 0 then freeSlot 4 t else ptr &&& 255
-      if slot < 4 || slot >= 12 || (ptr != 0 && ptr != identity slot t) || (Guest.load64 (proc slot) t > 0 && Guest.load64 (proc slot) t < 5) then err else
+      let slot := if ptr == 0 then freeSlot 6 t else ptr &&& 255
+      if slot < 6 || slot >= 12 || (ptr != 0 && ptr != identity slot t) || (Guest.load64 (proc slot) t > 0 && Guest.load64 (proc slot) t < 5) then err else
         let r := release h
         let result := start slot (releaseCode h) (Guest.load64 (r+8) t) (Guest.load64 (r+16) t) (Guest.load64 (r+24) t) 0 t
         if result == err then err else
-          let t := Guest.store64 (proc slot+112) (h+1) result
+          let t := Guest.store64 (proc slot+96) (Guest.load64 (release h+40) result) result
+          let t := if Guest.load64 (proc slot+96) t == 2 then zero (arena slot) 262144 t else t
+          let t := tables slot t
+          let t := Guest.store64 (proc slot+112) (h+1) t
           identity slot t
   else if op == 51 then
     if p == 1 && live h t && (h &&& 255) >= 4 then teardown (h &&& 255) 0 t else err
@@ -294,12 +320,14 @@ def dispatch (p op h ptr n v t : UInt64) : UInt64 :=
       let size := Guest.load64 src t
       let rights := Guest.load64 (src+8) t
       let entry := Guest.load64 (src+16) t
-      if size == 0 || size > 65536 || (size &&& 3) != 0 || rights > 255 || entry < 0x400000 || entry >= 0x400000+size then err else
+      if size == 0 || size > 262144 || (size &&& 3) != 0 || rights > 1023 || (entry != 0x200000 && entry != 0x400000) || (entry == 0x400000 && size > 65536) then err else
         let t := zero (release h) 32 t
         let t := Guest.store64 (release h+8) size t
         let t := Guest.store64 (release h+16) rights t
         let t := Guest.store64 (release h+24) entry t
-        zero (releaseCode h) 8192 t
+        let profile := Guest.load64 (src+24) t
+        let t := Guest.store64 (release h+40) (if profile == 2 then 2 else 1) t
+        zero (releaseCode h) 32768 t
   else if op == 53 then
     if p != 1 || h >= 16 || Guest.load64 (release h) t != 0 || !valid ptr n 1024 then err else
       let done := Guest.load64 (release h+32) t
@@ -311,7 +339,7 @@ def dispatch (p op h ptr n v t : UInt64) : UInt64 :=
     if p == 1 && h < 16 && Guest.load64 (release h+8) t > 0 && Guest.load64 (release h+32) t == Guest.load64 (release h+8) t then Guest.store64 (release h) 1 t else err
   else if op == 55 then
     if p == 1 && h < 16 && !usedRelease h 4 t then
-      let t := zero (releaseCode h) 8192 t
+      let t := zero (releaseCode h) 32768 t
       zero (release h) 32 t
     else err
   else if op == 56 then
@@ -321,7 +349,7 @@ def dispatch (p op h ptr n v t : UInt64) : UInt64 :=
       let t := teardown slot 0 t
       if ptr == 0 then t else
         let descriptor := 0x80200000+slot*32
-        let result := start slot (0x80300000+(slot-1)*65536) (Guest.load64 descriptor t) (Guest.load64 (descriptor+8) t) 0x400000 slot t
+        let result := start slot (0x80300000+(slot-1)*262144) (Guest.load64 descriptor t) (Guest.load64 (descriptor+8) t) 0x200000 slot t
         if result == err then err else identity slot result
   else if op == 60 || op == 61 then
     if p != 3 || n == 0 || n > 4096 || n%512 != 0 || !valid ptr n 4096 then err else
@@ -335,6 +363,108 @@ def dispatch (p op h ptr n v t : UInt64) : UInt64 :=
     if p != 3 || n == 0 || n > 256 || !valid ptr n 256 then err else
       let result := Devices.random 0x80e0a000 n t
       if result == 0 then copy 0x80e0a000 (physical p ptr) n result else err
+  else if op == 80 then
+    if p < 5 || (Guest.load64 (proc p+16) t &&& 256) == 0 || Guest.load64 (proc p+96) t != 2 then err else
+      let t := if Guest.load64 (proc p+160) t == 0 then zero (0x87200000+(p-5)*0x100000) 112640 t else t
+      let t := Guest.store64 (proc p+208) 0 t
+      let t := Guest.store64 (proc p+216) 352 t
+      let t := Guest.store64 (proc p+160) 1 t
+      let t := Guest.store64 (proc p+168) 1 t
+      let t := Guest.store64 (proc p+200) 0 t
+      identity p t
+  else if op == 81 then
+    if p < 5 || h != identity p t || Guest.load64 (proc p+160) t != 1 || Guest.load64 (proc p+168) t == err || !validFor p ptr n 1024 t || n%4 != 0 || v > 901120 || n > 901120-v then err else
+      let t := copy (physical p ptr) (0x87200000+(p-5)*0x100000+v) n t
+      let first := v/2560
+      let lastRow := (v+n+2559)/2560
+      let t := Guest.store64 (proc p+208) (if first < Guest.load64 (proc p+208) t then first else Guest.load64 (proc p+208) t) t
+      let t := Guest.store64 (proc p+216) (if lastRow > Guest.load64 (proc p+216) t then lastRow else Guest.load64 (proc p+216) t) t
+      Guest.store64 (proc p+168) (Guest.load64 (proc p+168) t+1) t
+  else if op == 82 then
+    if p != 4 || !live h t || (h &&& 255) < 5 || Guest.load64 (proc (h &&& 255)+160) t != 1 then err else
+      let q := proc (h &&& 255)
+      let epoch := Guest.load64 (q+168) t
+      if epoch == Guest.load64 (q+200) t then 0 else epoch
+  else if op == 83 then
+    if p != 4 || !live h t || (h &&& 255) < 5 || Guest.load64 (proc (h &&& 255)+160) t != 1 || ptr >= 352 || n == 0 || n > 8 || n > 352-ptr then err else
+      let t := copy (0x87200000+((h &&& 255)-5)*0x100000+ptr*2560) (0x80f00000+(ptr+48)*2560) (n*2560) t
+      let q := proc (h &&& 255)
+      if ptr+n >= Guest.load64 (q+216) t && Guest.load64 (q+168) t == v then
+        let t := Guest.store64 (q+208) 352 t
+        let t := Guest.store64 (q+216) 0 t
+        Guest.store64 (q+200) v t else t
+  else if op == 84 then
+    if p != 4 then err else
+      let event := Guest.GraphicsDevice.input t
+      if event >>> 48 == 1 && (event &&& 0xffffffff) == 1 &&
+        (((event >>> 32) &&& 65535) == 28 || ((event >>> 32) &&& 65535) == 272) then
+        let t := Guest.store64 (state+136) (Guest.load64 (state+136) event+1) event
+        let t := Guest.store64 (state+144) (Guest.load64 (state+16) t) t
+        event+t
+      else event
+  else if op == 85 then
+    if p != 4 || (h != 0 && (!live h t || (h &&& 255) < 5 || Guest.load64 (proc (h &&& 255)+160) t != 1)) then err else
+      let old := Guest.load64 (state+128) t
+      let t := if old != 0 && live old t then
+        let q := proc (old &&& 255)
+        let t := Guest.store64 (q+176) (Guest.load64 (q+184) t) t
+        Guest.store64 (q+192) 1 t else t
+      let t := if h != 0 then
+        let q := proc (h &&& 255)
+        let t := Guest.store64 (q+176) (Guest.load64 (q+184) t) t
+        Guest.store64 (q+192) 1 t else t
+      Guest.store64 (state+128) h t
+  else if op == 86 then
+    if p != 4 || !validFor p ptr n 1024 t || n%4 != 0 || v > 1024000 || n > 1024000-v then err else
+      copy (physical p ptr) (0x80f00000+v) n t
+  else if op == 87 then
+    if p != 4 then err else Guest.GraphicsDevice.presentBegin 0 h 640 ptr t
+  else if op == 88 then
+    if p == 4 then Guest.GraphicsDevice.presentPoll t else err
+  else if op == 89 then
+    if p != 4 || h == 0 || n == 0 || n > 0xffffffff then err else
+      let focus := Guest.load64 (state+128) t
+      if focus == 0 || !live focus t then 0 else
+        let q := proc (focus &&& 255)
+        let head := Guest.load64 (q+176) t
+        let tail := Guest.load64 (q+184) t
+        if tail-head >= 64 then
+          let t := Guest.store64 (q+176) tail t
+          Guest.store64 (q+192) 1 t
+        else
+          let t := Guest.store64 (0x80d10000+(focus &&& 255)*1024+(tail%64)*8) h t
+          Guest.store64 (q+184) (tail+1) t
+  else if op == 90 then
+    if p < 5 || h != identity p t || (Guest.load64 (proc p+16) t &&& 512) == 0 then err else
+      let q := proc p
+      if Guest.load64 (q+192) t == 1 then
+        let t := Guest.store64 (q+192) 0 t
+        0xffff000000000000+t
+      else
+        let head := Guest.load64 (q+176) t
+        let tail := Guest.load64 (q+184) t
+        if head == tail then 0 else
+          let event := Guest.load64 (0x80d10000+p*1024+(head%64)*8) t
+          let t := Guest.store64 (q+176) (head+1) t
+          event+t
+  else if op == 92 then
+    if p != 4 || !live h t || (h &&& 255) < 6 then err else
+      (Guest.load64 (proc (h &&& 255)+208) t <<< 32) ||| Guest.load64 (proc (h &&& 255)+216) t
+  else if op == 93 then
+    -- Trusted compositor cursor readback: a single bounded pixel row only.
+    if p != 4 || n == 0 || n > 28 || n%4 != 0 || h%4 != 0 || h > 1024000 || n > 1024000-h || h%2560+n > 2560 || !validFor p ptr n 28 t then err else
+      copy (0x80f00000+h) (physical p ptr) n t
+  else if op == 100 then
+    if p != 5 || n != 32 || !validFor p ptr 32 32 t then err else copy 0x80200400 (physical p ptr) 32 t
+  else if op == 98 then
+    if p != 1 || h == 0 || h != Guest.load64 (state+136) t || h == Guest.load64 (state+152) t || Guest.load64 (state+16) t-Guest.load64 (state+144) t > 1000 then err else
+      Guest.store64 (state+152) h t
+  else if op == 99 then
+    if p == 4 then Guest.load64 (state+136) t else err
+  else if op == 97 then
+    if h > 0 && h <= 5 && live (identity h t) t then identity h t else err
+  else if op == 91 then
+    if p != 4 || !valid ptr 384 384 then err else 384+inspectProcesses 0 (physical p ptr) t
   else if op == 70 then if p == 1 then Guest.finish 0 else err
   else err
 
@@ -351,10 +481,10 @@ partial def seedInstances (p seed t : UInt64) : UInt64 :=
   if p == 12 then t else seedInstances (p+1) seed (Guest.store64 (proc p+8) seed t)
 
 partial def bootServices (p t : UInt64) : UInt64 :=
-  if p == 4 then t else
+  if p == 6 then t else
     let descriptor := 0x80200000+p*32
     let t := clearPrivate p t
-    let result := start p (0x80300000+(p-1)*65536) (Guest.load64 descriptor t) (Guest.load64 (descriptor+8) t) 0x400000 p t
+    let result := start p (0x80300000+(p-1)*262144) (Guest.load64 descriptor t) (Guest.load64 (descriptor+8) t) 0x200000 p t
     if result == err then Guest.finish 1 else bootServices (p+1) result
 
 def kernelMain (initial : UInt64) : UInt64 :=
@@ -365,6 +495,7 @@ def kernelMain (initial : UInt64) : UInt64 :=
   let t := zero rx 2048 t
   let t := Guest.store8 0x10000002 7 t
   let t := Devices.init t
+  let t := Guest.GraphicsDevice.init t
   let result := Devices.random 0x80e0a000 8 t
   if result != 0 then Guest.finish 1 else
   let seed := (Guest.load64 0x80e0a000 result &&& 0xffffffff) <<< 24

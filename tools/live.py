@@ -1,20 +1,24 @@
 """Byte transport and CLI for a long-lived guest; all platform state is guest-owned."""
-import argparse,hashlib,json,os,select,socket,struct,subprocess,sys,time
+import argparse,fcntl,hashlib,json,os,select,socket,struct,subprocess,sys,time
 from pathlib import Path
 import driver,releases,capsule
+import stat
 MAGIC=b'LT2\0';REPLY=b'LR2\0'
-def args_for(backend,image,vault=None,readonly=False):
+def args_for(backend,image,vault=None,readonly=False,graphics=None,display="none"):
  if backend=='qemu':
-  args=[driver.tool('qemu-system-riscv64'),'-M','virt','-cpu','rv64','-m','128M','-smp','1','-bios','none','-nographic','-monitor','none','-global','virtio-mmio.force-legacy=true','-kernel',str(image),'-object','rng-random,filename=/dev/urandom,id=lt-rng','-device','virtio-rng-device,rng=lt-rng']
+  args=[driver.tool('qemu-system-riscv64'),'-M','virt','-cpu','rv64','-m','128M','-smp','1','-bios','none','-display',display,'-serial','stdio','-monitor','none','-global','virtio-mmio.force-legacy=false','-kernel',str(image),'-object','rng-random,filename=/dev/urandom,id=lt-rng','-device','virtio-rng-device,rng=lt-rng']
+  args+=['-device','virtio-gpu-device,xres=640,yres=400','-device','virtio-keyboard-device','-device','virtio-mouse-device']
+  if graphics:args+=['-qmp',f'unix:{graphics},server=on,wait=off']
   if vault:args+=['-drive',f'file={vault},format=raw,if=none,id=lt-vault'+(',readonly=on' if readonly else ''),'-device','virtio-blk-device,drive=lt-vault']
   return args
  args=[str(driver.BUILD/('lt-'+backend)),str(image),'--interactive']
  if backend=='aarch64':args.insert(0,driver.tool('qemu-aarch64'))
+ if graphics:args+=['--display-out',str(graphics)+'.bgrx','--input-events',str(graphics)+'.evdev']
  if vault:args+=['--vault',str(vault)]
  if readonly:args+=['--vault-readonly']
  return args
 
-def session(backend,path,vault=None,readonly=False):
+def session(backend,path,vault=None,readonly=False,graphics=None,display="none"):
  image=driver.BUILD/'live/guest.bin'
  if not image.exists():raise ValueError('run ./lt live-build first')
  if vault:
@@ -22,7 +26,21 @@ def session(backend,path,vault=None,readonly=False):
   if not vault.is_file():raise ValueError('vault backing must be an explicitly supplied existing image')
  if path.exists():raise ValueError('socket path exists; refusing to replace it')
  server=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM)
- process=subprocess.Popen(args_for(backend,image,vault,readonly),stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=None,bufsize=0)
+ input_path=None;input_fd=None;created_input=False
+ try:
+  if graphics and backend!='qemu':
+   input_path=Path(str(graphics)+'.evdev')
+   if not input_path.exists():os.mkfifo(input_path,0o600);created_input=True
+   if not stat.S_ISFIFO(input_path.stat().st_mode):raise ValueError('graphical input must be a raw-event FIFO; refusing a persistent input-history file')
+   # Keep the raw physical-input source open through startup and presenter
+   # reconnects. The host transports evdev records; no UI commands live here.
+   input_fd=os.open(input_path,os.O_RDWR|os.O_NONBLOCK)
+  process=subprocess.Popen(args_for(backend,image,vault,readonly,graphics,display),stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=None,bufsize=0)
+ except BaseException:
+  server.close()
+  if input_fd is not None:os.close(input_fd)
+  if created_input:input_path.unlink(missing_ok=True)
+  raise
  client=None;pending=bytearray()
  try:
   # Transport readiness only: no requests are interpreted or approved here.
@@ -88,10 +106,26 @@ def session(backend,path,vault=None,readonly=False):
   if client:client.close()
   server.close();path.unlink(missing_ok=True)
   if process.poll() is None:process.terminate();process.wait(timeout=5)
+  if input_fd is not None:os.close(input_fd)
+  if created_input:input_path.unlink(missing_ok=True)
 class Client:
  def __init__(self,path,timeout=180):
-  self.stream=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM);self.stream.settimeout(timeout);self.stream.connect(str(path));self.buffer=bytearray();self.counter=time.time_ns()
- def close(self):self.stream.close()
+  # The UART bridge has one outstanding management stream. Cooperating CLI and
+  # bootstrap workers serialize whole sessions so a poll cannot disconnect an
+  # in-progress bounded export/restore. This lock supplies no guest authority.
+  self.stream=None;self.lock=os.open(str(path)+'.client.lock',os.O_CREAT|os.O_RDWR|os.O_CLOEXEC|os.O_NOFOLLOW,0o600)
+  try:
+   deadline=time.monotonic()+timeout
+   while True:
+    try:fcntl.flock(self.lock,fcntl.LOCK_EX|fcntl.LOCK_NB);break
+    except BlockingIOError:
+     if time.monotonic()>=deadline:raise TimeoutError('management portal is busy')
+     time.sleep(.02)
+   self.stream=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM);self.stream.settimeout(timeout);self.stream.connect(str(path));self.buffer=bytearray();self.events=bytearray();self.counter=time.time_ns()
+  except BaseException:self.close();raise
+ def close(self):
+  if self.stream is not None:self.stream.close();self.stream=None
+  if self.lock is not None:os.close(self.lock);self.lock=None
  def request(self,op,payload=b'',rid=None):
   if len(payload)>1024:raise ValueError('frame payload exceeds1024')
   if rid is None:self.counter=max(self.counter+1,time.time_ns());rid=self.counter
@@ -99,7 +133,8 @@ class Client:
   while True:
    where=self.buffer.find(REPLY)
    if where>=0:
-    if where:del self.buffer[:where]
+    if where:
+     self.events.extend(self.buffer[:where]);del self.events[:-4096];del self.buffer[:where]
     if len(self.buffer)>=32:
      magic,status,answer,length,reserved=struct.unpack_from('<4sIQQQ',self.buffer)
      if length>1024 or reserved:raise ValueError('invalid guest reply frame')
@@ -110,6 +145,7 @@ class Client:
       return out
    elif len(self.buffer)>4096:
     # App output is kernel-framed ASCII hex, never a permission/control frame.
+    self.events.extend(self.buffer[:-3]);del self.events[:-4096]
     del self.buffer[:-3]
    data=self.stream.recv(65536)
    if not data:raise EOFError('management session closed')
@@ -139,7 +175,20 @@ class Client:
   for offset in range(0,len(raw),512):self.request(21,struct.pack('<Q',offset)+raw[offset:offset+512])
   header=self.request(22)
   if header!=raw[:512]:raise ValueError('guest inspected a different candidate header')
-  return releases.inspect(raw)
+  info=releases.inspect(raw)
+  content=Path(str(path)+'.content.json')
+  if content.exists():
+   try:
+    authority=json.loads(content.read_text())
+    if authority.get('release_id')==info['release_id']:
+     material=self.request(15,struct.pack('<Q',authority['release_handle']))
+     info['guest_material_commitments_checked']=len(material)==64 and struct.unpack_from('<Q',material,8)[0]==1
+   except (ValueError,KeyError):info['guest_material_commitments_checked']=False
+  info["guest_signature_verified"]=True
+  info["signature_verified"]=True
+  info["verification_authority"]="current guest project trust and exact staged header"
+  info["manifest_checked"]=False
+  return info
  def install(self,path):
   info=self.stage(path)
   self.request(23,bytes.fromhex(info['release_id'])+struct.pack('<Q',info['rights']))
@@ -149,7 +198,7 @@ class Client:
 def main(argv=None):
  p=argparse.ArgumentParser(description='Live byte portal; guest owns all state and policy')
  sub=p.add_subparsers(dest='mode',required=True)
- s=sub.add_parser('session');s.add_argument('--backend',choices=['qemu','x86_64','aarch64'],default='qemu');s.add_argument('--socket',required=True,type=Path);s.add_argument('--vault',type=Path);s.add_argument('--vault-readonly',action='store_true')
+ s=sub.add_parser('session');s.add_argument('--backend',choices=['qemu','x86_64','aarch64'],default='qemu');s.add_argument('--socket',required=True,type=Path);s.add_argument('--vault',type=Path);s.add_argument('--vault-readonly',action='store_true');s.add_argument('--display',choices=['none','gtk','sdl'],default='none');s.add_argument('--graphics',type=Path,help='QMP socket (QEMU) or raw pixel/input prefix (assembly)')
  v=sub.add_parser('vault-init');v.add_argument('path',type=Path);v.add_argument('--sectors',type=int,default=512);v.add_argument('--key-out',type=Path)
  c=sub.add_parser('ctl');c.add_argument('--socket',required=True,type=Path);cs=c.add_subparsers(dest='command',required=True)
  for name in ['ping','processes','cancel','gc','objects-gc','list','stats','shutdown']:cs.add_parser(name)
@@ -179,7 +228,7 @@ def main(argv=None):
  a=vs.add_parser('unlock');a.add_argument('--key',type=Path,required=True)
  a=vs.add_parser('retain');a.add_argument('handle',type=lambda x:int(x,0))
  args=p.parse_args(argv)
- if args.mode=='session':return session(args.backend,args.socket,args.vault,args.vault_readonly)
+ if args.mode=='session':return session(args.backend,args.socket,args.vault,args.vault_readonly,args.graphics,args.display)
  if args.mode=='vault-init':
   if args.sectors<304:raise ValueError('development Objects vault needs >=304 sectors')
   if args.path.exists() or (args.key_out and args.key_out.exists()):raise ValueError('vault/key output exists; refusing overwrite')

@@ -111,7 +111,7 @@ structure SurfaceHandle where
   incarnation : UInt64
 
 /-- Coordinates are unsigned device coordinates; kind 0 denotes no event,
-    1 key, 2 pointer motion, 3 pointer button, 4 focus loss, 5 overflow. -/
+    1 EV_KEY (including buttons), 2 EV_REL, 3 EV_ABS, 65535 overflow. -/
 structure InputEvent where
   kind : UInt64
   code : UInt64
@@ -165,6 +165,6 @@ def Bytes.boundary (b : Bytes) (index t : UInt64) : Bool :=
   ⟨kind,code,x,y,modifiers,sequence⟩
 
 @[noinline] def eventCode (ev : InputEvent) : Checked :=
-  if ev.kind == 1 || ev.kind == 3 then .ok ev.code else .error ev.kind
+  if ev.kind == 1 then .ok ev.code else .error ev.kind
 
 end Guest.Structured
