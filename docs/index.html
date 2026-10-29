@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LemmaTrix — Source documents</title>
+<style>
+:root{color-scheme:light dark}body{font:17px/1.65 system-ui,sans-serif;max-width:74rem;margin:3rem auto;padding:0 1.5rem}h1,h2{line-height:1.2}table{border-collapse:collapse;width:100%}th,td{border:1px solid #888;padding:.8rem;text-align:left;vertical-align:top}code{overflow-wrap:anywhere}aside{border-left:4px solid #888;padding:.5rem 1.2rem}a{overflow-wrap:anywhere}@media(max-width:700px){table,thead,tbody,tr,th,td{display:block}thead{display:none}td{border-top:0}}
+</style>
+</head>
+<body>
+<header>
+<h1>LemmaTrix source documents</h1>
+<p>Engineering baseline dated <time datetime="2026-10-28">28 October 2026</time>. These documents specify proposed work; they do not establish that the platform is implemented or its security properties are proved.</p>
+</header>
+<main>
+<section aria-labelledby="sources">
+<h2 id="sources">Source register</h2>
+<table>
+<thead><tr><th scope="col">Document</th><th scope="col">Role</th><th scope="col">Repository status</th></tr></thead>
+<tbody>
+<tr><td><a href="specs/lemmatrixos-mvp-v0.2.html">LemmaTrixOS Minimum Viable Product Specification — draft v0.2</a><br>28 October 2026</td><td>Governing, requirement-numbered MVP baseline, including acceptance gates RG-01–RG-11.</td><td>HTML transcription of the accessible text of <code>LemmaTrixOS_MVP_Spec_v0.2.pdf</code>, covering all 13 indexed pages. Original PDF bytes were not exportable during this import and are not included.</td></tr>
+<tr><td><a href="roadmap/platform-and-applications-2026-10-23.html">LemmaTrix Revised Platform and Application List</a><br>23 October 2026</td><td>Broader platform vision and application roadmap. The later MVP specification governs conflicting launch scope.</td><td>HTML transcription of the accessible text of <code>lemmaTrixAppList.pdf</code>, covering all 7 indexed pages. Printed source footers retain a 9-page denominator; this discrepancy is preserved and disclosed, not silently repaired. Original PDF bytes are not included.</td></tr>
+<tr><td>LemmaTrixOS MVP v0.2 — Release Charter<br>28 October 2026</td><td>Concise release charter and acceptance interpretation, subordinate to the detailed governing specification.</td><td><strong>Not yet archived.</strong> The exact original conversation text was not recoverable during this import. No summary or reconstructed text is being presented as the original charter.</td></tr>
+</tbody>
+</table>
+</section>
+<section aria-labelledby="precedence">
+<h2 id="precedence">Authority and scope</h2>
+<p>Where the 23 October application list conflicts with the 28 October MVP specification, follow the MVP specification. Preserve both documents as dated sources rather than rewriting the historical roadmap to look like the current release scope.</p>
+<p>LemmaTrixOS is independent of Lemma One hardware. Its canonical guest targets RISC-V; the MVP specifies x86-64 and ARM64 host emulators. This source import adds documentation, not an implementation or evidence of release-gate completion.</p>
+</section>
+<section aria-labelledby="format">
+<h2 id="format">Repository documentation format</h2>
+<p>All first-party README-equivalent documents, specifications, guides, plans, contributor guidance, and other prose documentation shall be actual <strong>HTML</strong>, not Markdown. Use this page as the documentation entry point. Keep the repository root, <code>.github/</code>, and <code>docs/</code> free of automatically displayed README files.</p>
+<p>See the <a href="documentation-policy.html">HTML documentation policy</a>. Open HTML files locally in a browser after cloning; no hosted documentation site or GitHub Pages deployment is implied.</p>
+</section>
+<aside aria-label="Provenance limitation">
+<p>The transcriptions preserve accessible source text, requirement identifiers, and source-page boundaries. They are not byte-identical PDF archives, visual facsimiles, newly approved specifications, or a substitute for missing original source material. Source-specific extraction limitations are recorded on each document.</p>
+</aside>
+</main>
+</body>
+</html>
