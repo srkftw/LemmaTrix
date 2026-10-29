@@ -43,7 +43,8 @@ class Session:
   require(not self.proc or self.proc.poll() is not None,'previous owned guest is still running')
   self.socket.unlink(missing_ok=True);self.round+=1
   self.log=(self.args.output/f'transport-{self.round}.log').open('wb')
-  command=[sys.executable,__file__,'_serve','--backend',self.args.backend,'--runtime',self.runtime,'--socket',self.socket,'--vault',self.vault]
+  command=[sys.executable,__file__,'_serve','--backend',self.args.backend,'--runtime',self.runtime,'--socket',self.socket]
+  if self.vault is not None:command+=['--vault',self.vault]
   self.proc=subprocess.Popen(list(map(str,command)),cwd=ROOT,stdout=self.log,stderr=self.log,start_new_session=True)
   deadline=time.monotonic()+90
   while not self.socket.exists():
@@ -220,7 +221,7 @@ def recover(args):
 def main():
  parser=argparse.ArgumentParser(description='Exact-image multi-object Project Vault interruption/recovery')
  sub=parser.add_subparsers(dest='command',required=True)
- internal=sub.add_parser('_serve');internal.add_argument('--backend',required=True);internal.add_argument('--runtime',type=Path,required=True);internal.add_argument('--socket',type=Path,required=True);internal.add_argument('--vault',type=Path,required=True)
+ internal=sub.add_parser('_serve');internal.add_argument('--backend',required=True);internal.add_argument('--runtime',type=Path,required=True);internal.add_argument('--socket',type=Path,required=True);internal.add_argument('--vault',type=Path)
  for name in ('interrupt','recover'):
   p=sub.add_parser(name);p.add_argument('--backend',choices=('qemu','x86_64','aarch64'),default='qemu');p.add_argument('--image',type=Path,required=True);p.add_argument('--expected-image',required=True);p.add_argument('--vault',type=Path,required=True);p.add_argument('--key',type=Path,required=True);p.add_argument('--output',type=Path,required=True)
   if name=='interrupt':p.add_argument('--project',default='creator')

@@ -191,5 +191,57 @@
       "fresh_authority": true
     },
     "command": "python3 tests/creator_retention.py interrupt --image build/live/guest.bin --expected-image 8dfec42445edfea2043c0032c477aa4f670d882d40c4c639485da802e5b8351f --vault build/creator-complete-vault.img --key build/creator-complete-vault.key --output build/creator-retention-material-final"
+  },
+  "bounded_graph_worklist": {
+    "before": {
+      "image": "8dfec42445edfea2043c0032c477aa4f670d882d40c4c639485da802e5b8351f",
+      "source_lineage": 23,
+      "total_nodes": 24,
+      "result": "actual Objects stack-guard fault on root publication",
+      "observation": "root agent actual guest observation: command100 status1; UART VE cause000f stval000000000042ffa8",
+      "transport_evidence": "build/graph-depth-before/transport-0.log"
+    },
+    "after": {
+      "shapes": [
+        {
+          "source_lineage": 23,
+          "total_nodes": 24,
+          "head": "d4223cce8ae9b33ed12e4982dc1825ec20109a903f0af749f2e0a9d9c83ffbbc",
+          "checks": [
+            "complete root publication",
+            "every ancestor appears in bounded closure",
+            "old/middle/new Source resolution",
+            "root pin protects oldest ancestor",
+            "root survives actual collection and reopen"
+          ]
+        },
+        {
+          "source_lineage": 48,
+          "total_nodes": 49,
+          "head": "ab04bd2d58fdb26e1f5d53118d0d8832593c4d56070783a71f92a416cf8be2f6",
+          "checks": [
+            "complete root publication",
+            "every ancestor appears in bounded closure",
+            "old/middle/new Source resolution",
+            "root pin protects oldest ancestor",
+            "root survives actual collection and reopen"
+          ]
+        }
+      ],
+      "scope": "explicit management graph operations;24-node ordinary quota shape plus49-node administrative stress; no compiler/signing and no resource-profile increase",
+      "image": "b15927561181c31720e8a9cc6385cc2db381b6e3ed25745798d08443deaa9971",
+      "environment": "QEMU11.1.1 RV64 guest; no-vault session; modern virtio MMIO"
+    },
+    "generated_code": {
+      "markNode_frame_bytes": 112,
+      "drainMarks_frame_bytes": 352,
+      "enqueueEdges_frame_bytes": 256,
+      "drainMarks_self_calls": 0,
+      "enqueueEdges_self_calls": 0,
+      "iteration": "direct jumps to function body; mark-on-enqueue64-entry FIFO",
+      "objects_code_bytes": 179688,
+      "service_stack_bytes": 16384
+    },
+    "execution": "tools.graph_depth_checks.check in an isolated frozen-image QEMU no-vault session; guest stopped"
   }
 }
