@@ -1,0 +1,216 @@
+{
+  "date": "2026-10-28",
+  "implementation_commit": "52cfcad67f846d8b94c13ba598248b12d912d495",
+  "acceptance": {
+    "scope": "development evidence; not an MVP release gate",
+    "checks": {
+      "same_guest_image": [
+        "qemu",
+        "x86_64",
+        "aarch64"
+      ],
+      "ephemeral_reset": "fresh process restarts the guest with its original image; no host vault used",
+      "isa_mmu_timer": {
+        "image_sha256": "7470a631dd003999633a752d43d2385adb28148d30afc15f29a35cc160c81e57",
+        "backends": [
+          "qemu",
+          "x86_64",
+          "aarch64"
+        ],
+        "properties": [
+          "signed/unsigned arithmetic and branch edges",
+          "RV64 W sign extension",
+          "load widths",
+          "division zero/overflow",
+          "high products",
+          "illegal instruction trap and mret",
+          "machine timer interrupt",
+          "Sv39 M/S/U transitions",
+          "kernel and UART user-access denial",
+          "privileged CSR denial"
+        ]
+      },
+      "unsupported_language_and_extern_rejected": {
+        "CheckHeap": "uncaught exception: freestanding compiler: Check.entry: return type Lean.IR.IRType.object is outside the fixed-width scalar ABI",
+        "CheckExtern": "uncaught exception: freestanding compiler: extern Check.forbidden requests unsupported primitive 'lt_unapproved_host'; add an explicit ABI implementation and allowlist entry"
+      },
+      "actual_lean_source_change": {
+        "source": "Guest.Workbench.runWorkbench: upper call replaced by store8 buffer 90",
+        "backend": "x86_64",
+        "application_sha256": "fb47336453b141e1ba682b120992d83dac33db40cf2bfdbb4b11285897f90f1f",
+        "image_sha256": "fdfcfefb31a6da9b7af96b99a9028dca8c204efde759b92bd349b9a911d1702c",
+        "observed_changed_content_hex": "5a656d6d615472697820736f75726365206f626a656374730a",
+        "limit": "unverified backend; this demonstrates compilation, not compiler correctness"
+      },
+      "guest_invalid_initial_signature": {
+        "backend": "x86_64",
+        "exit": 1,
+        "image_sha256": "075969824beb334641b92c897e3f65b7b6297a259c6ceea5fb8da995e1574b5e",
+        "mutation": "one RSA signature bit changed; header and code unchanged"
+      },
+      "generic_early_user_fault_contained": {
+        "image_sha256": "fe804c1711e4ecefda4de77c3d571422f41fd8f4793f360f6599db326a443913",
+        "backends": {
+          "qemu": {
+            "cause": 2,
+            "tval": 3221229683
+          },
+          "x86_64": {
+            "cause": 2,
+            "tval": 3221229683
+          },
+          "aarch64": {
+            "cause": 2,
+            "tval": 3221229683
+          }
+        }
+      },
+      "proof_dependencies": "'Guest.Policy.revoked_denies' depends on axioms: [propext, Quot.sound]\n'Guest.Policy.stale_denies' depends on axioms: [propext, Quot.sound]\n'Guest.Policy.missing_right_denies' depends on axioms: [propext, Quot.sound]\n'Guest.Policy.denied_preserves_generation' does not depend on any axioms"
+    },
+    "image_sha256": "6ed5cb19d5f3fcd75fc8f40f71e740965dba954c24244ce4b0e5a004f43ab5c3",
+    "toolchain_versions": {
+      "lean": "4.34.1",
+      "llvm": "20.1.8",
+      "qemu": "11.1.1"
+    },
+    "emulator_binaries": {
+      "x86_64": "3292f13a806f7a0f06b7433c235d236575509d14d8fa40ef592d079bc7086ebb",
+      "aarch64": "e69c75b1af8c4d67a9ab0e261fb06bd992fc01068b24427023718443599d3e03"
+    },
+    "guest_artifacts": {
+      "kernel": "457c77f01b2555a17225efb5220c82a4d01e29cbb49e1b6deca849d4f8d9e9ed",
+      "workbench": "167a3187b7ee844d0ed2fbaebc7dfbaf4d24375e688ba81536eb8e0a551410da",
+      "workbench-v2": "f6c3cc8baf23e96fa694e9aae92b4bf3b99538680e4dc20e5dad85dd9071763a",
+      "observer": "df1db49fa71035c8f767cef1f5e93f2eec0456a42f36facbcdc42f1da08235a2"
+    },
+    "host": {
+      "machine": "x86_64",
+      "system": "Linux",
+      "aarch64_execution": "Linux/AArch64 executable under qemu-aarch64; not native hardware"
+    },
+    "result": "PASS"
+  },
+  "reproducibility": {
+    "result": "PASS",
+    "image_sha256": "6ed5cb19d5f3fcd75fc8f40f71e740965dba954c24244ce4b0e5a004f43ab5c3",
+    "scope": "two full Lean IR/LLVM builds on the same Linux x86_64 host; not independent builders",
+    "independent_builders": false
+  },
+  "tools": {
+    "lean": "Lean (version 4.34.1, Release)",
+    "clang": "clang version 20.1.8\nTarget: x86_64-unknown-linux-gnu\nThread model: posix\nInstalledDir: /nix/store/85bhhpb74hj2644vizwyqrsgldf1yf8f-clang-20.1.8/bin",
+    "ld.lld": "LLD 20.1.8 (compatible with GNU linkers)",
+    "llvm-objcopy": "llvm-objcopy, compatible with GNU objcopy\nLLVM (http://llvm.org/):\n  LLVM version 20.1.8\n  Optimized build.",
+    "qemu-system-riscv64": "QEMU emulator version 11.1.1\nCopyright (c) 2003-2026 Fabrice Bellard and the QEMU Project developers",
+    "openssl": "OpenSSL 3.6.3 9 Jun 2026 (Library: OpenSSL 3.6.3 9 Jun 2026)"
+  },
+  "focused_checks": {
+    "compiler_sha": "PASS: arithmetic, 100000 tail calls, seven SHA boundaries, oversized no-write",
+    "guest_rsa": "PASS: valid, changed message/signature, out-of-range representative, malformed padding",
+    "host_package": "PASS: 23 focused checks",
+    "rel_importer": "PASS: 10 focused checks",
+    "native_sdk_guide": "PASS: build, Ed25519 sign/check/export, guest RSA install and actual native output"
+  },
+  "rel_guest_evidence": [
+    {
+      "component_expected_hex": "417a796d74776e656a692052454c2078747a77686a206b6e63797a776a2e0a",
+      "guest": [
+        {
+          "actual_hex": "417a796d74776e656a692052454c2078747a77686a206b6e63797a776a2e0a",
+          "backend": "x86_64",
+          "differential": "pass",
+          "image_sha256": "27ed8cb1f8920891d9b4a42a8cc8995dd3e69224e351a2f6babe42832c78eff3"
+        },
+        {
+          "actual_hex": "417a796d74776e656a692052454c2078747a77686a206b6e63797a776a2e0a",
+          "backend": "qemu",
+          "differential": "pass",
+          "image_sha256": "27ed8cb1f8920891d9b4a42a8cc8995dd3e69224e351a2f6babe42832c78eff3"
+        }
+      ],
+      "input_hex": "417574686f72697a65642052454c20736f7572636520666978747572652e0a",
+      "record_type": "Evidence",
+      "release": {
+        "admission": "development-only",
+        "capabilities": [
+          "console.write",
+          "object.create",
+          "object.read",
+          "object.revise"
+        ],
+        "elf": {
+          "entry": 4194304,
+          "image_size": 3080,
+          "load_segments": 1
+        },
+        "manifest_sha256": "4ba32ecaf851c15847119bfeb54dd84dc5ab7d537cc785ae6ad0e01afa21644c",
+        "package_sha256": "e6d180b58fc324643ab2a90067110e3371a4d9ae0cd9a8e37a688fb8c26bb32b",
+        "path": "rel-original/rel-original-1.0.0.ltpkg",
+        "project": "rel-original",
+        "signature": "verified-host-Ed25519",
+        "signer_key_id": "b3b9e52a1c416c765b26a1e5be55c40741abae8c05b65e0e2aaafb94ff276bf3",
+        "source_root": "84d01dafc2a4621dc71d4a39c9d93fed9d5d68a26999832fd0298c5f5166672f",
+        "version": "1.0.0"
+      },
+      "schema": 1,
+      "semantic_object": "80987c88b2d8844d68211909a0fc37945f452de78afecb9e429a481fc258f05c",
+      "source_baseline_hex": "417a796d74776e656a692052454c2078747a77686a206b6e63797a776a2e0a",
+      "source_equivalent_on_all_bytes": true,
+      "source_extraction_cases": 256,
+      "source_sha256": "4d94af6a19e61a78753e36e47c429ebcce53ce2fe34c819c54d14b17ceb2c894"
+    },
+    {
+      "component_expected_hex": "4162616f767970676c6b2052454c207a7662796a6c206d70656162796c2e0a",
+      "guest": [
+        {
+          "actual_hex": "4162616f767970676c6b2052454c207a7662796a6c206d70656162796c2e0a",
+          "backend": "x86_64",
+          "differential": "pass",
+          "image_sha256": "88a320b8e99f5e933e63244721695b69f10902e73f9e1037f2a198cbae00b718"
+        },
+        {
+          "actual_hex": "4162616f767970676c6b2052454c207a7662796a6c206d70656162796c2e0a",
+          "backend": "qemu",
+          "differential": "pass",
+          "image_sha256": "88a320b8e99f5e933e63244721695b69f10902e73f9e1037f2a198cbae00b718"
+        },
+        {
+          "actual_hex": "4162616f767970676c6b2052454c207a7662796a6c206d70656162796c2e0a",
+          "backend": "aarch64",
+          "differential": "pass",
+          "image_sha256": "88a320b8e99f5e933e63244721695b69f10902e73f9e1037f2a198cbae00b718"
+        }
+      ],
+      "input_hex": "417574686f72697a65642052454c20736f7572636520666978747572652e0a",
+      "record_type": "Evidence",
+      "release": {
+        "admission": "development-only",
+        "capabilities": [
+          "console.write",
+          "object.create",
+          "object.read",
+          "object.revise"
+        ],
+        "elf": {
+          "entry": 4194304,
+          "image_size": 3080,
+          "load_segments": 1
+        },
+        "manifest_sha256": "ef0acc63cb8ae54c446a96af5878212e03f6fea2da523b49d4eb75aea7d9c24b",
+        "package_sha256": "4bfc9d52df5754f4f2f4c7ac2a73dbc005942c0dafc5cdfd4c9a3916cffa56d6",
+        "path": "rel-original/rel-original-1.1.0.ltpkg",
+        "project": "rel-original",
+        "signature": "verified-host-Ed25519",
+        "signer_key_id": "b3b9e52a1c416c765b26a1e5be55c40741abae8c05b65e0e2aaafb94ff276bf3",
+        "source_root": "52389ff33ac8c2a28dd09aaf91c0d30a2b0f9eaf7737182589ba8ad5e061cd79",
+        "version": "1.1.0"
+      },
+      "schema": 1,
+      "semantic_object": "88d6824920592940d5ab1449385f4ee0a870cd51a9bb492a5eee20cbce58d97d",
+      "source_baseline_hex": "417a796d74776e656a692052454c2078747a77686a206b6e63797a776a2e0a",
+      "source_equivalent_on_all_bytes": false,
+      "source_extraction_cases": 256,
+      "source_sha256": "4d94af6a19e61a78753e36e47c429ebcce53ce2fe34c819c54d14b17ceb2c894"
+    }
+  ]
+}
