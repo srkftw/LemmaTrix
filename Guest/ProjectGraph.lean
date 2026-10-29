@@ -116,6 +116,154 @@ def validBuildDetail (r t : UInt64) : Bool :=
   n >= 200 && n <= 712 && load64 d t == 0x31444c4942544c && load64 (d+8) t == 1 &&
     load64 (d+16) t == 2 && load64 (d+192) t <= 512 && n == 200+load64 (d+192) t
 
+-- The guest serializes this fixed canonical metadata subset from actual graph
+-- records. It never treats a publisher JSON array as fetched source/evidence.
+-- Scratch is private and bounded to8192 bytes, immediately after binaryBuffer.
+def jsonBuffer : UInt64 := 0xd60000
+def jsonByte (pos byte t : UInt64) : UInt64 :=
+  if pos >= 8192 then error else Guest.Effects.effectValue (pos+1) (store8 (jsonBuffer+pos) byte t)
+def jsonLiteral (id pos t : UInt64) : UInt64 :=
+  if id == 0 then
+    if pos > 8184 then error else
+      let t := store64 (jsonBuffer+pos+0) 91 t
+      Guest.Effects.effectValue (pos+1) t
+  else
+  if id == 1 then
+    if pos > 8184 then error else
+      let t := store64 (jsonBuffer+pos+0) 44 t
+      Guest.Effects.effectValue (pos+1) t
+  else
+  if id == 2 then
+    if pos > 8176 then error else
+      let t := store64 (jsonBuffer+pos+0) 4189025452468216443 t
+      let t := store64 (jsonBuffer+pos+8) 34 t
+      Guest.Effects.effectValue (pos+9) t
+  else
+  if id == 3 then
+    if pos > 8176 then error else
+      let t := store64 (jsonBuffer+pos+0) 3833233334081825826 t
+      let t := store64 (jsonBuffer+pos+8) 574235190 t
+      Guest.Effects.effectValue (pos+12) t
+  else
+  if id == 4 then
+    if pos > 8176 then error else
+      let t := store64 (jsonBuffer+pos+0) 2478521763259100194 t
+      let t := store64 (jsonBuffer+pos+8) 58 t
+      Guest.Effects.effectValue (pos+9) t
+  else
+  if id == 5 then
+    if pos > 8184 then error else
+      let t := store64 (jsonBuffer+pos+0) 125 t
+      Guest.Effects.effectValue (pos+1) t
+  else
+  if id == 6 then
+    if pos > 8184 then error else
+      let t := store64 (jsonBuffer+pos+0) 93 t
+      Guest.Effects.effectValue (pos+1) t
+  else
+  if id == 7 then
+    if pos > 8168 then error else
+      let t := store64 (jsonBuffer+pos+0) 8241990191961766747 t
+      let t := store64 (jsonBuffer+pos+8) 3906083645759381369 t
+      let t := store64 (jsonBuffer+pos+16) 2243106 t
+      Guest.Effects.effectValue (pos+19) t
+  else
+  if id == 8 then
+    if pos > 8176 then error else
+      let t := store64 (jsonBuffer+pos+0) 7592895727431461922 t
+      let t := store64 (jsonBuffer+pos+8) 574235236 t
+      Guest.Effects.effectValue (pos+12) t
+  else
+  if id == 9 then
+    if pos > 8144 then error else
+      let t := store64 (jsonBuffer+pos+0) 2478227094008638498 t
+      let t := store64 (jsonBuffer+pos+8) 8299417727452848698 t
+      let t := store64 (jsonBuffer+pos+16) 7074443009456369249 t
+      let t := store64 (jsonBuffer+pos+24) 8224184395757283701 t
+      let t := store64 (jsonBuffer+pos+32) 7232627565552562533 t
+      let t := store64 (jsonBuffer+pos+40) 2466321629486344041 t
+      Guest.Effects.effectValue (pos+48) t
+  else
+  if id == 10 then
+    if pos > 8168 then error else
+      let t := store64 (jsonBuffer+pos+0) 7165919078633319458 t
+      let t := store64 (jsonBuffer+pos+8) 4189038625367940965 t
+      let t := store64 (jsonBuffer+pos+16) 34 t
+      Guest.Effects.effectValue (pos+17) t
+  else
+  if id == 11 then
+    if pos > 8136 then error else
+      let t := store64 (jsonBuffer+pos+0) 7165919078633319458 t
+      let t := store64 (jsonBuffer+pos+8) 7955998378758004581 t
+      let t := store64 (jsonBuffer+pos+16) 7959305549529051745 t
+      let t := store64 (jsonBuffer+pos+24) 7234304265017255286 t
+      let t := store64 (jsonBuffer+pos+32) 7164223631720066082 t
+      let t := store64 (jsonBuffer+pos+40) 2478221553555825000 t
+      let t := store64 (jsonBuffer+pos+48) 8762 t
+      Guest.Effects.effectValue (pos+50) t
+  else
+  if id == 12 then
+    if pos > 8184 then error else
+      let t := store64 (jsonBuffer+pos+0) 6126882 t
+      Guest.Effects.effectValue (pos+3) t
+  else
+  error
+
+partial def jsonHex (p n pos t : UInt64) : UInt64 :=
+  if n == 0 then Guest.Effects.effectValue pos t else
+    let byte := load8 p t
+    let high := byte >>> 4
+    let next := jsonByte pos (if high < 10 then high+48 else high+87) t
+    let low := byte &&& 15
+    let next := jsonByte next (if low < 10 then low+48 else low+87) next
+    if next == error then error else jsonHex (p+1) (n-1) next next
+
+partial def jsonDecimal (value pos t : UInt64) : UInt64 :=
+  let pos := if value >= 10 then jsonDecimal (value/10) pos t else Guest.Effects.effectValue pos t
+  jsonByte pos (value%10+48) pos
+
+partial def jsonName (p n pos t : UInt64) : UInt64 :=
+  if n == 0 then Guest.Effects.effectValue pos t else
+    let byte := load8 p t
+    let pos := if byte == 34 || byte == 92 then jsonByte pos 92 t else Guest.Effects.effectValue pos t
+    let pos := jsonByte pos byte pos
+    if pos == error then error else jsonName (p+1) (n-1) pos pos
+
+partial def jsonSources (r i count emitted pos t : UInt64) : UInt64 :=
+  if pos == error then error else
+  if i == count then jsonLiteral 6 pos t else
+    let entry := r+288+i*128
+    if load64 entry t != 10 then jsonSources r (i+1) count emitted pos t else
+      let found := findNode (entry+16) 10 0 t
+      if found == error then error else
+        let source := recordAt found
+        let pos := if emitted == 0 then Guest.Effects.effectValue pos t else jsonLiteral 1 pos t
+        let pos := jsonLiteral 2 pos pos
+        let pos := jsonName (entry+48) (load64 (entry+8) pos) pos pos
+        let pos := jsonLiteral 3 pos pos
+        let pos := jsonHex (source+128) 32 pos pos
+        let pos := jsonLiteral 4 pos pos
+        let pos := jsonDecimal (load64 (source+32) pos) pos pos
+        let pos := jsonLiteral 5 pos pos
+        jsonSources r (i+1) count (emitted+1) pos pos
+
+def canonicalSources (r t : UInt64) : UInt64 :=
+  let pos := jsonLiteral 0 0 t
+  jsonSources r 0 (load64 (r+272) pos) 0 pos pos
+
+def canonicalEvidence (detail t : UInt64) : UInt64 :=
+  let pos := jsonLiteral 7 0 t
+  let pos := jsonHex (detail+80) 32 pos pos
+  let pos := jsonLiteral 8 pos pos
+  let pos := jsonDecimal (load64 (detail+24) pos) pos pos
+  let pos := jsonLiteral 9 pos pos
+  let pos := jsonHex (detail+112) 32 pos pos
+  let pos := jsonLiteral 10 pos pos
+  let pos := jsonHex (detail+48) 32 pos pos
+  let pos := jsonLiteral 11 pos pos
+  let pos := jsonHex (detail+144) 32 pos pos
+  jsonLiteral 12 pos pos
+
 def checkRelease (r t : UInt64) : UInt64 :=
   if load64 (r+272) t != 4 ||
     !releaseEdge r 0 12 0x646c697562 5 t || !releaseEdge r 1 11 0x65646f63 4 t ||
@@ -167,7 +315,13 @@ def checkRelease (r t : UInt64) : UInt64 :=
                                   !equal bd ed (load64 (b+280) checked) checked ||
                                   load64 (bd+40) checked != load64 (h+400) checked ||
                                   !equal (bd+48) (r+688) 32 checked || !equal (bd+80) (h+192) 32 checked then error else
-                                  zero binaryBuffer 32768 checked
+                                  let source := findNode (r+688) 11 0 checked
+                                  if source == error then error else
+                                    let generated := canonicalSources (recordAt source) checked
+                                    if generated == error || generated != sn || !equal jsonBuffer (h+768+mn) sn generated then error else
+                                      let generated := canonicalEvidence bd generated
+                                      if generated == error || generated != en || !equal jsonBuffer (h+768+mn+sn) en generated then error else
+                                        zero jsonBuffer 1024 (zero binaryBuffer 32768 generated)
 
 def sealNode (caller r t : UInt64) : UInt64 :=
   if !validPayload caller r t then error else
