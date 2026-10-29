@@ -15,6 +15,19 @@ def scalar : IRType → Bool
   | .uint8 | .uint16 | .uint32 | .uint64 | .usize => true
   | _ => false
 
+def valueType (t : IRType) : Bool :=
+  scalar t || t == .object || t == .tobject || t == .tagged || t == .erased || t == .void
+
+def runtime (name : String) : Name := ("Guest.Structured.Runtime." ++ name).toName
+
+def exprRuntime : IR.Expr → Array Name
+  | .ctor i _ => if i.isRef then #[runtime "alloc"] else #[]
+  | .reuse .. => #[runtime "reuse"]
+  | .reset .. => #[runtime "reset"]
+  | .isShared .. => #[runtime "shared"]
+  | .box ty _ => if ty == .uint64 || ty == .uint32 || ty == .usize then #[runtime "alloc"] else #[]
+  | _ => #[]
+
 def builtin (n : Name) : Bool :=
   let p := n.getPrefix.toString
   let s := n.getString!
@@ -26,11 +39,13 @@ def builtin (n : Name) : Bool :=
 partial def refs (b : FnBody) : Array Name :=
   match b with
   | .vdecl _ _ (.fap f _) b => (refs b).push f
-  | .vdecl _ _ _ b => refs b
+  | .vdecl _ _ e b => exprRuntime e ++ refs b
   | .jdecl _ _ v b => refs v ++ refs b
-  | .case _ _ _ alts => alts.foldl (fun out a => out ++ refs a.body) #[]
-  | .set _ _ _ b | .uset _ _ _ b | .sset _ _ _ _ _ b | .setTag _ _ b |
-    .inc _ _ _ _ b | .dec _ _ _ _ b | .del _ b => refs b
+  | .case _ _ ty alts => (if scalar ty then #[] else #[runtime "tag"]) ++ alts.foldl (fun out a => out ++ refs a.body) #[]
+  | .inc _ _ _ _ b => (refs b).push (runtime "inc")
+  | .dec _ _ _ _ b => (refs b).push (runtime "dec")
+  | .del _ b => (refs b).push (runtime "delete")
+  | .set _ _ _ b | .uset _ _ _ b | .sset _ _ _ _ _ b | .setTag _ _ b => refs b
   | _ => #[]
 
 partial def maxVar (b : FnBody) : Nat :=
@@ -76,14 +91,14 @@ def store (reg : String) (x : VarId) : EmitM Unit := storeOffset reg (x.idx * 8)
 
 def arg (reg : String) : Arg → EmitM Unit
   | .var x => load reg x
-  | .erased => fail "erased runtime argument: polymorphic/heap values are outside the scalar ABI"
+  | .erased => emit s!"  li {reg}, 0"
 
 def narrow (reg : String) : IRType → EmitM Unit
   | .uint8 => emit s!"  andi {reg}, {reg}, 255"
   | .uint16 => do emit s!"  slli {reg}, {reg}, 48"; emit s!"  srli {reg}, {reg}, 48"
   | .uint32 => do emit s!"  slli {reg}, {reg}, 32"; emit s!"  srli {reg}, {reg}, 32"
-  | .uint64 | .usize => pure ()
-  | t => fail s!"unsupported runtime type {repr t}; use fixed-width scalars and bounded explicit buffers"
+  | .uint64 | .usize | .object | .tobject | .tagged | .erased | .void => pure ()
+  | t => fail s!"unsupported runtime type {repr t}; use fixed-width scalars or bounded constructor values"
 
 def emitBuiltin (n : Name) (ys : Array Arg) : EmitM Unit := do
   let op := n.getString!
@@ -133,6 +148,8 @@ partial def getJoins (b : FnBody) : Array (JoinPointId × Array Param) :=
   | .jdecl j xs v b => #[(j, xs)] ++ getJoins v ++ getJoins b
   | .vdecl _ _ _ b => getJoins b
   | .case _ _ _ as => as.foldl (fun a c => a ++ getJoins c.body) #[]
+  | .set _ _ _ b | .uset _ _ _ b | .sset _ _ _ _ _ b | .setTag _ _ b |
+    .inc _ _ _ _ b | .dec _ _ _ _ b | .del _ b => getJoins b
   | _ => #[]
 
 def joinLabel (c : FnContext) (j : JoinPointId) : String := s!".L{symbol c.fn}_jp_{j.idx}"
@@ -160,23 +177,104 @@ def callSymbol (env : Environment) (f : Name) : Except String String := do
   | some (.fdecl ..) => return symbol f
   | none => throw s!"missing Lean IR for {f}; compile its module .olean first and keep declarations within supported ABI"
 
-def emitExpr (env : Environment) (e : IR.Expr) : EmitM Unit := do
+def readOp : IRType → Except String String
+  | .uint8 => .ok "lbu" | .uint16 => .ok "lhu" | .uint32 => .ok "lwu"
+  | .uint64 | .usize | .object | .tobject | .tagged => .ok "ld"
+  | t => .error s!"unsupported field type {repr t}"
+def writeOp : IRType → Except String String
+  | .uint8 => .ok "sb" | .uint16 => .ok "sh" | .uint32 => .ok "sw"
+  | .uint64 | .usize | .object | .tobject | .tagged => .ok "sd"
+  | t => .error s!"unsupported field type {repr t}"
+
+def runtimeCall (name : String) : EmitM Unit := emit s!"  call {symbol (runtime name)}"
+
+def checkCtor (i : CtorInfo) : EmitM Unit := do
+  if i.size > 8 || (i.size+i.usize)*8+i.ssize > 96 then
+    fail s!"constructor {i.name} exceeds structured-v2 limit: eight references, 96 payload bytes"
+
+def construct (i : CtorInfo) (ys : Array Arg) (reuse : Option VarId := none) : EmitM Unit := do
+  checkCtor i
+  if ys.size != i.size+i.usize then fail s!"constructor {i.name}: unsupported field layout"
+  if let some x := reuse then
+    load "a0" x
+    emit s!"  li a1, {i.cidx}"
+    emit s!"  li a2, {i.size}"
+    emit s!"  li a3, {(i.size+i.usize)*8+i.ssize}"
+    runtimeCall "reuse"
+  else
+    emit s!"  li a0, {i.cidx}"
+    emit s!"  li a1, {i.size}"
+    emit s!"  li a2, {(i.size+i.usize)*8+i.ssize}"
+    runtimeCall "alloc"
+  emit "  mv t2, a0"
+  for j in [:ys.size] do
+    arg "t1" ys[j]!
+    emit s!"  sd t1, {32+j*8}(t2)"
+  emit "  mv t0, t2"
+
+def emitExpr (env : Environment) (ty : IRType) (e : IR.Expr) : EmitM Unit := do
   match e with
   | .lit (.num n) =>
     if n >= 2^64 then fail "integer literal outside UInt64 range"
-    emit s!"  li t0, {n}"
+    emit s!"  li t0, {if ty == .tagged then n*2+1 else n}"
   | .fap f ys =>
     if builtin f then emitBuiltin f ys
     else
-      if ys.size > 8 then fail s!"{f}: {ys.size} arguments exceeds eight-register scalar ABI"
+      if ys.size > 8 then fail s!"{f}: {ys.size} arguments exceeds eight-register value ABI"
       for i in [:ys.size] do arg s!"a{i}" ys[i]!
       let s ← match callSymbol env f with | .ok s => pure s | .error e => fail e
       emit s!"  call {s}"
       emit "  mv t0, a0"
   | .ctor info ys =>
-    if info.isRef || !ys.isEmpty then fail s!"heap constructor {info.name} is unsupported; use explicit bounded buffer records"
-    emit s!"  li t0, {info.cidx}"
-  | _ => fail s!"unsupported Lean IR expression: {toString (format e)}; closures, heap objects, strings and allocation require a freestanding runtime"
+    if info.isRef then construct info ys
+    else
+      if !ys.isEmpty then fail s!"constructor {info.name}: unexpected nullary payload"
+      emit s!"  li t0, {if scalar ty then info.cidx else info.cidx*2+1}"
+  | .reuse x info _ ys => construct info ys (some x)
+  | .reset n x =>
+    load "a0" x
+    emit s!"  li a1, {n}"
+    runtimeCall "reset"
+    emit "  mv t0, a0"
+  | .proj i x | .uproj i x =>
+    if i >= 12 then fail "constructor projection exceeds 96-byte payload"
+    load "t1" x
+    emit s!"  ld t0, {32+i*8}(t1)"
+  | .sproj i off x =>
+    if i*8+off >= 96 then fail "scalar projection exceeds 96-byte payload"
+    let op ← match readOp ty with | .ok v => pure v | .error e => fail e
+    load "t1" x
+    emit s!"  {op} t0, {32+i*8+off}(t1)"
+  | .isShared x =>
+    load "a0" x
+    runtimeCall "shared"
+    emit "  mv t0, a0"
+  | .box bt x =>
+    if bt == .uint8 || bt == .uint16 || bt == .tagged then
+      load "t0" x
+      emit "  slli t0, t0, 1"
+      emit "  ori t0, t0, 1"
+    else if bt == .uint64 || bt == .uint32 || bt == .usize then
+      emit "  li a0, 0"
+      emit "  li a1, 0"
+      emit "  li a2, 8"
+      runtimeCall "alloc"
+      load "t1" x
+      emit "  sd t1, 32(a0)"
+      emit "  mv t0, a0"
+    else fail s!"unsupported scalar boxing {repr bt}"
+  | .unbox x =>
+    load "t0" x
+    let pointer ← fresh "unbox_pointer"
+    let done ← fresh "unbox_done"
+    emit "  andi t1, t0, 1"
+    emit s!"  beqz t1, {pointer}"
+    emit "  srli t0, t0, 1"
+    emit s!"  j {done}"
+    emit s!"{pointer}:"
+    emit "  ld t0, 32(t0)"
+    emit s!"{done}:"
+  | _ => fail s!"unsupported Lean IR expression: {toString (format e)}; closures, strings, floating point and general heap forms are outside structured-v2"
 
 partial def emitBody (env : Environment) (c : FnContext) (b : FnBody) : EmitM Unit := do
   match b with
@@ -187,13 +285,13 @@ partial def emitBody (env : Environment) (c : FnContext) (b : FnBody) : EmitM Un
       for i in [:c.params.size] do store s!"a{i}" c.params[i]!.x
       emit s!"  j {bodyLabel c}"
     else
-      emitExpr env (.fap f ys)
+      emitExpr env ty (.fap f ys)
       narrow "t0" ty
       store "t0" x
       arg "a0" (.var y)
       epilogue c
   | .vdecl x ty e b =>
-    emitExpr env e
+    emitExpr env ty e
     narrow "t0" ty
     store "t0" x
     emitBody env c b
@@ -202,8 +300,11 @@ partial def emitBody (env : Environment) (c : FnContext) (b : FnBody) : EmitM Un
     emit s!"{joinLabel c j}:"
     emitBody env c v
   | .case _ x ty alts =>
-    if !(scalar ty) then fail s!"non-scalar case on {repr ty} is unsupported"
-    load "t0" x
+    if !(valueType ty) then fail s!"unsupported case type {repr ty}"
+    if scalar ty then load "t0" x else
+      load "a0" x
+      runtimeCall "tag"
+      emit "  mv t0, a0"
     let mut labels := #[]
     let mut fallback := none
     for a in alts do
@@ -211,7 +312,6 @@ partial def emitBody (env : Environment) (c : FnContext) (b : FnBody) : EmitM Un
       labels := labels.push (a, l)
       match a with
       | .ctor info _ =>
-        if info.isRef then fail s!"non-scalar case constructor {info.name} is unsupported"
         emit s!"  li t1, {info.cidx}"
         emit s!"  beq t0, t1, {l}"
       | .default _ => fallback := some l
@@ -229,20 +329,59 @@ partial def emitBody (env : Environment) (c : FnContext) (b : FnBody) : EmitM Un
       arg "t0" ys[i]!
       storeOffset "t0" (c.scratch + i*8)
     for i in [:ps.size] do
-      if !(scalar ps[i]!.ty) then fail "non-scalar join point is unsupported"
+      if !(valueType ps[i]!.ty) then fail "unsupported join-point type"
       loadOffset "t0" (c.scratch + i*8)
       store "t0" ps[i]!.x
     emit s!"  j {joinLabel c j}"
+  | .inc x n _ persistent b =>
+    if persistent then fail "persistent upstream heap objects are outside structured-v2"
+    load "a0" x
+    emit s!"  li a1, {n}"
+    runtimeCall "inc"
+    emitBody env c b
+  | .dec x n _ persistent b =>
+    if persistent then fail "persistent upstream heap objects are outside structured-v2"
+    load "a0" x
+    emit s!"  li a1, {n}"
+    runtimeCall "dec"
+    emitBody env c b
+  | .del x b =>
+    load "a0" x
+    runtimeCall "delete"
+    emitBody env c b
+  | .set x i y b =>
+    if i >= 8 then fail "reference set exceeds constructor limit"
+    load "t0" x
+    arg "t1" y
+    emit s!"  sd t1, {32+i*8}(t0)"
+    emitBody env c b
+  | .uset x i y b =>
+    if i >= 12 then fail "USize set exceeds constructor limit"
+    load "t0" x
+    load "t1" y
+    emit s!"  sd t1, {32+i*8}(t0)"
+    emitBody env c b
+  | .sset x i off y ty b =>
+    if i*8+off >= 96 then fail "scalar set exceeds constructor limit"
+    let op ← match writeOp ty with | .ok v => pure v | .error e => fail e
+    load "t0" x
+    load "t1" y
+    emit s!"  {op} t1, {32+i*8+off}(t0)"
+    emitBody env c b
+  | .setTag x tag b =>
+    load "t0" x
+    emit s!"  li t1, {tag}"
+    emit "  sd t1, 8(t0)"
+    emitBody env c b
   | .unreachable => emit "  unimp"
-  | _ => fail s!"unsupported heap/reference-count instruction in {c.fn}"
 
 def emitDecl (env : Environment) (d : Decl) : Except String (Array String) := do
   let .fdecl fn ps ty b info := d | throw "internal: expected definition"
   if info.sorryDep?.isSome then throw s!"{fn} depends on a sorry axiom"
   if ps.size > 8 then throw s!"{fn}: more than eight parameters are unsupported"
-  if !(scalar ty) then throw s!"{fn}: return type {repr ty} is outside the fixed-width scalar ABI"
+  if !(valueType ty) then throw s!"{fn}: return type {repr ty} is outside structured-v2"
   for p in ps do
-    if !(scalar p.ty) then throw s!"{fn}: parameter {p.x.idx} has unsupported type {repr p.ty}"
+    if !(valueType p.ty) then throw s!"{fn}: parameter {p.x.idx} has unsupported type {repr p.ty}"
   let top := max (maxVar b) (ps.foldl (fun n p => max n p.x.idx) 0)
   let scratch := (top+1)*8
   let joins := getJoins b

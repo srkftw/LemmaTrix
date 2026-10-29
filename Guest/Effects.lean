@@ -1,7 +1,7 @@
-import Guest.Primitives
+import Guest.Structured
 namespace Guest.Effects
--- Single-field wrappers are erased/unboxed by upstream Lean IR. Effects are inlined
--- StateM programs; escaping closures and heap results remain explicit compiler errors.
+-- Effect tokens preserve primitive order. Structured values use the bounded native
+-- constructor runtime; escaping effect closures remain explicit compiler errors.
 structure Handle where
   raw : UInt64
 structure Buffer where
