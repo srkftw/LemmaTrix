@@ -155,10 +155,10 @@ def allowedEndpoint (caller target h t : UInt64) : Bool :=
   if target == 2 then (h == 2 || h == identity target t) && (Guest.load64 (proc caller+16) t &&& 127) != 0
   else if target == 3 then (caller == 1 || (Guest.load64 (proc caller+16) t &&& 2048) != 0) && (h == 3 || h == identity target t)
   else if target == 1 then caller == 4 && (h == 1 || h == identity target t)
-  else if target == 5 then (h == 5 || h == identity target t) && (caller == 1 || (Guest.load64 (proc caller+16) t &&& 256) != 0)
+  else if target == 5 then (h == 5 || h == identity target t) && (caller == 1 || (Guest.load64 (proc caller+16) t &&& 256) != 0 || identity caller t == Guest.load64 (state+208) t)
   else if target == 6 then (h == 6 || h == identity target t) && (caller == 1 || (Guest.load64 (proc caller+16) t &&& 1024) != 0)
   else if target == 4 then (h == 4 || h == identity target t) && (Guest.load64 (proc caller+16) t &&& 256) != 0
-  else (caller == 1 || caller == 4) && h == identity target t
+  else (caller == 1 || caller == 4 || (h == Guest.load64 (state+200) t && (Guest.load64 (proc caller+16) t &&& 1024) != 0)) && h == identity target t
 
 def callerRights (caller t : UInt64) : UInt64 :=
   Guest.load64 (proc caller+16) t ||| (if Guest.load64 (proc caller+24) t == 5 then 0x200000000 else if Guest.load64 (proc caller+24) t == 3 then 0x400000000 else 0)
@@ -185,7 +185,7 @@ def call (p endpoint ptr len capacity t : UInt64) : UInt64 :=
         let t := Guest.store64 (state+8) serial t
         let t := Guest.store64 (proc p+32) (identity target t) t
         let t := Guest.store64 (proc p+40) serial t
-        let t := Guest.store64 (proc p+120) (Guest.load64 (state+16) t+(if target == 3 then 30000 else 5000)) t
+        let t := Guest.store64 (proc p+120) (Guest.load64 (state+16) t+(if target == 3 || endpoint == Guest.load64 (state+200) t then 30000 else 5000)) t
         let t := Guest.store64 (proc p+48) ptr t
         let t := Guest.store64 (proc p+56) capacity t
         let t := Guest.store64 (proc p) 2 t
@@ -507,6 +507,23 @@ def dispatch (p op h ptr n v t : UInt64) : UInt64 :=
     if h > 0 && h <= 6 && live (identity h t) t then identity h t else err
   else if op == 91 then
     if p != 4 || !valid ptr 384 384 then err else 384+inspectProcesses 0 (physical p ptr) t
+  else if op == 112 then
+    if p != 1 || (h != 0 && (!live h t || (h &&& 255) < 7)) then err else
+      Guest.store64 (state+200) h t
+  else if op == 113 then
+    let registry := Guest.load64 (state+200) t
+    if (p == 1 || (Guest.load64 (proc p+16) t &&& 1024) != 0) && registry != 0 && live registry t then registry else err
+  else if op == 114 then
+    if p != 1 || (h != 0 && (!live h t || (h &&& 255) < 7)) then err else
+      let old := Guest.load64 (state+208) t
+      let slot := old &&& 255
+      let t := if old != h && old != 0 && live old t && Guest.load64 (proc slot) t == 2 && (Guest.load64 (proc slot+32) t &&& 255) == 5 then
+        let t := Guest.store64 (proc slot+40) 0 t
+        let t := Guest.store64 (frame slot+80) err t
+        Guest.store64 (proc slot) 1 t
+      else t
+      Guest.store64 (state+208) h t
+  else if op == 115 then if p == 1 then Guest.load64 (state+208) t else err
   else if op == 70 then if p == 1 then Guest.finish 0 else err
   else err
 

@@ -51,14 +51,15 @@ def validate (t : UInt64) : Bool :=
   if Guest.load64 stage t != 0x3253454c544c || Guest.load64 (stage+8) t != 2 || Guest.load64 (stage+16) t != 512 ||
      size == 0 || size > (if Guest.load64 (stage+400) t == 2 then 262144 else 65536) || size%4 != 0 || Guest.load64 (control+256) t != size+768 ||
      Guest.load64 (stage+32) t != (if Guest.load64 (stage+400) t == 2 then 0x200000 else 0x400000) || Guest.load64 (stage+40) t != 2 || Guest.load64 (stage+48) t != 2 || Guest.load64 (stage+56) t != 2 ||
-     Guest.load64 (stage+64) t > 1023 || Guest.load64 (stage+72) t > 0xffffffff || Guest.load64 (stage+80) t > 0xffffffff || Guest.load64 (stage+88) t > 0xffffffff ||
+     Guest.load64 (stage+64) t > 4095 || Guest.load64 (stage+72) t > 0xffffffff || Guest.load64 (stage+80) t > 0xffffffff || Guest.load64 (stage+88) t > 0xffffffff ||
      Guest.load64 (stage+384) t != 0 || Guest.load64 (stage+392) t != 0 || (Guest.load64 (stage+400) t != 1 && Guest.load64 (stage+400) t != 2) ||
      Guest.load64 (stage+408) t != 65536+(if Guest.load64 (stage+400) t == 2 then 2097152 else 0) || Guest.load64 (stage+416) t != 16384 || n == 0 || n > 48 || !nameValid 0 n t ||
-     !paddingZero (stage+432+n) (48-n) t || Guest.load64 (stage+480) t != 65537 || !paddingZero (stage+488) 24 t then false else
+     !paddingZero (stage+432+n) (48-n) t || Guest.load64 (stage+480) t != 65537 ||
+     (Guest.load64 (stage+488) t != 0 && Guest.load64 (stage+488) t != 3) || !paddingZero (stage+496) 16 t then false else
     let key := findTrust (stage+128) (stage+96) 0 t
     if key == 0 then false else
       let t := hash (stage+432) n (control+64) t
-      if !equal (control+64) (stage+128) 32 t then false else
+      if Guest.load64 (stage+488) t == 0 && !equal (control+64) (stage+128) 32 t then false else
         let t := hash (stage+768) size (control+64) t
         if !equal (control+64) (stage+192) 32 t then false else
           let t := copy (stage+160) (control+96) 32 t
@@ -249,6 +250,77 @@ def candidateMaterial (h t : UInt64) : UInt64 :=
       let got := forward 2 64 t
       if got != 576 || Guest.load64 buf got != 0 || !equal (buf+64) stage 512 got then err else
         result 1 (Guest.store64 (control+304) 1 got)
+
+-- Native Forge stages the actual checked Release graph and binary closure.
+-- A graph grant permits inspection; existing trust/signature validation and a
+-- fresh physical approval still govern execution.
+def graphHeader (op h a b t : UInt64) : UInt64 :=
+  let t := zero buf 8 t
+  let t := Guest.store64 buf op t
+  let t := Guest.store64 (buf+8) h t
+  let t := Guest.store64 (buf+16) a t
+  let t := Guest.store64 (buf+24) b t
+  Guest.store64 (buf+56) 1 t
+partial def graphRead (h destination length offset t : UInt64) : UInt64 :=
+  if offset == length then t else
+    let n := if length-offset > 512 then 512 else length-offset
+    let r := forward 2 64 (graphHeader 4 h offset n t)
+    if r != 64+n || Guest.load64 buf r != 0 || Guest.load64 (buf+8) r != n then err else
+      graphRead h destination length (offset+n) (copy (buf+64) (destination+offset) n r)
+def graphResolve (root id t : UInt64) : UInt64 :=
+  let t := graphHeader 25 root 0 0 t
+  let r := forward 2 96 (copy id (buf+64) 32 t)
+  if r != 128 || Guest.load64 buf r != 0 then err else Guest.load64 (buf+8) r
+partial def selectedRelease (i count found t : UInt64) : UInt64 :=
+  if i == count then found else
+    let e := 0x680020+i*128
+    if Guest.load64 e t == 13 then
+      if found != err then err else selectedRelease (i+1) count i t
+    else selectedRelease (i+1) count found t
+partial def materialBinary (root count i used t : UInt64) : UInt64 :=
+  if i == count then keep used t else
+    let e := 0x682020+i*128
+    if Guest.load64 e t != 10 then err else
+    let h := graphResolve root (e+16) t
+    if h == err then err else
+    let n := Guest.load64 (buf+16) h
+    if n == 0 || n > 65536 || used > 262144 || n > 262144-used then err else
+      let r := graphRead h (stage+768+used) n 0 h
+      if r == err then err else materialBinary root count (i+1) (used+n) r
+def stageProject (root t : UInt64) : UInt64 :=
+  let t := zero (control+256) 8 t
+  let r := forward 2 64 (graphHeader 24 root 0 0 t)
+  if r != 128 || Guest.load64 buf r != 0 then err else
+  let h := Guest.load64 (buf+8) r
+  let n := Guest.load64 (buf+16) r
+  if n < 32 || n > 65536 then err else
+  let r := graphRead h 0x680000 n 0 r
+  let count := Guest.load64 0x680010 r
+  if r == err || count > 32 || n < 32+count*128 then err else
+  let selected := selectedRelease 0 count err r
+  if selected == err then err else
+  let h := graphResolve root (0x680030+selected*128) selected
+  if h == err then err else
+  let r := graphRead h 0x681000 544 0 h
+  if r == err || Guest.load64 0x681010 r != 4 then err else
+  let r := graphRead h (stage-608) 1376 608 r
+  if r == err then err else
+  let binary := graphResolve root 0x6810b0 r
+  if binary == err then err else
+  let n := Guest.load64 (buf+16) binary
+  if n < 32 || n > 1056 then err else
+  let r := graphRead binary 0x682000 n 0 binary
+  let count := Guest.load64 0x682010 r
+  let detail := Guest.load64 0x682018 r
+  if r == err || count == 0 || count > 4 || detail > 512 || n != 32+count*128+detail then err else
+  let bytes := materialBinary root count 0 0 r
+  if bytes == err || bytes != Guest.load64 (stage+24) bytes then err else
+    let t := Guest.store64 (control+256) (bytes+768) bytes
+    let t := Guest.store64 (control+264) (bytes+768) t
+    if !validate t then err else
+      let t := Guest.store64 (control+272) 1 t
+      let t := Guest.store64 (control+304) 1 t
+      keep 512 (copy stage buf 512 t)
 
 @[noinline] def commandControl (op len t : UInt64) : UInt64 :=
   if op == 1 then result 2 t
@@ -472,6 +544,26 @@ def retainProject (root t : UInt64) : UInt64 :=
   if op == 70 then Guest.syscall 70 0 0 0 0 t
   else if op == 100 then if len >= 64 && len <= 1024 then forward 2 len t else err
   else if op == 160 then if len >= 64 && len <= 1024 then forward 5 len t else err
+  else if op == 170 then
+    if len < 64 || len > 1024 then err else
+      let provisioning := Guest.load64 buf t == 1
+      let received := forward 6 len t
+      -- Provisioning secrets are never retained in the management replay cache.
+      let t := if provisioning then zero (buf+64) 120 received else received
+      keep received t
+  else if op == 180 then if len == 8 then stageProject (Guest.load64 buf t) t else err
+  else if op == 181 then
+    if len != 8 then err else
+      let r := Guest.syscall 112 (Guest.load64 buf t) 0 0 0 t
+      if r == err then err else 8+Guest.store64 buf (Guest.load64 buf r) r
+  else if op == 182 then
+    if len != 8 then err else
+      let r := Guest.syscall 114 (Guest.load64 buf t) 0 0 0 t
+      if r == err then err else 8+Guest.store64 buf (Guest.load64 buf r) r
+  else if op == 183 then
+    if len != 0 then err else
+      let r := Guest.syscall 115 0 0 0 0 t
+      8+Guest.store64 buf r r
   else if op == 150 then
     if len < 72 || len > 1032 then err else
       let target := Guest.load64 buf t
@@ -485,7 +577,9 @@ def retainProject (root t : UInt64) : UInt64 :=
       let root := Guest.load64 buf t
       let t := copy (buf+8) (projectTxn+8) 32 t
       retainProject root t
-  else if (op >= 200 && op <= 206) || (op >= 210 && op <= 216) then
+  else if (op >= 230 && op <= 239) then
+    if len < 64 || len > 1024 || Guest.load64 buf t != op then err else forward 3 len t
+  else if (op >= 200 && op <= 206) || (op >= 210 && op <= 217) then
     if len < 64 || len > 1024 || Guest.load64 buf t != op then err else
       let received := forward 3 len t
       if op == 200 then keep received (zero (buf+64) 4 received) else received
@@ -504,8 +598,13 @@ def pollGUI (t : UInt64) : UInt64 :=
     let op := Guest.load64 0x410820 n
     let length := n-40
     let t := copy 0x410828 buf length n
-    let allowed := op == 2 || op == 3 || op == 12 || op == 13 || op == 24 || op == 25 || op == 26 || op == 27 || op == 28 || op == 29 || op == 14 || op == 16 || op == 202 || op == 212 || op == 221
-    let response := if (op == 23 || op == 220) && length == 48 then
+    let allowed := op == 2 || op == 3 || op == 12 || op == 13 || op == 24 || op == 25 || op == 26 || op == 27 || op == 28 || op == 29 || op == 14 || op == 16 || op == 202 || op == 211 || op == 213 || op == 212 || op == 221 || op == 180
+    let response := if (op == 200 && length == 104) || (op == 217 && length == 72) then
+        let payload := length-8
+        let gesture := Guest.load64 (buf+payload) t
+        let checked := Guest.syscall 98 gesture 0 0 0 t
+        if checked == err then err else command op payload checked
+      else if (op == 23 || op == 220) && length == 48 then
         let gesture := Guest.load64 (buf+40) t
         let checked := Guest.syscall 98 gesture 0 0 0 t
         if checked == err then err else command op 40 checked
@@ -527,7 +626,8 @@ def pollGUI (t : UInt64) : UInt64 :=
     let t := if response == err || response > 1024 then zero buf 8 response else response
     let size := if response == err || response > 1024 then 8 else response
     let t := if size == 8 then Guest.store64 buf err t else t
-    Guest.syscall 32 token buf size 0 t
+    let t := Guest.syscall 32 token buf size 0 t
+    zero 0x410800 132 t
 
 def readByte (t : UInt64) : UInt64 :=
   let index := Guest.load64 (control+520) t
@@ -550,13 +650,16 @@ def readByte (t : UInt64) : UInt64 :=
 partial def readBytes (dst n i t : UInt64) : UInt64 :=
   if i == n then t else
     let c := readByte t
-    if c == err then err else
+    -- A native GUI RPC can wake the UART reader. Preserve a partially received
+    -- management frame while servicing it; the next read blocks in the kernel.
+    if c == err then readBytes dst n i c else
       let t := Guest.store8 (dst+i) c t
       let t := Guest.store64 (control+544) (i+1) t
       readBytes dst n (i+1) t
 partial def findMagic (matched t : UInt64) : UInt64 :=
   let c := readByte t
-  if matched == 0 && c == 76 then findMagic 1 t
+  if c == err then findMagic matched c
+  else if matched == 0 && c == 76 then findMagic 1 t
   else if matched == 1 && c == 84 then findMagic 2 t
   else if matched == 2 && c == 50 then findMagic 3 t
   else if matched == 3 && c == 0 then t
@@ -581,9 +684,13 @@ partial def loop (t : UInt64) : UInt64 :=
     if len > 1024 || reserved != 0 || rid == 0 then loop (respond rid 2 buf 0 received) else
       let t := zero buf 128 received
       let t := Guest.store64 (control+544) 0 t
-      let received := readBytes buf len 0 t
+      -- GUI dispatch uses buf. Keep an interrupted UART body in private staging
+      -- until the complete management request is available.
+      let received := readBytes 0x638000 len 0 t
       if received == err then loop (respond rid 2 buf 0 (zero buf 128 received)) else
-        let t := copy 0x413000 0x634000 32 received
+        let t := copy 0x638000 buf len received
+        let t := zero 0x638000 128 t
+        let t := copy 0x413000 0x634000 32 t
         let t := copy buf 0x634020 len t
         let t := hash 0x634000 (len+32) (control+448) t
         let t := zero 0x634000 132 t
@@ -598,8 +705,8 @@ partial def loop (t : UInt64) : UInt64 :=
         else if rid < last then loop (respond rid 3 buf 0 t) else
           let t := copy (control+448) (control+400) 32 t
           let size := command op len t
-          if size == err || size > 1024 then loop (respond rid 1 buf 0 size)
-          else loop (respond rid 0 buf size size)
+          if size == err || size > 1024 then loop (zero buf 128 (respond rid 1 buf 0 size))
+          else loop (zero buf 128 (respond rid 0 buf size size))
 
 def main (initial : UInt64) : UInt64 :=
   let t := zero control 128 initial
