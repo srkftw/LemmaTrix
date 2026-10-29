@@ -4,6 +4,7 @@ import Guest.NetworkSDK
 import Guest.Raster
 import Guest.ForgeArchive
 import Guest.RemoteBuild
+import Guest.RemoteIngest
 import Guest.ForgeFederation
 import Guest.ForgeSubscription
 import Guest.ForgeCache
@@ -22,6 +23,7 @@ def logical : UInt64 := 0x6e1400
 def importedName : UInt64 := 0x6e1500
 def offeredHead : UInt64 := 0x6e1600
 def offeredName : UInt64 := 0x6e1640
+def remoteLogical : UInt64 := 0x6e1680
 def packet : UInt64 := 0x6f4000
 def received : UInt64 := 0x6f5000
 def pins : UInt64 := 0x6f6000
@@ -125,7 +127,7 @@ partial def hexName (p i t : UInt64) : UInt64 :=
 def fetch (t : UInt64) : UInt64 :=
   let upload := load64 (st+200) t == 1 && load64 (Guest.ForgeFederation.st+208) t == 1 &&
     equal (Guest.ForgeFederation.st+224) remoteHead 32 t
-  if !Guest.ForgeFederation.mayFetch t && !upload then message 14 t else
+  if !Guest.ForgeFederation.mayFetch t && !upload && Guest.RemoteIngest.phase t != 10 then message 14 t else
   if load64 (st+144) t == 0 || load64 (st+80) t != 0 || load64 (st+112) t != 0 then message 2 t else
     let old := load64 (st+16) t
     let t := if old == 0 then t else Guest.NetworkSDK.revoke old t
@@ -161,7 +163,7 @@ def fetch (t : UInt64) : UInt64 :=
 def requestFetch (t : UInt64) : UInt64 :=
   let upload := load64 (st+200) t == 1 && load64 (Guest.ForgeFederation.st+208) t == 1 &&
     equal (Guest.ForgeFederation.st+224) remoteHead 32 t
-  if !Guest.ForgeFederation.mayFetch t && !upload then message 14 t else
+  if !Guest.ForgeFederation.mayFetch t && !upload && Guest.RemoteIngest.phase t != 10 then message 14 t else
   if load64 (st+144) t == 0 then message 2 t else
   if load64 (st+112) t != 0 then message 7 t else
   if load64 (st+80) t != 0 then message 7 (store64 (st+176) 1 t) else fetch t
@@ -223,6 +225,7 @@ def accept2 (length transaction a b c t : UInt64) : UInt64 :=
   if load64 (st+112) t != 0 then message 7 t else
   let t := Guest.ForgeFederation.metadata t
   let t := copy (received+64) remoteHead 32 t
+  let t := copy (received+160) remoteLogical 32 t
   let t := copy (received+96) remoteName 64 t
   let t := store64 (st+448) (load64 (received+56) t) t
   let t := store64 (st+144) a t
@@ -325,6 +328,11 @@ def accept7 (length transaction a b c t : UInt64) : UInt64 :=
     let t := packetHeader 8 transaction 0 0 0 0 remoteHead t
     message 11 (sendPacket (load64 (st+16) t) 96 t)
 
+def accept16 (length t : UInt64) : UInt64 :=
+  if load64 (received+40) t != load64 (st+144) t || load64 (received+48) t != load64 (st+152) t then message 9 t else
+    Guest.RemoteIngest.acceptUpload received length (load64 (st+200) t)
+      remoteHead remoteLogical (load64 (st+400) t) t
+
 def accept (length t : UInt64) : UInt64 :=
   if !validFrame length t then message 9 t else
   let kind := load64 (received+16) t
@@ -347,6 +355,8 @@ def accept (length t : UInt64) : UInt64 :=
   if kind == 12 then accept12 length transaction a b c t else
   if kind == 11 then accept11 length transaction a b c t else
   if kind == 14 || kind == 15 then accept14 kind length transaction a b c t else
+  if kind == 16 then accept16 length t else
+  if kind == 17 then Guest.RemoteIngest.acceptReady received length t else
   if load64 (st+112) t == 0 || transaction != load64 (st+232) t || !equal (received+64) remoteHead 32 t then message 9 t else
   if kind == 4 then accept4 length transaction a b c t else
   if kind == 5 then accept5 length transaction a b c t else
@@ -384,7 +394,7 @@ def projectPortal (t : UInt64) : UInt64 :=
 def configure (length t : UInt64) : UInt64 :=
   if length != 128 || load64 (st+80) t != 0 || load64 (st+112) t != 0 || load64 (st+56) t != 0 || Guest.ForgeArchive.active t ||
     load64 (command+40) t > 1 || (load64 (command+40) t == 1 && (load64 (command+16) t != 2 || load64 (command+32) t == 0)) then error else
-    let t := Guest.ForgeSubscription.disable t
+    let t := Guest.RemoteIngest.init (Guest.ForgeSubscription.disable t)
     let oldMetadata := load64 (st+8) t
     let oldRoot := load64 (st+16) t
     let t := if oldMetadata == 0 then t else Guest.NetworkSDK.revoke oldMetadata t
@@ -405,51 +415,56 @@ def configure (length t : UInt64) : UInt64 :=
       let t := if load64 (st+280) t == 1 then Guest.ForgeArchive.inspect (load64 (st+216) t) t else t
       let t := zero wire 8 t
       64+message 0 t
+def archiveInspection (t : UInt64) : UInt64 :=
+  let t := zero wire 26 t
+  let t := store64 (wire+64) (Guest.ForgeArchive.phase t) t
+  let t := store64 (wire+72) (Guest.ForgeArchive.progress t) t
+  let t := store64 (wire+80) (Guest.ForgeArchive.total t) t
+  let t := store64 (wire+88) (Guest.ForgeArchive.code t) t
+  let t := store64 (wire+96) (Guest.ForgeArchive.resultRoot t) t
+  let t := copy (Guest.ForgeArchive.bundleIndex+32) (wire+104) 32 t
+  let t := store64 (wire+136) (load64 (Guest.ForgeArchive.bundleIndex+64) t) t
+  208+copy (Guest.ForgeArchive.bundleIndex+72) (wire+144) 64 t
+-- Keeping bounded operations separate also avoids inflating the freestanding
+-- register frame merely by adding another public inspection operation.
+def controlRead (op t : UInt64) : UInt64 :=
+  if op == 58 then Guest.ForgeFederation.inspect t else
+  if op == 59 then Guest.ForgeFederation.inspectLocal t else
+  if op == 60 then Guest.ForgeSubscription.inspect t else
+  if op == 63 then Guest.RemoteIngest.inspect t else
+  if op == 62 then 144+copy Guest.ForgeCache.st (wire+64) 80 (zero wire 8 t) else
+  if op == 56 then 192+copy (st+256) (wire+64) 128 (zero wire 8 t) else
+  if op == 55 then archiveInspection t else
+  if op == 2 then 320+copy st (wire+64) 256 (zero wire 8 t) else error
+
+def controlAdmin (op n t : UInt64) : UInt64 :=
+  if op == 1 then configure (n-32) t else
+  if op == 50 && n == 160 then
+    let r := Guest.RemoteBuild.configure (load64 (command+16) t) (command+64) (command+96) pins t
+    if r == error then error else
+      let t := Guest.RemoteIngest.init r
+      let t := store64 (st+288) (if load64 (command+24) t == 3 then 3 else 2) t
+      64+zero wire 8 t
+  else if op == 54 && n == 96 then Guest.RemoteBuild.inspect t else
+  if op == 57 && n == 128 then
+    let r := Guest.ForgeFederation.configure (load64 (command+16) t) (load64 (command+24) t) (command+64) t
+    if r == error then error else 64+zero wire 8 (store64 (st+248) 1 r)
+  else if op == 61 && n == 96 then
+    if Guest.ForgeArchive.active t || load64 (st+264) t != 0 then error else
+      let t := Guest.ForgeArchive.init t
+      let t := store64 (st+216) (load64 (command+16) t) t
+      64+zero wire 8 (store64 (st+248) 1 t)
+  else error
+
 def pollControl (t : UInt64) : UInt64 :=
   let n := syscall 36 (self t) incoming 1024 0 t
   if n < 96 || n > 1024 then n else
     let token := load64 (incoming+8) n
     let op := load64 command n
     let admin := (load64 incoming n &&& 255) == 1
-    let r := if op == 1 && admin then configure (n-32) n else
-      if op == 50 && admin && n == 160 then
-        let r := Guest.RemoteBuild.configure (load64 (command+16) n) (command+64) (command+96) pins n
-        if r == error then error else
-          let t := store64 (st+288) (if load64 (command+24) r == 3 then 3 else 2) r
-          64+zero wire 8 t
-      else if op == 54 && admin && n == 96 then Guest.RemoteBuild.inspect n else
-      if op == 57 && admin && n == 128 then
-        let r := Guest.ForgeFederation.configure (load64 (command+16) n) (load64 (command+24) n) (command+64) n
-        if r == error then error else 64+zero wire 8 (store64 (st+248) 1 r)
-      else if op == 58 && n == 96 then Guest.ForgeFederation.inspect n else
-      if op == 59 && n == 96 then Guest.ForgeFederation.inspectLocal n else
-      if op == 60 && n == 96 then Guest.ForgeSubscription.inspect n else
-      if op == 62 && n == 96 then 144+copy Guest.ForgeCache.st (wire+64) 80 (zero wire 8 n) else
-      if op == 61 && admin && n == 96 then
-        if Guest.ForgeArchive.active n || load64 (st+264) n != 0 then error else
-          let t := Guest.ForgeArchive.init n
-          let t := store64 (st+216) (load64 (command+16) t) t
-          64+zero wire 8 (store64 (st+248) 1 t)
-      else
-      if op == 56 && n == 96 then
-        let t := zero wire 8 n
-        192+copy (st+256) (wire+64) 128 t
-      else if op == 55 && n == 96 then
-        let t := zero wire 26 n
-        let t := store64 (wire+64) (Guest.ForgeArchive.phase t) t
-        let t := store64 (wire+72) (Guest.ForgeArchive.progress t) t
-        let t := store64 (wire+80) (Guest.ForgeArchive.total t) t
-        let t := store64 (wire+88) (Guest.ForgeArchive.code t) t
-        let t := store64 (wire+96) (Guest.ForgeArchive.resultRoot t) t
-        let t := copy (Guest.ForgeArchive.bundleIndex+32) (wire+104) 32 t
-        let t := store64 (wire+136) (load64 (Guest.ForgeArchive.bundleIndex+64) t) t
-        208+copy (Guest.ForgeArchive.bundleIndex+72) (wire+144) 64 t
-      else
-      if op == 2 && n == 96 then
-        let t := zero wire 8 n
-        let t := copy st (wire+64) 256 t
-        320+t
-      else error
+    let r := if op == 1 || op == 50 || op == 54 || op == 57 || op == 61 then
+      if admin then controlAdmin op n n else error
+      else if n == 96 then controlRead op n else error
     let t := if r == error then store64 wire 1 (zero wire 8 r) else r
     reply token (if r == error then 64 else r) t
 
@@ -787,6 +802,7 @@ def draw (surface t : UInt64) : UInt64 :=
   Guest.Raster.upload surface 0 901120 0 t
 
 def cancel (t : UInt64) : UInt64 :=
+  let t := Guest.RemoteIngest.stop 5 t
   let rs := Guest.RemoteBuild.state t
   let t := if rs == 1 || rs == 2 || rs == 7 then Guest.RemoteBuild.cancel t else t
   let t := if Guest.ForgeArchive.active t then Guest.ForgeArchive.cancel t else t
@@ -883,16 +899,59 @@ def archiveTick (t : UInt64) : UInt64 :=
     store64 (st+264) 0 t
   else t
 def remoteRequest (t : UInt64) : UInt64 :=
-  if load64 Guest.RemoteBuild.st t != 1 then message 2 t else
+  let state := Guest.RemoteBuild.state t
+  if load64 Guest.RemoteBuild.st t != 1 || Guest.RemoteIngest.phase t != 0 || state == 1 || state == 2 || state == 7 then message 2 t else
     let t := prepare t
     if load64 (st+136) t != 4 then t else
-      let r := Guest.RemoteBuild.select (load64 (st+24) t) t
+      let r := Guest.RemoteBuild.select (load64 (st+32) t) t
       if r == error then message 2 r else
         let r := Guest.NetworkSDK.nonce r
         if r != 96 || status r != 0 then message 8 r else
           let role := if load64 (st+288) r == 3 then 3 else 2
-          let r := Guest.RemoteBuild.request (wire+64) (load64 (st+48) r) role (load64 (st+296) r) r
+          let r := Guest.RemoteIngest.client (wire+64) role
+            (load64 (st+40) r) (load64 (st+48) r) (load64 (st+400) r) r
           if r == error then message 2 r else store64 (st+248) 1 r
+
+def ingestPacket (kind t : UInt64) : UInt64 :=
+  let p := Guest.RemoteIngest.st
+  let t := packetHeader kind (load64 Guest.RemoteIngest.nonce t) (load64 (p+8) t)
+    (load64 (p+24) t) (load64 (p+32) t) 1 Guest.RemoteIngest.root t
+  let t := copy Guest.RemoteIngest.nonce (packet+96) 32 t
+  sendPacket (load64 (st+8) t) 192 (copy Guest.RemoteIngest.project (packet+128) 64 t)
+def ingestSelect (t : UInt64) : UInt64 :=
+  let root := load64 (st+24) t
+  let r := describeRoot root t
+  if r != 160 || status r != 0 || !equal (wire+64) Guest.RemoteIngest.root 32 r then error else
+    let r := projectIdentity root r
+    if r != 192 || status r != 0 || !equal (wire+160) Guest.RemoteIngest.project 32 r then error else
+      let r := Guest.RemoteBuild.select root r
+      if r == error then error else store64 Guest.RemoteIngest.st 12 r
+def ingestTick (clock t : UInt64) : UInt64 :=
+  let p := Guest.RemoteIngest.st
+  let phase := Guest.RemoteIngest.phase t
+  if phase == 0 then t else
+  if Guest.RemoteIngest.expired clock t then cancel (Guest.RemoteIngest.stop 6 t) else
+  if phase == 4 then
+    let r := Guest.RemoteBuild.request Guest.RemoteIngest.nonce (load64 (p+32) t) (load64 (p+8) t) clock t
+    if r == error then message 8 (Guest.RemoteIngest.stop 7 r) else Guest.RemoteIngest.stop 0 r
+  else if phase == 11 then
+    if load64 (st+112) t != 0 || load64 (st+80) t != 0 then t else
+      let r := ingestSelect t
+      if r == error then message 9 (Guest.RemoteIngest.stop 7 r) else r
+  else if load64 (st+80) t != 0 || load64 (st+56) t != 0 then t else
+  if phase == 1 then
+    let t := sendMetadata t
+    if load64 (st+80) t == 0 then t else store64 p 2 t
+  else if phase == 2 || phase == 12 then
+    let t := ingestPacket (if phase == 2 then 16 else 17) t
+    if load64 (st+80) t == 0 then t else store64 p (if phase == 2 then 3 else 13) t
+  else if phase == 10 then
+    if !equal remoteHead Guest.RemoteIngest.root 32 t || !equal remoteLogical Guest.RemoteIngest.project 32 t then
+      message 9 (Guest.RemoteIngest.stop 1 t)
+    else
+      let r := requestFetch t
+      if load64 (st+112) r == 0 then Guest.RemoteIngest.stop 7 r else store64 p 11 r
+  else t
 def remoteTick (clock t : UInt64) : UInt64 :=
   let t := store64 (st+296) clock t
   let role := load64 Guest.RemoteBuild.st t
@@ -901,7 +960,7 @@ def remoteTick (clock t : UInt64) : UInt64 :=
     let current := load64 (Guest.RemoteBuild.st+16) t
     let resultRoot := Guest.RemoteBuild.resultRoot t
     let state := Guest.RemoteBuild.state t
-    let t := if role >= 2 && root != 0 && root != current && root != resultRoot && state != 2 && state != 7 then
+    let t := if role >= 2 && Guest.RemoteIngest.phase t == 0 && root != 0 && root != current && root != resultRoot && state != 2 && state != 7 then
       let r := Guest.RemoteBuild.select root t
       if r == error then message 8 r else r
       else t
@@ -1009,6 +1068,7 @@ partial def loop (surface count t : UInt64) : UInt64 :=
     let t := archiveTick t
     let t := store64 (st+400) count t
     let t := remoteTick count t
+    let t := ingestTick count t
     let t := pollSend t
     let t := cancellationTick count t
     let t := cacheTick t
@@ -1025,8 +1085,8 @@ partial def loop (surface count t : UInt64) : UInt64 :=
   let t := if surface != 0 && load64 (st+248) t != 0 then draw surface t else t
   loop surface (count+1) (syscall 9 0 0 0 0 t)
 def main (initial : UInt64) : UInt64 :=
-  let t := Guest.ForgeSubscription.disable (Guest.ForgeArchive.init (Guest.ForgeFederation.init (Guest.ForgeCache.init (zero st 128 initial))))
+  let t := Guest.RemoteIngest.init (Guest.ForgeSubscription.disable (Guest.ForgeArchive.init (Guest.ForgeFederation.init (Guest.ForgeCache.init (zero st 128 initial)))))
   let surface := syscall 80 0 0 0 0 t
   if surface == error then syscall 10 1 0 0 0 surface else loop surface 0 (draw surface surface)
-def serverMain (initial : UInt64) : UInt64 := loop 0 0 (Guest.ForgeSubscription.disable (Guest.ForgeArchive.init (Guest.ForgeFederation.init (Guest.ForgeCache.init (zero st 128 initial)))))
+def serverMain (initial : UInt64) : UInt64 := loop 0 0 (Guest.RemoteIngest.init (Guest.ForgeSubscription.disable (Guest.ForgeArchive.init (Guest.ForgeFederation.init (Guest.ForgeCache.init (zero st 128 initial))))))
 end Guest.Forge

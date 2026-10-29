@@ -13,6 +13,12 @@ def inspect(client,instance):
  q=struct.unpack_from('<32Q',raw,64)
  return {'role':q[0],'state':q[4],'local_job':q[6],'job_service':q[7],'result_root':q[12],'error':q[14],'artifact_hash':raw[192:224].hex(),'artifact_root':raw[224:256].hex(),'source_root':raw[320:352].hex(),'project_id':raw[352:384].hex(),'toolchain_id':raw[384:416].hex(),'provider_id':raw[416:448].hex(),'request_id':raw[480:512].hex(),'contract':raw[448:704]}
 
+def ingest_inspect(client,instance):
+ raw=client.request(150,struct.pack('<Q',instance)+struct.pack('<8Q',63,0,0,0,0,0,0,1))
+ if len(raw)!=320 or struct.unpack_from('<Q',raw)[0]:raise ValueError('native source ingestion inspection unavailable')
+ q=struct.unpack_from('<8Q',raw,64)
+ return {'phase':q[0],'provider_role':q[1],'deadline_local_turn':q[2],'nodes':q[3],'bytes':q[4],'error':q[5],'rejected_messages':q[6],'request_id':raw[128:160].hex(),'source_root':raw[160:192].hex(),'project_id':raw[192:224].hex(),'toolchain_id':raw[224:256].hex(),'source_upload_grants_execution':False}
+
 def configure(client,instance,credentials,role,provider_role="builder"):
  side,material=network.load_credentials(credentials)
  own=material[:32] if side==1 else material[32:64]
@@ -85,7 +91,8 @@ def main(argv=None):
  p=argparse.ArgumentParser(description='Guest-authorized capped remote build/verifier executor')
  sub=p.add_subparsers(dest='command',required=True)
  q=sub.add_parser('configure');q.add_argument('--socket',type=Path,required=True);q.add_argument('--instance',type=int,required=True);q.add_argument('--credentials',type=Path,required=True);q.add_argument('--role',choices=('client','builder','verifier'),required=True);q.add_argument('--provider-role',choices=('builder','verifier'),default='builder')
- q=sub.add_parser('inspect');q.add_argument('--socket',type=Path,required=True);q.add_argument('--instance',type=int,required=True)
+ for command in ('inspect','ingestion'):
+  q=sub.add_parser(command);q.add_argument('--socket',type=Path,required=True);q.add_argument('--instance',type=int,required=True)
  q=sub.add_parser('worker');q.add_argument('--socket',type=Path,required=True);q.add_argument('--instance',type=int,required=True);q.add_argument('--output',type=Path,required=True);q.add_argument('--once',action='store_true');q.add_argument('--poll-interval',type=float,default=.5)
  q=sub.add_parser('compare');q.add_argument('--builder',type=Path,required=True);q.add_argument('--verifier',type=Path,required=True);q.add_argument('--output',type=Path)
  a=p.parse_args(argv)
@@ -95,7 +102,7 @@ def main(argv=None):
  else:
   while True:
    c=live.Client(a.socket)
-   try:result=configure(c,a.instance,a.credentials,a.role,a.provider_role) if a.command=='configure' else inspect(c,a.instance) if a.command=='inspect' else execute_once(c,a.instance,a.output)
+   try:result=configure(c,a.instance,a.credentials,a.role,a.provider_role) if a.command=='configure' else inspect(c,a.instance) if a.command=='inspect' else ingest_inspect(c,a.instance) if a.command=='ingestion' else execute_once(c,a.instance,a.output)
    finally:c.close()
    if a.command!='worker' or result is not None or a.once:break
    time.sleep(max(.1,min(a.poll_interval,10)))
