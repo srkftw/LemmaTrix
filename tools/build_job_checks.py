@@ -47,8 +47,14 @@ def check(client,root,result_path):
   body+=raw[64:96]+(bytes.fromhex(binary_hash) if success else bytes(32))+hashlib.sha256(b'lifecycle-request:'+str(identity).encode()).digest()+raw[128:160]+diagnostic
   answer=client.request(160,body);status,returned,state=struct.unpack_from('<3Q',answer)
   assert status==0 and returned==identity and state==(2 if success else 3)
+  returned_fields=struct.unpack_from('<8Q',answer)
+  assert returned_fields[7]!=0,'native requester received no Evidence read capability'
+  assert client.objects(21,returned_fields[7])[0][4]==14
+  if success:
+   assert returned_fields[6]!=0,'native requester received no Build read capability'
+   assert client.objects(21,returned_fields[6])[0][4]==12
   completed.append(identity)
-  return struct.unpack_from('<8Q',answer)
+  return returned_fields
  try:
   first=queue();first_response=finish(first,True);first_id=first_response[1]
   for _ in range(4):
@@ -68,7 +74,7 @@ def check(client,root,result_path):
   for fields,_ in pending:assert request(client,4,fields[1])[0][2]==1
   for queued in pending:finish(queued,False)
   assert request(client,4,latest_id)[0][2]==2
-  return dict(checks=['more than four completed success/error iterations recycle bounded old jobs','queued/failing builds preserve most recent successful result','obsolete unrooted Build handle and recycled job ID are revoked','three pending jobs plus newest success exhaust four slots without eviction'],completed_jobs=len(completed),artifact_sha256=binary_hash,source_root=artifact['source_root'],scope='controlled explicit builder/management assertions over a prior real artifact; no new compiler execution or signature')
+  return dict(checks=['more than four completed success/error iterations recycle bounded old jobs','queued/failing builds preserve most recent successful result','native requester receives nonzero readable Build/Evidence grants; obsolete handles and job IDs are revoked','three pending jobs plus newest success exhaust four slots without eviction'],completed_jobs=len(completed),artifact_sha256=binary_hash,source_root=artifact['source_root'],scope='controlled explicit builder/management assertions over a prior real artifact; no new compiler execution or signature')
  finally:
   for identity in reversed(jobs):
    try:request(client,5,identity)
