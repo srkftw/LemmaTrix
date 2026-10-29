@@ -80,6 +80,35 @@ def poll (head t : UInt64) : UInt64 :=
       let t := store64 (st+8) 2 t
       store64 (st+32) 1 t
 
+-- A recovered Registry catalog contains signed metadata, not content caps.
+-- Repeated explicit discovery advances the existing bounded SDK cursor; one
+-- empty end wraps to the first page without claiming a global latest record.
+def catalogName : UInt64 := 0x6e3100
+partial def catalogHex (root i t : UInt64) : UInt64 :=
+  if i == 16 then t else
+    let byte := load8 (root+i/2) t
+    let digit := if i%2 == 0 then byte >>> 4 else byte &&& 15
+    catalogHex root (i+1) (store8 (catalogName+8+i) (if digit < 10 then digit+48 else digit+87) t)
+def catalogEntry (cursor t : UInt64) : UInt64 :=
+  let r := Guest.RegistrySDK.query cursor t
+  if r != 832 || status r != 0 then error else
+  if load64 (wire+24) r > 16 || !expected (wire+64) (wire+384) r ||
+    Guest.ProjectGraph.allZero (wire+384) 32 r then error else
+    let t := copy (wire+64) localDescriptor 768 r
+    let t := store64 (st+368) (load64 (wire+24) t) t
+    let t := store64 (st+8) 2 t
+    let t := store64 (st+24) (load64 (localDescriptor+48) t) t
+    let t := store64 (st+40) (load64 (localDescriptor+16) t) t
+    let t := store64 (st+48) (load64 (localDescriptor+24) t) t
+    let t := zero catalogName 8 t
+    let t := store64 catalogName 3271706165590122851 t
+    catalogHex (localDescriptor+320) 0 t
+def catalog (t : UInt64) : UInt64 :=
+  if !enabled t || localPhase t == 1 then error else
+    let cursor := load64 (st+368) t
+    let r := catalogEntry cursor t
+    if r != error || cursor == 0 then r else catalogEntry 0 r
+
 def metadata (t : UInt64) : UInt64 :=
   let t := zero remote 96 t
   let t := zero (st+56) 5 t
