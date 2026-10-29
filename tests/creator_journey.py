@@ -95,6 +95,13 @@ class Journey:
  def snapshot(self,root):
   with self.client() as c:return projects.snapshot(c,root)
  def creator(self):return next(r for r in self.roots() if r['name']=='creator')
+ def wait_text(self,x,y,text,foreground=0xd8e6ed,timeout=30):
+  deadline=time.monotonic()+timeout
+  while True:
+   frame=self.ui.frame()
+   if rendered_text(frame,x,y,len(text),foreground)==text:return frame
+   if time.monotonic()>deadline:raise TimeoutError('expected native text pixels did not arrive: '+repr(text))
+   time.sleep(.1)
  def open_named_project(self,name):
   old=self.ui.frame().digest;self.ui.chord(42,60);self.ui.wait_frame(old);time.sleep(.5)
   frame=self.ui.frame();rows=[rendered_text(frame,32,107+i*12,len(name)+1).rstrip() for i in range(16)]
@@ -124,7 +131,7 @@ class Journey:
   self.ui.textASCII('notes',delay=.035);self.ui.press(28);self.ui.textASCII('def note : UInt64 := 1\n',delay=.035);self.ui.press(62);time.sleep(.4)
   notes=next(r for r in self.roots() if r['name']=='notes');self.passed('keyboard created committed multi-file notes project',root=notes['head'])
   tools_info,tools_instance=self.trust_stage(self.args.text_tools,'text-tools');self.ui.textASCII('independent input 42',delay=.07);time.sleep(.4)
-  tools_frame=self.ui.frame()
+  tools_frame=self.wait_text(8,116,'independent input 42')
   require(rendered_text(tools_frame,56,94,8)=='00000003' and rendered_text(tools_frame,218,94,8)=='00000014' and rendered_text(tools_frame,356,94,8)=='00000000','independent app did not render actual3words/20bytes/0LF')
   require(rendered_text(tools_frame,8,116,20)=='independent input 42','independent app private input pixels differ')
   (self.out/'text-tools-input.ppm').write_bytes(tools_frame.ppm())
@@ -176,7 +183,7 @@ class Journey:
   require(first['status']=='ok','first exact multi-module/resource build failed: '+first['diagnostic_text'])
   with self.client() as c:pub1=projects.publish_result(self.out/'build-weight3/job.result.json',self.args.key,'creator','1.0.0',self.out/'creator-1.ltrel',client=c,rights=768)
   self.passed('exact resource-backed build and checked Release graph',source=first['source_root'],binary=first['artifact']['sha256'],content=pub1['content'])
-  release1,app1=self.trust_stage(self.out/'creator-1.ltrel','creator');self.ui.textASCII('cat123',delay=.07);time.sleep(.4);frame1=self.ui.frame();(self.out/'native-weight3.ppm').write_bytes(frame1.ppm())
+  release1,app1=self.trust_stage(self.out/'creator-1.ltrel','creator');self.ui.textASCII('cat123',delay=.07);time.sleep(.4);frame1=self.wait_text(50,104,'00000014',0xb8e5a2);(self.out/'native-weight3.ppm').write_bytes(frame1.ppm())
   require(rendered_score(frame1)=='00000014','Weight3 native rendered score differs from expected cat123 result')
   self.passed('first compiled app accepts real keyboard input',release=release1['release_id'],instance=app1,frame=frame1.digest,rendered_score=rendered_score(frame1))
   # Return focus to the editor by cycling actual trusted focus control.
@@ -201,7 +208,7 @@ class Journey:
   require(second['status']=='ok','corrected source rebuild failed: '+second['diagnostic_text'])
   latest_root=self.creator()['cap']
   with self.client() as c:pub2=projects.publish_result(self.out/'build-weight7/job.result.json',self.args.key,'creator','1.1.0',self.out/'creator-2.ltrel',release1['release_id'],client=c,rights=768,attach_root=latest_root)
-  release2,app2=self.trust_stage(self.out/'creator-2.ltrel','creator');self.ui.textASCII('cat123',delay=.07);time.sleep(.4);frame2=self.ui.frame();(self.out/'native-weight7.ppm').write_bytes(frame2.ppm())
+  release2,app2=self.trust_stage(self.out/'creator-2.ltrel','creator');self.ui.textASCII('cat123',delay=.07);time.sleep(.4);frame2=self.wait_text(50,104,'00000018',0xb8e5a2);(self.out/'native-weight7.ppm').write_bytes(frame2.ppm())
   require(first['artifact']['sha256']!=second['artifact']['sha256'],'edited source produced identical native code')
   require(rendered_score(frame2)=='00000018','Weight7 native rendered score differs from expected cat123 result')
   self.passed('edited multi-module code updates native application without OS rebuild',binary=second['artifact']['sha256'],release=release2['release_id'],instance=app2,frame=frame2.digest,rendered_score=rendered_score(frame2))
@@ -251,7 +258,7 @@ class Journey:
   _,fresh_editor=self.trust_stage(self.args.editor,'native-editor')
   self.ui.press(1);time.sleep(.3)
   self.open_named_project('creator')
-  restored_frame=self.ui.frame()
+  restored_frame=self.wait_text(164,96,'import Lean')
   require(rendered_text(restored_frame,164,96,11)=='import Lean','recovered editor did not render actual Main.lean content')
   (self.out/'recovered-editor-source.ppm').write_bytes(restored_frame.ppm())
   with self.client() as c:
