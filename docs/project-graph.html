@@ -43,7 +43,7 @@
 <h2>Commands and evidence boundaries</h2>
 <pre>./lt vault-init build/project.vault --sectors 24576 --key-out build/project.key
 ./lt run --backend qemu --socket /tmp/lt.sock --vault build/project.vault
-./lt project --socket /tmp/lt.sock import examples/project --name example
+./lt project --socket /tmp/lt.sock import examples/creator --name creator
 ./lt project-vault --socket /tmp/lt.sock --key build/project.key save ROOT_CAPABILITY
 ./lt project-vault --socket /tmp/lt.sock inspect
 # Restart the guest, then explicitly unlock and recover with fresh authority:
