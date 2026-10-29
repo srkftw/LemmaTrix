@@ -384,22 +384,37 @@ partial def duplicateRoot (caller name n excluded i t : UInt64) : Bool :=
     let r := rootAt i
     (r != excluded && load64 r t == 1 && load64 (r+48) t == 0 && load64 (r+8) t == caller && load64 (r+40) t == n && equal name (r+64) n t) ||
       duplicateRoot caller name n excluded (i+1) t
--- Mark before descent bounds traversal to64 nodes, even for malformed restored cycles.
-partial def markNode (i budget t : UInt64) : UInt64 :=
-  if i >= 64 || budget == 0 || load64 (marks+i*8) t == 1 then t else
+-- One bounded private FIFO replaces recursive graph descent. Mark on enqueue
+-- makes every index occupy at most one slot and every pop expand at most once.
+-- The64-node worklist is disjoint from roots, marks and release scratch arenas.
+def worklist : UInt64 := 0xd18000
+
+def enqueueMark (i count limit t : UInt64) : UInt64 :=
+  if i >= 64 || count >= limit || load64 (marks+i*8) t == 1 then Guest.Effects.effectValue count t else
     let r := recordAt i
-    if load64 r t != 2 || load64 (r+224) t != 1 then t else
+    if load64 r t != 2 || load64 (r+224) t != 1 then Guest.Effects.effectValue count t else
       let t := store64 (marks+i*8) 1 t
-      let parent := if allZero (r+192) 32 t then error else findNode (r+192) 0 0 t
-      let t := if parent == error then t else markNode parent (budget-1) t
-      if load64 (r+40) t == 10 then t else markEdges r 0 (load64 (r+272) t) (budget-1) t
-where
-  markEdges (r j count budget t : UInt64) : UInt64 :=
-    if j == count || j == 32 then t else
-      let e := r+288+j*128
-      let i := findNode (e+16) (load64 e t) 0 t
-      let t := if i == error then t else markNode i budget t
-      markEdges r (j+1) count budget t
+      Guest.Effects.effectValue (count+1) (store64 (worklist+count*8) i t)
+
+partial def enqueueEdges (r j count limit t : UInt64) : UInt64 :=
+  if j == load64 (r+272) t || j == 32 then Guest.Effects.effectValue count t else
+    let e := r+288+j*128
+    let i := findNode (e+16) (load64 e t) 0 t
+    let count := enqueueMark i count limit t
+    enqueueEdges r (j+1) count limit count
+
+partial def drainMarks (head count limit t : UInt64) : UInt64 :=
+  if head >= count || head >= limit then Guest.Effects.effectValue 0 t else
+    let r := recordAt (load64 (worklist+head*8) t)
+    let parent := if allZero (r+192) 32 t then error else findNode (r+192) 0 0 t
+    let count := enqueueMark parent count limit t
+    let count := if load64 (r+40) count == 10 then count else enqueueEdges r 0 count limit count
+    drainMarks (head+1) count limit count
+
+def markNode (i budget t : UInt64) : UInt64 :=
+  let limit := if budget > 64 then 64 else budget
+  let count := enqueueMark i 0 limit t
+  drainMarks 0 count limit count
 
 def markRoot (r t : UInt64) : UInt64 :=
   let i := findNode (r+128) 11 0 t
