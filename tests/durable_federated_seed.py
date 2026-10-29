@@ -224,6 +224,175 @@ def displayed_peer(node, expected):
     return wait(shown, 'actual native overview displays selected full peer identity', 120)
 
 
+def admission_bytes(node):
+    client = node.client()
+    try:
+        raw = client.request(150, struct.pack('<Q', node.instance) +
+                             struct.pack('<8Q', 58, 0, 0, 0, 0, 0, 0, 1))
+        assert len(raw) == 960 and struct.unpack_from('<Q', raw)[0] == 0
+        return raw[192:960]
+    finally:
+        client.close()
+
+
+def revocation_followup(args):
+    """Revoke the selected own catalog, then reject its root at a fresh seed.
+
+    This intentionally advances that operator's catalog. It reuses only its
+    own committed backing and keys and the already built startup packages.
+    The client has no source graph or execution approval at any point.
+    """
+    previous = args.revocation_of.resolve()
+    original = json.loads((previous / 'evidence.json').read_text())
+    assert len(original['checks']) == 4 and all(row['status'] == 'passed' for row in original['checks'])
+    image_id = hashlib.sha256(args.image.read_bytes()).digest()
+    assert image_id.hex() == original['image'] and original['root'] == EXPECTED_ROOT
+    config = json.loads((previous / 'registry-initial/node.json').read_text())
+    backing, namespace = Path(config['server_store']), config['namespace']
+    assert backing == previous / 'registry.img'
+    federation_key, federation_public = previous / 'federation.pem', previous / 'federation.pub'
+    registry_key = previous / 'registry-network.pem'
+    seed_package, reader_package, headless_package = [previous / name for name in
+                                                     ('seed.ltrel', 'reader.ltrel', 'headless.ltrel')]
+    for name, path in [('seed', seed_package), ('reader', reader_package), ('headless', headless_package)]:
+        assert releases.inspect(path.read_bytes())['release_id'] == original['bootstrap_packages'][name]
+    reader_key, reader_public = args.output / 'reader-network.pem', args.output / 'reader-network.pub'
+    capsule.generate_key(reader_key, reader_public)
+    reader_id = hashlib.sha256(releases.public_modulus(reader_public)).digest()
+    address = endpoint()
+    relation = relationship(args.output / 'reader-registry-relationship', reader_id, registry_key,
+                            address, image_id, 'registry')
+    seed_before = hashlib.sha256(args.seed_store.read_bytes()).hexdigest()
+    store_before = hashlib.sha256(backing.read_bytes()).hexdigest()
+    checks, running = [], []
+
+    def passed(label, **facts):
+        checks.append(dict(check=label, status='passed', **facts))
+        report = dict(image=image_id.hex(), root=EXPECTED_ROOT, previous_journey=str(previous),
+            protocol='Forge1 + signed admission1; known revocation retained across fresh peer enrollment',
+            project_compiler_executions=0, project_release_signatures_created=0,
+            source_graph_imported_by_reader=False, original_publisher_absent=True, first_seed_absent=True,
+            environment='Separate QEMU guests on one Linux host; original own Registry and seed2 backing',
+            transport_endpoint=address, endpoint_reuse='Explicit numeric opaque transport only; independently pinned peer/service/PSK and fresh grants',
+            checks=checks)
+        (args.output / 'evidence.json').write_text(json.dumps(report, indent=2) + '\n')
+        print('PASS', label, flush=True)
+
+    try:
+        registry = start_registry(args.output / 'registry', backing, namespace, address, relation,
+            headless_package, args.registry_package, args.operator_public, federation_public, args.image, recover=True)
+        running.append(registry)
+        assert len(registry.startup_catalog['entries']) == 1 and not registry.roots()
+        reader = ClientNode(args.output / 'reader', address)
+        running.append(reader)
+        client = reader.client()
+        try:
+            network.configure(client, relation['client'], relation['description'])
+        finally:
+            client.close()
+        authenticate(reader, registry)
+        reader.install(reader_package, args.operator_public)
+        client = reader.client()
+        try:
+            forge.configure(client, reader.instance, relation['client'])
+        finally:
+            client.close()
+        verifier = install_registry(reader, args.registry_package, args.operator_public, federation_public, 'portable')
+        reader.ui.press(61)
+        positive = wait(lambda: (record if (record := admission(reader))['remote_phase'] == 2
+                                 and record['descriptor']['root'] == EXPECTED_ROOT else None),
+                        'fresh reader verifies the original positive decision before actual revocation', 180)
+        assert positive['remote_sequence'] == 1 and not reader.roots()
+        old_handles = broker_handles(reader)
+        client = registry.client()
+        try:
+            fields, descriptor = federation.call(client, registry.registry_instance, 6)
+            assert fields[1] == 1 and descriptor[320:352].hex() == EXPECTED_ROOT
+            assert struct.unpack_from('<Q', descriptor, 16)[0] == 2
+            federation.call(client, registry.registry_instance, 8, h=fields[2], a=fields[1])
+            signed = federation.sign_once(client, registry.registry_instance, federation_key, 'portable')
+        finally:
+            client.close()
+        assert signed['listing'] == 3 and signed['reason'] == 6 and signed['sequence'] == 2
+        assert signed['root'] == EXPECTED_ROOT
+        reader.ui.press(61)
+        revoked = wait(lambda: (record if (record := admission(reader))['remote_phase'] == 3
+                                and record['reason'] == 6 and record['remote_sequence'] == 2 else None),
+                       'physical discovery receives the actual signed newer revocation', 180)
+        revoked_bytes = admission_bytes(reader)
+        assert revoked['descriptor']['root'] == EXPECTED_ROOT and revoked['descriptor']['signature_present']
+        assert not reader.roots() and not registry.roots()
+        (reader.path / 'revocation.ppm').write_bytes(reader.ui.frame().ppm())
+        passed('actual operator revocation supersedes its positive public admission without importing source',
+               positive=positive, revoked=revoked, signed=signed,
+               descriptor_sha256=hashlib.sha256(revoked_bytes).hexdigest(), reader_roots=0,
+               registry_roots=0, catalog_changed=hashlib.sha256(backing.read_bytes()).hexdigest() != store_before)
+        registry.stop()
+        running.remove(registry)
+        committed = hashlib.sha256(backing.read_bytes()).hexdigest()
+
+        fresh = relationship(args.output / 'reader-seed2-relationship', reader_id, args.seed_network_key,
+                             address, image_id, 'forge')
+        assert fresh['server_id'] != relation['server_id'] and fresh['service_id'] != relation['service_id']
+        seed = start_seed(args.output / 'seed2', args.seed_store, address, fresh, seed_package,
+                          args.operator_public, True)
+        running.append(seed)
+        seed.recover(bytes.fromhex(args.seed_namespace), EXPECTED_ROOT)
+        assert not admission(seed)['required'] and not admission(seed)['descriptor']['signature_present']
+        client = reader.client()
+        try:
+            network.configure(client, fresh['client'], fresh['description'])
+            forge.configure(client, reader.instance, fresh['client'])
+            table = client.request(2)
+            assert any(struct.unpack_from('<4Q', table, offset)[0] == verifier
+                       and struct.unpack_from('<4Q', table, offset)[2] == 2175
+                       for offset in range(0, len(table), 32))
+        finally:
+            client.close()
+        authenticate(reader, seed)
+        reader.ui.press(61)
+        metadata = wait(lambda: (state if (state := reader.inspect())['metadata_nodes'] == 17 else None),
+                        'fresh seed offers its actual retained root after known revocation', 180)
+        negative = wait(lambda: (record if (record := admission(reader))['remote_phase'] == 3
+                                 and record['reason'] == 6 and record['remote_sequence'] == 2 else None),
+                        'same-root public revocation independently reverified after fresh peer enrollment', 180)
+        assert negative['metadata_epoch'] > revoked['metadata_epoch']
+        assert admission_bytes(reader) == revoked_bytes, 'portable public descriptor bytes changed'
+        fresh_handles = broker_handles(reader)
+        assert old_handles['metadata'] != fresh_handles['metadata']
+        reader.ui.press(63)
+        wait(lambda: reader.inspect()['status'] == 14, 'native Fetch denies the known revoked release at a fresh seed', 120)
+        assert not reader.roots() and not reader.inspect()['import_transaction']
+        reader.ui.press(59)
+        frame = displayed_peer(reader, fresh['server_id'])
+        label = 'FEDERATION DECISION REQUIRED OR REJECTED'
+        assert rendered_text(frame, 60, 278, 40, 0x9fc6a5) == label
+        (reader.path / 'revoked-fetch-denied.ppm').write_bytes(frame.ppm())
+        assert hashlib.sha256(args.seed_store.read_bytes()).hexdigest() == seed_before
+        assert hashlib.sha256(backing.read_bytes()).hexdigest() == committed
+        passed('fresh authorized seed cannot resurrect known revoked admission or trigger a source import',
+               metadata=metadata, negative=negative, descriptor_sha256=hashlib.sha256(revoked_bytes).hexdigest(),
+               before_peer=relation['server_id'], after_peer=fresh['server_id'],
+               before_service=relation['service_id'], after_service=fresh['service_id'],
+               old_handles=old_handles, fresh_handles=fresh_handles,
+               denied_status=14, rendered_denial=label, reader_roots=0, import_transaction=0,
+               source_store_unchanged=True, committed_revocation_retained=True,
+               federation_reconfigured=False, verifier_instance=verifier)
+    except BaseException:
+        for node in running:
+            try:
+                (node.path / 'failure-state.json').write_text(json.dumps(dict(
+                    forge=node.inspect(), federation=admission(node), roots=node.roots()), indent=2))
+                if node.ui:
+                    (node.path / 'failure.ppm').write_bytes(node.ui.frame().ppm())
+            except BaseException:
+                pass
+        raise
+    finally:
+        for node in reversed(running):
+            node.stop()
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--output', type=Path, required=True)
@@ -238,6 +407,8 @@ def main():
     parser.add_argument('--registry-package', type=Path, default=ROOT / 'build/federation-wire/native-registry.ltrel')
     parser.add_argument('--operator-key', type=Path, default=ROOT / 'build/federation-wire/operator.pem')
     parser.add_argument('--operator-public', type=Path, default=ROOT / 'build/federation-wire/operator.pub')
+    parser.add_argument('--revocation-of', type=Path,
+                        help='explicitly revoke the successful previous journey own catalog, then test a fresh seed')
     parser.add_argument('--resume-publication', action='store_true',
                         help='reattach own still-running publication guests after harness-parent loss')
     parser.add_argument('--registry-pid', type=int)
@@ -249,6 +420,9 @@ def main():
         parser.error('resume requires explicit existing own Registry and Seed process IDs')
     args.image, args.seed_store = args.image.resolve(), args.seed_store.resolve()
     os.environ['LT_GUEST_IMAGE'] = str(args.image)
+    if args.revocation_of:
+        assert not args.resume_publication
+        return revocation_followup(args)
     image_id = hashlib.sha256(args.image.read_bytes()).digest()
     before_seed = hashlib.sha256(args.seed_store.read_bytes()).hexdigest()
     archive = json.loads(args.expected_graph.read_text())
