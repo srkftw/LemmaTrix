@@ -93,7 +93,16 @@ def recovered_graph(client,expected):
  require(set(imported)==set(target),'unexpected graph nodes became visible during recovery')
  roots=projects.roots(client,include_identity=True)
  require(head_map(roots)==head_map(expected['projects']),'recovered project names or heads differ')
- return dict(nodes=len(imported),bytes=sum(n['length'] for n in imported.values()),roots=roots)
+ for root in roots:
+  origin=root['head']
+  for _ in range(64):
+   require(origin in target and target[origin]['kind']==11,'manifest ancestry is incomplete')
+   parent=target[origin]['parent']
+   if parent=='00'*32:break
+   origin=parent
+  else:raise AssertionError('manifest ancestry exceeds bounded traversal')
+  require(root['project_id']==origin,'logical Project identity changed across retained ancestry')
+ return dict(nodes=len(imported),bytes=sum(n['length'] for n in imported.values()),roots=roots,logical_identity_and_ancestry_checked=True)
 
 
 def prepare_revision(client,recovered,project):
