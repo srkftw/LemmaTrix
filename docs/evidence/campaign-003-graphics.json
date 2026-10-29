@@ -228,10 +228,9 @@
     "failed": "The same rapid multi-file typing and F4 sequence did not publish a root within90s. No emulator fault was reported. The harness closed before a final failure-state capture; input/paint backlog is a hypothesis, not an established diagnosis. Newer dirty-row and event-coalescing code was not present in these frozen artifacts."
   },
   "remaining_evidence": [
-    "Final integrated image/package parity after newer font, project portal, lifecycle, dirty-row and coalesced-render changes",
-    "Complete restored project behavior on both assembly backends",
-    "Complete QEMU editor/build/install/update/rollback/retention/interruption journey",
-    "Physical ARM64, physical display/input, physical vault and independent-builder evidence"
+    "Affected final graph-material image: complete restored editor UI and native package execution on both assembly backends",
+    "ARM-under-qemu-aarch64 interrupted-vault graph recovery is running",
+    "Physical ARM64, physical display/input, physical vault and independent-builder evidence remain unavailable"
   ],
   "honest_limits": [
     "No self-hosting claim",
@@ -433,6 +432,275 @@
       "qemu": "Parent captured compositor store-page-fault cause15 at virtual0x42f718, below mapped0x430000 stack",
       "native_x86": "Same state5/cause15 and UART stval0x42f718; frame remained unchanged",
       "cause": "Expanded Labels.say generated11600-byte frame combined with approval path exceeded bounded16KiB stack. This is a static-label compiler stack-usage regression, not a device incompatibility. Parent is splitting label functions into bounded groups; a fresh image must validate that fix."
+    }
+  },
+  "final_device_core_4f4f": {
+    "image_sha256": "4f4f1ea6be9169a4a9236cd563b3342970838aa584f2e5f9e373ddb9c805db3e",
+    "artifacts": {
+      "campaign003-publisher.pub": "d9c44b133ea76eb64c8ae6a6c6b6d2a2fd7082af2c75f5333188ab1889f00db5",
+      "guest.bin": "4f4f1ea6be9169a4a9236cd563b3342970838aa584f2e5f9e373ddb9c805db3e",
+      "editor.ltrel": "35b1bab99a6e1aeafa03a1696c3c8cf1d387ef9f9d824452b8fefbc44e799332",
+      "text-tools.ltrel": "70967cad254d46be3d0d3e95fdbf80fae7cc152a621af098aee81bcb1dbc3fa0"
+    },
+    "scope": "Same immutable image and signed artifacts on both assembly backends. Root completed the full QEMU journey on this same image. A subsequent graph-only material-join validation fix requires a separately identified affected positive recovery/native execution run.",
+    "backends": {
+      "x86_64": {
+        "backend": "x86_64",
+        "image": "4f4f1ea6be9169a4a9236cd563b3342970838aa584f2e5f9e373ddb9c805db3e",
+        "editor_release": "542f517559b6e4631aca8f5475838730d1ede4d949813579893f91be44c8c928",
+        "consumer_release": "eae21afb36890bbcfe1fcf69ff6b9869480370436595af4126151f815b86070e",
+        "root": {
+          "cap": 17517221865620242689,
+          "name": "alpha",
+          "head": "1fa1e032c588bf6efd81235bf6e05de8edb03f3736ecd1e731caca0521d20f26"
+        },
+        "head": "1fa1e032c588bf6efd81235bf6e05de8edb03f3736ecd1e731caca0521d20f26",
+        "files": {
+          "Main.lean": "def parity : UInt64 := 41\n",
+          "Util.lean": "def extra : UInt64 := 7\n"
+        },
+        "frames": {
+          "approval": "eb4dd5a47fa02d4595352975733872cb9ff358617e8b0f867a99490447a41722",
+          "editor": "7e7343bace136f51fbb1960e558d2bc8031e7b89a27d5ee00c442d4017c31ccf",
+          "consumer": "f438d6f86677b854d689f6b7ad1562829e77bf6c7b242f343981b05467c5d17e",
+          "reopened": "a9683181660410e340f73b873b3a3e902ddc9fb3b957a252c0c8af2bd894b4b8"
+        },
+        "processes": [
+          {
+            "instance": 0,
+            "state": 0,
+            "rights": 0,
+            "cause": 0
+          },
+          {
+            "instance": 17517221861325275393,
+            "state": 1,
+            "rights": 4294967551,
+            "cause": 0
+          },
+          {
+            "instance": 17517221861325275394,
+            "state": 3,
+            "rights": 0,
+            "cause": 0
+          },
+          {
+            "instance": 17517221861325275395,
+            "state": 3,
+            "rights": 1,
+            "cause": 0
+          },
+          {
+            "instance": 17517221861325275396,
+            "state": 1,
+            "rights": 127,
+            "cause": 0
+          },
+          {
+            "instance": 17517221861325275397,
+            "state": 3,
+            "rights": 127,
+            "cause": 0
+          },
+          {
+            "instance": 17517221861325275398,
+            "state": 1,
+            "rights": 895,
+            "cause": 0
+          },
+          {
+            "instance": 17517221861325275399,
+            "state": 1,
+            "rights": 769,
+            "cause": 0
+          },
+          {
+            "instance": 17517221861325275144,
+            "state": 0,
+            "rights": 0,
+            "cause": 0
+          },
+          {
+            "instance": 17517221861325275145,
+            "state": 0,
+            "rights": 0,
+            "cause": 0
+          },
+          {
+            "instance": 17517221861325275146,
+            "state": 0,
+            "rights": 0,
+            "cause": 0
+          },
+          {
+            "instance": 17517221861325275147,
+            "state": 0,
+            "rights": 0,
+            "cause": 0
+          }
+        ],
+        "result": "pass",
+        "environment": "Native Linux x86-64 assembly interpreter",
+        "rendered_consumer_assertions": {
+          "header": "TEXT TOOLS / INDEPENDENT NATIVE APPLICATION",
+          "text": "independent input 42",
+          "words": 3,
+          "bytes": 20,
+          "lf": 0
+        },
+        "inspector_scope": "F6 physical input was issued, but timed capture was still editor source. This run does not independently establish Inspector rendering.",
+        "driver_adjustments": "Plain F2 correctly reopens granted roots directly. Additional real Shift-F2 requested the trusted picker. A fresh real Enter followed actual fully rendered TextTools candidate when early Enter had correctly been ignored before arming. Test harness was corrected to gate on actual frames and request Shift-F2."
+      },
+      "aarch64": {
+        "backend": "aarch64",
+        "image": "4f4f1ea6be9169a4a9236cd563b3342970838aa584f2e5f9e373ddb9c805db3e",
+        "editor_release": "542f517559b6e4631aca8f5475838730d1ede4d949813579893f91be44c8c928",
+        "consumer_release": "eae21afb36890bbcfe1fcf69ff6b9869480370436595af4126151f815b86070e",
+        "root": {
+          "cap": 7791810427226161409,
+          "name": "alpha",
+          "head": "1fa1e032c588bf6efd81235bf6e05de8edb03f3736ecd1e731caca0521d20f26"
+        },
+        "head": "1fa1e032c588bf6efd81235bf6e05de8edb03f3736ecd1e731caca0521d20f26",
+        "files": {
+          "Main.lean": "def parity : UInt64 := 41\n",
+          "Util.lean": "def extra : UInt64 := 7\n"
+        },
+        "frames": {
+          "approval": "eb4dd5a47fa02d4595352975733872cb9ff358617e8b0f867a99490447a41722",
+          "editor": "df94bec2afe3754e749daeb948c3f1b709ffa40c22181c0a8091c777a141a2df",
+          "consumer": "127974fc951d7b3ff38107092153ba0ce7c3b79d824010cf9c13e31b9462b19a",
+          "reopened": "c460648f2ef7c6421be202be2b4430c40bc344548da6e8a458ec2d5fc8ded11d"
+        },
+        "processes": [
+          {
+            "instance": 0,
+            "state": 0,
+            "rights": 0,
+            "cause": 0
+          },
+          {
+            "instance": 7791810422931194113,
+            "state": 1,
+            "rights": 4294967551,
+            "cause": 0
+          },
+          {
+            "instance": 7791810422931194114,
+            "state": 3,
+            "rights": 0,
+            "cause": 0
+          },
+          {
+            "instance": 7791810422931194115,
+            "state": 3,
+            "rights": 1,
+            "cause": 0
+          },
+          {
+            "instance": 7791810422931194116,
+            "state": 1,
+            "rights": 127,
+            "cause": 0
+          },
+          {
+            "instance": 7791810422931194117,
+            "state": 3,
+            "rights": 127,
+            "cause": 0
+          },
+          {
+            "instance": 7791810422931194118,
+            "state": 1,
+            "rights": 895,
+            "cause": 0
+          },
+          {
+            "instance": 7791810422931194119,
+            "state": 1,
+            "rights": 769,
+            "cause": 0
+          },
+          {
+            "instance": 7791810422931193864,
+            "state": 0,
+            "rights": 0,
+            "cause": 0
+          },
+          {
+            "instance": 7791810422931193865,
+            "state": 0,
+            "rights": 0,
+            "cause": 0
+          },
+          {
+            "instance": 7791810422931193866,
+            "state": 0,
+            "rights": 0,
+            "cause": 0
+          },
+          {
+            "instance": 7791810422931193867,
+            "state": 0,
+            "rights": 0,
+            "cause": 0
+          }
+        ],
+        "result": "pass",
+        "environment": "AArch64 assembly interpreter under qemu-aarch64 on x86-64; not physical ARM64",
+        "rendered_consumer_assertions": {
+          "header": "TEXT TOOLS / INDEPENDENT NATIVE APPLICATION",
+          "text": "independent input 42",
+          "words": 3,
+          "bytes": 20,
+          "lf": 0
+        },
+        "inspector_scope": "F6 physical input was issued, but timed capture was still editor source. This run does not independently establish Inspector rendering.",
+        "driver_adjustments": "Plain F2 correctly reopens granted roots directly. Additional real Shift-F2 requested the trusted picker. A fresh real Enter followed actual fully rendered TextTools candidate when early Enter had correctly been ignored before arming. Test harness was corrected to gate on actual frames and request Shift-F2."
+      }
+    },
+    "elapsed_seconds": {
+      "x86_64": 319.13,
+      "aarch64": 546.12
+    },
+    "timing_note": "Includes concurrent emulation load, readiness waits and corrected test-driver gestures; not a benchmark. ARM source entry used150ms key edges after actual rendered prompt/status completion.",
+    "shared_stable_head": "1fa1e032c588bf6efd81235bf6e05de8edb03f3736ecd1e731caca0521d20f26",
+    "checks": [
+      "Real virtio raw F12 and fresh Enter approved/installed already-signed apps after boot",
+      "Actual guest glyph pixels gated editor readiness",
+      "Multi-file keyboard entry and commit/export exact source bytes",
+      "Same canonical alpha root on both machines",
+      "Actual independent TextTools text/statistics rendered and inspected",
+      "Raw pointer gesture, focus switch, trusted picker and unchanged committed project reopen"
+    ],
+    "native_interrupted_recovery": {
+      "image": "4f4f1ea6be9169a4a9236cd563b3342970838aa584f2e5f9e373ddb9c805db3e",
+      "backend": "x86_64",
+      "environment": "native x86_64 assembly emulator, headless",
+      "recovery": {
+        "generation": 2,
+        "graph": {
+          "nodes": 27,
+          "bytes": 135295,
+          "roots": [
+            {
+              "cap": 2071706114067529984,
+              "name": "creator",
+              "head": "04f243c6e7c946e9a7ef81422967cf1b9ffa56395841d0ee73cf9bd29eaddd82",
+              "project_id": "69d8274c92d5b2c829e55d5e3f5359b7c652b13160d138eec5d7e99623a72f2b"
+            },
+            {
+              "cap": 2071706114067529985,
+              "name": "notes",
+              "head": "e1d03abf1ccbd513c5d9ee01ce4cccc4ef6afb506f60ea44cdecbac6c3b989e7",
+              "project_id": "e1d03abf1ccbd513c5d9ee01ce4cccc4ef6afb506f60ea44cdecbac6c3b989e7"
+            }
+          ],
+          "logical_identity_and_ancestry_checked": true
+        },
+        "snapshot": "old",
+        "fresh_authority": true
+      }
     }
   }
 }
