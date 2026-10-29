@@ -443,7 +443,7 @@ def graphDispatch (op caller rights length t : UInt64) : UInt64 :=
       let granted := if op == 33 then 89 else 25
       if op == 33 && (rights &&& 0x200000000) == 0 then respond 1 0 0 0 t else
       if !has rights 2 || !ProjectGraph.rootValid caller h required t || !equal (command+64) (root+128) 32 t then respond 8 0 0 0 t else
-      if !admin rights && ProjectGraph.ownerRoots caller 1 0 0 t >= 2 then respond 4 0 0 0 t else
+      if !admin rights && ProjectGraph.ownerRoots caller 1 0 0 t >= (if op == 33 then 4 else 2) then respond 4 0 0 0 t else
         let free := ProjectGraph.freeRoot 0 t
         let slot := ProjectGraph.freeRootCap 0 t
         if free == error || slot == error then respond 4 0 0 0 t else

@@ -51,7 +51,7 @@ partial def findVisibleNode (caller id kind i t : UInt64) : UInt64 :=
 
 -- Resolving a content ID alone never creates authority.
 def edgeAllowed (kind child : UInt64) : Bool :=
-  if kind == 11 then child == 10 else
+  if kind == 11 then child == 10 || child == 12 || child == 13 || child == 14 else
   if kind == 12 then child == 11 || child == 14 else
   if kind == 13 then child == 11 || child == 12 || child == 14 else
   kind == 14 && (child == 10 || child == 11)
@@ -76,9 +76,78 @@ def validPayload (caller r t : UInt64) : Bool :=
     n >= 32 && load64 p t == 0x31464e4d544c && load64 (p+8) t == 1 && count <= 32 &&
       load64 (p+24) t <= 65536 && n == 32+count*128+load64 (p+24) t && validateEntries caller r 0 count 0 t
 
+-- Release content is inert. These checks bind present material to the signed
+-- header commitments; Launcher separately verifies publisher and local authority.
+def releaseHash : UInt64 := 0xd16800
+def binaryBuffer : UInt64 := 0xd20000
+
+def releaseEdge (r i kind nameWord nameLength t : UInt64) : Bool :=
+  let e := r+288+i*128
+  load64 e t == kind && load64 (e+8) t == nameLength && load64 (e+48) t == nameWord
+
+partial def collectBinary (r i count used t : UInt64) : UInt64 :=
+  if i == count then Guest.Effects.effectValue used t else
+    let e := r+288+i*128
+    let found := findNode (e+16) 10 0 t
+    if found == error || load64 e t != 10 then error else
+      let source := recordAt found
+      let n := load64 (source+32) t
+      if n == 0 || n > 65536 || used > 262144 || n > 262144-used then error else
+        collectBinary r (i+1) count (used+n) (copy (source+256) (binaryBuffer+used) n t)
+
+def hashMatches (p n expected t : UInt64) : UInt64 :=
+  let t := ServiceHash.sha256At 0xd00000 p n releaseHash t
+  if equal releaseHash expected 32 t then t else error
+
+def checkRelease (r t : UInt64) : UInt64 :=
+  if load64 (r+272) t != 4 ||
+    !releaseEdge r 0 12 0x646c697562 5 t || !releaseEdge r 1 11 0x65646f63 4 t ||
+    !releaseEdge r 2 14 0x65636e6564697665 8 t || !releaseEdge r 3 11 0x656372756f73 6 t then error else
+    let details := r+800
+    let n := load64 (r+280) t
+    if n < 832 || load64 details t != 0x31544e43524c544c || load64 (details+8) t != 1 ||
+      load64 (details+16) t != 768 || load64 (details+56) t != 0 then error else
+      let mn := load64 (details+24) t
+      let sn := load64 (details+32) t
+      let en := load64 (details+40) t
+      let ln := load64 (details+48) t
+      if mn > 65536 || sn > 65536 || en > 65536 || ln > 65536 || n != 832+mn+sn+en+ln then error else
+        let h := details+64
+        if load64 h t != 0x3253454c544c || load64 (h+8) t != 2 || load64 (h+16) t != 512 then error else
+          let t := copy h scratch 512 t
+          let t := zero (scratch+160) 4 t
+          let checked := hashMatches scratch 512 (h+160) t
+          if checked == error then error else
+            let checked := hashMatches (h+768) mn (h+256) checked
+            if checked == error then error else
+              let checked := hashMatches (h+768+mn) sn (h+224) checked
+              if checked == error then error else
+                let checked := hashMatches (h+768+mn+sn) en (h+352) checked
+                if checked == error then error else
+                  let checked := hashMatches (h+768+mn+sn+en) ln (h+320) checked
+                  if checked == error then error else
+                    let bi := findNode (r+432) 11 0 checked
+                    let build := findNode (r+304) 12 0 checked
+                    if bi == error || build == error then error else
+                      let binary := recordAt bi
+                      let count := load64 (binary+272) checked
+                      if count == 0 || count > 4 then error else
+                        let bytes := collectBinary binary 0 count 0 checked
+                        if bytes == error || bytes != load64 (h+24) bytes then error else
+                          let checked := hashMatches binaryBuffer bytes (h+192) bytes
+                          if checked == error then error else
+                            let b := recordAt build
+                            let bd := b+288+load64 (b+272) checked*128
+                            if load64 bd checked != 0x31444c4942544c || load64 (bd+16) checked != 2 ||
+                              load64 (bd+40) checked != load64 (h+400) checked ||
+                              !equal (bd+48) (r+688) 32 checked || !equal (bd+80) (h+192) 32 checked then error else
+                              zero binaryBuffer 32768 checked
+
 def sealNode (caller r t : UInt64) : UInt64 :=
   if !validPayload caller r t then error else
-    let t := zero scratch 12 t
+    let checked := if load64 (r+40) t == 13 then checkRelease r t else t
+    if checked == error then error else
+    let t := zero scratch 12 checked
     let t := store64 scratch 0x3145444f4e544c t
     let t := store64 (scratch+8) 1 t
     let t := store64 (scratch+16) (load64 (r+40) t) t

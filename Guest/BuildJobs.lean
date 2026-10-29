@@ -46,12 +46,12 @@ def enqueue (caller root t : UInt64) : UInt64 :=
         let frozen := result r
         let t := store64 0x610040 frozen r
         let r := openHead frozen t
-        if r != 128 || status r != 0 then fail 1 r else
+        if r != 128 || status r != 0 then fail 1 (ProjectSDK.remove frozen r) else
           let h := result r
           let t := store64 0x610048 h r
           let launcher := syscall 97 1 0 0 0 t
           let r := delegate frozen launcher 65 t
-          if r != 160 || status r != 0 then fail 1 r else
+          if r != 160 || status r != 0 then fail 1 (ProjectSDK.remove frozen r) else
             let j := job slot
             let id := load64 st r+1
             let t := store64 st id r
@@ -173,6 +173,20 @@ def cancel (j t : UInt64) : UInt64 :=
     let t := zero j 256 t
     fail 0 t
 
+def artifactGrants (j caller t : UInt64) : UInt64 :=
+  if load64 j t != 2 || load64 (j+224) t == 0 || load64 (j+232) t == 0 then fail 6 t else
+    let r := share (load64 (j+224) t) caller 1 t
+    if r != 64 || status r != 0 then fail 1 r else
+      let build := result r
+      let t := store64 0x610090 build r
+      let r := share (load64 (j+232) t) caller 1 t
+      if r != 64 || status r != 0 then fail 1 r else
+        let evidence := result r
+        let r := response j r
+        let t := store64 (wire+48) build r
+        let t := store64 (wire+56) evidence t
+        Guest.Effects.effectValue r t
+
 def dispatch (caller rights length t : UInt64) : UInt64 :=
   let op := load64 command t
   let id := load64 (command+8) t
@@ -187,6 +201,7 @@ def dispatch (caller rights length t : UInt64) : UInt64 :=
       let j := job i
       if op == 4 && length == 64 && load64 (j+16) t == caller then response j t else
       if op == 5 && length == 64 && load64 (j+16) t == caller then cancel j t else
+      if op == 6 && length == 64 && (rights &&& 0x100000000) != 0 then artifactGrants j caller t else
       if op == 3 && (rights &&& 0x100000000) != 0 && length >= 192 && length <= 704 &&
         load64 j t == 1 && load64 (command+16) t == self t && load64 (command+24) t >= 2 && load64 (command+24) t <= 3 && load64 (command+40) t == 2 &&
         Guest.ProjectGraph.equal (command+64) (j+64) 32 t &&
@@ -214,6 +229,6 @@ partial def serve (endpoint t : UInt64) : UInt64 :=
 def main (initial : UInt64) : UInt64 :=
   let t := zero st 2048 initial
   let fetched := syscall 100 0 (st+32) 32 0 t
-  let t := store64 (st+64) (if fetched == 0 then 1 else 0) fetched
+  let t := store64 (st+64) (if fetched == 0 && !Guest.ProjectGraph.allZero (st+32) 32 fetched then 1 else 0) fetched
   serve (self t) t
 end Guest.BuildJobs
