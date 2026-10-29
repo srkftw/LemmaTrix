@@ -122,90 +122,95 @@ def validBuildDetail (r t : UInt64) : Bool :=
 def jsonBuffer : UInt64 := 0xd60000
 def jsonByte (pos byte t : UInt64) : UInt64 :=
   if pos >= 8192 then error else Guest.Effects.effectValue (pos+1) (store8 (jsonBuffer+pos) byte t)
+-- Emit bytes rather than unaligned SD: every byte stays within the budget.
+partial def jsonWord (value n pos t : UInt64) : UInt64 :=
+  if n == 0 then Guest.Effects.effectValue pos t else
+    let pos := jsonByte pos (value &&& 255) t
+    if pos == error then error else jsonWord (value >>> 8) (n-1) pos pos
 def jsonLiteral (id pos t : UInt64) : UInt64 :=
   if id == 0 then
-    if pos > 8184 then error else
-      let t := store64 (jsonBuffer+pos+0) 91 t
-      Guest.Effects.effectValue (pos+1) t
+    if pos > 8191 then error else
+      let pos := jsonWord 91 1 pos t
+      pos
   else
   if id == 1 then
-    if pos > 8184 then error else
-      let t := store64 (jsonBuffer+pos+0) 44 t
-      Guest.Effects.effectValue (pos+1) t
+    if pos > 8191 then error else
+      let pos := jsonWord 44 1 pos t
+      pos
   else
   if id == 2 then
-    if pos > 8176 then error else
-      let t := store64 (jsonBuffer+pos+0) 4189025452468216443 t
-      let t := store64 (jsonBuffer+pos+8) 34 t
-      Guest.Effects.effectValue (pos+9) t
+    if pos > 8183 then error else
+      let pos := jsonWord 4189025452468216443 8 pos t
+      let pos := jsonWord 34 1 pos pos
+      pos
   else
   if id == 3 then
-    if pos > 8176 then error else
-      let t := store64 (jsonBuffer+pos+0) 3833233334081825826 t
-      let t := store64 (jsonBuffer+pos+8) 574235190 t
-      Guest.Effects.effectValue (pos+12) t
+    if pos > 8180 then error else
+      let pos := jsonWord 3833233334081825826 8 pos t
+      let pos := jsonWord 574235190 4 pos pos
+      pos
   else
   if id == 4 then
-    if pos > 8176 then error else
-      let t := store64 (jsonBuffer+pos+0) 2478521763259100194 t
-      let t := store64 (jsonBuffer+pos+8) 58 t
-      Guest.Effects.effectValue (pos+9) t
+    if pos > 8183 then error else
+      let pos := jsonWord 2478521763259100194 8 pos t
+      let pos := jsonWord 58 1 pos pos
+      pos
   else
   if id == 5 then
-    if pos > 8184 then error else
-      let t := store64 (jsonBuffer+pos+0) 125 t
-      Guest.Effects.effectValue (pos+1) t
+    if pos > 8191 then error else
+      let pos := jsonWord 125 1 pos t
+      pos
   else
   if id == 6 then
-    if pos > 8184 then error else
-      let t := store64 (jsonBuffer+pos+0) 93 t
-      Guest.Effects.effectValue (pos+1) t
+    if pos > 8191 then error else
+      let pos := jsonWord 93 1 pos t
+      pos
   else
   if id == 7 then
-    if pos > 8168 then error else
-      let t := store64 (jsonBuffer+pos+0) 8241990191961766747 t
-      let t := store64 (jsonBuffer+pos+8) 3906083645759381369 t
-      let t := store64 (jsonBuffer+pos+16) 2243106 t
-      Guest.Effects.effectValue (pos+19) t
+    if pos > 8173 then error else
+      let pos := jsonWord 8241990191961766747 8 pos t
+      let pos := jsonWord 3906083645759381369 8 pos pos
+      let pos := jsonWord 2243106 3 pos pos
+      pos
   else
   if id == 8 then
-    if pos > 8176 then error else
-      let t := store64 (jsonBuffer+pos+0) 7592895727431461922 t
-      let t := store64 (jsonBuffer+pos+8) 574235236 t
-      Guest.Effects.effectValue (pos+12) t
+    if pos > 8180 then error else
+      let pos := jsonWord 7592895727431461922 8 pos t
+      let pos := jsonWord 574235236 4 pos pos
+      pos
   else
   if id == 9 then
     if pos > 8144 then error else
-      let t := store64 (jsonBuffer+pos+0) 2478227094008638498 t
-      let t := store64 (jsonBuffer+pos+8) 8299417727452848698 t
-      let t := store64 (jsonBuffer+pos+16) 7074443009456369249 t
-      let t := store64 (jsonBuffer+pos+24) 8224184395757283701 t
-      let t := store64 (jsonBuffer+pos+32) 7232627565552562533 t
-      let t := store64 (jsonBuffer+pos+40) 2466321629486344041 t
-      Guest.Effects.effectValue (pos+48) t
+      let pos := jsonWord 2478227094008638498 8 pos t
+      let pos := jsonWord 8299417727452848698 8 pos pos
+      let pos := jsonWord 7074443009456369249 8 pos pos
+      let pos := jsonWord 8224184395757283701 8 pos pos
+      let pos := jsonWord 7232627565552562533 8 pos pos
+      let pos := jsonWord 2466321629486344041 8 pos pos
+      pos
   else
   if id == 10 then
-    if pos > 8168 then error else
-      let t := store64 (jsonBuffer+pos+0) 7165919078633319458 t
-      let t := store64 (jsonBuffer+pos+8) 4189038625367940965 t
-      let t := store64 (jsonBuffer+pos+16) 34 t
-      Guest.Effects.effectValue (pos+17) t
+    if pos > 8175 then error else
+      let pos := jsonWord 7165919078633319458 8 pos t
+      let pos := jsonWord 4189038625367940965 8 pos pos
+      let pos := jsonWord 34 1 pos pos
+      pos
   else
   if id == 11 then
-    if pos > 8136 then error else
-      let t := store64 (jsonBuffer+pos+0) 7165919078633319458 t
-      let t := store64 (jsonBuffer+pos+8) 7955998378758004581 t
-      let t := store64 (jsonBuffer+pos+16) 7959305549529051745 t
-      let t := store64 (jsonBuffer+pos+24) 7234304265017255286 t
-      let t := store64 (jsonBuffer+pos+32) 7164223631720066082 t
-      let t := store64 (jsonBuffer+pos+40) 2478221553555825000 t
-      let t := store64 (jsonBuffer+pos+48) 8762 t
-      Guest.Effects.effectValue (pos+50) t
+    if pos > 8142 then error else
+      let pos := jsonWord 7165919078633319458 8 pos t
+      let pos := jsonWord 7955998378758004581 8 pos pos
+      let pos := jsonWord 7959305549529051745 8 pos pos
+      let pos := jsonWord 7234304265017255286 8 pos pos
+      let pos := jsonWord 7164223631720066082 8 pos pos
+      let pos := jsonWord 2478221553555825000 8 pos pos
+      let pos := jsonWord 8762 2 pos pos
+      pos
   else
   if id == 12 then
-    if pos > 8184 then error else
-      let t := store64 (jsonBuffer+pos+0) 6126882 t
-      Guest.Effects.effectValue (pos+3) t
+    if pos > 8189 then error else
+      let pos := jsonWord 6126882 3 pos t
+      pos
   else
   error
 
