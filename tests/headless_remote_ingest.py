@@ -262,6 +262,9 @@ def main():
         passed('ordinary source metadata grants no automatic upload or execution', metadata=metadata,
                provider_roots=0, compiler_run=False)
 
+        wait(lambda: rendered_text(requester.ui.frame(), 10, 354, 45, 0xe9bc75) ==
+             'F7 upload source; F10 approve. State / error:',
+             'native control explicitly distinguishes source disclosure from computation approval', 120)
         requester.ui.press(65)
         quote = wait(lambda: (state if (state := remote(requester))['state'] == 1 else None),
                      'physical F7 uploads exact source and waits for actual provider quote', 240)
@@ -331,6 +334,23 @@ def main():
             client.close()
         passed('repeated source request is idempotent and cancellation leaves no executor work',
                job=job['job_id'], provider_state=5, queued_jobs=0, compiler_run=False)
+        requester.ui.press(65)
+        again = wait(lambda: (state if (state := remote(requester))['state'] == 1
+                              and state['request_id'] != quote['request_id'] else None),
+                     'fresh physical F7 reuses already validated provider source under a new request', 180)
+        repeated = remote(provider)
+        assert repeated['request_id'] == again['request_id'] and repeated['local_job'] == 0
+        assert repeated['source_root'] == head and len(provider.roots()) == 1
+        client = provider.client()
+        try:
+            assert projects.queued_build(client) is None
+        finally:
+            client.close()
+        requester.ui.press(1)
+        wait(lambda: remote(provider)['state'] == 5, 'physical Esc cancels the fresh unexecuted quote')
+        passed('fresh authorized request reuses exact validated source without duplicate roots or stale jobs',
+               previous_request=quote['request_id'], fresh_request=again['request_id'], source_root=head,
+               provider_roots=1, quoted_local_job=0, compiler_run=False)
     except BaseException:
         for node in (requester, provider):
             if node:

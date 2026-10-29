@@ -59,7 +59,9 @@ def select (root t : UInt64) : UInt64 :=
         let t := if old == 0 then t else Guest.NetworkSDK.revoke old t
         let r := Guest.NetworkSDK.grant pins 3 3 4194304 65536 100000 2 t
         if r != 64 || status r != 0 then error else
-          let t := store64 (st+8) (result r) r
+          let grant := result r
+          let t := zero (st+24) 37 r
+          let t := store64 (st+8) grant t
           store64 (st+16) root (store64 (st+32) 0 t)
 
 def validPacket (p n t : UInt64) : Bool :=
