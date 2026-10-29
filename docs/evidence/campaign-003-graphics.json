@@ -229,7 +229,6 @@
   },
   "remaining_evidence": [
     "Affected final graph-material image: complete restored editor UI and native package execution on both assembly backends",
-    "ARM-under-qemu-aarch64 interrupted-vault graph recovery is running",
     "Physical ARM64, physical display/input, physical vault and independent-builder evidence remain unavailable"
   ],
   "honest_limits": [
@@ -691,6 +690,35 @@
             },
             {
               "cap": 2071706114067529985,
+              "name": "notes",
+              "head": "e1d03abf1ccbd513c5d9ee01ce4cccc4ef6afb506f60ea44cdecbac6c3b989e7",
+              "project_id": "e1d03abf1ccbd513c5d9ee01ce4cccc4ef6afb506f60ea44cdecbac6c3b989e7"
+            }
+          ],
+          "logical_identity_and_ancestry_checked": true
+        },
+        "snapshot": "old",
+        "fresh_authority": true
+      }
+    },
+    "arm_interrupted_recovery": {
+      "image": "4f4f1ea6be9169a4a9236cd563b3342970838aa584f2e5f9e373ddb9c805db3e",
+      "backend": "aarch64",
+      "environment": "ARM64 assembly emulator under qemu-aarch64, headless",
+      "recovery": {
+        "generation": 2,
+        "graph": {
+          "nodes": 27,
+          "bytes": 135295,
+          "roots": [
+            {
+              "cap": 915345594787037440,
+              "name": "creator",
+              "head": "04f243c6e7c946e9a7ef81422967cf1b9ffa56395841d0ee73cf9bd29eaddd82",
+              "project_id": "69d8274c92d5b2c829e55d5e3f5359b7c652b13160d138eec5d7e99623a72f2b"
+            },
+            {
+              "cap": 915345594787037441,
               "name": "notes",
               "head": "e1d03abf1ccbd513c5d9ee01ce4cccc4ef6afb506f60ea44cdecbac6c3b989e7",
               "project_id": "e1d03abf1ccbd513c5d9ee01ce4cccc4ef6afb506f60ea44cdecbac6c3b989e7"
