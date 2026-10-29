@@ -13,42 +13,47 @@ from creator_journey import Journey,require,rendered_score,rendered_text
 
 
 def main():
- p=argparse.ArgumentParser();p.add_argument('--editor',type=Path,required=True);p.add_argument('--probe',type=Path,required=True);p.add_argument('--public',type=Path,required=True);p.add_argument('--key',type=Path,required=True);p.add_argument('--output',type=Path,required=True);a=p.parse_args();a.output=a.output.resolve()
+ p=argparse.ArgumentParser();p.add_argument('--editor',type=Path,required=True);p.add_argument('--probe',type=Path,required=True);p.add_argument('--public',type=Path,required=True);p.add_argument('--key',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--reuse-release',type=Path,help='rerun only authority/lifecycle checks with this already built/signed creator package');a=p.parse_args();a.output=a.output.resolve()
  require(not a.output.exists(),'output must be a new owned directory')
  j=Journey(a);worker=None;worker_log=None
  try:
-  j.boot(False);editor,editor_instance=j.trust_stage(a.editor,'native-editor');j.ui.press(1);time.sleep(.3)
-  command=[ROOT/'lt','project','--socket',j.socket,'import',ROOT/'examples/creator','--name','creator']
-  subprocess.run(list(map(str,command)),cwd=ROOT,check=True,capture_output=True)
-  j.open_named_project('creator')
-  # Real edits create an immutable new source/project revision before F5.
-  j.ui.press(107);j.ui.textASCII('\n-- explicit ephemeral session edit\n',delay=.04);j.ui.press(62);time.sleep(.5)
-  with j.client() as c:
-   root=next(r for r in projects.roots(c) if r['name']=='creator');head,files=projects.snapshot(c,root['cap']);require(files['Main.lean'].endswith(b'-- explicit ephemeral session edit\n'),'native ephemeral edit was not committed')
-   c.request(10,releases.project('creator')+releases.public_modulus(a.public))
-   try:project_vault.unlock(c,bytes([89])*32)
-   except ValueError:pass
-   else:raise AssertionError('no-vault guest acknowledged an unavailable durable store')
-  worker_path=j.out/'publisher-worker.log';worker_log=worker_path.open('wb')
-  command=[ROOT/'lt','project','--socket',j.socket,'serve','--project','creator','--sign-key',a.key.resolve(),'--output',j.out/'worker','--version','2.0.0']
-  worker=subprocess.Popen(list(map(str,command)),cwd=ROOT,stdout=worker_log,stderr=worker_log,start_new_session=True)
-  j.ui.press(63);deadline=time.monotonic()+180;staged=None
-  while time.monotonic()<deadline:
-   require(worker.poll() is None,'publisher worker exited unexpectedly')
-   for line in worker_path.read_text().splitlines():
-    try:event=json.loads(line)
-    except ValueError:continue
-    if event['event']=='staged':staged=event
-   if staged:break
-   time.sleep(.1)
-  require(staged is not None,'F5 persistent bootstrap did not stage a real signed result')
-  require(staged['signature_verified'] and staged['material_checked'] and not staged['installed'],'worker skipped signature/material/local-authority separation')
-  old=j.ui.frame().digest;j.ui.press(88);j.ui.wait_frame(old);time.sleep(.6);j.ui.press(28);time.sleep(2)
-  j.ui.textASCII('cat123',delay=.09);time.sleep(.6);frame=j.ui.frame();require(rendered_score(frame)=='00000014','no-vault exact build did not run on arbitrary input')
-  require(hashlib.sha256((ROOT/'build/live/guest.bin').read_bytes()).hexdigest()==j.image,'ordinary project build changed OS image')
-  with j.client() as c:active=c.request(29,releases.project('creator'));require(active[160:192].hex()==staged['release'],'F12 did not activate exact worker result')
-  (j.out/'ephemeral-native-app.ppm').write_bytes(frame.ppm());j.passed('no-vault real editing/F5 sandbox worker/F12 exact approval/native input',source=head,release=staged['release'],score=rendered_score(frame),durability='ephemeral',worker=staged)
-  os.killpg(worker.pid,signal.SIGINT);worker.wait(timeout=10);worker=None;worker_log.close();worker_log=None
+  j.boot(False);editor,editor_instance=j.trust_stage(a.editor,'native-editor')
+  if a.reuse_release:
+   j.ui.textASCII('ephemeral-proof',delay=.05);j.ui.press(28);j.ui.textASCII('def private : UInt64 := 99\n',delay=.05);j.ui.press(62);time.sleep(.5)
+   j.trust_stage(a.reuse_release,'creator');j.ui.textASCII('cat123',delay=.09);time.sleep(.6);require(rendered_score(j.ui.frame())=='00000014','reused actual native artifact input differs')
+  else:
+   j.ui.press(1);time.sleep(.3)
+   command=[ROOT/'lt','project','--socket',j.socket,'import',ROOT/'examples/creator','--name','creator']
+   subprocess.run(list(map(str,command)),cwd=ROOT,check=True,capture_output=True)
+   j.open_named_project('creator')
+   # Real edits create an immutable new source/project revision before F5.
+   j.ui.press(107);j.ui.textASCII('\n-- explicit ephemeral session edit\n',delay=.04);j.ui.press(62);time.sleep(.5)
+   with j.client() as c:
+    root=next(r for r in projects.roots(c) if r['name']=='creator');head,files=projects.snapshot(c,root['cap']);require(files['Main.lean'].endswith(b'-- explicit ephemeral session edit\n'),'native ephemeral edit was not committed')
+    c.request(10,releases.project('creator')+releases.public_modulus(a.public))
+    try:project_vault.unlock(c,bytes([89])*32)
+    except ValueError:pass
+    else:raise AssertionError('no-vault guest acknowledged an unavailable durable store')
+   worker_path=j.out/'publisher-worker.log';worker_log=worker_path.open('wb')
+   command=[ROOT/'lt','project','--socket',j.socket,'serve','--project','creator','--sign-key',a.key.resolve(),'--output',j.out/'worker','--version','2.0.0']
+   worker=subprocess.Popen(list(map(str,command)),cwd=ROOT,stdout=worker_log,stderr=worker_log,start_new_session=True)
+   j.ui.press(63);deadline=time.monotonic()+180;staged=None
+   while time.monotonic()<deadline:
+    require(worker.poll() is None,'publisher worker exited unexpectedly')
+    for line in worker_path.read_text().splitlines():
+     try:event=json.loads(line)
+     except ValueError:continue
+     if event['event']=='staged':staged=event
+    if staged:break
+    time.sleep(.1)
+   require(staged is not None,'F5 persistent bootstrap did not stage a real signed result')
+   require(staged['signature_verified'] and staged['material_checked'] and not staged['installed'],'worker skipped signature/material/local-authority separation')
+   old=j.ui.frame().digest;j.ui.press(88);j.ui.wait_frame(old);time.sleep(.6);j.ui.press(28);time.sleep(2)
+   j.ui.textASCII('cat123',delay=.09);time.sleep(.6);frame=j.ui.frame();require(rendered_score(frame)=='00000014','no-vault exact build did not run on arbitrary input')
+   require(hashlib.sha256((ROOT/'build/live/guest.bin').read_bytes()).hexdigest()==j.image,'ordinary project build changed OS image')
+   with j.client() as c:active=c.request(29,releases.project('creator'));require(active[160:192].hex()==staged['release'],'F12 did not activate exact worker result')
+   (j.out/'ephemeral-native-app.ppm').write_bytes(frame.ppm());j.passed('no-vault real editing/F5 sandbox worker/F12 exact approval/native input',source=head,release=staged['release'],score=rendered_score(frame),durability='ephemeral',worker=staged)
+   os.killpg(worker.pid,signal.SIGINT);worker.wait(timeout=10);worker=None;worker_log.close();worker_log=None
   probe,old_instance=j.trust_stage(a.probe,'workspace-authority')
   def probe_call(c,instance,stale):
    response=c.request(150,struct.pack('<Q8Q',instance,1,stale,0,0,0,0,0,1));status,mask,own=struct.unpack_from('<3Q',response)
@@ -61,7 +66,7 @@ def main():
     except ValueError:continue
     if header[160:192].hex()==probe['release_id']:slot=index+1;break
    require(slot is not None,'installed authority probe catalog missing')
-   new_instance=struct.unpack_from('<Q',c.request(25,struct.pack('<Q',slot)))[0]
+   new_instance=struct.unpack_from('<Q',c.request(25,struct.pack('<Q',slot)),8)[0]
   time.sleep(.3)
   with j.client() as c:probe_call(c,new_instance,old_instance);c.request(26,struct.pack('<Q',new_instance))
   require(new_instance!=old_instance and new_instance&255==old_instance&255,'probe did not exercise reused process slot')
