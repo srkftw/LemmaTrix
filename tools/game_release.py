@@ -17,8 +17,10 @@ def source_files(generation):
   'assets/original.ltlevels':(ROOT/'resources/crate-workshop/original.ltlevels').read_bytes(),
   'assets/near-goal.ltlevels':(ROOT/'resources/crate-workshop/near-goal.ltlevels').read_bytes()}
 
-def publish(client,*,generation,key,output,previous=None,version=None):
+def publish(client,*,generation,key,output,previous=None,version=None,edition_version=None):
  if generation not in (1,2):raise ValueError('supported original generation is1 or2')
+ previous_edition=(previous.get('edition_version',previous['generation']) if previous else 0)
+ if edition_version is not None and (type(edition_version)is not int or not previous_edition<edition_version<=0xffffffff):raise ValueError('edition version must be a positive uint32 greater than the previous edition')
  output=Path(output);output.mkdir(parents=True,exist_ok=True)
  files=source_files(generation);source_entries=[]
  for name,data in sorted(files.items()):
@@ -60,7 +62,7 @@ def publish(client,*,generation,key,output,previous=None,version=None):
  selected=[*source_entries,('release.ltrel',13,release_id)]
  head_handle,head=projects.node(client,projects.manifest(selected),11,source_handle)
  name=f'crate-workshop-{generation}';fields,_=client.objects(22,head_handle,0,len(name),data=bytes(32)+name.encode().ljust(64,b'\0'));root=fields[1]
- edition_version=(previous.get('edition_version',previous['generation'])+1) if previous else generation
+ edition_version=(previous_edition+1 if previous else generation) if edition_version is None else edition_version
  raw=consumers.create(key=key,project='crate-workshop',facet='game',collection=hashlib.sha256(b'Crate Workshop original collection').digest(),item=hashlib.sha256(b'Crate Workshop game').digest(),edition=hashlib.sha256(b'Crate Workshop native edition'+package[160:192]).digest(),title='Crate Workshop / original puzzles / generation '+str(generation),resource=files['assets/original.ltlevels'],executable=package,sequence=1,edition_version=edition_version,supersedes=previous['edition'] if previous else None,license_id=1)
  (output/'consumer.release').write_bytes(raw)
  attached=consumers.attach(client,raw,files['assets/original.ltlevels'],name=name,root=root)
@@ -69,11 +71,11 @@ def publish(client,*,generation,key,output,previous=None,version=None):
  (output/'publication.json').write_text(json.dumps(result,indent=2)+'\n');return result
 
 def main(argv=None):
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--socket',required=True,type=Path);p.add_argument('--key',required=True,type=Path);p.add_argument('--generation',required=True,type=int,choices=(1,2));p.add_argument('--previous',type=Path);p.add_argument('--version');p.add_argument('--output',required=True,type=Path);a=p.parse_args(argv)
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--socket',required=True,type=Path);p.add_argument('--key',required=True,type=Path);p.add_argument('--generation',required=True,type=int,choices=(1,2));p.add_argument('--previous',type=Path);p.add_argument('--version');p.add_argument('--edition-version',type=int,help='positive uint32 greater than the previous signed edition version; default increments it');p.add_argument('--output',required=True,type=Path);a=p.parse_args(argv)
  previous=json.loads(a.previous.read_text()) if a.previous else None
  if a.generation==2 and previous is None:raise ValueError('generation2 requires exact prior publication state from this live guest')
  c=live.Client(a.socket)
- try:result=publish(c,generation=a.generation,key=a.key,output=a.output,previous=previous,version=a.version)
+ try:result=publish(c,generation=a.generation,key=a.key,output=a.output,previous=previous,version=a.version,edition_version=a.edition_version)
  finally:c.close()
  print(json.dumps(result,indent=2));return 0
 if __name__=='__main__':raise SystemExit(main())

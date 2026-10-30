@@ -396,7 +396,17 @@ def encodeSave (t : UInt64) : UInt64 :=
   let t := store64 (saveBytes+112) (load64 (st+32) t) t
   store64 (saveBytes+120) (load64 (st+40) t) t
 
-def snapshot (t : UInt64) : UInt64 :=
+-- One old cached owner reference can await an idempotent release reply.
+-- A lost reply does not permit another allocation to accumulate behind it.
+def retireSnapshot (t : UInt64) : UInt64 :=
+  let previous := load64 (st+192) t
+  if previous == 0 then t else
+    let r := releaseReference previous t
+    if r == 64 && (status r == 0 || status r == 3) then store64 (st+192) 0 r else r
+
+def snapshot (initial : UInt64) : UInt64 :=
+  let t := retireSnapshot initial
+  if load64 (st+192) t != 0 then fail 4 (changed 24 t) else
   if load64 (st+72) t != 0 && load64 (st+64) t == load64 (st+56) t then fail 0 (changed 23 t) else
     let t := encodeSave t
     let got := stage 192 2 0 t
@@ -409,10 +419,15 @@ def snapshot (t : UInt64) : UInt64 :=
           let t := copy (wire+64) digest 32 got
           let got := commit handle digest t
           if got != 96 || status got != 0 then fail 4 (changed 24 (abortStage handle got)) else
+            let previous := load64 (st+72) got
             let t := store64 (st+72) handle got
             let t := store64 (st+64) (load64 (st+56) t) t
             let t := store64 (st+80) (load64 (st+80) t+1) t
-            fail 0 (changed 23 t)
+            -- Retire only this cached reference after publication. Previously
+            -- exported readers keep their immutable save and its own grant.
+            let t := store64 (st+192) (if previous == handle then 0 else previous) t
+            let t := retireSnapshot t
+            if load64 (st+192) t != 0 then fail 4 (changed 24 t) else fail 0 (changed 23 t)
 
 def inspect (t : UInt64) : UInt64 :=
   let t := zero wire 8 t

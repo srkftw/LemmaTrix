@@ -19,7 +19,7 @@ from native_responsive import NativeResponsive
 
 
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--image',type=Path,required=True);p.add_argument('--packages',type=Path,required=True);p.add_argument('--editions',type=Path,default=ROOT/'build/campaign005/game-secure-editions');p.add_argument('--public',type=Path,default=ROOT/'build/campaign005/publisher.pub');p.add_argument('--mod',action='store_true');p.add_argument('--mod-only',action='store_true',help='stop after one fresh remote install and native scoped mod check');p.add_argument('--resume-bootstrap',action='store_true');p.add_argument('--keep-running',action='store_true');p.add_argument('--output',type=Path,required=True);a=p.parse_args();out=a.output.resolve();out.mkdir(parents=True,exist_ok=a.resume_bootstrap);image=out/'platform.bin';
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--image',type=Path,required=True);p.add_argument('--packages',type=Path,required=True);p.add_argument('--editions',type=Path,default=ROOT/'build/campaign005/game-secure-editions');p.add_argument('--public',type=Path,default=ROOT/'build/campaign005/publisher.pub');p.add_argument('--reference-checks',type=int,default=0,help='bounded repeated native K/N check on generation2 after remote update');p.add_argument('--mod',action='store_true');p.add_argument('--mod-only',action='store_true',help='stop after one fresh remote install and native scoped mod check');p.add_argument('--resume-bootstrap',action='store_true');p.add_argument('--keep-running',action='store_true');p.add_argument('--output',type=Path,required=True);a=p.parse_args();out=a.output.resolve();out.mkdir(parents=True,exist_ok=a.resume_bootstrap);image=out/'platform.bin';
  if a.resume_bootstrap:require(image.read_bytes()==a.image.read_bytes(),'resumed selected platform differs')
  else:image.write_bytes(a.image.read_bytes())
  image_id=hashlib.sha256(image.read_bytes()).hexdigest();base=out/'s';personal=None;source=None;success=False;game=0;lib=0;fetch=0;checks=[];packages=[]
@@ -114,6 +114,35 @@ def main():
   focus_library();personal.ui.press(49);wait(lambda:text(16,16,'TRUSTED'),300,'N explicit selected save recovery');time.sleep(.5);personal.ui.press(28);wait(library_surface,300,'N recovery panel dismissed');wait(lambda:struct.unpack('<Q',row(word(8),96,8))[0] not in (0,prior),300,'fresh selected save grant');personal.ui.press(38);wait(lambda:current()['won']==1 and current()['moves']==2,120,'L compatible actual saved puzzle state')
   with personal.client()as c:inv=c.request(202,struct.pack('<8Q',202,0,3,0,0,0,0,1));require(inv[64:96].hex()==digest,'recovery selected a different approved snapshot')
   passed(label,recipient=personal.base.name,save_sha256=digest,state=current(),fresh_save_scope=True)
+ def reference_checks(count):
+  require(32<count<=64,'reference checks must exceed old32-grant quota and stay bounded')
+  held=0
+  try:
+   with personal.client()as c:
+    fields,_=game_call(c,game,502);require(fields[0]==0,'held prior reader export failed');held=fields[1];preserved=c.read_object(held)
+   snapshots=[]
+   for iteration in range(count):
+    NativeResponsive(personal,game,lib).focus_game();personal.ui.press(19);wait(lambda:current()['moves']==0 and not current()['won'],60,'reference-check actual Game reset')
+    if iteration%2:personal.ui.press(32);wait(lambda:current()['moves']==1,60,'reference-check actual right push')
+    focus_library();previous=struct.unpack('<Q',row(1,96,8))[0];personal.ui.press(37);new=wait(lambda:(h if(h:=struct.unpack('<Q',row(1,96,8))[0])not in(0,previous)else 0),60,'native K replaces selected save without leaking old grant')
+    with personal.client()as c:require(c.read_object(held)==preserved,'new snapshots destroyed a held immutable reader')
+    snapshots.append(dict(iteration=iteration,selected_save_handle=new,moves=current()['moves']))
+   passed('more than32 native changed-state K snapshots succeed after remote generation2 update while a prior reader stays byte-exact',iterations=count,held_save_sha256=hashlib.sha256(preserved).hexdigest(),snapshots=snapshots)
+   # The retained producer1 save is still the explicitly approved selection.
+   # Every N creates a fresh caller grant; replaced references must retire the
+   # former Launcher-owned recovery record once no reader holds it.
+   baseline=None;recoveries=[]
+   for iteration in range(count):
+    focus_library();previous=struct.unpack('<Q',row(1,96,8))[0];personal.ui.press(49);wait(lambda:text(16,16,'TRUSTED'),300,'native N selected recovery approval');time.sleep(.5);personal.ui.press(28);wait(library_surface,300,'N physical approval panel dismissed');new=wait(lambda:(h if(h:=struct.unpack('<Q',row(1,96,8))[0])not in(0,previous)else 0),60,'N replaces prior selected recovery grant');personal.ui.press(38);wait(lambda:current()['moves']==2 and current()['won']==1,60,'L actual compatible recovered state')
+    with personal.client()as c:
+     require(c.read_object(held)==preserved,'N recovery retired a different held reader');stats=c.objects(10)[0]
+    if baseline is None:baseline=stats[1:4]
+    require(stats[1:4]==baseline,'native repeated N accumulated Launcher-owned records/references');recoveries.append(dict(iteration=iteration,selected_save_handle=new,launcher_owned_records=stats[1],launcher_owned_bytes=stats[2],launcher_grants=stats[3]))
+   passed('more than32 physical N/Enter/L recoveries keep Launcher record/byte/grant counts stable and preserve an independent old reader',iterations=count,stable_launcher_stats=list(baseline),recoveries=recoveries,held_save_sha256=hashlib.sha256(preserved).hexdigest())
+  finally:
+   if held:
+    with personal.client()as c:c.objects(47,held)
+
  try:
   if not a.resume_bootstrap:
    subprocess.run([sys.executable,str(ROOT/'tests/library_graph_provider.py'),'--image',str(image),'--packages',str(a.packages.resolve()),'--archive',str((a.editions/'game1-closure.json').resolve()),'--game',str(editions[0][1].resolve()),'--public',str(a.public.resolve()),'--output',str(base)],cwd=ROOT,check=True)
@@ -140,7 +169,9 @@ def main():
   archive,_,info=editions[1]
   with source.client()as c:
    records=[dict(r,payload=base64.b64decode(r['payload']))for r in archive['nodes']];root=projects.import_records(c,archive['selected'],records)[0]['cap'];federation.call(c,reg,2,h=c.objects(27,root,reg,25)[0][1]);decision=federation.sign_once(c,reg,base/'federation.pem','consumer',8191);require(decision['listing']==5 and decision['release_id']==info['release_id'],'actual second native+consumer admission differs')
-  scope(1,archive['selected'][0]['head'],root);focus_library();personal.ui.press(16);wait(lambda:word(16)==2,300,'native Q discovers newly admitted generation2');require(row(1,1280,32).hex()==info['release_id'],'new consumer does not bind exact executable');select(1);personal.ui.press(30);wait(lambda:struct.unpack('<Q',row(1,8,8))[0]!=0,60,'metadata-only Add second edition');old_game=game;install(1);require(current()['generation']==2 and not current()['won'],'new Game did not start separately');recover('actually newly admitted/downloaded generation2 loads compatible approved prior save',first_save);second_save=save(1,2)
+  scope(1,archive['selected'][0]['head'],root);focus_library();personal.ui.press(16);wait(lambda:word(16)==2,300,'native Q discovers newly admitted generation2');require(row(1,1280,32).hex()==info['release_id'],'new consumer does not bind exact executable');select(1);personal.ui.press(30);wait(lambda:struct.unpack('<Q',row(1,8,8))[0]!=0,60,'metadata-only Add second edition');old_game=game;install(1);require(current()['generation']==2 and not current()['won'],'new Game did not start separately');recover('actually newly admitted/downloaded generation2 loads compatible approved prior save',first_save)
+  if a.reference_checks:reference_checks(a.reference_checks)
+  second_save=save(1,2)
   with personal.client()as c:
    catalog=[]
    for slot in range(16):

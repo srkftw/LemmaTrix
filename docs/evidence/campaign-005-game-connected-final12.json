@@ -1,0 +1,737 @@
+{
+  "image_sha256": "c9309452ea552b204ce85b0440525b2222770a651319dcf96cd7dee48451b2d4",
+  "checks": [
+    {
+      "check": "fresh recipient enrolls registry and seed, Adds signed metadata, binds O and has no Game root before I",
+      "result": "passed",
+      "recipient": "p1",
+      "library": 17438793293189087497,
+      "fetch": 17438793293189087496,
+      "recipient_game_roots_before_I": 0,
+      "fresh_network_authority": true
+    },
+    {
+      "check": "native O/I remotely acquires selected canonical Game and physical Enter approves its exact executable",
+      "result": "passed",
+      "recipient": "p1",
+      "head": "4c8ed47412020b886df5d8abc373dcc66fc4f7532382c78c8ab52d21d015c3bd",
+      "nodes": 19,
+      "payload_bytes": 129807,
+      "game_release": "3a56b13d0e211adf25e66d05c09dedc48506c84cb4fe328af8295b3460be7779",
+      "game_instance": 17438793293189087498,
+      "game_not_running_before_approval": true,
+      "recipient_host_game_import": false
+    },
+    {
+      "check": "native K/B/Enter retains only the selected typed192-byte save",
+      "result": "passed",
+      "recipient": "p1",
+      "producer": 1,
+      "save_sha256": "199fe54e37946001f2a728dd841a2476d1e58506a39231c976cc57b5052043fe",
+      "state": {
+        "generation": 1,
+        "level": 0,
+        "moves": 2,
+        "completed": 1,
+        "won": 1,
+        "undo": 2,
+        "game": "c77a40fc178d8ec017c8d31b8c86e8967540fcc72eebd4050da629602edc99ff",
+        "pack": "77ce47e71af7c4d7a3b915b11cdba694554f93e2039403bbe7195aa97a44c8b1",
+        "boxes": 536870912,
+        "player": 28,
+        "save": 17438793297484054790,
+        "notice": 23
+      }
+    },
+    {
+      "check": "fresh recipient enrolls registry and seed, Adds signed metadata, binds O and has no Game root before I",
+      "result": "passed",
+      "recipient": "p2",
+      "library": 11994008465447059721,
+      "fetch": 11994008465447059720,
+      "recipient_game_roots_before_I": 0,
+      "fresh_network_authority": true
+    },
+    {
+      "check": "native O/I remotely acquires selected canonical Game and physical Enter approves its exact executable",
+      "result": "passed",
+      "recipient": "p2",
+      "head": "4c8ed47412020b886df5d8abc373dcc66fc4f7532382c78c8ab52d21d015c3bd",
+      "nodes": 19,
+      "payload_bytes": 129807,
+      "game_release": "3a56b13d0e211adf25e66d05c09dedc48506c84cb4fe328af8295b3460be7779",
+      "game_instance": 11994008465447059722,
+      "game_not_running_before_approval": true,
+      "recipient_host_game_import": false
+    },
+    {
+      "check": "fresh personal restart, fresh O/I execution approval and N/Enter/L recover prior approved progress",
+      "result": "passed",
+      "recipient": "p2",
+      "save_sha256": "199fe54e37946001f2a728dd841a2476d1e58506a39231c976cc57b5052043fe",
+      "state": {
+        "generation": 1,
+        "level": 0,
+        "moves": 2,
+        "completed": 1,
+        "won": 1,
+        "undo": 0,
+        "game": "c77a40fc178d8ec017c8d31b8c86e8967540fcc72eebd4050da629602edc99ff",
+        "pack": "77ce47e71af7c4d7a3b915b11cdba694554f93e2039403bbe7195aa97a44c8b1",
+        "boxes": 536870912,
+        "player": 28,
+        "save": 0,
+        "notice": 21
+      },
+      "fresh_save_scope": true
+    },
+    {
+      "check": "native M selects a downloaded Source mod, changes gameplay and refuses incompatible save without deleting it",
+      "result": "passed",
+      "mod_sha256": "9434db0ee959d7c76cc915cd3e409d425315830bbd3057be046025d8d74664f8",
+      "mod_moves": 1,
+      "restored_original_moves": 2
+    },
+    {
+      "check": "native O/I remotely acquires selected canonical Game and physical Enter approves its exact executable",
+      "result": "passed",
+      "recipient": "p2",
+      "head": "9fc93e98eaa7cb254b6141aff13f18075d9ca4ba7e051c799a8386a52201d18a",
+      "nodes": 21,
+      "payload_bytes": 154557,
+      "game_release": "4bc96b74880bfaf03e7feeab2b535b1dd0fd268c50509217f46cdf35bca13489",
+      "game_instance": 11994008465447059723,
+      "game_not_running_before_approval": true,
+      "recipient_host_game_import": false
+    },
+    {
+      "check": "actually newly admitted/downloaded generation2 loads compatible approved prior save",
+      "result": "passed",
+      "recipient": "p2",
+      "save_sha256": "199fe54e37946001f2a728dd841a2476d1e58506a39231c976cc57b5052043fe",
+      "state": {
+        "generation": 2,
+        "level": 0,
+        "moves": 2,
+        "completed": 1,
+        "won": 1,
+        "undo": 0,
+        "game": "c77a40fc178d8ec017c8d31b8c86e8967540fcc72eebd4050da629602edc99ff",
+        "pack": "77ce47e71af7c4d7a3b915b11cdba694554f93e2039403bbe7195aa97a44c8b1",
+        "boxes": 536870912,
+        "player": 28,
+        "save": 0,
+        "notice": 21
+      },
+      "fresh_save_scope": true
+    },
+    {
+      "check": "more than32 native changed-state K snapshots succeed after remote generation2 update while a prior reader stays byte-exact",
+      "result": "passed",
+      "iterations": 40,
+      "held_save_sha256": "ad129f736a9b9fc90068f491a36bcbe1f55f0c8441237307fe7f5e8613543bf7",
+      "snapshots": [
+        {
+          "iteration": 0,
+          "selected_save_handle": 11994008469742027791,
+          "moves": 0
+        },
+        {
+          "iteration": 1,
+          "selected_save_handle": 11994008469742027282,
+          "moves": 1
+        },
+        {
+          "iteration": 2,
+          "selected_save_handle": 11994008469742027536,
+          "moves": 0
+        },
+        {
+          "iteration": 3,
+          "selected_save_handle": 11994008469742028303,
+          "moves": 1
+        },
+        {
+          "iteration": 4,
+          "selected_save_handle": 11994008469742027794,
+          "moves": 0
+        },
+        {
+          "iteration": 5,
+          "selected_save_handle": 11994008469742028048,
+          "moves": 1
+        },
+        {
+          "iteration": 6,
+          "selected_save_handle": 11994008469742028815,
+          "moves": 0
+        },
+        {
+          "iteration": 7,
+          "selected_save_handle": 11994008469742028306,
+          "moves": 1
+        },
+        {
+          "iteration": 8,
+          "selected_save_handle": 11994008469742028560,
+          "moves": 0
+        },
+        {
+          "iteration": 9,
+          "selected_save_handle": 11994008469742029327,
+          "moves": 1
+        },
+        {
+          "iteration": 10,
+          "selected_save_handle": 11994008469742028818,
+          "moves": 0
+        },
+        {
+          "iteration": 11,
+          "selected_save_handle": 11994008469742029072,
+          "moves": 1
+        },
+        {
+          "iteration": 12,
+          "selected_save_handle": 11994008469742029839,
+          "moves": 0
+        },
+        {
+          "iteration": 13,
+          "selected_save_handle": 11994008469742029330,
+          "moves": 1
+        },
+        {
+          "iteration": 14,
+          "selected_save_handle": 11994008469742029584,
+          "moves": 0
+        },
+        {
+          "iteration": 15,
+          "selected_save_handle": 11994008469742030351,
+          "moves": 1
+        },
+        {
+          "iteration": 16,
+          "selected_save_handle": 11994008469742029842,
+          "moves": 0
+        },
+        {
+          "iteration": 17,
+          "selected_save_handle": 11994008469742030096,
+          "moves": 1
+        },
+        {
+          "iteration": 18,
+          "selected_save_handle": 11994008469742030863,
+          "moves": 0
+        },
+        {
+          "iteration": 19,
+          "selected_save_handle": 11994008469742030354,
+          "moves": 1
+        },
+        {
+          "iteration": 20,
+          "selected_save_handle": 11994008469742030608,
+          "moves": 0
+        },
+        {
+          "iteration": 21,
+          "selected_save_handle": 11994008469742031375,
+          "moves": 1
+        },
+        {
+          "iteration": 22,
+          "selected_save_handle": 11994008469742030866,
+          "moves": 0
+        },
+        {
+          "iteration": 23,
+          "selected_save_handle": 11994008469742031120,
+          "moves": 1
+        },
+        {
+          "iteration": 24,
+          "selected_save_handle": 11994008469742031887,
+          "moves": 0
+        },
+        {
+          "iteration": 25,
+          "selected_save_handle": 11994008469742031378,
+          "moves": 1
+        },
+        {
+          "iteration": 26,
+          "selected_save_handle": 11994008469742031632,
+          "moves": 0
+        },
+        {
+          "iteration": 27,
+          "selected_save_handle": 11994008469742032399,
+          "moves": 1
+        },
+        {
+          "iteration": 28,
+          "selected_save_handle": 11994008469742031890,
+          "moves": 0
+        },
+        {
+          "iteration": 29,
+          "selected_save_handle": 11994008469742032144,
+          "moves": 1
+        },
+        {
+          "iteration": 30,
+          "selected_save_handle": 11994008469742032911,
+          "moves": 0
+        },
+        {
+          "iteration": 31,
+          "selected_save_handle": 11994008469742032402,
+          "moves": 1
+        },
+        {
+          "iteration": 32,
+          "selected_save_handle": 11994008469742032656,
+          "moves": 0
+        },
+        {
+          "iteration": 33,
+          "selected_save_handle": 11994008469742033423,
+          "moves": 1
+        },
+        {
+          "iteration": 34,
+          "selected_save_handle": 11994008469742032914,
+          "moves": 0
+        },
+        {
+          "iteration": 35,
+          "selected_save_handle": 11994008469742033168,
+          "moves": 1
+        },
+        {
+          "iteration": 36,
+          "selected_save_handle": 11994008469742033935,
+          "moves": 0
+        },
+        {
+          "iteration": 37,
+          "selected_save_handle": 11994008469742033426,
+          "moves": 1
+        },
+        {
+          "iteration": 38,
+          "selected_save_handle": 11994008469742033680,
+          "moves": 0
+        },
+        {
+          "iteration": 39,
+          "selected_save_handle": 11994008469742034447,
+          "moves": 1
+        }
+      ]
+    },
+    {
+      "check": "more than32 physical N/Enter/L recoveries keep Launcher record/byte/grant counts stable and preserve an independent old reader",
+      "result": "passed",
+      "iterations": 40,
+      "stable_launcher_stats": [
+        2,
+        384,
+        11
+      ],
+      "recoveries": [
+        {
+          "iteration": 0,
+          "selected_save_handle": 11994008469742027027,
+          "launcher_owned_records": 2,
+          "launcher_owned_bytes": 384,
+          "launcher_grants": 11
+        },
+        {
+          "iteration": 1,
+          "selected_save_handle": 11994008469742034192,
+          "launcher_owned_records": 2,
+          "launcher_owned_bytes": 384,
+          "launcher_grants": 11
+        },
+        {
+          "iteration": 2,
+          "selected_save_handle": 11994008469742027283,
+          "launcher_owned_records": 2,
+          "launcher_owned_bytes": 384,
+          "launcher_grants": 11
+        },
+        {
+          "iteration": 3,
+          "selected_save_handle": 11994008469742034448,
+          "launcher_owned_records": 2,
+          "launcher_owned_bytes": 384,
+          "launcher_grants": 11
+        },
+        {
+          "iteration": 4,
+          "selected_save_handle": 11994008469742027539,
+          "launcher_owned_records": 2,
+          "launcher_owned_bytes": 384,
+          "launcher_grants": 11
+        },
+        {
+          "iteration": 5,
+          "selected_save_handle": 11994008469742034704,
+          "launcher_owned_records": 2,
+          "launcher_owned_bytes": 384,
+          "launcher_grants": 11
+        },
+        {
+          "iteration": 6,
+          "selected_save_handle": 11994008469742027795,
+          "launcher_owned_records": 2,
+          "launcher_owned_bytes": 384,
+          "launcher_grants": 11
+        },
+        {
+          "iteration": 7,
+          "selected_save_handle": 11994008469742034960,
+          "launcher_owned_records": 2,
+          "launcher_owned_bytes": 384,
+          "launcher_grants": 11
+        },
+        {
+          "iteration": 8,
+          "selected_save_handle": 11994008469742028051,
+          "launcher_owned_records": 2,
+          "launcher_owned_bytes": 384,
+          "launcher_grants": 11
+        },
+        {
+          "iteration": 9,
+          "selected_save_handle": 11994008469742035216,
+          "launcher_owned_records": 2,
+          "launcher_owned_bytes": 384,
+          "launcher_grants": 11
+        },
+        {
+          "iteration": 10,
+          "selected_save_handle": 11994008469742028307,
+          "launcher_owned_records": 2,
+          "launcher_owned_bytes": 384,
+          "launcher_grants": 11
+        },
+        {
+          "iteration": 11,
+          "selected_save_handle": 11994008469742035472,
+          "launcher_owned_records": 2,
+          "launcher_owned_bytes": 384,
+          "launcher_grants": 11
+        },
+        {
+          "iteration": 12,
+          "selected_save_handle": 11994008469742028563,
+          "launcher_owned_records": 2,
+          "launcher_owned_bytes": 384,
+          "launcher_grants": 11
+        },
+        {
+          "iteration": 13,
+          "selected_save_handle": 11994008469742035728,
+          "launcher_owned_records": 2,
+          "launcher_owned_bytes": 384,
+          "launcher_grants": 11
+        },
+        {
+          "iteration": 14,
+          "selected_save_handle": 11994008469742028819,
+          "launcher_owned_records": 2,
+          "launcher_owned_bytes": 384,
+          "launcher_grants": 11
+        },
+        {
+          "iteration": 15,
+          "selected_save_handle": 11994008469742035984,
+          "launcher_owned_records": 2,
+          "launcher_owned_bytes": 384,
+          "launcher_grants": 11
+        },
+        {
+          "iteration": 16,
+          "selected_save_handle": 11994008469742029075,
+          "launcher_owned_records": 2,
+          "launcher_owned_bytes": 384,
+          "launcher_grants": 11
+        },
+        {
+          "iteration": 17,
+          "selected_save_handle": 11994008469742036240,
+          "launcher_owned_records": 2,
+          "launcher_owned_bytes": 384,
+          "launcher_grants": 11
+        },
+        {
+          "iteration": 18,
+          "selected_save_handle": 11994008469742029331,
+          "launcher_owned_records": 2,
+          "launcher_owned_bytes": 384,
+          "launcher_grants": 11
+        },
+        {
+          "iteration": 19,
+          "selected_save_handle": 11994008469742036496,
+          "launcher_owned_records": 2,
+          "launcher_owned_bytes": 384,
+          "launcher_grants": 11
+        },
+        {
+          "iteration": 20,
+          "selected_save_handle": 11994008469742029587,
+          "launcher_owned_records": 2,
+          "launcher_owned_bytes": 384,
+          "launcher_grants": 11
+        },
+        {
+          "iteration": 21,
+          "selected_save_handle": 11994008469742036752,
+          "launcher_owned_records": 2,
+          "launcher_owned_bytes": 384,
+          "launcher_grants": 11
+        },
+        {
+          "iteration": 22,
+          "selected_save_handle": 11994008469742029843,
+          "launcher_owned_records": 2,
+          "launcher_owned_bytes": 384,
+          "launcher_grants": 11
+        },
+        {
+          "iteration": 23,
+          "selected_save_handle": 11994008469742037008,
+          "launcher_owned_records": 2,
+          "launcher_owned_bytes": 384,
+          "launcher_grants": 11
+        },
+        {
+          "iteration": 24,
+          "selected_save_handle": 11994008469742030099,
+          "launcher_owned_records": 2,
+          "launcher_owned_bytes": 384,
+          "launcher_grants": 11
+        },
+        {
+          "iteration": 25,
+          "selected_save_handle": 11994008469742037264,
+          "launcher_owned_records": 2,
+          "launcher_owned_bytes": 384,
+          "launcher_grants": 11
+        },
+        {
+          "iteration": 26,
+          "selected_save_handle": 11994008469742030355,
+          "launcher_owned_records": 2,
+          "launcher_owned_bytes": 384,
+          "launcher_grants": 11
+        },
+        {
+          "iteration": 27,
+          "selected_save_handle": 11994008469742037520,
+          "launcher_owned_records": 2,
+          "launcher_owned_bytes": 384,
+          "launcher_grants": 11
+        },
+        {
+          "iteration": 28,
+          "selected_save_handle": 11994008469742030611,
+          "launcher_owned_records": 2,
+          "launcher_owned_bytes": 384,
+          "launcher_grants": 11
+        },
+        {
+          "iteration": 29,
+          "selected_save_handle": 11994008469742037776,
+          "launcher_owned_records": 2,
+          "launcher_owned_bytes": 384,
+          "launcher_grants": 11
+        },
+        {
+          "iteration": 30,
+          "selected_save_handle": 11994008469742030867,
+          "launcher_owned_records": 2,
+          "launcher_owned_bytes": 384,
+          "launcher_grants": 11
+        },
+        {
+          "iteration": 31,
+          "selected_save_handle": 11994008469742038032,
+          "launcher_owned_records": 2,
+          "launcher_owned_bytes": 384,
+          "launcher_grants": 11
+        },
+        {
+          "iteration": 32,
+          "selected_save_handle": 11994008469742031123,
+          "launcher_owned_records": 2,
+          "launcher_owned_bytes": 384,
+          "launcher_grants": 11
+        },
+        {
+          "iteration": 33,
+          "selected_save_handle": 11994008469742038288,
+          "launcher_owned_records": 2,
+          "launcher_owned_bytes": 384,
+          "launcher_grants": 11
+        },
+        {
+          "iteration": 34,
+          "selected_save_handle": 11994008469742031379,
+          "launcher_owned_records": 2,
+          "launcher_owned_bytes": 384,
+          "launcher_grants": 11
+        },
+        {
+          "iteration": 35,
+          "selected_save_handle": 11994008469742038544,
+          "launcher_owned_records": 2,
+          "launcher_owned_bytes": 384,
+          "launcher_grants": 11
+        },
+        {
+          "iteration": 36,
+          "selected_save_handle": 11994008469742031635,
+          "launcher_owned_records": 2,
+          "launcher_owned_bytes": 384,
+          "launcher_grants": 11
+        },
+        {
+          "iteration": 37,
+          "selected_save_handle": 11994008469742038800,
+          "launcher_owned_records": 2,
+          "launcher_owned_bytes": 384,
+          "launcher_grants": 11
+        },
+        {
+          "iteration": 38,
+          "selected_save_handle": 11994008469742031891,
+          "launcher_owned_records": 2,
+          "launcher_owned_bytes": 384,
+          "launcher_grants": 11
+        },
+        {
+          "iteration": 39,
+          "selected_save_handle": 11994008469742039056,
+          "launcher_owned_records": 2,
+          "launcher_owned_bytes": 384,
+          "launcher_grants": 11
+        }
+      ],
+      "held_save_sha256": "ad129f736a9b9fc90068f491a36bcbe1f55f0c8441237307fe7f5e8613543bf7"
+    },
+    {
+      "check": "native K/B/Enter retains only the selected typed192-byte save",
+      "result": "passed",
+      "recipient": "p2",
+      "producer": 2,
+      "save_sha256": "ad129f736a9b9fc90068f491a36bcbe1f55f0c8441237307fe7f5e8613543bf7",
+      "state": {
+        "generation": 2,
+        "level": 0,
+        "moves": 2,
+        "completed": 1,
+        "won": 1,
+        "undo": 0,
+        "game": "c77a40fc178d8ec017c8d31b8c86e8967540fcc72eebd4050da629602edc99ff",
+        "pack": "77ce47e71af7c4d7a3b915b11cdba694554f93e2039403bbe7195aa97a44c8b1",
+        "boxes": 536870912,
+        "player": 28,
+        "save": 11994008469742054927,
+        "notice": 23
+      }
+    },
+    {
+      "check": "explicit trusted rollback and J/N/Enter/L load approved producer2 save in actual older Game",
+      "result": "passed",
+      "recipient": "p2",
+      "save_sha256": "ad129f736a9b9fc90068f491a36bcbe1f55f0c8441237307fe7f5e8613543bf7",
+      "state": {
+        "generation": 1,
+        "level": 0,
+        "moves": 2,
+        "completed": 1,
+        "won": 1,
+        "undo": 0,
+        "game": "c77a40fc178d8ec017c8d31b8c86e8967540fcc72eebd4050da629602edc99ff",
+        "pack": "77ce47e71af7c4d7a3b915b11cdba694554f93e2039403bbe7195aa97a44c8b1",
+        "boxes": 536870912,
+        "player": 28,
+        "save": 0,
+        "notice": 21
+      },
+      "fresh_save_scope": true
+    }
+  ],
+  "packages": [
+    {
+      "guest": "p1",
+      "release": "38b372cd782a95138381f7062ad82e26c9472b4d4e33f4a9c1abaae3df27b5cb",
+      "executable_sha256": "293ad06764c3b1d5c64678fc24f3b79399182e8d059bfaf36411d615fd12d012",
+      "rights": 1151
+    },
+    {
+      "guest": "p1",
+      "release": "86a2f4d830dedcd1126c0e7afeac44e9d8c0cbc0caca4f59ea4c2f0595d1e02f",
+      "executable_sha256": "66269b1c3aed803a7376f495260f14552a9cea242557d7ff0c2693c9cc99e3c8",
+      "rights": 1919
+    },
+    {
+      "guest": "p2",
+      "release": "38b372cd782a95138381f7062ad82e26c9472b4d4e33f4a9c1abaae3df27b5cb",
+      "executable_sha256": "293ad06764c3b1d5c64678fc24f3b79399182e8d059bfaf36411d615fd12d012",
+      "rights": 1151
+    },
+    {
+      "guest": "p2",
+      "release": "86a2f4d830dedcd1126c0e7afeac44e9d8c0cbc0caca4f59ea4c2f0595d1e02f",
+      "executable_sha256": "66269b1c3aed803a7376f495260f14552a9cea242557d7ff0c2693c9cc99e3c8",
+      "rights": 1919
+    }
+  ],
+  "recipient_host_game_import": false,
+  "game_releases": [
+    "3a56b13d0e211adf25e66d05c09dedc48506c84cb4fe328af8295b3460be7779",
+    "4bc96b74880bfaf03e7feeab2b535b1dd0fd268c50509217f46cdf35bca13489"
+  ],
+  "limitations": [
+    "explicit volatile public provider; no independently operated or durable Game provider claim",
+    "explicit development encrypted backing; no physical durability or rollback-freshness claim",
+    "focused current-image Game flow; connected media/audio has its own evidence"
+  ],
+  "provider": {
+    "result": "ready",
+    "image_sha256": "c9309452ea552b204ce85b0440525b2222770a651319dcf96cd7dee48451b2d4",
+    "packages": {
+      "library-registry": {
+        "instance": 4337322377982509319,
+        "release": "6297b21e2f039862cea14dc3d96ca78778303a767d31179cf4efdb2c0c3851d8",
+        "executable_sha256": "0b284a806d4b41893d7cad9dd8c35a80e1f8db32e9d73171775539d09718e2c3"
+      },
+      "library-peer": {
+        "instance": 4337322377982509320,
+        "release": "e6dd508b43de5808468ba8b60e036625312b037dee343b4d00b1fb1f158bbce5",
+        "executable_sha256": "0942b7ece8bd9d014365b79255fd71e73602042524522109317315ddbc5593d7"
+      }
+    },
+    "game_release": "3a56b13d0e211adf25e66d05c09dedc48506c84cb4fe328af8295b3460be7779",
+    "head": "4c8ed47412020b886df5d8abc373dcc66fc4f7532382c78c8ab52d21d015c3bd",
+    "nodes": 19,
+    "payload_bytes": 129807,
+    "process_id": 2943357,
+    "public_project_volatile": true,
+    "recipient_payload_provisioned": false
+  },
+  "result": "passed",
+  "save_sha256": [
+    "199fe54e37946001f2a728dd841a2476d1e58506a39231c976cc57b5052043fe",
+    "ad129f736a9b9fc90068f491a36bcbe1f55f0c8441237307fe7f5e8613543bf7"
+  ],
+  "provider_and_recipient_image_match": true
+}
