@@ -521,6 +521,10 @@ def acceptMetadata (t : UInt64) : UInt64 :=
   let old := findEdition (metadata+768+160) 0 r
   let i := if old == error then load64 (st+16) r else old
   if i >= 16 then notice 21 r else
+  -- A signed edition identifier is publisher-supplied, not a global mutable
+  -- name. Admission refreshes may replace only the descriptor for the exact
+  -- same signed consumer; private references remain bound to those bytes.
+  if old != error && !eq (consumer old) (metadata+768) 768 r then notice 29 r else
   if old != error && load64 (row i+256+48) r >= load64 (metadata+48) r then r else
   let t := if old == error then zero (row i) 256 r else r
   let t := copy metadata (row i+256) 1536 t
@@ -537,7 +541,7 @@ def queue (i t : UInt64) : UInt64 :=
   let fresh := current (row i+256) (row i+256+320) t
   if fresh != 832 || status fresh != 0 || !Guest.RegistrySDK.consumerAdmitted (result fresh) then notice 54 fresh else
   if load64 (m+16) t != 1 then notice 34 t else
-  if load64 (st+96) t != 1 then notice 21 (store64 (st+208) 1 t) else
+  if load64 (st+96) t != 1 then notice 21 (store64 (st+208) 1 (store64 (st+216) (i+1) t)) else
   if !eq (m+96) (st+288) 32 t || load64 (m+408) t > load64 (st+112) t ||
     load64 (st+120) t > load64 (st+112) t-load64 (m+408) t then notice 21 t else
   let ji := freeJob 0 t
@@ -804,6 +808,22 @@ def approvePolicy (t : UInt64) : UInt64 :=
   let t := store64 (st+120) 0 t
   let t := store64 (st+128) (load64 (st+128) t+1) t
   monitorDecision (notice 36 t)
+-- Monitoring another collection is not consent to acquire that collection.
+-- Retire the former generation before changing its collection binding; frozen
+-- job identities remain unchanged while their unfinished authority is revoked.
+@[noinline] def subscribe (t : UInt64) : UInt64 :=
+  let collection := selected t+1024+96
+  let changed := !eq collection (st+288) 32 t
+  let t := if !changed then t else
+    let t := retirePolicy 0 t
+    let t := store64 (st+96) 0 t
+    let t := store64 (st+104) 0 t
+    let t := store64 (st+120) 0 t
+    let t := store64 (st+216) 0 t
+    store64 (st+128) (load64 (st+128) t+1) t
+  let enabled := if changed || load64 (st+88) t == 0 then 1 else 0
+  let t := copy collection (st+288) 32 t
+  notice 43 (store64 (st+88) enabled t)
 def chosenJob (t : UInt64) : UInt64 :=
   let h := load64 (selected t+64) t
   if h == 0 || h > 4 then error else job (h-1)
@@ -990,6 +1010,9 @@ partial def chooseProcess (i audio t : UInt64) : UInt64 :=
     if checked == 32 && eq work (selected checked+1024+256) 32 checked then load64 p checked else chooseProcess (i+1) audio checked
 
 @[noinline] partial def bindProcess (audio t : UInt64) : UInt64 :=
+  -- The active operation was submitted to this exact helper incarnation.
+  -- Rebinding would send its inspection to another helper and orphan it.
+  if audio == 2 && load64 (st+536) t != 0 then notice 18 t else
   let r := syscall 124 0 0x6e6000 384 0 t
   if r == error then notice 58 r else
   let who := chooseProcess 7 audio r
@@ -1328,9 +1351,7 @@ def input (ev t : UInt64) : UInt64 :=
       dirty (zero (peer slot) 128 t) else t
   else if code == 30 then add t else
   if code == 31 && load64 (selected t+8) t != 0 then
-    let t := copy (selected t+1024+96) (st+288) 32 t
-    let enabled := if load64 (st+88) t == 0 then 1 else 0
-    notice 43 (store64 (st+88) enabled t)
+    subscribe t
   else if code == 34 then policy t else
   if code == 32 then queue (load64 (st+8) t) t else
   if code == 25 then pause t else
