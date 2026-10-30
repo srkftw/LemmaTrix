@@ -493,6 +493,14 @@ def pickerLabel (id x y t : UInt64) : UInt64 :=
     let t := store64 (0x414000+40) 68 t
     text 0x414000 41 x y fg bg t
   else
+  if id == 10 then
+    let t := store64 (0x414000+0) 4995090496071945281 t
+    let t := store64 (0x414000+8) 4995126715595375681 t
+    let t := store64 (0x414000+16) 2325347586728612384 t
+    let t := store64 (0x414000+24) 5701628958379089965 t
+    let t := store64 (0x414000+32) 5852238 t
+    text 0x414000 35 x y fg bg t
+  else
     t
 
 partial def drawPickerNames (i count selected t : UInt64) : UInt64 :=
@@ -514,7 +522,7 @@ def pickerDraw (t : UInt64) : UInt64 :=
   let t := hex (load64 (st+128) t) 16 152 30 fg bg t
   let t := pickerLabel 8 380 30 t
   let t := hex (load64 (st+160) t) 8 438 30 fg bg t
-  let t := pickerLabel (if load64 (st+136) t == 127 then 2 else 3) 12 50 t
+  let t := pickerLabel (if load64 (st+136) t == 127 then 2 else if load64 (st+136) t == 25 then 10 else 3) 12 50 t
   let t := pickerLabel 4 12 70 t
   let t := pickerLabel 7 12 88 t
   let count := load64 (st+144) t
@@ -530,10 +538,15 @@ def pickerDraw (t : UInt64) : UInt64 :=
   let t := upload 0 0 1024000 1 t
   store64 (st+32) 1 t
 
-def pickerRequest (caller nonce t : UInt64) : UInt64 :=
+-- Legacy op3 derives its former read/full request. Op14 requests precisely
+-- read-only or read/share/revoke data access, never creation/revision/export.
+-- The selected root's delegation independently enforces the approver's scope.
+def pickerRequest (caller nonce requested t : UInt64) : UInt64 :=
   let actual := syscall 34 caller 0 0 0 t
-  let rights := if (actual &&& 127) == 127 then 127 else if (actual &&& 1) == 1 then 1 else 0
-  if actual == error || rights == 0 || nonce == 0 then error else
+  let rights := if requested == 0 then
+    if (actual &&& 127) == 127 then 127 else if (actual &&& 1) == 1 then 1 else 0
+    else requested
+  if actual == error || rights == 0 || (actual &&& rights) != rights || nonce == 0 then error else
     let t := store64 (st+128) caller actual
     let t := store64 (st+136) rights t
     let t := store64 (st+152) 0 t
@@ -1442,7 +1455,8 @@ def pollApps (t : UInt64) : UInt64 :=
     else
       let r := if load64 (st+40) n != 0 || abi != 2 then error else
         if n == 128 && op == 2 then retentionRequest root 0x416060 caller n
-        else if n == 96 && op == 3 && load64 0x416058 n == 1 then pickerRequest caller nonce n
+        else if n == 96 && op == 3 && load64 0x416058 n == 1 then pickerRequest caller nonce 0 n
+        else if n == 96 && op == 14 && load64 0x416058 n == 1 && (root == 1 || root == 25) then pickerRequest caller nonce root n
         else if n == 96 && op == 5 && load64 0x416058 n == 1 then vaultStatusRequest caller n
         else if n == 96 && op == 6 && load64 0x416058 n == 1 then forgeInstallRequest root n
         else if n == 128 && op == 8 && load64 0x416058 n == 1 then contentRetainRequest root nonce 0x416060 caller n

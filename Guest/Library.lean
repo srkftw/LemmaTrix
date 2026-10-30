@@ -882,7 +882,7 @@ partial def packSuffix (p n i t : UInt64) : Bool :=
   let t := copy work (st+488) 32 check
   let t := nextId t
   let nonce := load64 (st+184) t
-  let r := portal 3 0 nonce 0 0 t
+  let r := portal 14 25 nonce 0 0 t
   if r != 64 || status r != 0 then notice 39 r else
     notice 39 (store64 (st+320) nonce (store64 (st+432) 2 (store64 (st+480) who r)))
 def packScan (t : UInt64) : UInt64 :=
@@ -942,7 +942,7 @@ def install (t : UInt64) : UInt64 :=
   let check := Guest.RegistrySDK.verify (row chosen+256) work t
   if check != 832 || status check != 0 || !Guest.RegistrySDK.executableAdmitted (result check) then notice 29 check else
     let shell := syscall 97 4 0 0 0 check
-    let r := Guest.ProjectSDK.delegate root shell 73 shell
+    let r := Guest.ProjectSDK.delegate root shell 89 shell
     if r != 160 || status r != 0 then notice 42 r else portal 6 (result r) 0 0 0 r
 def installPump (t : UInt64) : UInt64 :=
   if load64 (st+320) t == 0 then t else
