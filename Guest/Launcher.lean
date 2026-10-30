@@ -660,6 +660,19 @@ def retainGameSave (handle t : UInt64) : UInt64 :=
       -- Provisioning secrets are never retained in the management replay cache.
       let t := if provisioning then zero (buf+64) 120 received else received
       keep received t
+  else if op == 171 then
+    if len != 128 then err else
+      let r := Guest.syscall 127 0 buf 128 0 t
+      if r == err then err else 8+Guest.store64 buf r r
+  else if op == 172 then
+    if len != 16 then err else
+      let r := Guest.syscall 128 (Guest.load64 buf t) (Guest.load64 (buf+8) t) 0 0 t
+      8+Guest.store64 buf r r
+  else if op == 173 then
+    if len != 32 then err else
+      let r := Guest.syscall 129 (Guest.load64 buf t) (Guest.load64 (buf+8) t)
+        (Guest.load64 (buf+16) t) (Guest.load64 (buf+24) t) t
+      if r == err then err else 8+Guest.store64 buf 0 r
   else if op == 180 then if len == 8 then stageProject (Guest.load64 buf t) t else err
   else if op == 181 then
     if len != 8 then err else
