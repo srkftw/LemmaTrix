@@ -121,6 +121,12 @@ def verifyRemote (root sequence t : UInt64) : UInt64 :=
     let t := store64 (st+72) (load64 (wire+16) t) t
     let t := store64 (st+80) sequence t
     store64 (st+56) (if Guest.RegistrySDK.admitted (load64 (st+64) t) then 2 else 3) t
+-- Another authorized SDK consumer may have advanced the shared verifier's
+-- revocation knowledge without changing Forge metadata. Check at each action.
+def refreshAuthorization (root t : UInt64) : UInt64 :=
+  if !enabled t || remotePhase t != 2 then t else
+  if !expected remote root t then store64 (st+56) 3 (store64 (st+72) 7 t) else
+    verifyRemote root (load64 (remote+48) t) t
 def portable (root t : UInt64) : Bool :=
   enabled t && (remotePhase t == 2 || (remotePhase t == 3 && load64 (st+72) t <= 6)) && expected remote root t
 -- Signed admission is public portable evidence. Only the exact same immutable

@@ -80,10 +80,18 @@ partial def enumerate (root cursor i bytes t : UInt64) : UInt64 :=
       let r := metadata handle t
       if r != 96 || status r != 0 then error else
         enumerate root next (i+1) (bytes+n) (copy (wire+64) (row+88) 32 r)
+-- An unsuccessful replacement must not expose a removed frozen cap or a
+-- partially overwritten enumeration as an available offer.
+def withdrawOffer (t : UInt64) : UInt64 :=
+  let oldGrant := load64 (st+16) t
+  let oldRoot := load64 (st+32) t
+  let t := store64 (st+16) 0 (store64 (st+32) 0 t)
+  let t := store64 (st+40) 0 (store64 (st+48) 0 t)
+  let t := if oldGrant == 0 then t else Guest.NetworkSDK.revoke oldGrant t
+  if oldRoot == 0 then t else remove oldRoot t
 def prepare (t : UInt64) : UInt64 :=
   if load64 (st+24) t == 0 || load64 (st+192) t != 0 || load64 (st+56) t != 0 || load64 (st+80) t != 0 || load64 (st+112) t != 0 then message 2 t else
-    let old := load64 (st+32) t
-    let t := if old == 0 then t else remove old t
+    let t := withdrawOffer t
     let r := describeRoot (load64 (st+24) t) t
     if r != 160 || status r != 0 then message 2 r else
       let t := copy (wire+64) localHead 32 r
@@ -99,13 +107,11 @@ def prepare (t : UInt64) : UInt64 :=
         let t := copy localHead offeredHead 32 r
         let t := copy localName offeredName 64 t
         let t := store64 (st+480) (load64 (st+168) t) t
-        let t := store64 (st+32) root t
         let r := enumerate root 0 0 0 t
-        if r == error then message 3 r else
-          let oldGrant := load64 (st+16) r
-          let t := if oldGrant == 0 then r else Guest.NetworkSDK.revoke oldGrant r
-          let grant := networkGrant localHead t
-          if grant == error then message 8 grant else message 4 (store64 (st+16) grant grant)
+        if r == error then message 3 (remove root r) else
+          let grant := networkGrant localHead r
+          if grant == error then message 8 (withdrawOffer (remove root grant)) else
+            message 4 (store64 (st+32) root (store64 (st+16) grant grant))
 def metadataOnly (t : UInt64) : Bool := load64 (st+32) t == 0 && load64 (st+200) t == 1
 def advertisedHead (t : UInt64) : UInt64 :=
   if metadataOnly t then Guest.ForgeFederation.localDescriptor+320 else offeredHead
@@ -132,6 +138,7 @@ partial def hexName (p i t : UInt64) : UInt64 :=
     hexName p (i+1) (store8 (p+i) (if d < 10 then d+48 else d+87) t)
 def fetch (t : UInt64) : UInt64 :=
   if load64 (st+448) t == 2 then message 15 t else
+  let t := Guest.ForgeFederation.refreshAuthorization remoteHead t
   let upload := load64 (st+200) t == 1 && load64 (Guest.ForgeFederation.st+208) t == 1 &&
     equal (Guest.ForgeFederation.st+224) remoteHead 32 t
   if !Guest.ForgeFederation.mayFetch t && !upload && Guest.RemoteIngest.phase t != 10 then message 14 t else
@@ -237,6 +244,7 @@ def accept2 (length transaction a b c t : UInt64) : UInt64 :=
   if length != 192 || mode > 3 || !sizes || c == 0 || c > 63 ||
     !Guest.ProjectGraph.validName (received+96) c 63 t then message 9 t else
   if load64 (st+112) t != 0 then message 7 t else
+  let t := if equal (received+64) remoteHead 32 t then t else store64 (st+176) 0 t
   let t := Guest.ForgeFederation.metadata (received+64) t
   let t := copy (received+64) remoteHead 32 t
   let t := copy (received+160) remoteLogical 32 t
@@ -278,7 +286,7 @@ def accept3 (length transaction a b c t : UInt64) : UInt64 :=
   message 5 (store64 (st+56) 1 t)
 
 def accept8 (length transaction a b c t : UInt64) : UInt64 :=
-  if length != 96 || transaction != load64 (st+104) t || !equal (received+64) offeredHead 32 t then message 9 t else
+  if length != 96 || load64 (st+56) t != 4 || transaction != load64 (st+104) t || !equal (received+64) offeredHead 32 t then message 9 t else
   message 10 (store64 (st+56) 0 t)
 
 def accept12 (length transaction a b c t : UInt64) : UInt64 :=
@@ -411,7 +419,7 @@ def projectPortal (t : UInt64) : UInt64 :=
 def configure (length t : UInt64) : UInt64 :=
   if length != 128 || load64 (st+80) t != 0 || load64 (st+112) t != 0 || load64 (st+56) t != 0 || Guest.ForgeArchive.active t ||
     load64 (command+40) t > 1 || (load64 (command+40) t == 1 && (load64 (command+16) t != 2 || load64 (command+32) t == 0)) then error else
-    let t := Guest.RemoteIngest.init (Guest.ForgeSubscription.disable t)
+    let t := store64 (st+176) 0 (Guest.RemoteIngest.init (Guest.ForgeSubscription.disable t))
     let oldMetadata := load64 (st+8) t
     let oldRoot := load64 (st+16) t
     let t := if oldMetadata == 0 then t else Guest.NetworkSDK.revoke oldMetadata t
@@ -883,8 +891,9 @@ def inspectInstall (t : UInt64) : UInt64 :=
   if root == 0 || load64 (st+192) t != 0 then message 2 t else
     let r := describeRoot root t
     if r != 160 || status r != 0 then message 2 r else
-    if !Guest.ForgeFederation.mayInstall (wire+64) r then message 14 r else
-    let t := r
+    let t := copy (wire+64) localHead 32 r
+    let t := Guest.ForgeFederation.refreshAuthorization localHead t
+    if !Guest.ForgeFederation.mayInstall localHead t then message 14 t else
     let shell := syscall 97 4 0 0 0 t
     let r := delegate root shell 127 shell
     if r != 160 || status r != 0 then message 2 r else
