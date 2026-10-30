@@ -1,0 +1,508 @@
+{
+  "schema": 1,
+  "result": "passed for the explicitly listed scopes",
+  "scope": "versioned bounded PCM2/Stream2 controls and I/O; legacy compatibility; exact native PCM capture with requested raw PipeWire output; component session isolation",
+  "platform_image": "26df02df50e24d2be2bfdb489cd6b6973e0f58f38faa92535de3fdcb8211ed18",
+  "intermediate_pcm2_image": "35b50f3027a84f110b64baf99902b327cb7cd238fa348c616eb491978c8a03e6",
+  "legacy_image": "22f9f9bde6c210ffe0f0ec52d7b8f5d697bed11d61fda7edda5f7c319079c70f",
+  "contracts": {
+    "audio": "PCM2 fixed non-console port1 lt-pcm1, tx5, control2/3",
+    "network": "Stream2 fixed non-console port1 lt-net1, rx4/tx5, control2/3",
+    "features": "VERSION_1 and MULTIPORT; direct split queues8 entries; bounded64-byte controls; one data descriptor/direction up to1024 bytes",
+    "image_header": "offset0x200420: <8sQQ> magic LTDEV2 NUL NUL, audio2, network2; older zero/short images select profile1",
+    "transport_envelope": "LT-Transport-v2 unchanged; encrypted-bulk mode3 only"
+  },
+  "records": [
+    {
+      "artifact": "build/campaign005/final-7/pcm2-legacy-x86/result.json",
+      "artifact_sha256": "bf8a877d1b6fa7ddf4fec1189404dfe0b78796451f8882caf5f2a865f50627f5",
+      "observed": {
+        "result": "passed",
+        "backend": "x86_64",
+        "image": "22f9f9bde6c210ffe0f0ec52d7b8f5d697bed11d61fda7edda5f7c319079c70f",
+        "packages": {
+          "audio-owner": {
+            "instance": 6732555966002233607,
+            "release": "2e40bf0247065590981c100cbfec5e0a5475e639db5f4f9405a3f962c92f0220"
+          },
+          "audio-none": {
+            "instance": 6732555966002233608,
+            "release": "cf85fb122336ccdca3646f3443c5bffdb3ac0bc9e7c07016995cde340e464863"
+          },
+          "audio-other": {
+            "instance": 6732555966002233609,
+            "release": "136ce2a34b76b4b7b9acb9be50e7248effc2afd17ece8789f9af05c6b8a97fab"
+          }
+        },
+        "bytes": 2048,
+        "sample_sha256": "ad3032bf9199ed9678f0a98790696fdd65461ea7909300859801cac12cbb3f81",
+        "checks": [
+          "correctly signed unknown right8192 denied by guest decoder",
+          "missing audio right denied",
+          "cross-process ownership denied",
+          "unaligned zero oversized and unmapped writes denied",
+          "actual PCM device descriptors captured",
+          "stop invalidates epoch",
+          "process death releases ownership and clears accepted counter",
+          "no queued samples inherited"
+        ],
+        "speaker_output": false
+      }
+    },
+    {
+      "artifact": "build/campaign005/final-8/audio-boundary-qemu/result.json",
+      "artifact_sha256": "8a2b6c4ab0b847d103bba20bef9b783344d2f9ed5f353b958925c73267d49b8f",
+      "observed": {
+        "result": "passed",
+        "backend": "qemu",
+        "image": "35b50f3027a84f110b64baf99902b327cb7cd238fa348c616eb491978c8a03e6",
+        "packages": {
+          "audio-owner": {
+            "instance": 12413885181268590855,
+            "release": "2e40bf0247065590981c100cbfec5e0a5475e639db5f4f9405a3f962c92f0220"
+          },
+          "audio-none": {
+            "instance": 12413885181268590856,
+            "release": "cf85fb122336ccdca3646f3443c5bffdb3ac0bc9e7c07016995cde340e464863"
+          },
+          "audio-other": {
+            "instance": 12413885181268590857,
+            "release": "136ce2a34b76b4b7b9acb9be50e7248effc2afd17ece8789f9af05c6b8a97fab"
+          }
+        },
+        "bytes": 2048,
+        "sample_sha256": "ad3032bf9199ed9678f0a98790696fdd65461ea7909300859801cac12cbb3f81",
+        "checks": [
+          "correctly signed unknown right8192 denied by guest decoder",
+          "missing audio right denied",
+          "cross-process ownership denied",
+          "unaligned zero oversized and unmapped writes denied",
+          "actual PCM device descriptors captured",
+          "stop invalidates epoch",
+          "process death releases ownership and clears accepted counter",
+          "no queued samples inherited"
+        ],
+        "speaker_output": false
+      }
+    },
+    {
+      "artifact": "build/campaign005/final-8/audio-backpressure-qemu-2/result.json",
+      "artifact_sha256": "3d3bff287e8ece3b717f238e6a7eb50b5ecd8fc21814ca080f72fadc9830e220",
+      "observed": {
+        "result": "passed",
+        "backend": "qemu",
+        "image_sha256": "35b50f3027a84f110b64baf99902b327cb7cd238fa348c616eb491978c8a03e6",
+        "release": "2e40bf0247065590981c100cbfec5e0a5475e639db5f4f9405a3f962c92f0220",
+        "accepted_bytes": 71680,
+        "sample_sha256": "e4b9fec2e1f956d27732f8ba213f92494b83ddfe3ef9f3568482c0cc05d44208",
+        "seconds": 0.7520761759951711,
+        "checks": [
+          "bounded raw sink filled",
+          "guest write returned zero without consuming a second descriptor",
+          "native inspection remained responsive under backpressure",
+          "descriptor resumed after sink release",
+          "every accepted byte captured and consumed exactly once",
+          "stop invalidated epoch"
+        ],
+        "speaker_output": false
+      }
+    },
+    {
+      "artifact": "build/campaign005/final-8/audio-backpressure-x86/result.json",
+      "artifact_sha256": "e1c2f0501fcdfdfe149776215bb162747b344534317b9671af738e888c239f35",
+      "observed": {
+        "result": "passed",
+        "backend": "x86_64",
+        "image_sha256": "35b50f3027a84f110b64baf99902b327cb7cd238fa348c616eb491978c8a03e6",
+        "release": "2e40bf0247065590981c100cbfec5e0a5475e639db5f4f9405a3f962c92f0220",
+        "accepted_bytes": 71680,
+        "sample_sha256": "e4b9fec2e1f956d27732f8ba213f92494b83ddfe3ef9f3568482c0cc05d44208",
+        "seconds": 1.4814242150168866,
+        "checks": [
+          "bounded raw sink filled",
+          "guest write returned zero without consuming a second descriptor",
+          "native inspection remained responsive under backpressure",
+          "descriptor resumed after sink release",
+          "every accepted byte captured and consumed exactly once",
+          "stop invalidated epoch"
+        ],
+        "speaker_output": false
+      }
+    },
+    {
+      "artifact": "build/campaign005/final-8/audio-backpressure-arm/result.json",
+      "artifact_sha256": "f1114bc157870cea40ece79f5ee84144fb60b01bf798162f79c8e1dd5922920c",
+      "observed": {
+        "result": "passed",
+        "backend": "aarch64",
+        "image_sha256": "35b50f3027a84f110b64baf99902b327cb7cd238fa348c616eb491978c8a03e6",
+        "release": "2e40bf0247065590981c100cbfec5e0a5475e639db5f4f9405a3f962c92f0220",
+        "accepted_bytes": 71680,
+        "sample_sha256": "e4b9fec2e1f956d27732f8ba213f92494b83ddfe3ef9f3568482c0cc05d44208",
+        "seconds": 8.770473609911278,
+        "checks": [
+          "bounded raw sink filled",
+          "guest write returned zero without consuming a second descriptor",
+          "native inspection remained responsive under backpressure",
+          "descriptor resumed after sink release",
+          "every accepted byte captured and consumed exactly once",
+          "stop invalidated epoch"
+        ],
+        "speaker_output": false
+      }
+    },
+    {
+      "artifact": "build/campaign005/final-8/offline-host-output/result.json",
+      "artifact_sha256": "fcf02f0d3cf6725f94f232f86a23069ab4f16e71404976a59ad28824a34745ea",
+      "observed": {
+        "result": "passed",
+        "image": "35b50f3027a84f110b64baf99902b327cb7cd238fa348c616eb491978c8a03e6",
+        "packages": [
+          {
+            "release_id": "efa8056ec4741b55326b30bc99fb5aae1770b5cb0983a7dc7e492d7c86071ae2",
+            "rights": 4865,
+            "instance": 29318520504320263
+          },
+          {
+            "release_id": "5ed024795ca8a89d33d9268f415591f7189937bcb5757f85bbded0fbe5d8e1c7",
+            "rights": 1919,
+            "instance": 29318520504320264
+          }
+        ],
+        "retained_backing": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign005/connected-final/personal.vault",
+        "native_actions": "U / physical Enter / H / Space / Alt-Tab / Space",
+        "network_configured": false,
+        "providers_started": false,
+        "media_input_supplied": false,
+        "acquisition_authority_recovered": false,
+        "pcm_bytes": 1152000,
+        "pcm_sha256": "fb0af16f34ddbee9935e45f06f2c73549f0b50236315378f97bd8c38dce9c929",
+        "seconds_to_submit_samples": 5.68154708808288,
+        "host_pcm_output_requested": true,
+        "speaker_output": false
+      }
+    },
+    {
+      "artifact": "build/campaign005/final-9/audio-backpressure-qemu/result.json",
+      "artifact_sha256": "fe2000bd4b27da9730a500022abd816cc161e1362fd451aa8bb2e1c52d39080c",
+      "observed": {
+        "result": "passed",
+        "backend": "qemu",
+        "image_sha256": "26df02df50e24d2be2bfdb489cd6b6973e0f58f38faa92535de3fdcb8211ed18",
+        "release": "2e40bf0247065590981c100cbfec5e0a5475e639db5f4f9405a3f962c92f0220",
+        "accepted_bytes": 71680,
+        "sample_sha256": "e4b9fec2e1f956d27732f8ba213f92494b83ddfe3ef9f3568482c0cc05d44208",
+        "seconds": 0.8087498920504004,
+        "checks": [
+          "bounded raw sink filled",
+          "guest write returned zero without consuming a second descriptor",
+          "native inspection remained responsive under backpressure",
+          "descriptor resumed after sink release",
+          "every accepted byte captured and consumed exactly once",
+          "stop invalidated epoch"
+        ],
+        "speaker_output": false
+      }
+    },
+    {
+      "artifact": "build/campaign005/final-9/network-mixed-qemu-x86.json",
+      "artifact_sha256": "da024d192c2891ffb8d4271e92170a41f95411f0b334f4c1d5407c945aa5367e",
+      "observed": {
+        "image": "26df02df50e24d2be2bfdb489cd6b6973e0f58f38faa92535de3fdcb8211ed18",
+        "client_backend": "qemu",
+        "server_backend": "x86_64",
+        "connections": 3,
+        "service_operation": 2,
+        "public_description_schema": 2,
+        "separate_endpoints": true,
+        "bytes_per_connection": 4097,
+        "payload_sha256": [
+          "5be9a3ec29fc6fdc4e4d6c5d8494b9afe2b8265b81d81f7c9a75ba99e217dbad",
+          "812a3cfdb8bb3b3cd077e30b78347b9a9ff0fa8b47ad6b30a3e7f3be6d88a114",
+          "0de6786ddb201f5cb9d915cd61e5632822a9822a50ffc5b346420cf0eceffa45"
+        ],
+        "surviving_sessions": [
+          0,
+          2
+        ],
+        "stale_epoch_grant": "denied",
+        "request_binding": "authenticated",
+        "duplicate_receive_scope": "denied",
+        "fresh_boot_authority": {
+          "old_grant": 10135751956723924993,
+          "fresh_grant": 3611745923144613889,
+          "old_job": 10135751958871408641,
+          "fresh_job": 3611745925292097537,
+          "stale_after_new_allocation": "denied",
+          "fresh_job_state": "completed"
+        },
+        "consumer_admission": "not tested by this transport component check"
+      }
+    },
+    {
+      "artifact": "build/campaign005/final-9/stream2-device-components.json",
+      "artifact_sha256": "b5eebefd4a79ce57d8b336a874ca01ea5b360ab259e32218e4a3cb44d841c798",
+      "observed": {
+        "image_sha256": "ac978cf5e97bc9e8c552f5668d35fcd9704241e97404d0dff9e5c8bf6a10d376",
+        "scope": "separate bounded raw-device fixture; common platform exchange recorded separately",
+        "checks": [
+          {
+            "backend": "qemu",
+            "bytes": 4097,
+            "sha256": "ce358f6bcf45badd0779f5dd38b4ce4a7badaef5621c850c2984c4edb3049323",
+            "console": "ON",
+            "status": "passed"
+          },
+          {
+            "backend": "x86_64",
+            "bytes": 4097,
+            "sha256": "ce358f6bcf45badd0779f5dd38b4ce4a7badaef5621c850c2984c4edb3049323",
+            "console": "ON",
+            "status": "passed"
+          },
+          {
+            "backend": "aarch64",
+            "bytes": 4097,
+            "sha256": "ce358f6bcf45badd0779f5dd38b4ce4a7badaef5621c850c2984c4edb3049323",
+            "console": "ON",
+            "status": "passed"
+          }
+        ]
+      }
+    },
+    {
+      "artifact": "build/campaign005/final-9/network-mixed-arm-qemu.json",
+      "artifact_sha256": "a48ade3aedc58698679b47e4060b42bd26576cc95a68a9e23c5aa8e1d7ae4180",
+      "observed": {
+        "image": "26df02df50e24d2be2bfdb489cd6b6973e0f58f38faa92535de3fdcb8211ed18",
+        "client_backend": "aarch64",
+        "server_backend": "qemu",
+        "connections": 3,
+        "service_operation": 2,
+        "public_description_schema": 2,
+        "separate_endpoints": true,
+        "bytes_per_connection": 4097,
+        "payload_sha256": [
+          "5be9a3ec29fc6fdc4e4d6c5d8494b9afe2b8265b81d81f7c9a75ba99e217dbad",
+          "812a3cfdb8bb3b3cd077e30b78347b9a9ff0fa8b47ad6b30a3e7f3be6d88a114",
+          "0de6786ddb201f5cb9d915cd61e5632822a9822a50ffc5b346420cf0eceffa45"
+        ],
+        "surviving_sessions": [
+          0,
+          2
+        ],
+        "stale_epoch_grant": "denied",
+        "request_binding": "authenticated",
+        "duplicate_receive_scope": "denied",
+        "fresh_boot_authority": "not requested",
+        "consumer_admission": "not tested by this transport component check"
+      }
+    },
+    {
+      "artifact": "build/campaign005/final-9/clean-build.json",
+      "artifact_sha256": "38e04795b9252a05f9592459b093a2b71ed238c73a01aee7e551f17a047ae9d7",
+      "observed": {
+        "result": "passed",
+        "command": "./lt build --clean",
+        "sha256": "26df02df50e24d2be2bfdb489cd6b6973e0f58f38faa92535de3fdcb8211ed18",
+        "image_bytes": 6291456,
+        "matches_incremental_image": true
+      }
+    },
+    {
+      "artifact": "build/campaign005/final-9/offline-host-output/result.json",
+      "artifact_sha256": "f38c8435119710e597cefea21f674fa57b8c1dc6bef254f5c3d29101c90a955e",
+      "observed": {
+        "result": "passed",
+        "image": "26df02df50e24d2be2bfdb489cd6b6973e0f58f38faa92535de3fdcb8211ed18",
+        "packages": [
+          {
+            "release_id": "efa8056ec4741b55326b30bc99fb5aae1770b5cb0983a7dc7e492d7c86071ae2",
+            "rights": 4865,
+            "instance": 16466577482384933127
+          },
+          {
+            "release_id": "5ed024795ca8a89d33d9268f415591f7189937bcb5757f85bbded0fbe5d8e1c7",
+            "rights": 1919,
+            "instance": 16466577482384933128
+          }
+        ],
+        "retained_backing": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign005/connected-final/personal.vault",
+        "native_actions": "U / physical Enter / H / Space / Alt-Tab / Space",
+        "network_configured": false,
+        "providers_started": false,
+        "media_input_supplied": false,
+        "acquisition_authority_recovered": false,
+        "pcm_bytes": 1152000,
+        "pcm_sha256": "fb0af16f34ddbee9935e45f06f2c73549f0b50236315378f97bd8c38dce9c929",
+        "seconds_to_submit_samples": 5.691721677780151,
+        "host_pcm_output_requested": true,
+        "speaker_output": false
+      }
+    },
+    {
+      "artifact": "build/campaign005/final-9/device-qemu/result.json",
+      "artifact_sha256": "bfda6405755163622c21994e0b89568e02bb5cb0c32ed0116586bc2d54cb964a",
+      "observed": {
+        "result": "passed",
+        "image": "26df02df50e24d2be2bfdb489cd6b6973e0f58f38faa92535de3fdcb8211ed18",
+        "backend": "qemu",
+        "objects_service_restart": {
+          "previous": 3520398935195648258,
+          "replacement": 3520398935195648514,
+          "vault_neighbor_live": true,
+          "stale_after_fresh_allocation": "denied"
+        },
+        "progress247_foreign_caller": "denied",
+        "audio_release": "2e40bf0247065590981c100cbfec5e0a5475e639db5f4f9405a3f962c92f0220",
+        "pcm_bytes": 1024,
+        "pcm_sha256": "afd965583de875f77d2b1ca7e3b6f2104922b1c0d1b45aea718b330c8df25bdc",
+        "speaker_output": false
+      },
+      "content_summary": {
+        "input_bytes": 9644,
+        "chunks": 3,
+        "max_chunk_buffer_per_job": 4096,
+        "actual_read_sha256": "92b1b570197dc18a4cb69aadb274b12f556bded16f037524e3e7757e8785c32f",
+        "retention": "explicitly volatile; durable reservation rejected"
+      }
+    },
+    {
+      "artifact": "build/campaign005/final-9/device-x86_64/result.json",
+      "artifact_sha256": "b1dc2d3e7477692fce209ef51284bdf6b6c623543e9bdc918f259f5391f53a91",
+      "observed": {
+        "result": "passed",
+        "image": "26df02df50e24d2be2bfdb489cd6b6973e0f58f38faa92535de3fdcb8211ed18",
+        "backend": "x86_64",
+        "objects_service_restart": {
+          "previous": 16918051834516472066,
+          "replacement": 16918051834516472322,
+          "vault_neighbor_live": true,
+          "stale_after_fresh_allocation": "denied"
+        },
+        "progress247_foreign_caller": "denied",
+        "audio_release": "2e40bf0247065590981c100cbfec5e0a5475e639db5f4f9405a3f962c92f0220",
+        "pcm_bytes": 1024,
+        "pcm_sha256": "afd965583de875f77d2b1ca7e3b6f2104922b1c0d1b45aea718b330c8df25bdc",
+        "speaker_output": false
+      },
+      "content_summary": {
+        "input_bytes": 9644,
+        "chunks": 3,
+        "max_chunk_buffer_per_job": 4096,
+        "actual_read_sha256": "92b1b570197dc18a4cb69aadb274b12f556bded16f037524e3e7757e8785c32f",
+        "retention": "explicitly volatile; durable reservation rejected"
+      }
+    },
+    {
+      "artifact": "build/campaign005/final-9/device-aarch64/result.json",
+      "artifact_sha256": "d6bdb4c3343ca4128c2bdc1386f5339fefada05133c1b9b0035ed0c2b57bdb5e",
+      "observed": {
+        "result": "passed",
+        "image": "26df02df50e24d2be2bfdb489cd6b6973e0f58f38faa92535de3fdcb8211ed18",
+        "backend": "aarch64",
+        "objects_service_restart": {
+          "previous": 16836332200445083906,
+          "replacement": 16836332200445084162,
+          "vault_neighbor_live": true,
+          "stale_after_fresh_allocation": "denied"
+        },
+        "progress247_foreign_caller": "denied",
+        "audio_release": "2e40bf0247065590981c100cbfec5e0a5475e639db5f4f9405a3f962c92f0220",
+        "pcm_bytes": 1024,
+        "pcm_sha256": "afd965583de875f77d2b1ca7e3b6f2104922b1c0d1b45aea718b330c8df25bdc",
+        "speaker_output": false
+      },
+      "content_summary": {
+        "input_bytes": 9644,
+        "chunks": 3,
+        "max_chunk_buffer_per_job": 4096,
+        "actual_read_sha256": "92b1b570197dc18a4cb69aadb274b12f556bded16f037524e3e7757e8785c32f",
+        "retention": "explicitly volatile; durable reservation rejected"
+      }
+    }
+  ],
+  "diagnosed_legacy_failure": {
+    "fixture_expected_bytes": 192000,
+    "actual_bytes": 187904,
+    "actual_sha256": "697efbf920e31287237b1b04831b1e98e8d4458745c44775b1984a135d5b5ae5",
+    "exact_internal_omission": [
+      184320,
+      188416
+    ],
+    "correct_suffix_after_omission": true,
+    "primary_source_explanation": "QEMU virtconsole does not throttle short writes; its non-console port does. Port0 is reserved for consoles, so a correct fix uses MULTIPORT and port1 rather than an args-only port0 substitution.",
+    "separate_raw_adapter_probe": {
+      "bytes": 187904,
+      "capture_exact_before_eof": true,
+      "seconds": 0.7232457799836993,
+      "child_exit_status": 0,
+      "source": "the actual incomplete guest capture, transported as raw PCM without host WAV decoding"
+    },
+    "expected_sha256": "bc3895b7cc6263679d470a0e46e73dc82a3b4823088f7ef2a23b74242450f357",
+    "qemu_version": "11.1.1",
+    "first_trial": {
+      "actual_bytes": 167936,
+      "actual_sha256": "3aef35d7c75588b768c218d7b2b97f54ebd3e03ace9f454665fbc8059385f8c6",
+      "omitted_expected_byte_ranges": [
+        [
+          143360,
+          150016
+        ],
+        [
+          158208,
+          165376
+        ],
+        [
+          173568,
+          181248
+        ],
+        [
+          189440,
+          192000
+        ]
+      ],
+      "all_remaining_bytes_equal_expected_in_order": true
+    },
+    "second_trial": {
+      "actual_bytes": 187904,
+      "actual_sha256": "697efbf920e31287237b1b04831b1e98e8d4458745c44775b1984a135d5b5ae5",
+      "omitted_expected_byte_ranges": [
+        [
+          184320,
+          188416
+        ]
+      ],
+      "all_remaining_bytes_equal_expected_in_order": true
+    }
+  },
+  "primary_sources": [
+    "https://docs.oasis-open.org/virtio/virtio/v1.2/virtio-v1.2.html",
+    "https://raw.githubusercontent.com/qemu/qemu/master/hw/char/virtio-console.c",
+    "https://raw.githubusercontent.com/qemu/qemu/master/hw/char/virtio-serial-bus.c",
+    "https://raw.githubusercontent.com/PipeWire/pipewire/1.4.9/src/tools/pw-cat.c"
+  ],
+  "limits": [
+    "Physical speaker output was not heard or measured; exact bytes and sink process status do not establish audible latency or underrun limits.",
+    "pw-cat stdin uses fread(requested_frames); a final partial host quantum may await subsequent input or EOF. Natural guest end is not a physical speaker-drain acknowledgment.",
+    "Blocked raw-sink test samples are constant boundary-probe samples, not the media composition; its elapsed time is not sustained playback throughput.",
+    "The four-channel transport retains shared framing head-of-line backpressure.",
+    "Native ARM64 hardware and independent operators were not exercised; AArch64 here runs under qemu-aarch64.",
+    "These focused checks do not establish the full campaign, MVP, privacy routing, anonymity, payment or confidential-execution gates."
+  ],
+  "verification_scope_note": "The three blocked-sink backend checks used the first PCM2 image35b50. The final26df image extracts the same bounded controls into Devices; final-image QEMU blocked-sink and both mixed-backend network pairs check that shared helper. The separately identified finite raw-device fixture also checks all three backends without claiming it is the common platform image.",
+  "implementation_sha256": {
+    "Guest/AudioDevice.lean": "63f8573ebc452e1f2177bc79c942e7cb6216988ecad53fc68ac5e6769b630fc0",
+    "Guest/Devices.lean": "b6fae080790fda2e315529d444be16f5dffa872cb5303f2655b6c2fbd7ffc38c",
+    "emulator/pcm_x86_64.inc": "0cb63e2cc19b75d6ebad1602768c7a8a373537690447d90622ce3de2bc7b38f3",
+    "emulator/pcm_aarch64.inc": "8f29b3ed07d7845eef12a9cd9b6a85b9c120beb168588ea4c137e1d22b41007a",
+    "emulator/network_x86_64.inc": "75f7893b1ed1767e242dbf1f3a26a01a16d69979a6a7d09be1ec435455d72bcf",
+    "emulator/network_aarch64.inc": "95a01e2fb346c8cab7dd7a0c4c6410140412e9dd02af7a72ed8211d572c92297",
+    "tools/pcm.py": "5a5cbb81b4ce6ea301aa5bd6ee7d5d6e459deb3e14e97660900809c869c6348f",
+    "tools/live.py": "a8de0122f759a9b1251799e5f44d2bb46cefd311c5d5a41f66cccd5b8beae9e5",
+    "tools/live_build.py": "cd56ffbe126c9904e08c5fa4ce51d0bb7f4496a834edf6f82eaca29dd4ee6715",
+    "tests/audio_backpressure.py": "fb811974815fbbeb6b1174afc9c7f7d690f3699b7896c1f92abf3e9a364f6674",
+    "tests/network_devices.py": "ace76df2145e5a514eb74e880a42e998d7016d8eac5f054e762932ac2dfd78a4",
+    "tests/fixtures/TransportProbe.lean": "7361ff1ae02f36a18cb8cfcb2419935f6229f2d554cccf6f4dcf768d369e2530"
+  }
+}

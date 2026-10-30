@@ -1,5 +1,5 @@
 """Actual QEMU and assembly-console byte I/O; no graph/network-policy adapter."""
-import os,socket,subprocess,sys,time,hashlib,json
+import os,socket,struct,subprocess,sys,time,hashlib,json
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'tools'))
@@ -11,6 +11,9 @@ def build():
  driver.lean(['-o','tests/fixtures/TransportProbe.olean','tests/fixtures/TransportProbe.lean'])
  (ROOT/'build/transport-boot.S').write_text('.option norvc\n.section .text.boot\n.globl _start\n_start:\n li sp,0x800ff000\n li a0,0\n call lt_Guest_transportMain\n1: j 1b\n')
  driver.compile_guest('tests.fixtures.TransportProbe',['Guest.transportMain'],'transport-probe','build/transport-boot.S','runtime/kernel.ld')
+ image=ROOT/'build/transport-probe.bin';data=bytearray(image.read_bytes())
+ if len(data)<0x200438:data.extend(bytes(0x200438-len(data)))
+ struct.pack_into('<8sQQ',data,0x200420,b'LTDEV2\0\0',2,2);image.write_bytes(data)
 
 def check(backend):
  a,b=socket.socketpair();a.settimeout(45)
@@ -27,7 +30,8 @@ def check(backend):
    if not chunk:raise AssertionError('stream closed early')
    result.extend(chunk)
   out,err=proc.communicate(timeout=45)
-  if result!=payload or proc.returncode!=0 or b'ON' not in out:
+  extra=a.recv(1)
+  if result!=payload or extra or proc.returncode!=0 or b'ON' not in out:
    raise AssertionError((backend,proc.returncode,len(result),out,err))
   return {'backend':backend,'bytes':len(result),'sha256':hashlib.sha256(result).hexdigest(),'console':out.decode(),'status':'passed'}
  finally:
