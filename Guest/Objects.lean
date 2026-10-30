@@ -546,13 +546,18 @@ partial def importNames (caller i count t : UInt64) : Bool :=
       ProjectGraph.allZero (e+48+n) (80-n) t && !ProjectGraph.allZero (e+16) 32 t &&
       validRestoreNames e i t && !ProjectGraph.duplicateRoot caller (e+48) n 0 0 t && importNames caller (i+1) count t
 
+def importPrivileged (rights : UInt64) : Bool := admin rights || (rights &&& 0x400000000) != 0
+def importRootQuota (caller rights count t : UInt64) : Bool :=
+  importPrivileged rights || ProjectGraph.ownerRoots caller 0 0 0 t+count <= 4
+
 def beginImport (caller rights length t : UInt64) : UInt64 :=
   let count := load64 (command+16) t
   let nodes := load64 (command+24) t
   let bytes := load64 (command+32) t
   if !has rights 6 then respond 1 0 0 0 t else
   if count == 0 || count > 6 || nodes == 0 || nodes > 64 || bytes > 4194304 || length != 64+count*128 ||
-    (!admin rights && (rights &&& 0x400000000) == 0 && (count > 4 || nodes > 24 || bytes > 1048576 || ProjectGraph.ownerRoots caller 0 0 0 t+count > 4)) then respond 4 0 0 0 t else
+    (!importPrivileged rights && (count > 4 || nodes > 24 || bytes > 1048576)) ||
+    !importRootQuota caller rights count t then respond 4 0 0 0 t else
   if !importNames caller 0 count t then respond 2 0 0 0 t else
     let slot := freeImport 0 t
     if slot == error then respond 4 0 0 0 t else
@@ -708,7 +713,10 @@ partial def commitImportRoots (caller rights j i t : UInt64) : UInt64 :=
 def finishImport (caller rights h t : UInt64) : UInt64 :=
   let j := importAt (h &&& 255)
   let count := load64 (j+56) t
-  if load64 (j+32) t != load64 (j+24) t || load64 (j+40) t != load64 (j+48) t ||
+  -- Other transactions may have published roots after this stage began.
+  -- Recheck the caller's quota at the same boundary as atomic publication.
+  if !importRootQuota caller rights count t ||
+    load64 (j+32) t != load64 (j+24) t || load64 (j+40) t != load64 (j+48) t ||
     freeRootsCount 0 0 t < count || freeRootCapsCount 0 0 t < count then respond 4 0 0 0 (eraseImport j t) else
     let checked := sealImport caller j (load64 (j+32) t) (store64 ProjectGraph.importScope h t)
     if checked == error then respond 2 0 0 0 (eraseImport j checked) else

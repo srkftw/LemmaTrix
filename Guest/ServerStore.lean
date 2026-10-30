@@ -98,10 +98,16 @@ def permit (length t : UInt64) : UInt64 :=
     if slot == error || (load64 (txn+8) actual != 0 && load64 (txn+32) actual == slot) then response 4 0 actual else
       let g := grant slot
       let generation := load64 (st+8) actual+1
-      if generation == 0 || generation > 0xffffffff then response 4 0 actual else
-      let t := zero g 16 actual
+      if generation == 0 || generation > 0xffffff then response 4 0 actual else
+      -- Grants are session authority, never durable store identities. Include
+      -- this service incarnation so restarting it cannot recycle an old handle
+      -- for a still-running caller and a different namespace.
+      let serviceInstance := self actual
+      let epoch := ((serviceInstance >>> 32)+((serviceInstance >>> 8) &&& 0xffffff)) &&& 0xffffffff
+      let handle := (epoch <<< 32) ||| (generation <<< 8) ||| (slot+1)
+      let t := zero g 16 serviceInstance
       let t := store64 (st+8) generation t
-      let t := store64 g (generation*256+slot+1) t
+      let t := store64 g handle t
       let t := store64 (g+8) target t
       let t := store64 (g+16) role t
       let t := store64 (g+24) quota t
