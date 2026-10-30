@@ -1,0 +1,32 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Library seed operation</title><style>body{font:17px/1.6 system-ui,sans-serif;max-width:74rem;margin:2rem auto;padding:0 1rem}pre,code{font:14px/1.5 ui-monospace,monospace}pre{white-space:pre-wrap;overflow-wrap:anywhere}</style><nav><a href="index.html">Documentation index</a> · <a href="server-content.html">Server archive format</a> · <a href="network-bulk.html">Network contract</a> · <a href="content-jobs.html">Content jobs</a></nav><h1>Library seed operation</h1>
+<p><code>./lt library-node</code> runs the selected signed native LibraryPeer package on the same common platform image as a personal guest. Its operator configuration pins the exact release ID and read/network rights 1025, explicit purpose-2 server backing, selected archive slots and immutable manifest commitments, signed service descriptions, relationship credential paths, byte budgets and lifetimes. It contains no content index, transport session key, capability handle or personal vault key. Credential files remain separate, owner-only setup inputs. Direct encrypted bulk discloses endpoint and relationship metadata.</p>
+<p>Populate each selected archive through the native <code>server-content permit</code>/<code>retain</code> operations after authorized acquisition or protocol replication. Retention does not require opening Forge. Each seed retains its own bytes through guest-owned writes to its own selected backing. Never initialize or copy another node's backing to manufacture replication. The metadata-only registry may be a separate guest and needs no media archive.</p>
+<pre>./lt server-store init /explicit/seed-a.img --content
+# Provision the signed service description and separate role-2 relationship
+# credentials through the documented ./lt network description/init commands.
+# Retain selected content under an explicit server namespace and archive slot.
+./lt library-node init /explicit/seed-a.json \
+  --package /explicit/library-peer.ltrel --public /explicit/publisher.pub \
+  --release-id EXACT_RELEASE_SHA256 --store /explicit/seed-a.img \
+  --archive-slot 0 --namespace NAMESPACE_SHA256 \
+  --manifest-sha256 SELECTED_MANIFEST_SHA256 --bytes EXACT_BYTE_CEILING \
+  --connection-slot 0 --credentials /explicit/relationship.server \
+  --description /explicit/relationship.service --budget 16777216 --lifetime 100000
+./lt library-node add-archive /explicit/seed-a.json \
+  --archive-slot 1 --namespace SECOND_NAMESPACE_SHA256 \
+  --manifest-sha256 SECOND_MANIFEST_SHA256 --bytes SECOND_BYTE_CEILING
+./lt library-node add-relationship /explicit/seed-a.json \
+  --connection-slot 1 --credentials /explicit/second.server \
+  --description /explicit/second.service --budget 16777216 --lifetime 100000
+./lt library-node run /explicit/seed-a.json --backend qemu \
+  --image /explicit/identified-common-guest.bin --socket /tmp/seed-a.sock
+# run prints the actual native serving instance; use it for inspection.
+./lt library-node inspect /explicit/seed-a.json \
+  --socket /tmp/seed-a.sock --instance ACTUAL_NATIVE_INSTANCE
+./lt library-node stop --socket /tmp/seed-a.sock
+# Restart from that seed's own backing; run obtains fresh grants and recovers.
+./lt library-node run /explicit/seed-a.json --backend x86_64 \
+  --image /explicit/identified-common-guest.bin --socket /tmp/seed-a.sock</pre>
+<p>Startup checks the pinned package and signed descriptions again, launches the package using explicit operator approval, issues fresh namespace grants and calls asynchronous native recovery for each selected archive. Only the serving incarnation receives the recovered read scopes. It then configures each selected connection and binds each selected immutable root to a separate authenticated protocol stream. The native package owns readiness, request parsing, range authorization, response generation, bounded deadlines and reconnection. A stream identity is derived from the manifest commitment; local read handles are never serialized as stream IDs.</p>
+<p>The profile supports four archive slots and four independent relationship slots, at most sixteen root/relationship scopes. Aggregate simultaneously recovered payloads must fit the 6,029,312-byte volatile content capacity. One bounded storage engine serializes recovery/retention transactions and returns busy rather than retargeting an active transaction. Each configured stream has its own approved total byte ceiling and absolute lifetime; a lost connection obtains fresh authentication and grants within that remaining policy. Removal revokes the future serving policy. Expiry or budget exhaustion requires explicit operator reconfiguration. Inspection distinguishes active, waiting for authentication, offline and terminal error states.</p>
+<p><code>library-node recover CONFIG --socket SOCKET --instance INSTANCE</code> performs the same selected recovery/bootstrap into an explicitly supplied fresh native serving incarnation, useful when a package is started separately. Recovery does not serialize or restore execution approval or old transport authority. Repeated recovery into an already populated bounded instance may report quota; restarting the selected guest clears its volatile content scopes while preserving authorized backing. Stop targets only the explicit management socket, and run refuses an existing socket before creating a guest. These commands do not establish independent-operator validation or physical crash durability.</p></html>
