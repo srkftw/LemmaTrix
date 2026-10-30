@@ -1,0 +1,73 @@
+{
+  "schema": 1,
+  "result": "passed",
+  "scope": "actual Library save-retention failure-path Compositor-scope cleanup; focused ordinary Lean fixture, not a consumer positive",
+  "source_test": "tests/library_save_failure_refs.py",
+  "source_fixture": "tests/fixtures/LibrarySaveFailureProbe.lean",
+  "consumed_function": "Guest.Library.retainGameSave",
+  "run_command": "./lt app --profile 2 --module tests.fixtures.LibrarySaveFailureProbe --entry Guest.LibrarySaveFailureProbe.main --name library-save-failure-probe && python3 tests/library_save_failure_refs.py --image build/campaign005/final-12/guest.bin --binary build/live/apps/library-save-failure-probe.bin --output build/campaign005/save-failure12",
+  "raw_result": "build/campaign005/save-failure12/result.json",
+  "raw_result_sha256": "930943179d091ac29914ea9d4d504506329c0a4f7e9c5302b4b0428310689543",
+  "backend": "qemu",
+  "image_sha256": "c9309452ea552b204ce85b0440525b2222770a651319dcf96cd7dee48451b2d4",
+  "library_source_sha256": "3692c24f336a8f54512718a0e62df4556db95924450ade943eb65b2827235098",
+  "probe_sha256": "f384e5f0e2f26f85da4f1050113c63b0bc8c6421bdbec906b9817c304bec5596",
+  "probe_release": "3e631ee60f15984d7c11195c893aaa5c36524ead158b6cdc3e961b8f6c3bed92",
+  "probe_instance": 6149294961914282247,
+  "actual_rights": 1919,
+  "command": [
+    "/home/sreekumaar/Desktop/LemmaTrix/lt",
+    "run",
+    "--backend",
+    "qemu",
+    "--image",
+    "build/campaign005/final-12/guest.bin",
+    "--socket",
+    "/home/sreekumaar/Desktop/LemmaTrix/build/campaign005/save-failure12/portal.sock",
+    "--graphics",
+    "/home/sreekumaar/Desktop/LemmaTrix/build/campaign005/save-failure12/display.qmp"
+  ],
+  "checks": [
+    {
+      "check": "actual Library retainGameSave rejects191-byte selected Object before sharing;40 calls leave all32 Compositor capability slots available",
+      "result": "passed",
+      "bytes": 191,
+      "calls": 40,
+      "expected_notice": 42,
+      "pending_approval": 0,
+      "available_before": 32,
+      "available_after": 32
+    },
+    {
+      "check": "actual Library retainGameSave revokes each newly shared Compositor scope after portal11 busy rejection;40 calls preserve original picker and all32 target slots",
+      "result": "passed",
+      "bytes": 192,
+      "calls": 40,
+      "expected_notice": 21,
+      "pending_approval": 0,
+      "available_before": 32,
+      "available_after": 32,
+      "picker_nonce": 7300001,
+      "picker_state_during_rejection": 1,
+      "physical_escape_state": 3,
+      "trusted_label": "ACCESS: READ ONLY / NO EDIT OR PUBLISH AUTHORITY",
+      "frame_sha256": "8aca589fcd75dc0356f57adec4f016677999c8aaa985c3cfbdaf365a4777e381"
+    }
+  ],
+  "method": "ordinary signed Lean fixture imports and invokes Guest.Library.retainGameSave; own private selected row and Objects; public Objects.share/revoke quota calibration exposes no Compositor private state",
+  "limitations": [
+    "negative function regression, not a native Library save UI, Game execution, consumer admission or encrypted retention positive",
+    "192-byte object is deliberately dummy zero bytes; open trusted picker rejects portal11 before typed-save parsing",
+    "temporary target grants are stored privately in the Lean fixture and all calibration grants are revoked; no host guest-memory writes",
+    "single QEMU image execution only; no new audio, network or physical-vault evidence"
+  ],
+  "quota_observation": "Fixture owns the selected committed Object. It shares25 to the actual Compositor until public Objects status4, privately stores each temporary grant, revokes all created grants, and returns only the available count. Before and after each40-call case the target accepts32 grants. No Compositor-private capability table is inspected.",
+  "fixture_data": "191 and192 zero-byte payloads are created through Objects stage/append/digest/commit by the Lean fixture itself; only its own selected Library row96 and arena are initialized.192-byte dummy is deliberately not a valid game save.",
+  "trusted_picker_capture": {
+    "path": "build/campaign005/save-failure12/busy-trusted-picker.ppm",
+    "ppm_sha256": "6a53d1c8b92a7d507c51e088fcc2f0e1dc8d901ceb5ab79060f57a35a8a4c9ab",
+    "frame_sha256": "8aca589fcd75dc0356f57adec4f016677999c8aaa985c3cfbdaf365a4777e381"
+  },
+  "process_result": "test returned0 and normal guest command70 completed; no guest left running",
+  "retention_or_execution_claim": false
+}
