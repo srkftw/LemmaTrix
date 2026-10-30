@@ -231,7 +231,7 @@ def inspect(client, config, instance):
                 for i in range(16) for f, _ in [library_peer.call(client, instance, 401, i)]],
         backing=config['server_store'], live_handles_persisted=False,
         durable_service_policy=config.get('durable_service_policy'),
-        durable_jobs=[r for i in range(16) if (r := service_jobs.inspect(client, i))],
+        durable_jobs=[r for i in range(16) if (r := service_jobs.inspect(client, i, by_index=True))],
         limits='16 selected root/relationship scopes; legacy archives share6029312 volatile bytes; indexed items read nonresident ranges')
 
 
@@ -243,7 +243,7 @@ def control(client, config, instance, action):
         for selected in config.get('archives', []) + config.get('indexed_items', []):
             policy_ids.add(hashlib.sha256(b'LT-OperatorPolicy-v1\0' +
                 bytes.fromhex(selected['namespace']) + material[:32]).hexdigest())
-    selected_slots = {i for i in range(16) if (record := service_jobs.inspect(client, i)) and
+    selected_slots = {record['slot'] for i in range(16) if (record := service_jobs.inspect(client, i, by_index=True)) and
                       record['policy'] in policy_ids}
     for slot in sorted(selected_slots):
         state = service_jobs.inspect(client, slot)

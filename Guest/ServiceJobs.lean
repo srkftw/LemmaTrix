@@ -23,15 +23,18 @@ def key (role : UInt64) : UInt64 := keys+(role-1)*512
 def magic : UInt64 := 0x31424f4a5653544c
 def row (slot : UInt64) : UInt64 := rows+slot*512
 def binding (slot : UInt64) : UInt64 := bindings+slot*16
+-- Low byte identifies physical storage; upper56 bits identify its allocation.
+-- Publication generation (row+24) is separate and never resets during reuse.
+def index (handle : UInt64) : UInt64 := handle &&& 255
+def handle (slot t : UInt64) : UInt64 := slot ||| (load64 (row slot+416) t <<< 8)
+def current (identity slot t : UInt64) : Bool := slot < 16 && identity == handle slot t
 def equal (a b n t : UInt64) : Bool := Guest.ProjectGraph.equal a b n t
 def zeroBytes (p n t : UInt64) : Bool := Guest.ProjectGraph.allZero p n t
 def response (code slot t : UInt64) : UInt64 :=
-  let t := header code slot (if slot < 16 then load64 (row slot+32) t else 0)
-    (if slot < 16 then load64 (row slot+40) t else 0)
-    (if slot < 16 then load64 (row slot+48) t else 0)
-    (if slot < 16 then load64 (row slot+56) t else 0)
-    (if slot < 16 then load64 (row slot+24) t else 0) t
-  64+t
+  if slot >= 16 then 64+header code slot 0 0 0 0 0 t else
+  let p := row slot
+  64+header code (handle slot t) (load64 (p+32) t) (load64 (p+40) t)
+    (load64 (p+48) t) (load64 (p+56) t) (load64 (p+24) t) t
 def disk (op sector p t : UInt64) : UInt64 :=
   let t := if op == 66 then copy p chunk 512 t else t
   let r := syscall op sector chunk 512 2 t
@@ -49,11 +52,13 @@ def validTerms (p t : UInt64) : Bool :=
   (load64 (p+176) t == 2 || load64 (p+176) t == 3) &&
   load64 (p+184) t == 0 && !zeroBytes (p+192) 32 t
 def valid (p slot t : UInt64) : Bool :=
-  if load64 p t != magic || load64 (p+8) t != 1 || load64 (p+16) t != slot ||
+  if load64 p t != magic || (load64 (p+8) t != 1 && load64 (p+8) t != 2) || load64 (p+16) t != slot ||
     load64 (p+24) t == 0 || load64 (p+32) t > 8 ||
     !validTerms (p+64) t || load64 (p+40) t > load64 (p+216) t ||
     load64 (p+48) t > load64 (p+216) t || load64 (p+56) t > load64 (p+224) t ||
-    load64 (p+400) t > load64 (p+232) t || load64 (p+408) t > 0xffffffff || !zeroBytes (p+416) 32 t ||
+    load64 (p+400) t > load64 (p+232) t || load64 (p+408) t > 0xffffffff ||
+    (load64 (p+8) t == 1 && !zeroBytes (p+416) 16 t) || load64 (p+416) t > 0xffffffffffffff ||
+    load64 (p+424) t > load64 (p+24) t || !zeroBytes (p+432) 16 t ||
     !zeroBytes (p+480) 32 t then false else
     let t := Guest.ServiceHash.sha256At scratch (p+64) 256 hashed t
     if !equal hashed (p+320) 32 t then false else
@@ -91,6 +96,7 @@ partial def scan (slot t : UInt64) : UInt64 :=
     else
       let p := if av && (!bv || load64 (working+24) b >= load64 (candidate+24) b) then working else candidate
       let t := copy p (row slot) 512 b
+      let t := if load64 (p+416) t != 0 then store64 (st+8) 1 t else t
       -- An interrupted attempt is distinct from fresh current authority.
       let t := if load64 (row slot+32) t == 2 then store64 (row slot+32) 6 t else t
       let t := Guest.ServiceHash.sha256At scratch (row slot) 448 hashed t
@@ -104,7 +110,7 @@ def mount (t : UInt64) : UInt64 :=
   if r == error || load64 working r != Guest.ServerStore.formatMagic ||
     load64 (working+8) r != 1 || load64 (working+16) r != 33088 ||
     !zeroBytes (working+24) 488 r then response 6 16 r else
-    let t := scanKeys 1 (zero bindings 32 r)
+    let t := scanKeys 1 (zero bindings 32 (zero st 2 r))
     let t := if t == error then error else scan 0 t
     if t == error then response 5 16 t else response 0 16 (store64 st 1 t)
 def persist (slot t : UInt64) : UInt64 :=
@@ -119,28 +125,40 @@ def persist (slot t : UInt64) : UInt64 :=
     if r != 0 then error else copy working (row slot) 512 r
 partial def locate (operation requester slot t : UInt64) : UInt64 :=
   if slot == 16 then error else
-  if load64 (row slot) t == magic && load64 (row slot+32) t != 0 && equal operation (row slot+64) 32 t && equal requester (row slot+96) 32 t then slot
+  if load64 (row slot) t == magic && equal operation (row slot+64) 32 t && equal requester (row slot+96) 32 t then slot
   else locate operation requester (slot+1) t
 partial def vacant (slot t : UInt64) : UInt64 :=
   if slot == 16 then error else if load64 (row slot) t == 0 || load64 (row slot+32) t == 0 then slot else vacant (slot+1) t
-def submit (slot length t : UInt64) : UInt64 :=
-  if length != 320 || slot > 16 || !validTerms (command+64) t then response 2 slot t else
+def submit (identity length t : UInt64) : UInt64 :=
+  let selected := index identity
+  if length != 320 || (identity != 16 && selected >= 16) || load64 (command+40) t > 1 || !validTerms (command+64) t then response 2 16 t else
   let old := locate (command+64) (command+96) 0 t
   if old != error then
-    response (if equal (command+64) (row old+64) 256 t then 0 else 2) old t
+    response (if !equal (command+64) (row old+64) 256 t then 2 else if load64 (row old+32) t == 0 then 8 else 0) old t
   else
-  let slot := if slot == 16 then vacant 0 t else slot
+  -- After history reclamation, an unknown operation is not automatically a
+  -- fresh allowance. Only an explicit new-operation admission may allocate it.
+  if identity == 16 && load64 (st+8) t != 0 && load64 (command+40) t != 1 then response 8 16 t else
+  let slot := if identity == 16 then vacant 0 t else selected
   if slot == error || (load64 (row slot) t != 0 && load64 (row slot+32) t != 0) then response 4 16 t else
+  if identity != 16 && !current identity slot t then response 9 16 t else
+  let used := load64 (row slot) t == magic
+  let epoch := if used then load64 (row slot+416) t+1 else 0
+  if epoch > 0xffffffffffffff then response 4 slot t else
+    let generation := load64 (row slot+24) t
     let t := zero working 64 t
     let t := store64 working magic t
-    let t := store64 (working+8) 1 t
+    let t := store64 (working+8) 2 t
     let t := store64 (working+16) slot t
+    let t := store64 (working+24) generation t
     let t := store64 (working+32) 1 t
+    let t := store64 (working+416) epoch t
+    let t := store64 (working+424) (generation+1) t
     let t := copy (command+64) (working+64) 256 t
     let t := Guest.ServiceHash.sha256At scratch (working+64) 256 hashed t
     let t := copy hashed (working+320) 32 t
     let r := persist slot t
-    if r == error then response 6 slot r else response 0 slot r
+    if r == error then response 6 slot r else response 0 slot (if used then store64 (st+8) 1 r else r)
 def terminal (state : UInt64) : Bool := state == 4 || state == 5 || state == 7 || state == 8
 def bind (slot owner t : UInt64) : UInt64 :=
   let p := row slot
@@ -252,6 +270,7 @@ def attachReceipt (slot length t : UInt64) : UInt64 :=
     if r != 0 then response 6 slot r else response 0 slot r
 def receiptMatches (p slot t : UInt64) : Bool :=
   load64 p t == receiptMagic && load64 (p+8) t == 1 && load64 (p+24) t == load64 (row slot+192) t &&
+  load64 (p+32) t >= load64 (row slot+424) t && load64 (p+32) t <= load64 (row slot+24) t &&
   equal (p+64) (row slot+64) 96 t && equal (p+160) (row slot+320) 32 t
 def readReceipt (slot t : UInt64) : UInt64 :=
   let role := load64 (row slot+192) t
@@ -270,46 +289,58 @@ def readReceipt (slot t : UInt64) : UInt64 :=
     832+copy (key role+32) (wire+576) 256 t
 def dispatch (caller rights length t : UInt64) : UInt64 :=
   let op := load64 command t
-  let slot := load64 (command+8) t
+  let identity := load64 (command+8) t
+  let slot := index identity
   let admin := (rights &&& 0x100000000) != 0
   if length < 64 || load64 (command+56) t != 1 then response 2 16 t else
-  if op == 280 && admin && length == 64 then mount t else
+  if op != 281 && op != 290 && op != 293 && op != 295 && length != 64 then response 2 16 t else
+  if op == 280 && admin then mount t else
   if load64 st t != 1 then response 3 16 t else
-  if op == 293 && admin then configureKey slot length t else
-  if op == 281 && admin then submit slot length t else
-  if slot >= 16 || load64 (row slot) t != magic || load64 (row slot+32) t == 0 then response 3 slot t else
-  if op == 299 && admin && length == 64 then
-    -- A reused slot must not alias a still-running application's old numeric
-    -- identifier. Terminal index reclamation waits for a different kernel
-    -- boot; no process, capability or transport state is recovered here.
-    if !terminal (load64 (row slot+32) t) || load64 (row slot+408) t == (self t >>> 32) then response 6 slot t else
+  if op == 293 && admin then configureKey identity length t else
+  if op == 281 && admin then submit identity length t else
+  -- Inventory is explicitly index-addressed and read-only. Every ordinary
+  -- operation, including administrative mutation, requires a current handle.
+  if op == 296 && admin && identity < 16 then
+    if load64 (row slot) t != magic || load64 (row slot+32) t == 0 then response 3 slot t else
+      let t := response 0 slot t
+      576+copy (row slot) (wire+64) 512 t
+  else
+  if slot >= 16 || load64 (row slot) t != magic then response 3 16 t else
+  if !current identity slot t then response 9 16 t else
+  if load64 (row slot+32) t == 0 then response 8 slot t else
+  let worker := caller == syscall 97 5 0 0 0 t
+  let readable := admin || owner slot caller t || worker
+  if op == 299 && admin then
+    -- Terminal tombstones preserve the last exact terms until this physical
+    -- row is explicitly reused. Old handles then fail before owner checking.
+    if !terminal (load64 (row slot+32) t) then response 6 slot t else
       let t := copy (row slot) working 512 t
       let t := store64 (working+32) 0 t
       let r := persist slot t
       if r == error then response 6 slot r else response 0 slot (zero (binding slot) 2 r)
   else
-  if op == 294 && length == 64 && (admin || owner slot caller t || caller == syscall 97 5 0 0 0 t) then
+  if op == 294 && readable then
     let t := prepareReceipt slot t
     let t := response 0 slot t
     320+copy receipt (wire+64) 256 t
-  else if op == 295 && caller == syscall 97 5 0 0 0 t then attachReceipt slot length t else
-  if op == 297 && length == 64 && (admin || owner slot caller t || caller == syscall 97 5 0 0 0 t) then
+  else if op == 295 && worker then attachReceipt slot length t else
+  if op == 297 && readable then
     let p := key (load64 (row slot+192) t)
     if load64 p t == 0 then response 6 slot t else
       let t := response 0 slot t
       320+copy (p+32) (wire+64) 256 t
-  else if op == 298 && length == 64 && (admin || owner slot caller t || caller == syscall 97 5 0 0 0 t) then readReceipt slot t else
-  if op == 282 && admin && length == 64 then bind slot (load64 (command+16) t) t else
-  if op == 283 && length == 64 then reserve slot caller (load64 (command+16) t) (load64 (command+24) t) (load64 (command+32) t) t else
-  if op == 284 && length == 64 then newAttempt slot caller t else
-  if (op == 285 || op == 292) && length == 64 && (admin || owner slot caller t || (op == 292 && caller == syscall 97 5 0 0 0 t)) then
+  else if op == 298 && readable then readReceipt slot t else
+  if op == 282 && admin then bind slot (load64 (command+16) t) t else
+  if op == 283 then reserve slot caller (load64 (command+16) t) (load64 (command+24) t) (load64 (command+32) t) t else
+  if op == 284 then newAttempt slot caller t else
+  if (op == 285 || op == 292) && (admin || owner slot caller t || (op == 292 && worker)) then
     let t := response 0 slot t
     576+copy (row slot) (wire+64) 512 t
-  else if op == 286 && admin && length == 64 then control slot 3 t else
-  if op == 288 && admin && length == 64 then control slot 5 t else
-  if op == 289 && admin && length == 64 then control slot 1 t else
+  else if op == 286 && admin then control slot 3 t else
+  if op == 288 && admin then control slot 5 t else
+  if op == 289 && admin then control slot 1 t else
   if op == 290 then complete slot caller (load64 (command+16) t) length t else
-  if op == 291 && length == 64 && owner slot caller t then
+  if op == 291 && owner slot caller t then
     if terminal (load64 (row slot+32) t) then
       response (if load64 (row slot+32) t == 7 && load64 (row slot+392) t == load64 (command+16) t then 0 else 2) slot t
     else

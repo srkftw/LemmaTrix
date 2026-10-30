@@ -19,8 +19,8 @@ STATES = {1: 'queued', 2: 'active', 3: 'paused', 4: 'complete', 5: 'cancelled',
 ROLES = {'retrieval': 1, 'storage': 2, 'builder': 3, 'verifier': 4}
 
 
-def call(client, op, slot=0, a=0, b=0, c=0, data=b'', allow=()):
-    raw = client.request(op, struct.pack('<8Q', op, slot, a, b, c, 0, 0, 1) + data)
+def call(client, op, slot=0, a=0, b=0, c=0, data=b'', allow=(), new_operation=False):
+    raw = client.request(op, struct.pack('<8Q', op, slot, a, b, c, int(new_operation), 0, 1) + data)
     if len(raw) < 64:
         raise ValueError('short native service job response')
     fields = struct.unpack_from('<8Q', raw)
@@ -36,20 +36,21 @@ def terms(operation, requester, root, policy, role, generation, budget,
     ) + network.digest(description) + (network.digest(expected) if expected else bytes(32))
 
 
-def submit(client, slot, canonical):
+def submit(client, slot, canonical, *, new_operation=False):
     if len(canonical) != 256:
         raise ValueError('ServiceTerms-v1 must contain exactly 256 canonical bytes')
-    return call(client, 281, slot, data=canonical)[0][1]
+    return call(client, 281, slot, data=canonical, new_operation=new_operation)[0][1]
 
 
-def inspect(client, slot):
-    fields, raw = call(client, 285, slot, allow=(3,))
-    if fields[0] == 3:
+def inspect(client, slot, *, by_index=False):
+    fields, raw = call(client, 296 if by_index else 285, slot, allow=(3, 8))
+    if fields[0] in (3, 8):
         return None
     if len(raw) != 512:
         raise ValueError('wrong native service record length')
     q = struct.unpack('<64Q', raw)
-    return dict(slot=slot, generation=q[3], state=STATES[q[4]],
+    return dict(slot=fields[1], storage_index=q[2], allocation_epoch=q[52],
+                allocation_first_generation=q[53], record_schema=q[1], generation=q[3], state=STATES[q[4]],
                 reserved_transmission_bytes=q[5], checkpoint=q[6], attempts=q[7],
                 operation=raw[64:96].hex(), requester=raw[96:128].hex(),
                 input_root=raw[128:160].hex(), policy=raw[160:192].hex(),
@@ -114,7 +115,7 @@ def main(argv=None):
     commands.add_parser('recover')
     commands.add_parser('list')
     command = commands.add_parser('submit')
-    command.add_argument('--slot', type=int, choices=range(16), required=True)
+    command.add_argument('--slot', type=int, required=True, help='opaque handle, or16 for native allocation')
     for name in ('operation', 'requester', 'root', 'policy', 'description'):
         command.add_argument('--' + name, required=True)
     command.add_argument('--role', choices=ROLES, required=True)
@@ -124,31 +125,33 @@ def main(argv=None):
     command.add_argument('--quanta', type=int, default=1000000)
     command.add_argument('--await-approval-after-restart', action='store_true')
     command.add_argument('--expected-result')
+    command.add_argument('--new-operation', action='store_true',
+                         help='explicitly admit a new allowance after old retry history was reclaimed; never use for an automatic retry')
     for name in ('inspect', 'bind', 'pause', 'drain', 'cancel', 'retry', 'forget'):
         command = commands.add_parser(name)
-        command.add_argument('--slot', type=int, choices=range(16), required=True)
+        command.add_argument('--slot', type=int, required=True, help='opaque handle returned by submit/list')
         if name == 'bind':
             command.add_argument('--instance', type=int, required=True)
     command = commands.add_parser('sign')
-    command.add_argument('--slot', type=int, choices=range(16), required=True)
+    command.add_argument('--slot', type=int, required=True)
     command.add_argument('--sign-key', type=Path, required=True)
     command = commands.add_parser('receipt')
-    command.add_argument('--slot', type=int, choices=range(16), required=True)
+    command.add_argument('--slot', type=int, required=True)
     args = parser.parse_args(argv)
     client = live.Client(args.socket)
     try:
         call(client, 280)
         if args.command == 'recover':
-            result = dict(records=[r for i in range(16) if (r := inspect(client, i))],
+            result = dict(records=[r for i in range(16) if (r := inspect(client, i, by_index=True))],
                           fresh_authority_required=True)
         elif args.command == 'list':
-            result = [r for i in range(16) if (r := inspect(client, i))]
+            result = [r for i in range(16) if (r := inspect(client, i, by_index=True))]
         elif args.command == 'submit':
             canonical = terms(args.operation, args.requester, args.root, args.policy,
                               args.role, args.generation, args.bytes, args.attempts,
                               args.quanta, args.description,
                               not args.await_approval_after_restart, args.expected_result)
-            result = inspect(client, submit(client, args.slot, canonical))
+            result = inspect(client, submit(client, args.slot, canonical, new_operation=args.new_operation))
         elif args.command == 'inspect':
             result = inspect(client, args.slot)
         elif args.command == 'sign':

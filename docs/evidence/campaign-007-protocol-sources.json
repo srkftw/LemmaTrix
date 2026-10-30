@@ -1,0 +1,133 @@
+{
+  "scope": "Fetched primary-source HTML byte identities, not an implementation or interoperability result",
+  "sources": [
+    {
+      "url": "https://www.rfc-editor.org/rfc/rfc8032",
+      "final_url": "https://www.rfc-editor.org/info/rfc8032/",
+      "sha256": "b3b3ca067569d39e0123dc2d236e893b2f4f4225d5aa5bd10abdaca2c9c03525",
+      "bytes": 481481,
+      "retrieved_utc": "2026-10-30T23:49:00.174070+00:00",
+      "last_modified": null
+    },
+    {
+      "url": "https://noiseprotocol.org/noise.html",
+      "final_url": "https://noiseprotocol.org/noise.html",
+      "sha256": "05d1f2305f81f49ce516530fd70884014f9bae54f8f290a4274b3392b1313d68",
+      "bytes": 142833,
+      "retrieved_utc": "2026-10-30T23:49:00.425382+00:00",
+      "last_modified": "Wed, 11 Jul 2018 08:41:57 GMT"
+    },
+    {
+      "url": "https://spec.torproject.org/tor-spec/",
+      "final_url": "https://spec.torproject.org/tor-spec/",
+      "sha256": "47bddfb26c46d0ad620c47bf07c383893a51380536117b73198d88d57f0991ab",
+      "bytes": 10633,
+      "retrieved_utc": "2026-10-30T23:49:01.262568+00:00",
+      "last_modified": "Thu, 28 May 2026 16:32:07 GMT"
+    },
+    {
+      "url": "https://spec.torproject.org/tor-spec/create-created-cells.html",
+      "final_url": "https://spec.torproject.org/tor-spec/create-created-cells.html",
+      "sha256": "065a5d083b3b598fd29bd189ba073f4194859e54ed0a865ea178276fef3e9774",
+      "bytes": 39825,
+      "retrieved_utc": "2026-10-30T23:49:02.092620+00:00",
+      "last_modified": "Wed, 02 Sep 2026 17:46:45 GMT"
+    },
+    {
+      "url": "https://spec.torproject.org/tor-spec/setting-circuit-keys.html",
+      "final_url": "https://spec.torproject.org/tor-spec/setting-circuit-keys.html",
+      "sha256": "807251e33eacc6aeb6d13e3fa2a65ea2279facadc8e14c2a8039821be761d752",
+      "bytes": 14614,
+      "retrieved_utc": "2026-10-30T23:49:02.225843+00:00",
+      "last_modified": "Thu, 28 May 2026 16:32:07 GMT"
+    },
+    {
+      "url": "https://spec.torproject.org/tor-spec/relay-cells.html",
+      "final_url": "https://spec.torproject.org/tor-spec/relay-cells.html",
+      "sha256": "a1d38ce610085582f75f7bfb1541bbff571a976298b5faee4b73b157f9777ec8",
+      "bytes": 24010,
+      "retrieved_utc": "2026-10-30T23:49:02.382184+00:00",
+      "last_modified": "Thu, 28 May 2026 16:32:07 GMT"
+    },
+    {
+      "url": "https://spec.torproject.org/tor-spec/routing-relay-cells.html",
+      "final_url": "https://spec.torproject.org/tor-spec/routing-relay-cells.html",
+      "sha256": "32a893bff9c882000e78221d78bbd7b7b5c2f3bd2d6eb9a6a074efebba901e1d",
+      "bytes": 13851,
+      "retrieved_utc": "2026-10-30T23:49:03.022757+00:00",
+      "last_modified": "Thu, 28 May 2026 16:32:07 GMT"
+    },
+    {
+      "url": "https://spec.torproject.org/tor-spec/cell-packet-format.html",
+      "final_url": "https://spec.torproject.org/tor-spec/cell-packet-format.html",
+      "sha256": "753987d6b58fade6f81347c4e2c32e3ecaac531a6893d4627d844934e698c779",
+      "bytes": 19165,
+      "retrieved_utc": "2026-10-30T23:49:03.684983+00:00",
+      "last_modified": "Thu, 28 May 2026 16:32:07 GMT"
+    },
+    {
+      "url": "https://spec.torproject.org/tor-spec/flow-control.html",
+      "final_url": "https://spec.torproject.org/tor-spec/flow-control.html",
+      "sha256": "5bf5c9c4c531aa4ee1ef414f4c8d4937fe7d5daf116f34e5294350f14bb37a0f",
+      "bytes": 19332,
+      "retrieved_utc": "2026-10-30T23:49:04.352380+00:00",
+      "last_modified": "Thu, 28 May 2026 16:32:07 GMT"
+    },
+    {
+      "url": "https://spec.torproject.org/tor-spec/relay-early.html",
+      "final_url": "https://spec.torproject.org/tor-spec/relay-early.html",
+      "sha256": "9cef12fb4db1f1c41b46bec0e07ef6982d81175074d71e32b804478c1e517d9e",
+      "bytes": 11119,
+      "retrieved_utc": "2026-10-30T23:49:04.483173+00:00",
+      "last_modified": "Thu, 28 May 2026 16:32:07 GMT"
+    },
+    {
+      "url": "https://spec.torproject.org/tor-spec/channels.html",
+      "final_url": "https://spec.torproject.org/tor-spec/channels.html",
+      "sha256": "ce1adc64773b003fe58a0f41fefa22f513c923273e76eca1e0596adcd10eeaf9",
+      "bytes": 13511,
+      "retrieved_utc": "2026-10-30T23:49:04.612759+00:00",
+      "last_modified": "Thu, 28 May 2026 16:32:07 GMT"
+    },
+    {
+      "url": "https://spec.torproject.org/tor-spec/subprotocol-versioning.html",
+      "final_url": "https://spec.torproject.org/tor-spec/subprotocol-versioning.html",
+      "sha256": "39f7b1892c62aeac6e324086489d2f5275b338dcf17ad34261b2dcc46ed0b7d9",
+      "bytes": 28459,
+      "retrieved_utc": "2026-10-30T23:49:05.425165+00:00",
+      "last_modified": "Thu, 25 Jun 2026 08:17:55 GMT"
+    },
+    {
+      "url": "https://spec.torproject.org/proposals/359-cgo-redux.html",
+      "final_url": "https://spec.torproject.org/proposals/359-cgo-redux.html",
+      "sha256": "072bb8ec36e3c04d8e9f9e7f3394a73a3d03aed51379cd398cb56a45ff382246",
+      "bytes": 41884,
+      "retrieved_utc": "2026-10-30T23:49:06.185757+00:00",
+      "last_modified": "Thu, 28 May 2026 16:32:07 GMT"
+    },
+    {
+      "url": "https://signal.org/docs/specifications/x3dh/",
+      "final_url": "https://signal.org/docs/specifications/x3dh/",
+      "sha256": "0ecd8011e66ebe1ccaf2183dcc771f44668b0722ca62fdd023c89bc8f25eb7bb",
+      "bytes": 34119,
+      "retrieved_utc": "2026-10-30T23:51:00.886983+00:00",
+      "last_modified": null
+    },
+    {
+      "url": "https://signal.org/docs/specifications/xeddsa/",
+      "final_url": "https://signal.org/docs/specifications/xeddsa/",
+      "sha256": "ac86770df4f285e43b814648dda9461d5a54d78fb0f201db52545156c77923ff",
+      "bytes": 46119,
+      "retrieved_utc": "2026-10-30T23:51:00.989807+00:00",
+      "last_modified": null
+    },
+    {
+      "url": "https://signal.org/docs/specifications/doubleratchet/",
+      "final_url": "https://signal.org/docs/specifications/doubleratchet/",
+      "sha256": "7a16a45af6aed3b8caeb8b06a7822ba71f50f257cc32118a0d31f499260ae7c9",
+      "bytes": 93841,
+      "retrieved_utc": "2026-10-30T23:51:01.126226+00:00",
+      "last_modified": null
+    }
+  ]
+}
