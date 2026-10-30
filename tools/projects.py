@@ -65,7 +65,10 @@ def import_records(client,selected,records):
      fields=(0,len(data)//8);client.objects(46,transaction,4);break
     if job[2]>=5:
      client.objects(46,transaction,4)
-     raise ValueError('async import failed state'+str(job[2])+' reason'+str(job[5]))
+     # Keep the existing opaque import adapter's invalid-record error.
+     # The native job inspection retains the more precise integrity reason5.
+     reason=job[5] or 2
+     raise ValueError('Objects status'+str(2 if reason==5 else reason))
     if time.monotonic()>=deadline:raise TimeoutError('async import '+str(transaction)+' remains queryable; deadline is not rollback')
     time.sleep(.01)
   if fields[1]!=len(selected) or len(data)!=8*len(selected):raise ValueError('native importer returned incomplete root set')
