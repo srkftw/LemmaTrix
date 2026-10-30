@@ -1,0 +1,38 @@
+{
+  "image": "c620a5610dbcad3dc2ae13f231eb8bb0fb00ca2082834b96eb17b8ddeb45fb6d",
+  "client_backend": "qemu",
+  "server_backend": "x86_64",
+  "connections": 3,
+  "service_operation": 2,
+  "public_description_schema": 2,
+  "separate_endpoints": true,
+  "bytes_per_connection": 4097,
+  "payload_sha256": [
+    "5be9a3ec29fc6fdc4e4d6c5d8494b9afe2b8265b81d81f7c9a75ba99e217dbad",
+    "812a3cfdb8bb3b3cd077e30b78347b9a9ff0fa8b47ad6b30a3e7f3be6d88a114",
+    "0de6786ddb201f5cb9d915cd61e5632822a9822a50ffc5b346420cf0eceffa45"
+  ],
+  "surviving_sessions": [
+    0,
+    2
+  ],
+  "stale_epoch_grant": "denied",
+  "request_binding": "authenticated",
+  "duplicate_receive_scope": "denied",
+  "fresh_boot_authority": {
+    "old_grant": 5730224351324667905,
+    "fresh_grant": 11989281360016572417,
+    "old_job": 5730224353472151553,
+    "fresh_job": 11989281362164056065,
+    "stale_after_new_allocation": "denied",
+    "fresh_job_state": "completed"
+  },
+  "consumer_admission": "not tested by this transport component check",
+  "script": "tests/network_multiplex.py --client-backend qemu --server-backend x86_64 --library-profile --restart-check",
+  "scope": "actual three authenticated peers, isolated loss and numeric authority after a fresh client boot and allocation",
+  "limits": [
+    "local separately supplied processes; no independent-operator claim",
+    "reset/close path exercised; natural100000-tick expiry correction shares that path but was not waited out again in this focused run",
+    "finite boot-epoch tokens do not supply rollback freshness"
+  ]
+}

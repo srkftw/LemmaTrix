@@ -23,8 +23,9 @@ def activeSlot (t : UInt64) : UInt64 := load64 control t
 def bank (i : UInt64) : UInt64 := contexts+i*65536
 -- Local handles bind the broker incarnation, context, type and counter. Broker
 -- restart must not make a stale numeric grant/job name newly minted authority.
--- Kernel op56 forbids wrapping the low24 generation. Full caller incarnation
--- separately binds ownership, so a fresh guest boot never restores authority.
+-- Kernel op56 forbids wrapping the low24 generation. The high30 token field
+-- folds the randomized boot epoch with that incarnation; full caller identity
+-- separately binds ownership. This finite token is not rollback freshness.
 def localId (kind counter t : UInt64) : UInt64 :=
   (load64 (control+8) t <<< 34) ||| (activeSlot t <<< 32) ||| (kind <<< 31) ||| counter
 def saveContext (i t : UInt64) : UInt64 :=
@@ -288,7 +289,9 @@ def pump (initial : UInt64) : UInt64 :=
     let t := if epoch != load64 (st+24) device then store64 (st+24) epoch (disconnect 10 device) else device
     if load64 (st+8) t == 0 || now t < load64 (st+88) t then t else
       let t := if session t == 0 then fresh t else t
-      if (session t != 3 && now t >= load64 (st+96) t) || (session t == 3 && now t >= load64 (st+104) t) then disconnect 13 t else
+      -- Expiry terminates this transport epoch before fresh authentication. An
+      -- asynchronous peer may still have ciphertext queued under the old key.
+      if (session t != 3 && now t >= load64 (st+96) t) || (session t == 3 && now t >= load64 (st+104) t) then disconnect 13 (networkReset t) else
         let t := if load64 (st+40) t == 0 && session t == 3 then queueFrame t else t
         let t := writeFrame t
         if freeInbox 0 t == error then t else readFrame t
@@ -335,7 +338,7 @@ def grant (caller length t : UInt64) : UInt64 :=
     load64 (st+8) t == 0 || !equal (command+64) peer 32 t || !equal (command+96) (pins+64) 32 t then failure 2 t else
     if (direction &&& 2) != 0 && ambiguousReceive (command+128) operation stream 0 t then failure 4 t else
     let selected := freeGrant 0 t
-    if selected == error || load64 (st+16) t >= 0x7fffffff || load64 (control+8) t > 0xffffff then failure 4 selected else
+    if selected == error || load64 (st+16) t >= 0x7fffffff || load64 (control+8) t > 0x3fffffff then failure 4 selected else
       let g := grantAt selected
       let counter := (load64 (st+16) selected &&& 0xffffffff)+1
       let id := localId 0 counter selected
@@ -362,7 +365,7 @@ def sendMessage (caller handle operation n t : UInt64) : UInt64 :=
     if (protocol2 selected && (n > 704 || load64 (command+24) selected == 0)) then failure 2 selected else
     if activeForGrant handle 0 selected || !chargeable g n selected then failure 4 selected else
       let vacant := freeJob 0 selected
-      if vacant == error || load64 (st+112) vacant >= 0x7fffffff || load64 (control+8) vacant > 0xffffff then failure 4 vacant else
+      if vacant == error || load64 (st+112) vacant >= 0x7fffffff || load64 (control+8) vacant > 0x3fffffff then failure 4 vacant else
         let j := jobAt vacant
         let counter := (load64 (st+112) vacant &&& 0xffffffff)+1
         let id := localId 1 counter vacant
@@ -499,6 +502,8 @@ def main (initial : UInt64) : UInt64 :=
   let t := zero control 8 t
   let t := zero contexts 32768 t
   let brokerInstance := self t
-  let t := store64 (control+8) ((brokerInstance >>> 8) &&& 0xffffff) t
+  let incarnation := (brokerInstance >>> 8) &&& 0xffffff
+  let epoch := ((brokerInstance >>> 32)+incarnation) &&& 0x3fffffff
+  let t := store64 (control+8) epoch t
   serve brokerInstance t
 end Guest.Network

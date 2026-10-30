@@ -16,14 +16,16 @@ def wait(check,seconds=300):
   time.sleep(.04)
  raise TimeoutError('bounded multi-peer condition did not complete')
 
-def run(client_backend='qemu',server_backend='x86_64',library_profile=False):
+def run(client_backend='qemu',server_backend='x86_64',library_profile=False,image=None,restart_check=False):
+ image=Path(image or ROOT/'build/live/guest.bin').resolve()
+ image_id=hashlib.sha256(image.read_bytes()).hexdigest()
  operation=2 if library_profile else 1
  with tempfile.TemporaryDirectory(prefix='lt-multi-peer-') as tmp:
   base=Path(tmp);processes=[];clients=[];logs=[];records=[]
   try:
    for index,backend in enumerate((client_backend,server_backend)):
     path=base/f'{index}.sock';log=(base/f'{index}.log').open('wb');logs.append(log)
-    processes.append(subprocess.Popen([str(ROOT/'lt'),'run','--backend',backend,'--socket',str(path),'--network-mux'],cwd=ROOT,stdout=log,stderr=subprocess.STDOUT,start_new_session=True))
+    processes.append(subprocess.Popen([str(ROOT/'lt'),'run','--backend',backend,'--image',str(image),'--socket',str(path),'--network-mux'],cwd=ROOT,stdout=log,stderr=subprocess.STDOUT,start_new_session=True))
     wait(path.exists,90);clients.append(live.Client(path,timeout=180))
    for slot in range(3):
     probe=socket.socket();probe.bind(('127.0.0.1',0));port=probe.getsockname()[1];probe.close()
@@ -52,10 +54,12 @@ def run(client_backend='qemu',server_backend='x86_64',library_profile=False):
    f,_=network.call(clients[0],6,grants[0][1],slot=2,allow_error=True);assert f[0]==3,'cross-context local handle accepted'
    payloads=[bytes((j*179+slot)%256 for j in range(4097)) for slot in range(3)]
    received=[bytearray() for _ in range(3)]
+   first_jobs=[]
    for offset in range(0,4097,700):
     jobs=[]
     for slot in range(3):
      f,_=network.call(clients[0],3,grants[0][slot],a=operation,b=offset+1,data=payloads[slot][offset:offset+700],slot=slot);jobs.append(f[1])
+    if offset==0:first_jobs=jobs[:]
     for slot in range(3):
      wait(lambda:network.call(clients[0],4,jobs[slot],slot=slot)[0][2]==3)
      def take():
@@ -77,7 +81,28 @@ def run(client_backend='qemu',server_backend='x86_64',library_profile=False):
     f,data=network.call(clients[1],6,grants[1][2],slot=2,allow_error=True)
     return data if f[0]==0 else None
    assert wait(surviving)==b'surviving seed'
-   return {'client_backend':client_backend,'server_backend':server_backend,'connections':3,'service_operation':operation,'public_description_schema':2 if library_profile else 1,'separate_endpoints':True,'bytes_per_connection':4097,'payload_sha256':[hashlib.sha256(p).hexdigest() for p in payloads],'surviving_sessions':[0,2],'stale_epoch_grant':'denied','request_binding':'authenticated','duplicate_receive_scope':'denied','consumer_admission':'not tested by this transport component check'}
+   restart_result='not requested'
+   if restart_check:
+    old_grant=grants[0][0];old_job=first_jobs[0]
+    try:clients[0].request(70)
+    except EOFError:pass
+    clients[0].close();processes[0].wait(15)
+    path=base/'fresh.sock';log=(base/'fresh.log').open('wb');logs.append(log)
+    processes.append(subprocess.Popen([str(ROOT/'lt'),'run','--backend',client_backend,'--image',str(image),'--socket',str(path),'--network-mux'],cwd=ROOT,stdout=log,stderr=subprocess.STDOUT,start_new_session=True))
+    wait(path.exists,90);clients[0]=live.Client(path,timeout=180)
+    network.configure(clients[0],base/'client0.credential',base/'peer0.service',slot=0)
+    wait(lambda:network.call(clients[0],13,slot=0,allow_error=True)[0][0]==0)
+    wait(lambda:network.status(clients[0],0)['endpoint_authenticated'],600)
+    client_id,server_id,service_id=records[0]
+    f,_=network.call(clients[0],2,a=3,b=3,c=32768,d=8192,e=100000,data=server_id+service_id+roots[0]+struct.pack('<QQ',operation,0x1000),slot=0)
+    fresh_grant=f[1];assert fresh_grant!=old_grant,'cross-boot grant numeric alias'
+    f,_=network.call(clients[0],3,fresh_grant,a=operation,b=1001,data=b'fresh selected authority',slot=0)
+    fresh_job=f[1];assert fresh_job!=old_job,'cross-boot job numeric alias'
+    wait(lambda:network.call(clients[0],4,fresh_job,slot=0)[0][2]==3)
+    for op,h in ((6,old_grant),(4,old_job)):
+     f,_=network.call(clients[0],op,h,slot=0,allow_error=True);assert f[0]==3,('old authority resolved after fresh allocation',op,f)
+    restart_result=dict(old_grant=old_grant,fresh_grant=fresh_grant,old_job=old_job,fresh_job=fresh_job,stale_after_new_allocation='denied',fresh_job_state='completed')
+   return {'image':image_id,'client_backend':client_backend,'server_backend':server_backend,'connections':3,'service_operation':operation,'public_description_schema':2 if library_profile else 1,'separate_endpoints':True,'bytes_per_connection':4097,'payload_sha256':[hashlib.sha256(p).hexdigest() for p in payloads],'surviving_sessions':[0,2],'stale_epoch_grant':'denied','request_binding':'authenticated','duplicate_receive_scope':'denied','fresh_boot_authority':restart_result,'consumer_admission':'not tested by this transport component check'}
   finally:
    for c in clients:
     try:c.request(70)
@@ -92,5 +117,7 @@ def run(client_backend='qemu',server_backend='x86_64',library_profile=False):
    for log in logs:log.close()
 
 if __name__=='__main__':
- parser=argparse.ArgumentParser();parser.add_argument('--client-backend',default='qemu');parser.add_argument('--server-backend',default='x86_64');parser.add_argument('--library-profile',action='store_true');args=parser.parse_args()
- print(json.dumps(run(args.client_backend,args.server_backend,args.library_profile),indent=2))
+ parser=argparse.ArgumentParser();parser.add_argument('--client-backend',default='qemu');parser.add_argument('--server-backend',default='x86_64');parser.add_argument('--library-profile',action='store_true');parser.add_argument('--image',type=Path);parser.add_argument('--restart-check',action='store_true');parser.add_argument('--output',type=Path);args=parser.parse_args()
+ result=run(args.client_backend,args.server_backend,args.library_profile,args.image,args.restart_check)
+ if args.output:args.output.write_text(json.dumps(result,indent=2)+'\n')
+ print(json.dumps(result,indent=2))
