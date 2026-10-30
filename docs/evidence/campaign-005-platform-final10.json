@@ -1,0 +1,350 @@
+{
+  "schema": 1,
+  "result": "passed",
+  "image": "22ed2b68787a3b484955ab4aa9df6de79730edb2f92da6e0e156f74cb6f9679b",
+  "source_image_commit": "37580d6",
+  "clean_build": {
+    "result": "passed",
+    "command": "./lt build --clean",
+    "sha256": "22ed2b68787a3b484955ab4aa9df6de79730edb2f92da6e0e156f74cb6f9679b",
+    "image_bytes": 6291456,
+    "matches_incremental_image": true
+  },
+  "layout": {
+    "image": "22ed2b68787a3b484955ab4aa9df6de79730edb2f92da6e0e156f74cb6f9679b",
+    "result": "passed",
+    "image_bytes": 6291456,
+    "services": [
+      {
+        "slot": 1,
+        "image_offset": 3145728,
+        "length": 155940,
+        "limit": 262144,
+        "descriptor": 2,
+        "sha256": "f8b9abf0de24cc78e61d5aebde317b2f9eca8483eb4ed85379930dd49a9739ba"
+      },
+      {
+        "slot": 2,
+        "image_offset": 4718592,
+        "length": 300120,
+        "limit": 393216,
+        "descriptor": 2,
+        "sha256": "08876fb8bc1ce9706c16d22801e02f8e895e6a19b024ff6ffb7e2db0df8864a3"
+      },
+      {
+        "slot": 3,
+        "image_offset": 3670016,
+        "length": 235244,
+        "limit": 262144,
+        "descriptor": 2,
+        "sha256": "28319298bc44e8d2951e0d5305430b8c85eb655b7c987b6052555ad10b730e3e"
+      },
+      {
+        "slot": 4,
+        "image_offset": 3932160,
+        "length": 254732,
+        "limit": 262144,
+        "descriptor": 2,
+        "sha256": "0f0bb67f173ddfdc20d3e140368d7c1130993eca875bd86726b15619c00c1201"
+      },
+      {
+        "slot": 5,
+        "image_offset": 4194304,
+        "length": 116776,
+        "limit": 262144,
+        "descriptor": 2,
+        "sha256": "df6564c3753821fa232fac102c50adb34dd44caedd46d4ae79df27373f6e2783"
+      },
+      {
+        "slot": 6,
+        "image_offset": 4456448,
+        "length": 119056,
+        "limit": 262144,
+        "descriptor": 2,
+        "sha256": "5e463d29538420a5e65ee886f3264d4dec1b2eaf454b6e31572e42d1b23a14ed"
+      }
+    ],
+    "audio_profile": 2,
+    "network_profile": 2,
+    "supervisor_dma_regions": [
+      {
+        "start": 2162294784,
+        "end_exclusive": 2162311168,
+        "purpose": "network data rings"
+      },
+      {
+        "start": 2162311168,
+        "end_exclusive": 2162313216,
+        "purpose": "network data buffers"
+      },
+      {
+        "start": 2162319360,
+        "end_exclusive": 2162319616,
+        "purpose": "audio owner/control state"
+      },
+      {
+        "start": 2162327552,
+        "end_exclusive": 2162335744,
+        "purpose": "audio output ring"
+      },
+      {
+        "start": 2162335744,
+        "end_exclusive": 2162336768,
+        "purpose": "audio samples"
+      },
+      {
+        "start": 2162343936,
+        "end_exclusive": 2162360320,
+        "purpose": "audio control rings"
+      },
+      {
+        "start": 2162360320,
+        "end_exclusive": 2162361352,
+        "purpose": "audio control buffers"
+      },
+      {
+        "start": 2162364416,
+        "end_exclusive": 2162364496,
+        "purpose": "network control state"
+      },
+      {
+        "start": 2162368512,
+        "end_exclusive": 2162384896,
+        "purpose": "network control rings"
+      },
+      {
+        "start": 2162384896,
+        "end_exclusive": 2162385928,
+        "purpose": "network control buffers"
+      }
+    ],
+    "objects_physical": {
+      "code": [
+        2165309440,
+        2165702656
+      ],
+      "data": [
+        2165702656,
+        2165768192
+      ],
+      "stack": [
+        2165768192,
+        2165784576
+      ],
+      "next_service_code": 2165833728
+    },
+    "ordinary_signed_application_code_limit": 262144,
+    "process_slots": 12,
+    "ram_bytes": 167772160,
+    "assumptions": "static ranges correspond to the documented kernel functions; actual boot/IPC/restart tested separately"
+  },
+  "changes_from_previous_image": {
+    "previous_image": "26df02df50e24d2be2bfdb489cd6b6973e0f58f38faa92535de3fdcb8211ed18",
+    "changed_built_in_services": [
+      4
+    ],
+    "description": "Compositor narrow Project data picker; other five exact service bodies and all device/profile contracts unchanged. Separate Library0.5.3 changes its M request and selected-root delegation."
+  },
+  "backends": [
+    {
+      "result": "passed",
+      "image": "22ed2b68787a3b484955ab4aa9df6de79730edb2f92da6e0e156f74cb6f9679b",
+      "backend": "qemu",
+      "content": {
+        "schema": 1,
+        "boundary": "native guest ContentJobs-v1 endpoint5 via ABI2 portal",
+        "input_bytes": 9644,
+        "chunks": 3,
+        "max_chunk_buffer_per_job": 4096,
+        "manifest_sha256": "c7aee1cb63a6dcd285e150027e61ff4b4e17e24449b414f865c932d6f906550d",
+        "actual_read_sha256": "92b1b570197dc18a4cb69aadb274b12f556bded16f037524e3e7757e8785c32f",
+        "elapsed_seconds": 2.303673137910664,
+        "retention": "explicitly volatile; durable reservation rejected",
+        "checks": [
+          "privacy mode enum, unsupported durable retention, byte budget and manifest substitution reject",
+          "aggregate reservation quota, idempotency, conflicting operation, stale handle, missing range and malformed proof reject",
+          "pause/resume/cancel, terminal retrieval and stale forgotten job reject",
+          "chunk-byte and position/Merkle substitution fail without range publication",
+          "validated partial range readable; unvalidated/cross-chunk/oversized ranges and premature completion reject",
+          {
+            "unrelated_objects_import_and_read_between_content_quanta": true,
+            "job_state_before": 2,
+            "cursor_before": 16,
+            "job_state_after": 4,
+            "cursor_after": 65
+          },
+          "complete root publishes once; all actual streamed range bytes match source SHA256",
+          "authorized complete-root proof exports match independently constructed paths",
+          "released root grant cannot read; collection enqueues bounded page reclamation"
+        ]
+      },
+      "objects_service_restart": {
+        "previous": 7491639719869022466,
+        "replacement": 7491639719869022722,
+        "vault_neighbor_live": true,
+        "stale_after_fresh_allocation": "denied"
+      },
+      "progress247_foreign_caller": "denied",
+      "audio_release": "2e40bf0247065590981c100cbfec5e0a5475e639db5f4f9405a3f962c92f0220",
+      "pcm_bytes": 1024,
+      "pcm_sha256": "afd965583de875f77d2b1ca7e3b6f2104922b1c0d1b45aea718b330c8df25bdc",
+      "speaker_output": false
+    },
+    {
+      "result": "passed",
+      "image": "22ed2b68787a3b484955ab4aa9df6de79730edb2f92da6e0e156f74cb6f9679b",
+      "backend": "x86_64",
+      "content": {
+        "schema": 1,
+        "boundary": "native guest ContentJobs-v1 endpoint5 via ABI2 portal",
+        "input_bytes": 9644,
+        "chunks": 3,
+        "max_chunk_buffer_per_job": 4096,
+        "manifest_sha256": "c7aee1cb63a6dcd285e150027e61ff4b4e17e24449b414f865c932d6f906550d",
+        "actual_read_sha256": "92b1b570197dc18a4cb69aadb274b12f556bded16f037524e3e7757e8785c32f",
+        "elapsed_seconds": 8.715772652998567,
+        "retention": "explicitly volatile; durable reservation rejected",
+        "checks": [
+          "privacy mode enum, unsupported durable retention, byte budget and manifest substitution reject",
+          "aggregate reservation quota, idempotency, conflicting operation, stale handle, missing range and malformed proof reject",
+          "pause/resume/cancel, terminal retrieval and stale forgotten job reject",
+          "chunk-byte and position/Merkle substitution fail without range publication",
+          "validated partial range readable; unvalidated/cross-chunk/oversized ranges and premature completion reject",
+          {
+            "unrelated_objects_import_and_read_between_content_quanta": true,
+            "job_state_before": 2,
+            "cursor_before": 8,
+            "job_state_after": 2,
+            "cursor_after": 32
+          },
+          "complete root publishes once; all actual streamed range bytes match source SHA256",
+          "authorized complete-root proof exports match independently constructed paths",
+          "released root grant cannot read; collection enqueues bounded page reclamation"
+        ]
+      },
+      "objects_service_restart": {
+        "previous": 7146104889326698754,
+        "replacement": 7146104889326699010,
+        "vault_neighbor_live": true,
+        "stale_after_fresh_allocation": "denied"
+      },
+      "progress247_foreign_caller": "denied",
+      "audio_release": "2e40bf0247065590981c100cbfec5e0a5475e639db5f4f9405a3f962c92f0220",
+      "pcm_bytes": 1024,
+      "pcm_sha256": "afd965583de875f77d2b1ca7e3b6f2104922b1c0d1b45aea718b330c8df25bdc",
+      "speaker_output": false
+    },
+    {
+      "result": "passed",
+      "image": "22ed2b68787a3b484955ab4aa9df6de79730edb2f92da6e0e156f74cb6f9679b",
+      "backend": "aarch64",
+      "content": {
+        "schema": 1,
+        "boundary": "native guest ContentJobs-v1 endpoint5 via ABI2 portal",
+        "input_bytes": 9644,
+        "chunks": 3,
+        "max_chunk_buffer_per_job": 4096,
+        "manifest_sha256": "c7aee1cb63a6dcd285e150027e61ff4b4e17e24449b414f865c932d6f906550d",
+        "actual_read_sha256": "92b1b570197dc18a4cb69aadb274b12f556bded16f037524e3e7757e8785c32f",
+        "elapsed_seconds": 53.838739718077704,
+        "retention": "explicitly volatile; durable reservation rejected",
+        "checks": [
+          "privacy mode enum, unsupported durable retention, byte budget and manifest substitution reject",
+          "aggregate reservation quota, idempotency, conflicting operation, stale handle, missing range and malformed proof reject",
+          "pause/resume/cancel, terminal retrieval and stale forgotten job reject",
+          "chunk-byte and position/Merkle substitution fail without range publication",
+          "validated partial range readable; unvalidated/cross-chunk/oversized ranges and premature completion reject",
+          {
+            "unrelated_objects_import_and_read_between_content_quanta": true,
+            "job_state_before": 2,
+            "cursor_before": 8,
+            "job_state_after": 2,
+            "cursor_after": 32
+          },
+          "complete root publishes once; all actual streamed range bytes match source SHA256",
+          "authorized complete-root proof exports match independently constructed paths",
+          "released root grant cannot read; collection enqueues bounded page reclamation"
+        ]
+      },
+      "objects_service_restart": {
+        "previous": 9101967609342984450,
+        "replacement": 9101967609342984706,
+        "vault_neighbor_live": true,
+        "stale_after_fresh_allocation": "denied"
+      },
+      "progress247_foreign_caller": "denied",
+      "audio_release": "2e40bf0247065590981c100cbfec5e0a5475e639db5f4f9405a3f962c92f0220",
+      "pcm_bytes": 1024,
+      "pcm_sha256": "afd965583de875f77d2b1ca7e3b6f2104922b1c0d1b45aea718b330c8df25bdc",
+      "speaker_output": false
+    }
+  ],
+  "mixed_backend": {
+    "image": "22ed2b68787a3b484955ab4aa9df6de79730edb2f92da6e0e156f74cb6f9679b",
+    "client_backend": "qemu",
+    "server_backend": "x86_64",
+    "connections": 3,
+    "service_operation": 2,
+    "public_description_schema": 2,
+    "separate_endpoints": true,
+    "bytes_per_connection": 4097,
+    "payload_sha256": [
+      "5be9a3ec29fc6fdc4e4d6c5d8494b9afe2b8265b81d81f7c9a75ba99e217dbad",
+      "812a3cfdb8bb3b3cd077e30b78347b9a9ff0fa8b47ad6b30a3e7f3be6d88a114",
+      "0de6786ddb201f5cb9d915cd61e5632822a9822a50ffc5b346420cf0eceffa45"
+    ],
+    "surviving_sessions": [
+      0,
+      2
+    ],
+    "stale_epoch_grant": "denied",
+    "request_binding": "authenticated",
+    "duplicate_receive_scope": "denied",
+    "fresh_boot_authority": "not requested",
+    "consumer_admission": "not tested by this transport component check"
+  },
+  "source_sha256": {
+    "Guest/Compositor.lean": "bb29cdad8d69ee5416e51e01c60087c00915771420523d96caca0d0dd6188ecd",
+    "Guest/Library.lean": "3029246746be3030bcc6381cca5bddddbde426a40b787aabe83feeae043b2123",
+    "Guest/LiveKernel.lean": "3d59cc7a21e9c02280700b735de6f78d6c6308641bd36cad1e91b24fbf24f320",
+    "Guest/Devices.lean": "b6fae080790fda2e315529d444be16f5dffa872cb5303f2655b6c2fbd7ffc38c",
+    "Guest/AudioDevice.lean": "63f8573ebc452e1f2177bc79c942e7cb6216988ecad53fc68ac5e6769b630fc0",
+    "Guest/ContentStore.lean": "46a0a3b8a83064ce0c719c95572d3f633c04a9e460e9d049a66f08375b3fd19b",
+    "Guest/ImportJobs.lean": "36569206c7b7b2c3ac9259381a2d6466db47da0c5af7f0f2825b791a878786d1",
+    "tools/pcm.py": "ed604203d76efcd3ed3959133e6bb384451576a534b00371b7ef8c00e02ec4cf"
+  },
+  "limitations": [
+    "ARM64 interpreter ran under qemu-aarch64; native ARM64 hardware unavailable.",
+    "These representative checks use tiny content and constant raw boundary-probe PCM; complete consumer media and Game paths are identified separately.",
+    "Static layout checks are not a compiler, MMU or binary-chain proof."
+  ],
+  "offline_host_output": {
+    "result": "passed",
+    "image": "22ed2b68787a3b484955ab4aa9df6de79730edb2f92da6e0e156f74cb6f9679b",
+    "packages": [
+      {
+        "release_id": "efa8056ec4741b55326b30bc99fb5aae1770b5cb0983a7dc7e492d7c86071ae2",
+        "rights": 4865,
+        "instance": 6452442760212381959
+      },
+      {
+        "release_id": "503888769aae9aeff49a2ae06d9ab4285754106ed512f2ca0ee1637f04357f58",
+        "rights": 1919,
+        "instance": 6452442760212381960
+      }
+    ],
+    "retained_backing": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign005/connected-final/personal.vault",
+    "native_actions": "U / physical Enter / H / Space / Alt-Tab / Space",
+    "network_configured": false,
+    "providers_started": false,
+    "media_input_supplied": false,
+    "acquisition_authority_recovered": false,
+    "pcm_bytes": 1152000,
+    "pcm_sha256": "fb0af16f34ddbee9935e45f06f2c73549f0b50236315378f97bd8c38dce9c929",
+    "seconds_to_submit_samples": 5.803443151991814,
+    "host_pcm_output_requested": true,
+    "speaker_output": false
+  },
+  "host_output_teardown": "PCM OUTPUT CLOSED pw-cat status 0 error False",
+  "offline_note": "Explicit existing approved encrypted checkpoint produced by the final7 connected journey; this is fresh current10 graphical recovery/playback with no network relationship/provider/media input. Combined capture acknowledges complete raw child-pipe acceptance, not physical speaker drain."
+}
