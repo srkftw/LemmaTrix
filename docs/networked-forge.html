@@ -1,0 +1,148 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Native networked Forge and node operation</title><style>:root{color-scheme:light dark}body{font:17px/1.6 system-ui,sans-serif;max-width:76rem;margin:3rem auto;padding:0 1.5rem}pre{overflow:auto;background:#8882;padding:1rem}td,th{border:1px solid #888;padding:.5rem;text-align:left;vertical-align:top}table{border-collapse:collapse}code{overflow-wrap:anywhere}</style></head><body><main>
+<nav><a href="index.html">Documentation</a> · <a href="network-device.html">Transport device</a> · <a href="network-bulk.html">Noise/broker</a> · <a href="server-store.html">Server storage</a> · <a href="graph-import-and-checkpoints.html">Identity/import/history</a> · <a href="remote-build.html">Remote execution</a></nav>
+<h1>Native Forge over an explicitly selected peer</h1>
+<p>Forge is a separately packaged Lean/RV64 application. It discovers metadata, freezes an explicitly selected graph closure, transfers real records through the isolated encrypted broker and commits received roots through the Objects transaction importer. A metadata query does not import content. A fetched graph grants no publisher ownership, trust, local execution approval or personal durability.</p>
+<p>This development profile has one configured ordered peer relationship per broker and advertises one selected content root at a time. A separately isolated <a href="forge-admission.html">guest Registry</a> implements signed chosen-federation admission and a bounded paginated catalog. Two independently configured policies judge the actual original-publisher-signed material. Metadata possession, actual seed availability, technical compatibility and local execution approval remain separate. There is no mandatory global index.</p>
+<h2>Build and explicitly install the native client</h2>
+<p>These templates name deliberate operator choices: replace each uppercase identity/instance/grant with the value returned by the corresponding inspection command, and each <code>/explicit/</code> path with your selected location. Start the guest instances before their trust/inspect commands. Keep the same pinned image on all participants; different roles are separately signed packages and configuration.</p>
+<pre>./lt build
+./lt emulators
+./lt app --profile 2 --module Guest.Forge --entry Guest.Forge.main --name native-forge
+./lt release keygen --private /explicit/forge-publisher.pem --public /explicit/forge-publisher.pub
+./lt release create --binary build/live/apps/native-forge.bin --profile 2 \
+  --project native-forge --version 0.4.10 --sign-key /explicit/forge-publisher.pem \
+  --right object.read --right object.create --right object.revise --right object.share \
+  --right object.revoke --right object.enumerate --right object.export \
+  --right display.surface --right input.focus --right network.broker \
+  --source Guest/Forge.lean --source-base . --output /explicit/native-forge.ltrel
+./lt ctl --socket /tmp/client.sock trust --project native-forge --public /explicit/forge-publisher.pub
+./lt ctl --socket /tmp/client.sock inspect /explicit/native-forge.ltrel</pre>
+<p>F12 opens the real trusted Launcher candidate. Inspect the actual publisher, profile, release and rights; Enter approves and starts that exact candidate. The client rights total 1919. A graphical seed that needs F8/F9 additionally declares <code>--right server.store</code> (3967 total) and still needs a separate operator namespace grant. Package trust and approval are ephemeral across a personal no-vault restart.</p>
+<p>For the initial graphical seed population, sign the same Forge binary under a separately approved package alias with the additional store right, then install it through the seed's trusted F12/Enter controls. This is distinct from the later headless recovery package:</p>
+<pre>./lt release create --binary build/live/apps/native-forge.bin --profile 2 \
+  --project native-forge-seed --version 0.4.10 --sign-key /explicit/forge-publisher.pem \
+  --right object.read --right object.create --right object.revise --right object.share \
+  --right object.revoke --right object.enumerate --right object.export \
+  --right display.surface --right input.focus --right network.broker --right server.store \
+  --source Guest/Forge.lean --source-base . --output /explicit/native-forge-seed.ltrel
+./lt ctl --socket /tmp/seed.sock trust --project native-forge-seed --public /explicit/forge-publisher.pub
+./lt ctl --socket /tmp/seed.sock inspect /explicit/native-forge-seed.ltrel</pre>
+<h2>Choose endpoints and pins</h2>
+<pre>./lt release keygen --private /explicit/seed-network.pem --public /explicit/seed-network.pub
+./lt network description --sign-key /explicit/seed-network.pem \
+  --client-id CLIENT_ID_SHA256 --kind forge --endpoint 127.0.0.1:19431 \
+  --image-id IDENTIFIED_GUEST_IMAGE_SHA256 --output /explicit/seed.service
+./lt network inspect-description /explicit/seed.service
+./lt network init --description /explicit/seed.service \
+  --client-out /explicit/client.credential --server-out /explicit/seed.credential
+./lt server-store init /explicit/seed.img
+./lt run --backend qemu --socket /tmp/seed.sock --graphics /tmp/seed.qmp \
+  --server-store /explicit/seed.img --network-listen 127.0.0.1:19431
+./lt run --backend x86_64 --socket /tmp/client.sock --graphics /tmp/client.display \
+  --network 127.0.0.1:19431
+./lt network configure --socket /tmp/seed.sock --credentials /explicit/seed.credential \
+  --description /explicit/seed.service
+./lt network configure --socket /tmp/client.sock --credentials /explicit/client.credential \
+  --description /explicit/seed.service
+./lt ctl --socket /tmp/client.sock processes
+./lt forge --socket /tmp/client.sock --instance CLIENT_FORGE configure --credentials /explicit/client.credential
+./lt server-store mount --socket /tmp/seed.sock
+./lt server-store permit --socket /tmp/seed.sock --instance SEED_FORGE \
+  --namespace NAMESPACE_SHA256 --role seed --bytes 1048576
+./lt forge --socket /tmp/seed.sock --instance SEED_FORGE configure \
+  --credentials /explicit/seed.credential --role seed --store-grant RETURNED_STORE_GRANT
+./lt forge --socket /tmp/client.sock --instance CLIENT_FORGE inspect</pre>
+<p>Replace the client identity digest with its deliberately selected public role identity, and select the exact platform hash shown by the build. Use <code>--image /explicit/platform.bin</code> on each run to pin that image. Network-role keys are distinct from publisher and federation keys. Provision each ordered pair separately with fresh credentials; role reversal needs a separate binding. Replace numeric loopback endpoints with deliberately selected numeric addresses on separate hosts. There is no ambient DNS or raw-socket application escape. The relay handles opaque bytes only. Each host owns its own guest memory, backing and credentials. ARM64 execution in the development environment uses qemu-aarch64 and does not establish native ARM64 hardware evidence.</p>
+<h2>Native controls</h2>
+<table><tr><th>Control</th><th>Actual action</th></tr>
+<tr><td>F1</td><td>Inspect actual federation/policy, signature state, classification/reason, publisher/source/evidence commitments, precise rights and profile.</td></tr>
+<tr><td>F2</td><td>Trusted project picker: actual names and exact root heads. Select a local project or recovered project.</td></tr>
+<tr><td>F3</td><td>Ask the chosen peer for metadata. Show name, root, record count and aggregate bytes; do not import source or sign anything.</td></tr>
+<tr><td>F4</td><td>Freeze and offer the selected root and its exact permitted dependency/history closure. Future edits and unrelated private objects are outside the offer.</td></tr>
+<tr><td>F5</td><td>Fetch the displayed immutable root. Stream bounded records into a private transaction, check actual bytes and canonical edges, then atomically publish a fresh local root. Send a completion receipt only after that commit.</td></tr>
+<tr><td>F6</td><td>Submit the selected received Release graph to trusted Launcher inspection. The guest reconstructs real code and checks signed content, profile and current local trust before showing approval. Actual signed native application, fork, generation update and explicit rollback journeys are recorded in campaign 004.</td></tr>
+<tr><td>F7 / F10</td><td>Explicitly disclose the selected frozen source to the chosen builder/verifier, wait for actual ingestion/quote / explicitly approve its exact execution contract. See the remote-build guide.</td></tr>
+<tr><td>F8 / F9</td><td>Explicit server-store save / inspect, then recover. Requires a separately granted operator namespace. An ordinary Fetch or Pin does not silently create personal host retention.</td></tr>
+<tr><td>F11 / S</td><td>Publish the exact selected frozen closure to the chosen federation / explicitly subscribe to metadata updates for a verified logical project, publication, federation and peer. A subscription does not fetch, install or retain content.</td></tr>
+<tr><td>Escape</td><td>Cancel pending native transfer/import or remote contract. Keep current published roots usable.</td></tr></table>
+<p>The peer's name is drawn in the application surface, not the trusted approval chrome. The trusted workspace owns project selection and execution approval. Network progress uses actual broker job/import state; it does not mean that device acceptance is graph completion. Forge-v1 advertises streamed-record resume explicitly. Objects checks each complete payload and canonical node ID before a bounded 256-KiB private RAM cache may keep its bytes. Escape aborts the graph stage and sends authenticated cancellation. A fresh authorized peer/session/grant can reuse checked records for the same immutable root; the new complete import validates the closure again. Cache bytes are ephemeral, contain no usable capabilities and do not survive restart. Durable transfer checkpoints and automatic multi-peer routing remain limited.</p>
+<p>In the native editor, Ctrl-F creates a real fork with an explicitly entered publisher key ID, exact upstream logical identity/head and a fresh entropy commitment. The source and consumed resources are independently editable. Ctrl-K offers an explicit source-only archival checkpoint with retained origin/provenance commitments and actual reclaim counts. The trusted vault view uses U for masked raw-key unlock and R for actual recovery inventory; numbered choices select roots, Enter recovers only that selection. These operations are distinct from publication and execution.</p>
+<h2>Local build, publish and execution generations</h2>
+<pre>./lt project --socket /tmp/client.sock list
+./lt project --socket /tmp/client.sock serve --project creator \
+  --root LIVE_ROOT_CAP --requester NATIVE_EDITOR_INSTANCE \
+  --sign-key /explicit/creator-publisher.pem --version 1.0.0 --output /explicit/worker
+./lt ctl --socket /tmp/recipient.sock trust \
+  --project-id LOGICAL_PROJECT_ID --public /explicit/creator-publisher.pub
+./lt ctl --socket /tmp/recipient.sock active --publication-id PUBLICATION_ID
+./lt ctl --socket /tmp/recipient.sock rollback --publication-id PUBLICATION_ID</pre>
+<p>The worker is explicitly scoped to a live root capability, canonical identity, requester/delegator, recipe, frozen source and service incarnation. Alias equality cannot authorize signing. Native editor F5 queues a frozen exact-snapshot build; its completed signed result is staged for trusted F12 execution approval. A fork must use its separately authorized publisher. The worker creates canonical Build/Release/Evidence links and a scheme-3 publication namespace. Legacy package bytes retain their declared rules.</p>
+<p>The last two commands address the exact signed publication ID, including scheme 3. Legacy releases can instead use the positional display alias. Native Launcher generation activation, update parent checks and explicit rollback are unchanged; a new material authority request needs renewed approval. The executed fork/update journey changed both source and a consumed resource, delivered the next signed release with the exact active parent, and explicitly rolled back while existing generations remained responsive. Subscription observation is a separate metadata action; it supplies no execution grant. Consult the campaign evidence for its focused execution status.</p>
+<h2>Headless operator role package</h2>
+<pre>./lt app --profile 2 --module Guest.Forge --entry Guest.Forge.serverMain --name forge-server
+./lt release keygen --private /explicit/operator.pem --public /explicit/operator.pub
+./lt release create --binary build/live/apps/forge-server.bin --profile 2 \
+  --project forge-server --version 0.4.10 --sign-key /explicit/operator.pem \
+  --right object.read --right object.create --right object.revise --right object.share \
+  --right object.revoke --right object.enumerate --right object.export \
+  --right network.broker --right server.store --source Guest/Forge.lean --source-base . \
+  --output /explicit/forge-server.ltrel
+./lt release inspect /explicit/forge-server.ltrel --public-key /explicit/operator.pub
+./lt node init /explicit/seed.json --role seed --package /explicit/forge-server.ltrel \
+  --public /explicit/operator.pub --release-id EXACT_SIGNED_RELEASE_ID --rights 3199 \
+  --credentials /explicit/seed.credential --description /explicit/seed.service \
+  --store /explicit/seed.img \
+  --namespace NAMESPACE_SHA256 --bytes 1048576 --endpoint 127.0.0.1:19431 \
+  --listen --recover-and-seed
+./lt node run /explicit/seed.json --socket /tmp/seed.sock --backend qemu
+./lt node inspect --socket /tmp/seed.sock --instance NODE_INSTANCE
+./lt node stop --socket /tmp/seed.sock</pre>
+<p>The operator config explicitly approves one signed package/release/rights and selects opaque endpoint/device/credential paths and a namespace budget. Each startup uses the unchanged common platform image, stages and guest-verifies that package, grants fresh authority and optionally recovers a previously committed seed archive. The file contains no graph or authoritative catalog. Credentials must be deliberately provisioned for unattended boot; this is not personal vault unlock. Builder/verifier roles also receive an explicit incarnation-scoped BuildJobs enqueue grant, configure their guest contract and use the disclosed key-free executor command separately. Physical client F7 authorizes source ingestion through SourceUpload-v1 (wire16/17); ordinary metadata does not trigger upload or execution. F10 remains necessary before a job queues.</p>
+<p>First population of a seed currently uses the graphical F3/F5/F8 path. The headless startup path can recover and serve an already committed archive. A headless registry accepts a publication only from its explicitly configured peer for the exact requested root, imports the actual graph, then delegates admission to its separate Registry process. Multiple simultaneous peers, general unattended replication policy and durable build-job scheduling remain limited. The role tool is administrative setup, not a replacement for normal native-client decisions.</p>
+<h2>Independent federation node</h2>
+<pre>./lt app --profile 2 --module Guest.Registry --entry Guest.Registry.main --name registry
+./lt release create --binary build/live/apps/registry.bin --profile 2 \
+  --project registry --version 0.4.10 --sign-key /explicit/operator.pem \
+  --right object.read --right object.create --right object.revise --right object.share \
+  --right object.revoke --right object.enumerate --right object.export --right server.store \
+  --source Guest/Registry.lean --source-base . --output /explicit/registry.ltrel
+./lt release create --binary build/live/apps/forge-server.bin --profile 2 \
+  --project forge-headless --version 0.4.10 --sign-key /explicit/operator.pem \
+  --right object.read --right object.create --right object.revise --right object.share \
+  --right object.revoke --right object.enumerate --right object.export --right network.broker \
+  --source Guest/Forge.lean --source-base . --output /explicit/forge-headless.ltrel
+./lt release inspect /explicit/registry.ltrel --public-key /explicit/operator.pub
+./lt release inspect /explicit/forge-headless.ltrel --public-key /explicit/operator.pub
+./lt release keygen --private /explicit/federation.pem --public /explicit/federation.pub
+./lt server-store init /explicit/registry.img
+./lt node init /explicit/registry.json --role registry \
+  --package /explicit/forge-headless.ltrel --public /explicit/operator.pub \
+  --release-id FORGE_RELEASE_ID --rights 1151 --credentials /explicit/registry.credential \
+  --description /explicit/registry.service --store /explicit/registry.img \
+  --namespace CATALOG_NAMESPACE_SHA256 --bytes 1048576 --endpoint 127.0.0.1:19431 --listen \
+  --registry-package /explicit/registry.ltrel --registry-public /explicit/operator.pub \
+  --registry-release-id REGISTRY_RELEASE_ID --registry-rights 2175 \
+  --federation-public /explicit/federation.pub --federation-policy portable
+./lt node run /explicit/registry.json --socket /tmp/registry.sock --backend qemu
+./lt federation --socket /tmp/registry.sock --instance REGISTRY_INSTANCE trust-publisher \
+  --project-id LOGICAL_PROJECT_ID --public /explicit/publisher.pub
+./lt federation --socket /tmp/registry.sock --instance REGISTRY_INSTANCE worker \
+  --key /explicit/federation.pem --policy portable
+./lt node inspect --socket /tmp/registry.sock --instance FORGE_INSTANCE
+./lt node stop --socket /tmp/registry.sock
+./lt node run /explicit/registry.json --socket /tmp/registry.sock --recover-catalog</pre>
+<p>Provision a separate store, network role, federation key and config for a second node. Select <code>--federation-policy restricted</code> and signer <code>--policy restricted</code> for the second policy. The original native sample requests display/input (768): portable admits it and restricted rejects its input authority. An existing catalog requires explicit recovery; startup without that selection refuses to overwrite it. Recovery restores signed metadata without claiming source availability or replaying host project fixtures.</p>
+<p>Each native client separately installs the signed Registry verifier package using the same explicit trust/inspect/F12/Enter path and records its returned instance. A store right in a package supplies no namespace grant or backing by itself. Then configure the actual verifier and expected federation:</p>
+<pre>./lt federation --socket /tmp/client.sock --instance CLIENT_REGISTRY configure \
+  --public /explicit/federation.pub --policy portable
+./lt federation --socket /tmp/client.sock --instance CLIENT_REGISTRY trust-publisher \
+  --project-id LOGICAL_PROJECT_ID --public /explicit/publisher.pub
+./lt forge --socket /tmp/client.sock --instance CLIENT_FORGE federation \
+  --identity RETURNED_FEDERATION_ID --policy portable
+./lt forge --socket /tmp/client.sock --instance CLIENT_FORGE admission</pre>
+<p>Use <code>--policy restricted</code> for the second Registry verifier and <code>--policy native-restricted</code> for its Forge selection. Native F11, F3, F1 and F5 perform ordinary publication, discovery, inspection and retrieval. The signing worker is disclosed bootstrap; its key/policy checks restrict the immutable guest-evaluated signing request. It does not choose admission.</p>
+<p>A metadata-only registry can return a signed listing while reporting no available content. After native F3/F1 inspection, F5 reports that a seed is required. To select a separately authorized seed, provision a fresh ordered description/credential pair for that client and seed, explicitly reset/reconfigure the broker and Forge with the commands above, and keep the same configured federation verifier. The public signed admission is reverified for the exact same root under that federation; the old peer's grants, keys and handles do not transfer. A known newer revocation continues to deny Fetch after this change. Network/Forge configuration changes guest pins and grants; it does not repoint the opaque host endpoint chosen by <code>lt run</code>. The combined journey deliberately stopped the registry listener and started the seed at that same numeric endpoint. A different endpoint needs a newly started client or deliberately configured opaque transport arrangement, and a new client must reacquire its signed metadata. Initial connections can use separate numeric host addresses. Native peer/federation selection from an enrolled list and live endpoint repointing are not yet implemented.</p>
+<h2>Versions and remaining boundaries</h2>
+<p>Device stream profile 1; Network SDK/broker 1; Noise revision 34 profile NNpsk0/25519/ChaChaPoly/SHA256; Forge peer protocol 1; Import-v1; graph schema 1 plus explicitly archival schema 2 and Fork-v1; publication scheme 3 alongside legacy scheme 0; server-store format 1; Forge archive 2; RemoteBuild contract 1. In Forge-v1, message types are metadata request/descriptor, closure request/start, node offer/chunk, complete and receipt. Every frame binds version, transaction and exact root, with sequential node/offset bounds. Node identity, schema, predecessor and payload hash reach the native importer.</p>
+<p>Direct bulk encryption does not supply traffic privacy. Interactive onion, delayed padded mixing and private-cluster modes are unavailable and fail closed. Signed peer descriptions and federation admission have separate guest verification paths; explicit metadata subscriptions have bounded backoff. Restart-persistent transfer checkpoints, privacy routing, Library/Feed/Messenger/Wallet/LemmaCoin, broad REL, native self-hosting, physical storage/hardware evidence and independently operated nodes remain MVP obligations. No whole RG-04, RG-08 or RG-11 gate is complete. See <a href="campaign-004.html">actual executed campaign results and continuation</a>.</p>
+</main></body></html>

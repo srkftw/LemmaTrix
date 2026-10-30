@@ -1,0 +1,1280 @@
+{
+  "schema": "LT-campaign-004-integration-evidence-1",
+  "date": "2026-10-29",
+  "branch": "codex/networked-forge",
+  "reviewed_head": "2edb0dfd06794985397023b756d8864c66103df0",
+  "implementation_basis_commit": "f348d9682f398b89a8f11fdb676d17b9751ec1be",
+  "scope": "Executed connected bounded development increment; no whole v0.2 MVP release gate complete. Historical campaign003 evidence was not relabelled as new validation.",
+  "final_guest": {
+    "path": "build/platform/55f2264c3a9ee5265409c4bcb013ddf964c87914501e863aa64109cd5e729466.bin",
+    "bytes": 6291456,
+    "sha256": "55f2264c3a9ee5265409c4bcb013ddf964c87914501e863aa64109cd5e729466",
+    "build_command": "./lt build --clean",
+    "build_outcome": "passed",
+    "component_identities": {
+      "kernel": {
+        "bytes": 160176,
+        "sha256": "87d5cc0725af5a43b64cc312a7ec310c6a17debda61e5f4b8b99aaf98fbf8538"
+      },
+      "launcher": {
+        "bytes": 118396,
+        "sha256": "d8485f77c4edb464dbd427f37cee5046be8fe78576b865002208c528c283ff6e"
+      },
+      "objects": {
+        "bytes": 235736,
+        "sha256": "dddf8cb7b2c96d36bdcce3dc236aa50b9d6255d9c369f984fb927e0ee6deb3a9"
+      },
+      "vault": {
+        "bytes": 124312,
+        "sha256": "30bec427f45c477855f5592afbd09729650748d702a93b9d87b4c909e840b90b"
+      },
+      "compositor": {
+        "bytes": 171616,
+        "sha256": "c9f8c7ae1430988e78f957912cf584f6bdd0f639efdcfc9a3186c37f4afa7993"
+      },
+      "build-jobs": {
+        "bytes": 48488,
+        "sha256": "9c04003d773d071181453abed5bd7f3d24ba1869751229a050dbf0220c63180f"
+      },
+      "network": {
+        "bytes": 92592,
+        "sha256": "e779875d920a19df9537f6916b86322862e0f7be4ef7218d355ea32939a22947"
+      }
+    },
+    "toolchain_lock": "12b2fdec1abcde9b6a510f0df877d81508cf0c8813ebf0c592bdb3b3cf2097dc",
+    "execution_profile": "freestanding RV64IM/lp64; Sv39; resource profile2; common six-service image",
+    "source_record": "build/campaign-004-final-platform.json",
+    "source_record_sha256": "4e5e2a8c6b8e767d0415ff74782db8d7ddd7718c3e11b1edf7915431a90c6132",
+    "delta_from_integration_image": "Objects final import-quota guard; ServerStore service-incarnation handle epoch. Kernel/Launcher/Compositor/BuildJobs/Network bytes unchanged.",
+    "verification_scope": "Final clean build exactly reproduced the incremental55 image used by both native regression checks. Older connected/backend journeys retain their explicitly recorded integration images; not rerun as a new matrix."
+  },
+  "versions": {
+    "virtio_stream": 1,
+    "IPC": 2,
+    "NetworkSDK": 1,
+    "Noise_specification": "revision34",
+    "Noise_profile": "Noise_NNpsk0_25519_ChaChaPoly_SHA256",
+    "PeerDescription": 1,
+    "Forge_wire": 1,
+    "Import": 1,
+    "checked_stage_read": 43,
+    "canonical_graph": 1,
+    "archival_graph_schema": 2,
+    "Fork": 1,
+    "publication_identity": 3,
+    "legacy_publication_identity": 0,
+    "Admission": 1,
+    "RegistrySDK": 1,
+    "Subscription": 1,
+    "SourceUpload": "1 messages16/17",
+    "RemoteBuild": 1,
+    "server_store": 1,
+    "ForgeArchive": 2
+  },
+  "environment": {
+    "host": "x86-64 Linux development machine",
+    "lean": "4.34.1",
+    "llvm": "20.1.8",
+    "openssl": "3.6.3",
+    "qemu": "11.1.1",
+    "x86_64_emulator": "assembly on native x86-64 host",
+    "aarch64_emulator": "assembly under qemu-aarch64; not physical ARM hardware",
+    "independent_operators": false,
+    "independent_hardware": false
+  },
+  "authority_boundaries": {
+    "Lean_guest": "kernel/device policy, broker crypto/grants/jobs, typed graph importer/identity/history, registry decisions, server transactions, native controls, release approval and remote job admission/state",
+    "assembly": "boot/traps/MMIO and generic independent RV64 emulators",
+    "opaque_host": "selected endpoint bytes, pixels/events, entropy and purpose-selected block files; no graph/catalog/admission server",
+    "bootstrap": "disclosed host compiler sandbox and narrowly scoped publisher/federation/service signers; no publisher keys in compiler or network service",
+    "personal_durability": "ephemeral unless explicitly retained encrypted vault; no automatic personal host directory from Fetch or network enrollment",
+    "server_durability": "explicit unencrypted operator purpose2 store, selected namespaces and fresh per-start role grants"
+  },
+  "checks": [
+    {
+      "name": "Guest cryptographic vectors/interoperability",
+      "outcome": "passed",
+      "source_record": "build/network-crypto/evidence.json",
+      "source_record_sha256": "981949aa156a6a7966a0eeac6b17d3f9aa748c2d98760ffba4a760806e027836",
+      "scope": "Generated freestanding Lean RV64 under QEMU; no global platform-image claim.",
+      "environment": "QEMU RV64 system emulation; generated Lean native crypto",
+      "observations": {
+        "RFC7748_section6_1": "passed",
+        "Noise_profile": "NNpsk0_25519_ChaChaPoly_SHA256",
+        "independent_fixture": "noiseprotocol0.3.1 + cryptography50.0.2",
+        "handshake_and_both_record_directions": "byte-for-byte match",
+        "replay_tamper_transcript_mismatch": "rejected",
+        "security_audit": false
+      }
+    },
+    {
+      "name": "Signed service selection and broker boundaries",
+      "outcome": "passed",
+      "source_record": "build/network-signed-description.json",
+      "source_record_sha256": "6934036f65481ec7b30629a62d2b00a434db1cd8bef4eaebe1472ece2be604be",
+      "scope": "QEMU and x86-64 assembly guests, one development host.",
+      "guest_image_sha256": "57d4d2cac38135b50ce03593ed16a944e274f8a188c7ef32b2fd6cb1990f8ad3",
+      "client_backend": "qemu",
+      "server_backend": "x86_64",
+      "profile": "Noise_NNpsk0_25519_ChaChaPoly_SHA256",
+      "observations": {
+        "actual_payload_bytes": 4097,
+        "sha256": "9183d4fef5c2614af5b6897eac473e9178c1c1bc96e0f6da9bb35a1c75331454",
+        "bidirectional": true,
+        "FIFO_slot_reuse": true,
+        "tamper_pin_substitution_operation_scope_downgrade_stale_grant": "rejected"
+      }
+    },
+    {
+      "name": "ARM64 assembly encrypted byte transport",
+      "outcome": "passed",
+      "source_record": "build/network-broker-qemu-aarch64-54663e8199d1.json",
+      "source_record_sha256": "e44de2db918434f357d0c20ba25facd979968507141d732b74960ee1cc1dc15c",
+      "scope": "Earlier identified image; ARM assembly under qemu-aarch64, not physical ARM hardware.",
+      "guest_image_sha256": "54663e8199d1bb6b1ea7d46e81a58458de8b40f8f58477e066ee3278d7ea98b6",
+      "client_backend": "qemu",
+      "server_backend": "aarch64",
+      "profile": "Noise_NNpsk0_25519_ChaChaPoly_SHA256",
+      "observations": {
+        "actual_payload_bytes": 4097,
+        "bidirectional": true,
+        "no_application_claim_from_this_check": true
+      }
+    },
+    {
+      "name": "Native graph recovery from encrypted backing",
+      "outcome": "passed",
+      "source_record": "build/networked-import-recovery-v2/evidence.json",
+      "source_record_sha256": "f1e91b99790b485af6cb8c10518d527d4962860cbfe312bdcb4dbb451cf88abd",
+      "scope": "Fresh QEMU guest; native op217 dependency ordering/import/publication.",
+      "image": "b03e54d30d96c53d69d3baa515f8164b58dcb18369b8ffd006b731b0fc20c01b",
+      "checks": [
+        {
+          "check": "native op217 recovery ordering/import/publication from encrypted backing"
+        },
+        {
+          "check": "actual >64KiB source/resource available after fresh guest restart"
+        },
+        {
+          "check": "fresh scoped capability and stable canonical identity"
+        }
+      ],
+      "observations": {
+        "bytes": 79072,
+        "nodes": 3,
+        "fresh_capability": true
+      }
+    },
+    {
+      "name": "Physical trusted vault unlock/recovery",
+      "outcome": "passed",
+      "source_record": "build/native-recovery-fork-ui-retry/journey.json",
+      "source_record_sha256": "dcf1c8660ff1fbc3c7114eca93dcd8a2732e86027de9f31474b39681a1abda51",
+      "scope": "Actual masked input and selected native recovery; excluded root remains unimported.",
+      "image": "8510a38c66b1fe0493573564547f691df772dc54ab1ad8c16efbd89a25969a3e",
+      "backend": "qemu",
+      "checks": [
+        {
+          "check": "trusted masked unlock and physical selected-root recovery",
+          "result": "pass",
+          "source_bytes": 72027
+        }
+      ]
+    },
+    {
+      "name": "Native typed Fork creation",
+      "outcome": "passed",
+      "source_record": "build/project-fork-evidence.json",
+      "source_record_sha256": "68fc55723f7386649d22f4022e156c77f613bb81cc25d9d07ea2b5635cef78f9",
+      "scope": "Fresh guest entropy, canonical source lineage and distinct local authority; later actual Release covers Fork signature commitment.",
+      "checks": [
+        {
+          "check": "fresh guest nonce creates distinct canonical identity"
+        },
+        {
+          "check": "typed Fork commits exact upstream identity/head and chosen publisher"
+        },
+        {
+          "check": "local root authority is fresh"
+        },
+        {
+          "check": "independent source/resource edits preserve fork identity and upstream bytes"
+        }
+      ]
+    },
+    {
+      "name": "Native checkpoint control",
+      "outcome": "passed",
+      "source_record": "build/native-checkpoint-ui/journey.json",
+      "source_record_sha256": "a11fcd93189fc392298614294d229a535cb886c0337bb1406c7fc7033829ff8b",
+      "scope": "Physical Ctrl-K scope/Enter and subsequent actual edited source.",
+      "image": "b33b06ff7a01290c749271017ba097aff6616417a4a1c9723738bb983ef8d0fb",
+      "backend": "qemu",
+      "checks": [
+        {
+          "check": "native Ctrl-K scope prompt, physical Enter checkpoint, actual completion glyphs, edited source after cap reload",
+          "result": "pass"
+        }
+      ]
+    },
+    {
+      "name": "Root-scoped signer regression",
+      "outcome": "passed",
+      "source_record": "build/project-worker-scope/evidence.json",
+      "source_record_sha256": "4c7a15059d124af0b176258e67a9ecee4549abd373964c7138ff65f8e8b70aa4",
+      "scope": "Actual frozen worker path and rendered diagnostic; capability scope validated before compiler/signing.",
+      "image": "4f4f1ea6be9169a4a9236cd563b3342970838aa584f2e5f9e373ddb9c805db3e",
+      "observations": {
+        "artifact_absent": true
+      }
+    },
+    {
+      "name": "Signer identity substitution boundaries",
+      "outcome": "passed",
+      "source_record": "build/signed-native-fork-journey-4/authority-negative/evidence.json",
+      "source_record_sha256": "5f824ab217627df783dcacc153de7be339f3aded2bd70e9f001cc9227d94dc1f",
+      "scope": "Wrong selected publisher and same-name/same-logical-ID reimport with fresh live root both refused before signing.",
+      "checks": [
+        {
+          "check": "canonical Fork origin rejects a different publisher before signing",
+          "result": "pass",
+          "reason": "selected signing key is not the publisher authorized by this canonical Fork lineage"
+        },
+        {
+          "check": "same-name reimport preserves identity but cannot reuse original live-root BuildJob signing authority",
+          "result": "pass",
+          "reason": "selected live root/requester differs from canonical guest job authority"
+        }
+      ]
+    },
+    {
+      "name": "Original build and signed native application exchange",
+      "outcome": "passed",
+      "source_record": "build/signed-forge-journey-2/journey.json",
+      "source_record_sha256": "6011fb3c90fa03329999011532c3eaad73d3e67b3d2a05a58642cc169bb92e0b",
+      "scope": "Actual native source/resource project build, stable identity signed Release, guest-only transfer, trusted approval and uncanned input.",
+      "image": "150a446ccca25014c1a1c05a8b8932303e72d0bf2ef56336fd1b5480418b4c1e",
+      "checks": [
+        {
+          "check": "native editor exact source build signs under stable identity and live root scope",
+          "result": "pass",
+          "release": "7dc7d80f5dcb1656b8e2d32fa0728ae294be2d485cfbfe100c1a73782e4623c9",
+          "source_root": "14b9ae8541e00acabe58d7e50606d87ed2677573161887ea6e523a449c1bcafb",
+          "artifact": "a10d5a5dcd5771711043bf3df8e595d2ed02e96b245bd7c803602e192fb4fa5f",
+          "bytes": 38320
+        },
+        {
+          "check": "encrypted network Release graph passes F6 actual material and exact rights approval then runs supplied input",
+          "result": "pass",
+          "input": "cat123",
+          "score": "00000014",
+          "release": "7dc7d80f5dcb1656b8e2d32fa0728ae294be2d485cfbfe100c1a73782e4623c9",
+          "rights": 768
+        }
+      ]
+    },
+    {
+      "name": "Actual fork edits, build and selected publisher",
+      "outcome": "passed",
+      "source_record": "build/signed-native-fork-journey-4/journey.json",
+      "source_record_sha256": "1b3c6b8cdd3809790cc39faf7d63c4b8d19a8147f53b5d3a62c2fbb453e649b0",
+      "scope": "Recipient physical Ctrl-F, source and consumed resource edits, exact fork-point provenance, real compiler and new Release.",
+      "image": "5bf8b208bb37d89801c54ff6ef1a7d522aa14ed20ee8db8d126a6372ff8fcc92",
+      "checks": [
+        {
+          "check": "restore exact already signed public graph into creator with fresh caps and no restored BuildJob signing authority",
+          "result": "pass"
+        },
+        {
+          "check": "encrypted network Release graph passes F6 actual material and exact rights approval then runs supplied input",
+          "result": "pass",
+          "input": "cat123",
+          "score": "00000014",
+          "release": "7dc7d80f5dcb1656b8e2d32fa0728ae294be2d485cfbfe100c1a73782e4623c9",
+          "rights": 768
+        },
+        {
+          "check": "recipient native Ctrl-F creates fresh identity and publisher choice; graphical source and resource edits preserve upstream",
+          "result": "pass",
+          "source_root": "7d6aad027670b925f630f220f0134d3cee457c589f676707f7d8e1554aa3e62a",
+          "source_weight": 7,
+          "resource_accent": 6
+        },
+        {
+          "check": "fork exact changed source builds and signs under its own selected live root and publisher identity",
+          "result": "pass",
+          "release": "6173bbed3716f4f2de0220f92bc92777f0d31d309e1f5fad20c5330d91a76422",
+          "source_root": "7d6aad027670b925f630f220f0134d3cee457c589f676707f7d8e1554aa3e62a",
+          "artifact": "235d749c6ce7b7f058dc8f53ff795125b195d0ff48693c7e3f6e1b640781ceed",
+          "bytes": 38304
+        }
+      ]
+    },
+    {
+      "name": "Actual signed generation update and rollback",
+      "outcome": "passed",
+      "source_record": "build/native-release-update-3/journey.json",
+      "source_record_sha256": "62db39b3f7d8ce0a7abbdc1a798fcc23a8f39b0315295cdf3a950ef4dfd55651",
+      "scope": "Physical checkpoint/edit/build, real network generation delivery and exact-parent activation, native explicit rollback, both apps remain usable.",
+      "image": "5bf8b208bb37d89801c54ff6ef1a7d522aa14ed20ee8db8d126a6372ff8fcc92",
+      "checks": [
+        {
+          "check": "both users inspect and run existing independently signed fork generation",
+          "result": "pass",
+          "input": "cat123",
+          "score": "0000001b",
+          "project": "08fb3bbeb18eb2bb5c573eb2a77cc05236e5705fb5e09bc6a974e13771dc885a",
+          "release": "6173bbed3716f4f2de0220f92bc92777f0d31d309e1f5fad20c5330d91a76422"
+        },
+        {
+          "check": "native source-only checkpoint preserves fork identity and subsequent real source/resource edits",
+          "result": "pass",
+          "project": "08fb3bbeb18eb2bb5c573eb2a77cc05236e5705fb5e09bc6a974e13771dc885a",
+          "source_root": "94f0655ef2a4e7ba59295efee2ae1c435b8d79ef5e8cec6454bf4d45a4260d48",
+          "source_weight": 9,
+          "resource_accent": 7
+        },
+        {
+          "check": "generation2 signs a real changed artifact with exact active parent while earlier app remains responsive",
+          "result": "pass",
+          "release": "a7bb24e9357928d00649529f28b456d255cfbf255afd33ba2a8a3fb2a14e6a03",
+          "parent": "6173bbed3716f4f2de0220f92bc92777f0d31d309e1f5fad20c5330d91a76422",
+          "source_root": "94f0655ef2a4e7ba59295efee2ae1c435b8d79ef5e8cec6454bf4d45a4260d48",
+          "version": "1.1.0"
+        },
+        {
+          "check": "network generation2 activation and explicit native rollback preserve both running generations",
+          "result": "pass",
+          "project": "08fb3bbeb18eb2bb5c573eb2a77cc05236e5705fb5e09bc6a974e13771dc885a",
+          "generation2_input": "cat123",
+          "generation2_score": "00000020",
+          "original_running_input": "cat123Z9A",
+          "original_running_score": "00000029"
+        }
+      ]
+    },
+    {
+      "name": "Durable byte transactions and failure",
+      "outcome": "passed",
+      "source_record": "build/server-store-evidence.json",
+      "source_record_sha256": "313fb7b712baf4d6a73eca0ab189328b60e671e810b4c6db03e7798c406dfac2",
+      "scope": "Purpose-bound guest store on explicit regular-file backing; no physical-power-loss guarantee.",
+      "guest_image_sha256": "b03e54d30d96c53d69d3baa515f8164b58dcb18369b8ffd006b731b0fc20c01b",
+      "backend": "qemu",
+      "observations": {
+        "payload_bytes": 70001,
+        "generations": 2,
+        "restart_fresh_grant": true,
+        "cancel_interrupted_inactive_bank_readonly_quota": "preserve prior complete state / reject"
+      }
+    },
+    {
+      "name": "Signed fork generations through two durable seeds",
+      "outcome": "passed",
+      "source_record": "build/durable-signed-four-node/journey.json",
+      "source_record_sha256": "c026234629f331cd24a6bf9413e82c56f57bd78b3b9241f4a2e472029d598b7a",
+      "scope": "Four distinct QEMU guests; each seed received real graph bytes through the broker and owns its own disk; publisher and then first seed absent.",
+      "image": "464ada27345522de69f618f515789d53f20cd5cdd4d4abfe637d9fdcde11f9b4",
+      "environment": "Four distinct QEMU guests on one Linux host; own identities/backing",
+      "checks": [
+        {
+          "check": "creator publishes signed generation 1 to independently durable seed1",
+          "result": "pass"
+        },
+        {
+          "check": "creator publishes signed generation 2 to independently durable seed1",
+          "result": "pass"
+        },
+        {
+          "check": "publisher absent; seed1 recovers own generation 1 and replicates to seed2",
+          "result": "pass"
+        },
+        {
+          "check": "publisher absent; seed1 recovers own generation 2 and replicates to seed2",
+          "result": "pass"
+        },
+        {
+          "check": "publisher and seed1 absent; reader retrieves and runs seed2 retained generation 1",
+          "result": "pass",
+          "input": "cat123",
+          "score": "0000001b"
+        },
+        {
+          "check": "publisher and seed1 absent; reader retrieves and runs seed2 retained generation 2",
+          "result": "pass",
+          "input": "cat123",
+          "score": "00000020"
+        }
+      ],
+      "observations": {
+        "generation1_records": 18,
+        "generation1_bytes": 130482,
+        "generation2_records": 17,
+        "generation2_bytes": 130344,
+        "recipient_input": "cat123",
+        "rendered_scores": [
+          "0000001b",
+          "00000020"
+        ],
+        "host_graph_copy_to_seed_or_recipient": false,
+        "separate_pairwise_sessions_and_public_service_descriptions": true
+      }
+    },
+    {
+      "name": "Actual native F8 publication interruption",
+      "outcome": "passed",
+      "source_record": "build/server-graph-publication-fault/evidence.json",
+      "source_record_sha256": "902998d21340c3e95efa5e83e10168f85eaefd59a28e6a696a4cdf759aff8f19",
+      "scope": "Actual SIGKILL during selected guest-backed graph writes, not a synthetic transaction response.",
+      "image": "464ada27345522de69f618f515789d53f20cd5cdd4d4abfe637d9fdcde11f9b4",
+      "environment": "QEMU guest; operator-selected own purpose2 disk; actual process termination during native publication",
+      "checks": [
+        {
+          "check": "interrupt native F8 after actual inactive-bank writes without publishing root",
+          "result": "pass"
+        },
+        {
+          "check": "own-device restart recovers complete prior generation and separately retained next generation",
+          "result": "pass"
+        },
+        {
+          "check": "explicit retry commits complete next generation and native restart recovers exact root",
+          "result": "pass"
+        }
+      ],
+      "observations": {
+        "kill_boundary_bytes": 4096,
+        "total_bytes": 132712,
+        "inactive_bank_changed": true,
+        "commit_roots_unchanged_at_kill": true,
+        "own_backing_previous_recovery": true,
+        "explicit_retry_then_second_restart_new_recovery": true
+      }
+    },
+    {
+      "name": "Federation material/policy and revocation",
+      "outcome": "passed",
+      "source_record": "build/federation-policy-native/evidence.json",
+      "source_record_sha256": "beb5be5c44dd0d243b0d1dee7a3dc9ac067f73ffc9dc98d78ef13fc0eea73a34",
+      "scope": "Guest material/signature evaluation, independent policies/keys and durable signed metadata; no execution grant.",
+      "image": "150a446ccca25014c1a1c05a8b8932303e72d0bf2ef56336fd1b5480418b4c1e",
+      "environment": "Two isolated QEMU registries with different keys/policies/backing on one development host; disclosed narrowly scoped signer",
+      "checks": [
+        {
+          "check": "actual guest material evaluation and signed policy difference",
+          "status": "passed",
+          "policy": "portable",
+          "reason": 0,
+          "sequence": 1
+        },
+        {
+          "check": "actual guest material evaluation and signed policy difference",
+          "status": "passed",
+          "policy": "restricted",
+          "reason": 4,
+          "sequence": 1
+        },
+        {
+          "check": "own durable signed catalog recovered with no graph replay",
+          "status": "passed",
+          "policy": "portable",
+          "records": 1
+        },
+        {
+          "check": "own durable signed catalog recovered with no graph replay",
+          "status": "passed",
+          "policy": "restricted",
+          "records": 1
+        },
+        {
+          "check": "signed exact-release revocation supersedes old admission and rejects known replay",
+          "status": "passed",
+          "reason": 6,
+          "sequence": 2
+        }
+      ]
+    },
+    {
+      "name": "Native federation publication and new-reader discovery",
+      "outcome": "passed",
+      "source_record": "build/federation-wire-3/journey.json",
+      "source_record_sha256": "d4150fa6de966bb06f92f0d3197e65c219c0c630c2a699f01d951907c7e8b5d8",
+      "scope": "Normal headless registry nodes import source only through guest wire after physical F11; distinct federation signer bootstrap.",
+      "image": "5bf8b208bb37d89801c54ff6ef1a7d522aa14ed20ee8db8d126a6372ff8fcc92",
+      "environment": "isolated QEMU guests; separate federation configurations on one development host; disclosed signer bootstrap",
+      "checks": [
+        {
+          "policy": "portable",
+          "classification": 2,
+          "reason": 0,
+          "rights": 768,
+          "metadata_only_until_explicit_fetch": true,
+          "publisher_offline_before_new_recipient": true,
+          "registry_source_received_only_through_network": true,
+          "signature_checked_in_guest": true
+        },
+        {
+          "policy": "restricted",
+          "classification": 3,
+          "reason": 4,
+          "rights": 768,
+          "metadata_only_until_explicit_fetch": true,
+          "publisher_offline_before_new_recipient": true,
+          "registry_source_received_only_through_network": true,
+          "signature_checked_in_guest": true
+        }
+      ],
+      "observations": {
+        "portable_native_classification": 2,
+        "restricted_classification": 3,
+        "restricted_reason": 4,
+        "requested_rights": 768,
+        "publisher_offline_before_new_readers": true
+      }
+    },
+    {
+      "name": "Recovered metadata-only catalog native discovery",
+      "outcome": "passed",
+      "source_record": "build/federation-catalog-native/evidence.json",
+      "source_record_sha256": "86f45b6c44a9aa269cb877eddbf8a330dd73896df0966379e6bf4d6c0153f477",
+      "scope": "Registry restarts from own durable catalog with zero graph roots; native F3 verifies listing; F5 refuses unavailable content.",
+      "image": "464ada27345522de69f618f515789d53f20cd5cdd4d4abfe637d9fdcde11f9b4",
+      "environment": "separate QEMU registry/reader guests on one development host; existing operator store reopened without fixture replay",
+      "observations": {
+        "display": "METADATA ONLY - CHOOSE SEED",
+        "recipient_graph_roots": 0,
+        "replayed_host_graph": false
+      }
+    },
+    {
+      "name": "Native signed update subscription",
+      "outcome": "passed",
+      "source_record": "build/forge-subscription-2/evidence.json",
+      "source_record_sha256": "a77e19af4f198cbb283d06d02389c4c1148c032f1d0f98facd761cf6137dcce9",
+      "scope": "Physical S, bounded timers, actual new signed generation, no automatic Fetch/install/durable personal retention.",
+      "image": "464ada27345522de69f618f515789d53f20cd5cdd4d4abfe637d9fdcde11f9b4",
+      "environment": "Two isolated QEMU guests on one development host; no personal vault or server backing",
+      "checks": [
+        {
+          "check": "physical Subscribe binds actual logical project, publication, federation and peer",
+          "status": "passed"
+        },
+        {
+          "check": "bounded guest metadata queries announce a real signed update without fetching or activating it",
+          "status": "passed"
+        },
+        {
+          "check": "physical unsubscribe clears only subscription identity and timer state",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "name": "Interrupted transfer and fresh-provider verified-record reuse",
+      "outcome": "passed",
+      "source_record": "build/forge-resume-5/journey.json",
+      "source_record_sha256": "3c27e3f52346c07778ad422617090f379c5fc07a8d8912e852ddab368214549c",
+      "scope": "Actual native Esc/cancel and ephemeral checked-byte cache; publisher offline, fresh authorized seed/session/grants, fresh complete importer.",
+      "image": "464ada27345522de69f618f515789d53f20cd5cdd4d4abfe637d9fdcde11f9b4",
+      "environment": "three isolated QEMU guests, distinct peer identities, one Linux development host, opaque bounded byte switch",
+      "checks": [
+        {
+          "check": "seed acquired actual closure from publisher through native Fetch",
+          "source_bytes": 81070
+        },
+        {
+          "check": "physical Esc interrupts graph, reclaims stage, preserves only checked record bytes"
+        },
+        {
+          "check": "fresh authorized seed and fresh Noise grant reuse verified immutable records before atomic complete publication"
+        }
+      ],
+      "observations": {
+        "verified_reused_bytes": 6654,
+        "verified_reused_records": 2,
+        "partial_root_published": false,
+        "cache_durable": false,
+        "peer_authority_reused": false
+      }
+    },
+    {
+      "name": "Editor and unrelated application during stalled transfer",
+      "outcome": "passed",
+      "source_record": "build/forge-background-work/evidence.json",
+      "source_record_sha256": "f91eca87edb8d8c48a6e9ef3f579479775964ff8f7ba18e3bec1955000740c8c",
+      "scope": "Physical Alt-Tab/editor source save/TextTools input while actual incomplete transaction exists; transfer subsequently completes exact root.",
+      "image": "464ada27345522de69f618f515789d53f20cd5cdd4d4abfe637d9fdcde11f9b4",
+      "environment": "two isolated QEMU guests; three separately signed native apps in recipient; opaque stream pause on one development host"
+    },
+    {
+      "name": "Owner-only complete staged byte reads",
+      "outcome": "passed",
+      "source_record": "build/import-verified-cache-004.json",
+      "source_record_sha256": "4212ed26db1c0a7ce4407c92961e535fa580ac8f6aeccaaace833ab9126f8ec2",
+      "scope": "Actual Import1 operation43 checks complete bytes and canonical node ID before returning data; incomplete/stale/tampered data denied.",
+      "checks": [
+        {
+          "check": "complete Manifest bytes independently verify before missing dependency closure can publish; incomplete bytes remain unreadable"
+        },
+        {
+          "check": "bounded cached reads return exact complete bytes and EOF without Object caps; cancellation revokes stage handle"
+        },
+        {
+          "check": "fresh allocation rechecks actual payload hash and canonical offered node identity; wrong hash or ID never returns bytes"
+        }
+      ]
+    },
+    {
+      "name": "Live wrong-owner operation43",
+      "outcome": "passed",
+      "source_record": "build/forge-background-work/wrong-owner43.json",
+      "source_record_sha256": "fb93f191acfce4f31d500b170831c504f7be31fd37d2682ba7e78ca0b8bf6b3c",
+      "scope": "Different actual guest caller probes active transfer stage while original owner remains live.",
+      "image": "464ada27345522de69f618f515789d53f20cd5cdd4d4abfe637d9fdcde11f9b4",
+      "observations": {
+        "status": 3,
+        "bytes_disclosed": 0,
+        "stage_still_active": true
+      }
+    },
+    {
+      "name": "Headless exact-incarnation build requester grant",
+      "outcome": "passed",
+      "source_record": "build/build-requester-final-2/evidence.json",
+      "source_record_sha256": "d77d985727574f79a4185f5908dc73e300cd547f93731794e6f09cd95acb3175",
+      "scope": "No display/input/network/admin authority; actual frozen enqueue/cancel, revocation and same-slot process replacement.",
+      "image": "57d4d2cac38135b50ce03593ed16a944e274f8a188c7ef32b2fd6cb1990f8ad3",
+      "backend": "qemu",
+      "checks": [
+        {
+          "check": "headless caller cannot enqueue through object read authority alone",
+          "result": "pass"
+        },
+        {
+          "check": "explicit full-incarnation grant admits and cancels actual frozen job only",
+          "result": "pass",
+          "source_root": "d64932cca9cb67267ca0ebdbd17d62faf45859bd772f24d9b576b4f7b207d660",
+          "compiler_run": false
+        },
+        {
+          "check": "revocation denies subsequent enqueue without changing source",
+          "result": "pass"
+        },
+        {
+          "check": "slot reuse inherits no old incarnation grant; fresh explicit grant required",
+          "result": "pass",
+          "source_root": "d64932cca9cb67267ca0ebdbd17d62faf45859bd772f24d9b576b4f7b207d660"
+        }
+      ],
+      "observations": {
+        "host_compiler_executions": 0
+      }
+    },
+    {
+      "name": "Headless builder source ingestion and explicit approval",
+      "outcome": "passed",
+      "source_record": "build/headless-remote-ingest-final/evidence.json",
+      "source_record_sha256": "8a2f8b65138528233e6d2102536e2404b41100147026ff955ed511b5d8ba537d",
+      "scope": "Normal node commands, zero initial source, physical client F7/F10 and actual public executor frozen tuple; no repeated compiler run.",
+      "image": "464ada27345522de69f618f515789d53f20cd5cdd4d4abfe637d9fdcde11f9b4",
+      "environment": "Two isolated QEMU guests on one development host; normal headless node commands",
+      "profile": "SourceUpload1 wire16/17, Forge1 streamed import, RemoteBuild1",
+      "checks": [
+        {
+          "check": "ordinary node builder starts without display, input, source or queued jobs",
+          "status": "passed",
+          "rights": 3199
+        },
+        {
+          "check": "truncated source request rejected without source import or job authority",
+          "status": "passed"
+        },
+        {
+          "check": "wrong provider role rejected without source import or job authority",
+          "status": "passed"
+        },
+        {
+          "check": "source root substituted from offered metadata rejected without source import or job authority",
+          "status": "passed"
+        },
+        {
+          "check": "ordinary source metadata grants no automatic upload or execution",
+          "status": "passed",
+          "compiler_run": false
+        },
+        {
+          "check": "physical F7 sends real source to headless provider and obtains a quote without execution",
+          "status": "passed",
+          "source_bytes": 81070,
+          "graph_bytes": 81870,
+          "project": "69d8274c92d5b2c829e55d5e3f5359b7c652b13160d138eec5d7e99623a72f2b",
+          "source_root": "69d8274c92d5b2c829e55d5e3f5359b7c652b13160d138eec5d7e99623a72f2b"
+        },
+        {
+          "check": "separate physical approval enqueues exact capped job through public executor interface",
+          "status": "passed",
+          "hard_budget": {
+            "cpu_seconds": 60,
+            "wall_seconds": 120,
+            "output_bytes": 65536,
+            "price": 0
+          },
+          "compiler_run": false
+        },
+        {
+          "check": "repeated source request is idempotent and cancellation leaves no executor work",
+          "status": "passed",
+          "compiler_run": false
+        },
+        {
+          "check": "fresh authorized request reuses exact validated source without duplicate roots or stale jobs",
+          "status": "passed",
+          "source_root": "69d8274c92d5b2c829e55d5e3f5359b7c652b13160d138eec5d7e99623a72f2b",
+          "compiler_run": false
+        }
+      ],
+      "observations": {
+        "provider_rights": 3199,
+        "remote_compiler_executions": 0,
+        "source_upload_is_execution_approval": false
+      }
+    },
+    {
+      "name": "Headless verifier source ingestion and explicit approval",
+      "outcome": "passed",
+      "source_record": "build/headless-verifier-ingest-final/evidence.json",
+      "source_record_sha256": "974a1ef553bd68cfa1bf198c6319cde84c619aa9d846bc382c80efa93591aaf6",
+      "scope": "Separately configured verifier role; same public source-ingestion/quote/approval path and boundary checks.",
+      "image": "464ada27345522de69f618f515789d53f20cd5cdd4d4abfe637d9fdcde11f9b4",
+      "environment": "Two isolated QEMU guests on one development host; normal headless node commands",
+      "profile": "SourceUpload1 wire16/17, Forge1 streamed import, RemoteBuild1",
+      "checks": [
+        {
+          "check": "ordinary node builder starts without display, input, source or queued jobs",
+          "status": "passed",
+          "rights": 3199
+        },
+        {
+          "check": "truncated source request rejected without source import or job authority",
+          "status": "passed"
+        },
+        {
+          "check": "wrong provider role rejected without source import or job authority",
+          "status": "passed"
+        },
+        {
+          "check": "source root substituted from offered metadata rejected without source import or job authority",
+          "status": "passed"
+        },
+        {
+          "check": "ordinary source metadata grants no automatic upload or execution",
+          "status": "passed",
+          "compiler_run": false
+        },
+        {
+          "check": "physical F7 sends real source to headless provider and obtains a quote without execution",
+          "status": "passed",
+          "source_bytes": 81070,
+          "graph_bytes": 81870,
+          "project": "69d8274c92d5b2c829e55d5e3f5359b7c652b13160d138eec5d7e99623a72f2b",
+          "source_root": "69d8274c92d5b2c829e55d5e3f5359b7c652b13160d138eec5d7e99623a72f2b"
+        },
+        {
+          "check": "separate physical approval enqueues exact capped job through public executor interface",
+          "status": "passed",
+          "hard_budget": {
+            "cpu_seconds": 60,
+            "wall_seconds": 120,
+            "output_bytes": 65536,
+            "price": 0
+          },
+          "compiler_run": false
+        },
+        {
+          "check": "repeated source request is idempotent and cancellation leaves no executor work",
+          "status": "passed",
+          "compiler_run": false
+        },
+        {
+          "check": "fresh authorized request reuses exact validated source without duplicate roots or stale jobs",
+          "status": "passed",
+          "source_root": "69d8274c92d5b2c829e55d5e3f5359b7c652b13160d138eec5d7e99623a72f2b",
+          "compiler_run": false
+        }
+      ],
+      "observations": {
+        "provider_rights": 3199,
+        "remote_compiler_executions": 0
+      }
+    },
+    {
+      "name": "One real capped remote build and actual separate verifier",
+      "outcome": "passed",
+      "source_record": "build/remote-build-journey-5/journey.json",
+      "source_record_sha256": "213b936a37c5ca2223dec04a7e89391493e3669333b0734d947848c82e99851e",
+      "scope": "Two distinct guest providers, actual separate Lean/LLVM namespace executions and returned artifact bytes; same physical development host.",
+      "image": "150a446ccca25014c1a1c05a8b8932303e72d0bf2ef56336fd1b5480418b4c1e",
+      "observations": {
+        "actual_compiler_executions": 2,
+        "source_bytes": 81070,
+        "source_graph_bytes": 81870,
+        "artifact_bytes": 38320,
+        "artifact_sha256": "a10d5a5dcd5771711043bf3df8e595d2ed02e96b245bd7c803602e192fb4fa5f",
+        "bytes_equal": true,
+        "cpu_seconds": 60,
+        "wall_seconds": 120,
+        "output_limit": 65536,
+        "independent_hardware": false,
+        "independent_operators": false,
+        "publisher_signature_from_computation_evidence": false
+      }
+    },
+    {
+      "name": "Final image full native QEMU to x86 application journey",
+      "outcome": "passed",
+      "source_record": "build/signed-forge-qemu-x86-final-3/journey.json",
+      "source_record_sha256": "19ae1b826847228ef85007954d05d581fc003e38acdd0d80d4941beb99a32942",
+      "scope": "Same already signed source/release; graphical F4/F3/F5/F6/approval and actual app input. No repeated source compilation/signing.",
+      "image": "2507576d8c4de78ac80f6f0628496d4944f532447481cfd1eb102d7d31af7c2b",
+      "creator_backend": "qemu",
+      "recipient_backend": "x86_64",
+      "checks": [
+        {
+          "check": "restore exact already signed public graph into creator with fresh caps and no restored BuildJob signing authority",
+          "result": "pass"
+        },
+        {
+          "check": "encrypted network Release graph passes F6 actual material and exact rights approval then runs supplied input",
+          "result": "pass",
+          "input": "cat123",
+          "score": "00000014",
+          "release": "7dc7d80f5dcb1656b8e2d32fa0728ae294be2d485cfbfe100c1a73782e4623c9",
+          "rights": 768
+        }
+      ],
+      "observations": {
+        "received_records": 14,
+        "received_bytes": 127788,
+        "recipient_input": "cat123",
+        "rendered_score": "00000014"
+      }
+    },
+    {
+      "name": "Final image small public SDK consumer smoke",
+      "outcome": "passed",
+      "source_record": "build/forge-sdk-probe-qemu-final/evidence.json",
+      "source_record_sha256": "f214cbfff13ea655da4f1884a0135816f68a78544a8b3f1f4baddce033461dd3",
+      "scope": "QEMU to QEMU; fixture exercises shipped wire/parser/sender/import public service paths and trusted physical approval. This is component evidence, not graphical Forge client acceptance.",
+      "image": "2507576d8c4de78ac80f6f0628496d4944f532447481cfd1eb102d7d31af7c2b",
+      "creator_backend": "qemu",
+      "recipient_backend": "qemu",
+      "profile": "Forge-v1 legacy record stream over Noise bulk",
+      "checks": [
+        {
+          "check": "independent guests establish authenticated encrypted endpoint relationship",
+          "result": "pass"
+        },
+        {
+          "check": "explicit headless SDK fixture installed and scoped",
+          "result": "pass",
+          "bytes": 59648
+        },
+        {
+          "check": "explicit headless SDK fixture installed and scoped",
+          "result": "pass",
+          "bytes": 59648
+        },
+        {
+          "check": "metadata describes exact approved source/artifact/evidence closure without recipient content",
+          "result": "pass",
+          "payload_bytes": 127788
+        },
+        {
+          "check": "network-only recipient closure validates under native atomic importer with fresh authority",
+          "result": "pass",
+          "bytes": 127788
+        },
+        {
+          "check": "physically approved actual signed app executes changed input on assembly backend",
+          "result": "pass",
+          "input": "cat123",
+          "score": "00000014",
+          "release": "7dc7d80f5dcb1656b8e2d32fa0728ae294be2d485cfbfe100c1a73782e4623c9",
+          "rights": 768
+        }
+      ],
+      "observations": {
+        "fixture_bytes": 59648,
+        "project_compilations": 0
+      }
+    },
+    {
+      "name": "Personal restart drops session and approvals",
+      "outcome": "passed",
+      "source_record": "build/personal-session-restart-2/evidence.json",
+      "source_record_sha256": "082480048603a2fc0919ff1bb30bf90ee2a8aa2ba3dba12845e613c792d59843",
+      "scope": "Genuine new guest without vault/server backing; old logical/source IDs are reference expectations, not restored objects.",
+      "image": "5bf8b208bb37d89801c54ff6ef1a7d522aa14ed20ee8db8d126a6372ff8fcc92",
+      "checks": [
+        {
+          "check": "no attached personal vault or server backing"
+        },
+        {
+          "check": "fresh guest has no project roots"
+        },
+        {
+          "check": "old local root and frozen BuildJob capability handles denied"
+        },
+        {
+          "check": "prior execution approval and installed generation catalog absent"
+        },
+        {
+          "check": "prior installed application incarnations gone"
+        },
+        {
+          "check": "old requester/service incarnations and BuildJob signing authority absent"
+        }
+      ],
+      "observations": {
+        "fresh_service_instances": 6,
+        "project_roots": 0,
+        "installed_apps": 0,
+        "active_publications": 0,
+        "old_root_job_requester_authority": "denied"
+      }
+    },
+    {
+      "name": "Restarted signed catalog to independent recovered seed",
+      "outcome": "passed",
+      "source_record": "build/durable-federated-seed/evidence.json",
+      "source_record_sha256": "b7823a75d867096b33c94756b516759b5e215586a4830bac72348ba4122731b5",
+      "scope": "Native F11 admission; own-store registry restart; metadata-only discovery; fresh peer reauthorization; native Fetch/physical execution approval with publisher and seed1 absent.",
+      "image": "2507576d8c4de78ac80f6f0628496d4944f532447481cfd1eb102d7d31af7c2b",
+      "environment": "Independently restarted QEMU guests and own backing on one Linux development host",
+      "checks": [
+        {
+          "check": "own seed2 recovery publishes the exact signed generation through native F11 to a new isolated federation",
+          "result": "passed"
+        },
+        {
+          "check": "restarted Registry serves signed metadata only; fresh reader chooses content without importing or executing",
+          "result": "passed"
+        },
+        {
+          "check": "fresh seed2 session revalidates portable admission and fetches its own retained signed closure",
+          "result": "passed"
+        },
+        {
+          "check": "publisher and seed1 absent; native signed generation runs after durable federation and content recovery",
+          "result": "passed"
+        }
+      ],
+      "root": "bb6032251e098fe6268e8b3afb60be75c36b0a0a52dd9fef8763250b7489ac12"
+    },
+    {
+      "name": "Known federation revocation survives fresh seed enrollment",
+      "outcome": "passed",
+      "source_record": "build/durable-federated-revocation/run/evidence.json",
+      "source_record_sha256": "f22fa69f1ebd1ded186b59b5c954295627b24d3dd57b16f46e334c21090279d1",
+      "scope": "Actual signed sequence2 revocation remains binding after fresh peer/service/PSK enrollment; native Fetch denied with zero imported graph roots.",
+      "image": "2507576d8c4de78ac80f6f0628496d4944f532447481cfd1eb102d7d31af7c2b",
+      "environment": "Separate QEMU guests on one Linux host; original own Registry and seed2 backing",
+      "checks": [
+        {
+          "check": "actual operator revocation supersedes its positive public admission without importing source",
+          "result": "passed"
+        },
+        {
+          "check": "fresh authorized seed cannot resurrect known revoked admission or trigger a source import",
+          "result": "passed"
+        }
+      ],
+      "root": "bb6032251e098fe6268e8b3afb60be75c36b0a0a52dd9fef8763250b7489ac12"
+    },
+    {
+      "name": "Integration image QEMU to ARM64 public SDK and application",
+      "outcome": "passed",
+      "source_record": "build/forge-sdk-qemu-arm-async/evidence.json",
+      "source_record_sha256": "9ff5ec5e72c3d805906325aab570c37fd92a569aca00f134949cecdb322a4bca",
+      "scope": "Explicit small headless public SDK fixture transfers actual signed14-record/127788-byte closure; trusted physical app approval and cat123→00000014. Not full graphical Forge-client acceptance.",
+      "image": "2507576d8c4de78ac80f6f0628496d4944f532447481cfd1eb102d7d31af7c2b",
+      "environment": "QEMU creator and ARM64 assembly recipient under qemu-aarch64 on one Linux development host",
+      "checks": [
+        {
+          "check": "independent guests establish authenticated encrypted endpoint relationship",
+          "result": "pass"
+        },
+        {
+          "check": "explicit headless SDK fixture installed and scoped",
+          "result": "pass"
+        },
+        {
+          "check": "explicit headless SDK fixture installed and scoped",
+          "result": "pass"
+        },
+        {
+          "check": "metadata describes exact approved source/artifact/evidence closure without recipient content",
+          "result": "pass"
+        },
+        {
+          "check": "network-only recipient closure validates under native atomic importer with fresh authority",
+          "result": "pass"
+        },
+        {
+          "check": "physically approved actual signed app executes supplied input on selected backend",
+          "result": "pass"
+        }
+      ],
+      "observations": {
+        "fixture_bytes": 59648,
+        "project_compilations": 0,
+        "received_records": 14,
+        "received_bytes": 127788,
+        "input": "cat123",
+        "rendered_score": "00000014"
+      }
+    },
+    {
+      "name": "Final audit: offer withdrawal and receipt transition",
+      "outcome": "passed",
+      "source_record": "build/forge-offer-failure/evidence.json",
+      "source_record_sha256": "5d57f0e5c09e4e364533a11f7431b3416125d46f3bd96e2d6c5b99341bc36518",
+      "scope": "Physical F4 rejects actual25-record closure, withdraws old availability and preserves both selected roots; an early authenticated receipt cannot complete; a supported fresh2-record transfer and terminal receipt still complete.",
+      "image": "2507576d8c4de78ac80f6f0628496d4944f532447481cfd1eb102d7d31af7c2b",
+      "environment": "two isolated QEMU guests on one development host; physical native controls; explicitly authorized malformed peer receipt injection",
+      "checks": [
+        {
+          "check": "matching-root receipt before send cannot report completion",
+          "result": "passed"
+        },
+        {
+          "check": "25-node offer failure withdraws all availability and preserves usable selected roots",
+          "result": "passed"
+        },
+        {
+          "check": "supported fresh offer and actual terminal receipt still complete",
+          "result": "passed"
+        }
+      ]
+    },
+    {
+      "name": "Final audit: shared verifier revocation at Fetch and install",
+      "outcome": "passed",
+      "source_record": "build/forge-authority-refresh/run/evidence.json",
+      "source_record_sha256": "30a9fce0f765abd8acb549b8056c8610e709785426d1ed8b3d9cfb6c8e328495",
+      "scope": "An independent public SDK caller advances the same verifier to signed revocation2 while Forge retains unchanged positive1metadata; physical F5 and F6 separately deny without incoming metadata or extra root publication.",
+      "image": "2507576d8c4de78ac80f6f0628496d4944f532447481cfd1eb102d7d31af7c2b",
+      "environment": "Separate QEMU guests on one Linux development host",
+      "checks": [
+        {
+          "check": "own recovered catalog exposes genuine positive1 and newer signed revocation2 without source replay",
+          "result": "passed"
+        },
+        {
+          "check": "physical F5 Fetch denies newer shared-verifier revocation without incoming metadata or admission frames",
+          "result": "passed"
+        },
+        {
+          "check": "physical F6 install denies newer shared-verifier revocation without incoming metadata or admission frames",
+          "result": "passed"
+        }
+      ]
+    },
+    {
+      "name": "Final image: atomic import ownership quota",
+      "outcome": "passed",
+      "source_record": "build/audit-quota-004/evidence.json",
+      "source_record_sha256": "d6794a9fb788626c2ef5823f23128f22d54510d9fd236e72a71ea57fdd5eb462",
+      "scope": "Two concurrent four-root stages cannot publish eight ordinary roots; rejected stage reclaims allocations and existing roots remain usable; explicit removal permits continued import.",
+      "image": "55f2264c3a9ee5265409c4bcb013ddf964c87914501e863aa64109cd5e729466",
+      "backend": "qemu",
+      "checks": [
+        {
+          "check": "overlapping four-root stages cannot publish eight roots; second stage abort preserves all first roots",
+          "result": "pass",
+          "actor": 12713745366785196295,
+          "first_transaction": 12713745371080163584,
+          "second_transaction": 12713745371080163585,
+          "roots": 4,
+          "remaining_records": 2,
+          "remaining_bytes": 172
+        },
+        {
+          "check": "rejected stage reclaims records and transaction capacity; explicit root removal permits continued import",
+          "result": "pass",
+          "roots": 4,
+          "records": 4,
+          "bytes": 348
+        }
+      ]
+    },
+    {
+      "name": "Final image: server grant incarnation after service restart",
+      "outcome": "passed",
+      "source_record": "build/audit-store-grant-004/evidence.json",
+      "source_record_sha256": "18161c1325e168c6eebbac840e3992d708d8940e91b7c9262c1feb01076f7317",
+      "scope": "Same app survives service3 restart; first same-slot regrant has fresh epoch; old authority cannot inspect/read/write the new namespace; fresh grants retain exact77 committed bytes. Store format unchanged.",
+      "image": "55f2264c3a9ee5265409c4bcb013ddf964c87914501e863aa64109cd5e729466",
+      "backend": "qemu",
+      "checks": [
+        {
+          "check": "service restart and same-slot regrant cannot revive old authority for a live caller",
+          "result": "pass",
+          "caller": 14134678895156265223,
+          "old_service": 14134678895156265219,
+          "new_service": 14134678895156265475,
+          "old_grant": 14134678899451232513,
+          "new_grant": 14134678903746199809,
+          "old_namespace": "cbab91730ef18aebb1418f69f5227cc4e76911e5cf666cbf764c1fea64ac9ecd",
+          "new_namespace": "e40f36cdfff9cedeb77bab57fc8584586c908e863531b0d7cd626a55110bb0d7"
+        },
+        {
+          "check": "stale grants cannot inspect, read, or overwrite the new namespace; fresh grants preserve committed bytes",
+          "result": "pass",
+          "bytes": 77,
+          "sha256": "ae0be7df2dfe03b4ca2ca3b8060d65270a1de5df6b61f55f3734d620d45ecc81",
+          "replacement_grant": 14134678903746200065
+        }
+      ]
+    },
+    {
+      "name": "Final platform and Forge package: actual native transfer and failure boundaries",
+      "outcome": "passed",
+      "source_record": "build/forge-offer-final-image/evidence.json",
+      "source_record_sha256": "910d22aedf697fad0935590a4f59e629d1f94931b821de69100ca25d69189b13",
+      "scope": "Final0.4.10 GUI package and final clean platform55; early receipt rejected, oversized replacement withdraws availability/preserves roots, supported new closure and terminal receipt complete over actual guest networking.",
+      "image": "55f2264c3a9ee5265409c4bcb013ddf964c87914501e863aa64109cd5e729466",
+      "forge_release": "d185707d63a7976513bc6c5d626ddf3fb53b4b5cd562dd636ba48b87d36e8bc3",
+      "environment": "two isolated QEMU guests on one development host; physical native controls; explicitly authorized malformed peer receipt injection",
+      "checks": [
+        {
+          "check": "matching-root receipt before send cannot report completion",
+          "result": "passed"
+        },
+        {
+          "check": "25-node offer failure withdraws all availability and preserves usable selected roots",
+          "result": "passed"
+        },
+        {
+          "check": "supported fresh offer and actual terminal receipt still complete",
+          "result": "passed"
+        }
+      ]
+    }
+  ],
+  "assurance_labels": {
+    "content_hashes": "actual bytes checked; not authority",
+    "publisher_signatures": "independently guest-checked original release signatures",
+    "federation_signatures": "guest-evaluated immutable admission with distinct disclosed signer",
+    "online_peer_authentication": "ordered fresh pairwise PSK Noise relationship, separately selected signed public descriptor; not online proof of RSA private key possession",
+    "builder_assertion": "authenticated relationship claim; not publicly signed provider attestation",
+    "reproduction": "two actual sandbox builds and byte comparison",
+    "small_proofs": "actual pure mode availability, authorization/identity and commit/terminal transition predicates under explicit assumptions; no whole compiler, imperative memory isolation or physical durability proof"
+  },
+  "requirements_advanced": [
+    "NET-001..004",
+    "NET-006",
+    "SRV-001..005",
+    "DAT-001..006",
+    "FORGE-001..002",
+    "STORE-001..004",
+    "SDK-001..005",
+    "IDE-001",
+    "IDE-003",
+    "OS-001..006",
+    "OS-008..009",
+    "VAULT-001..004"
+  ],
+  "release_gate_scope": {
+    "RG-04": "actual signed source/fork/build/install/generation portions exercised",
+    "RG-08": "networked guest roles, distribution and capped compute portions exercised",
+    "RG-11": "connected user/node behavior and focused backend portions exercised",
+    "entire_gate_complete": []
+  },
+  "remaining_limits": [
+    "interactive onion, delayed mixing and private-cluster modes unavailable and fail closed; bulk exposes endpoint/timing/size",
+    "no anonymity, post-quantum security, hostile-state resilience or crypto audit claim",
+    "one configured peer per broker; fixed64-record Objects,24-record/one-MiB transfer, eight one-MiB store namespaces and16-entry registry development limits",
+    "native peer/federation picker is not implemented; provider/federation changes require explicit administrative provisioning, followed by ordinary graphical discovery/fetch/publication",
+    "guest pin reconfiguration does not repoint lt run host endpoint; combined live provider change reused a deliberately chosen numeric endpoint; different endpoint needs fresh client or explicit opaque transport arrangement and fresh metadata",
+    "no trusted global clock/unseen-revocation oracle; explicit knowledge-relative sequence policy",
+    "invisible physical TCP disconnect requires inactivity expiry or deliberate reset; fresh provider selection reauthenticates/regrants",
+    "verified-record cache and remote job state ephemeral; no automatic durable job resumption or transfer checkpoint journaling",
+    "regular-file fsync/interruption evidence is not physical-power-loss durability, malicious whole-store rollback resistance or server encryption",
+    "source/compiler/bootstrap chain remains trusted; self-hosting and independent hardware/operators not demonstrated",
+    "payments, escrow, settlement and confidential execution unavailable",
+    "remaining Library, Feed, Messenger, Wallet/LemmaCoin, REL and privacy-routing/full-MVP obligations remain"
+  ],
+  "next_dependency": "incremental asynchronous validation and durable transfer/job checkpoint scheduling, then native multi-peer/provider selection and functioning interactive privacy routing",
+  "evidence_policy": "Build JSON/frames/logs remain local artifacts referenced by exact source-record hashes. This committed record preserves concise actual observations, not success generated from plans. Package parser fields signature_verified=false when no public key was passed are not guest signature-validation outcomes; raw parser summaries are deliberately omitted.",
+  "acceptance_qualifications": {
+    "subscription_and_update": "metadata subscription observation and signed generation install/update/rollback are separate actual focused journeys; there is no automatic fetch or activation",
+    "remote_execution": "one actual builder/verifier pair used graphical-provider prefetch on image150a; later normal headless ingestion/approval checks deliberately ran zero extra compilers",
+    "ARM": "actual encrypted transfer/native import plus physical selected-app approval/input through a public SDK fixture under qemu-aarch64; full graphical Forge-client journey was QEMU to native x86-64",
+    "journey_continuation": "combined durable federation journey records the initial harness parent interruption and public SDK/QMP reattachment without graph replay, backing copy or guest-memory mutation",
+    "queued_fetch_race": "Two guards clear queued intent on metadata-root or peer change; module compiled and static-reviewed. Exact directional-backpressure scheduling race not separately executed. Final package boot/normal transfer and prior failure regressions passed on final55 image; prior shared-verifier regression uses the recorded pre-queue-guard package."
+  },
+  "integration_guest": {
+    "path": "build/platform/2507576d8c4de78ac80f6f0628496d4944f532447481cfd1eb102d7d31af7c2b.bin",
+    "bytes": 6291456,
+    "sha256": "2507576d8c4de78ac80f6f0628496d4944f532447481cfd1eb102d7d31af7c2b",
+    "build_command": "./lt build --clean",
+    "build_outcome": "passed",
+    "component_identities": {
+      "kernel": {
+        "bytes": 160176,
+        "sha256": "87d5cc0725af5a43b64cc312a7ec310c6a17debda61e5f4b8b99aaf98fbf8538"
+      },
+      "launcher": {
+        "bytes": 118396,
+        "sha256": "d8485f77c4edb464dbd427f37cee5046be8fe78576b865002208c528c283ff6e"
+      },
+      "objects": {
+        "bytes": 235328,
+        "sha256": "d5b6206b773de9c5446bb5c271cd2830798020628936305c941e5e76eb2476d3"
+      },
+      "vault": {
+        "bytes": 124064,
+        "sha256": "b499f5fbc0e06ca6883c3b817b7cdce75caa4732976e26cb083f30ed1b4bd84c"
+      },
+      "compositor": {
+        "bytes": 171616,
+        "sha256": "c9f8c7ae1430988e78f957912cf584f6bdd0f639efdcfc9a3186c37f4afa7993"
+      },
+      "build-jobs": {
+        "bytes": 48488,
+        "sha256": "9c04003d773d071181453abed5bd7f3d24ba1869751229a050dbf0220c63180f"
+      },
+      "network": {
+        "bytes": 92592,
+        "sha256": "e779875d920a19df9537f6916b86322862e0f7be4ef7218d355ea32939a22947"
+      }
+    },
+    "toolchain_lock": "12b2fdec1abcde9b6a510f0df877d81508cf0c8813ebf0c592bdb3b3cf2097dc",
+    "execution_profile": "freestanding RV64IM/lp64; Sv39; resource profile2; common six-service image"
+  },
+  "final_role_artifacts": {
+    "native-forge": {
+      "binary": "build/forge-audit-packages-final/native-forge.bin",
+      "bytes": 249116,
+      "sha256": "ee9db890dc24a8680a9794716275cf02c81164404c64abce78ce78fcb953f987",
+      "test_package": "build/forge-audit-packages-final/native-forge.ltrel",
+      "test_release_id": "d185707d63a7976513bc6c5d626ddf3fb53b4b5cd562dd636ba48b87d36e8bc3",
+      "test_rights": 3967,
+      "package_sha256": "8a7983623be46c6a115ebf746ec2858820a4438498f06e092a834293ba670bc5",
+      "package_scope": "explicit local audit bootstrap package; normal operator must select own publisher and exact rights",
+      "actual_final_image_check": "build/forge-offer-final-image/evidence.json"
+    },
+    "forge-server": {
+      "binary": "build/forge-audit-packages-final/forge-server.bin",
+      "bytes": 248912,
+      "sha256": "256894e6cbd9844d378c83d4869eb4a95e299d854f8ab78ce4b0d8763207747f",
+      "test_package": "build/forge-audit-packages-final/forge-server.ltrel",
+      "test_release_id": "4a1a44de693eef411c2bf050efdc5d64d2d9566d2dfe31d0d10848dc215181cf",
+      "test_rights": 1151,
+      "package_sha256": "68f849229372619eabc249432aadf2387207a83f8bd22f8ebc5fac81b72ad848",
+      "package_scope": "explicit local audit bootstrap package; normal operator must select own publisher and exact rights",
+      "verification_scope": "Compiled final artifact; earlier same helper code before two client queued-intent guards exercised by headless journeys, not rerun as a new headless campaign."
+    }
+  }
+}
