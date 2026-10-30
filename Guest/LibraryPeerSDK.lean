@@ -18,7 +18,7 @@ def grant (slot pins stream budget lifetime t : UInt64) : UInt64 :=
   let t := store64 (chunk+48) stream t
   Guest.NetworkSDK.grantPeer slot pins chunk t
 def request (slot grantHandle requestId operation h a b t : UInt64) : UInt64 :=
-  if requestId == 0 || operation == 0 || operation > 6 then error else
+  if requestId == 0 || operation == 0 || operation > 9 then error else
   let t := zero chunk 8 t
   let t := store64 chunk magic t
   let t := store64 (chunk+8) 1 t

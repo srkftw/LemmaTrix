@@ -3,6 +3,7 @@ import Guest.RegistrySDK
 import Guest.ContentSDK
 import Guest.ContentFormat
 import Guest.WaitSDK
+import Guest.LibraryGraphServe
 namespace Guest.LibraryPeer
 open Guest.LiveSDK
 -- Sixteen bounded service scopes over four relationships (at most four grants
@@ -84,10 +85,19 @@ def answer (p t : UInt64) : UInt64 :=
   let a := load64 (request+32) t
   let b := load64 (request+40) t
   if load64 request t != Guest.LibraryPeerSDK.magic || load64 (request+8) t != 1 ||
-    load64 (request+48) t != 0 || load64 (request+56) t != 0 || op == 0 || op > 6 then reply p op 2 0 0 0 0 t else
+    load64 (request+48) t != 0 || load64 (request+56) t != 0 || op == 0 || op > 9 then reply p op 2 0 0 0 0 t else
   if load64 (p+8) t == 1 then
     if op == 1 then catalog p h t else
     if op == 2 then metadata p h a b t else reply p op 1 0 0 0 0 t
+  else if load64 (p+8) t == 3 then
+    let scope := (p-0x600000)/4096
+    let t := store64 (p+56) h t
+    let r := Guest.LibraryGraphServe.answer scope op h a b t
+    if r == error then
+      let reason := load64 (Guest.LibraryGraphServe.table scope+3984) r
+      let t := store64 (p+72) reason r
+      reply p op (if reason == 0 then 1 else reason) 0 0 0 0 t else
+    reply p op 0 (load64 (Guest.LibraryGraphServe.table scope+3968) r) (load64 (Guest.LibraryGraphServe.table scope+3976) r) 0 r r
   else seed p op h a t
 
 partial def freeScope (slot stream i t : UInt64) : UInt64 :=
@@ -103,7 +113,7 @@ def configure (length t : UInt64) : UInt64 :=
   let content := load64 (command+32) t
   let budget := load64 (command+40) t
   let lifetime := load64 (command+48) t
-  if length != 160 || slot >= 4 || (role != 1 && role != 2) || stream == 0 ||
+  if length != 160 || slot >= 4 || (role != 1 && role != 2 && role != 3) || stream == 0 ||
     budget == 0 || budget > 16777216 || lifetime == 0 || lifetime > 100000 then response 2 0 t else
   let selected := freeScope slot stream 0 t
   if selected == error then response 4 0 t else
@@ -119,6 +129,9 @@ def configure (length t : UInt64) : UInt64 :=
   if role == 2 && (r != 320 || status r != 0) then response 1 0 r else
   let t := if role == 2 then Guest.ServiceHash.sha256At hashScratch (wire+64) 256 hashOut r else r
   if role == 2 && !Guest.ContentFormat.equal hashOut (p+128) 32 t then response 2 0 t else
+  let prepared := if role == 3 then Guest.LibraryGraphServe.prepare selected content (p+128) t else t
+  if prepared == error then response 2 0 prepared else
+  let t := prepared
   -- Operator approval is independent of current connection availability.
   -- Authentication may begin later; work mints fresh epoch-bound authority.
   let t := store64 (p+88) 1 t
