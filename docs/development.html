@@ -95,4 +95,12 @@ python3 tests/release_boundaries.py
 ./lt fixture-check</code></pre>
 <p>The current check drives the live portal against a fixed image. See <a href="implementation-status.html">executed evidence and exact environments</a>. Component checks also cover compiler effect order, AEAD known-answer/boundary cases, device errors and scoped policy proofs. Recorded historical evidence is <a href="evidence/campaign-001.json">campaign-001.json</a>; <a href="history/campaign-001-development.html">the historical command guide</a> preserves the earlier finite demonstration. Legacy host Ed25519 packages and publicly keyed capsules are fixtures, not an alternative ordinary installation authority. A host build/sign loop is disclosed bootstrap work, not a completed native IDE, desktop, federation, network or independent-builder result.</p>
 </details>
+<section id="campaign005-library"><h2>Native consumer development workflow</h2><p><a href="library.html">Library setup and native actions</a> cover federation/provider selection, catalog Add, monitoring consent, queue controls, retained partial recovery, player and game saves. <a href="audio-player.html">PCM1</a> describes <code>./lt run --pcm-play</code> and explicit <code>--pcm-sink</code>. Use the same identified image with <code>--backend qemu</code>, <code>x86_64</code> or <code>aarch64</code>; ARM64 under qemu-aarch64 is not native ARM64 hardware.</p><pre>./lt app --profile 2 --module Guest.Library --entry Guest.Library.main --name library
+./lt app --profile 2 --module Guest.Library --entry Guest.Library.headlessMain --name library-acquirer
+./lt app --profile 2 --module Guest.LibraryPeer --entry Guest.LibraryPeer.main --name library-peer
+./lt app --profile 2 --module Guest.Player --entry Guest.Player.main --name player
+./lt content generate-original-audio --output build/original-audio
+./lt library --help
+./lt library-peer --help
+./lt server-content --help</pre><p>Use incremental builds after changed sources. Package/code identities and executed boundary checks are in <a href="campaign-005.html">Campaign005</a>; preserve Campaign004 as historical evidence. An explicit final clean build is separate from these development checks. No personal plaintext backing spill is introduced. The optional PCM capture is a selected diagnostic export.</p></section>
 </body></html>

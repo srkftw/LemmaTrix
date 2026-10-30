@@ -1,0 +1,121 @@
+{
+  "image": "99c6277a2a5c33a64188b3d626fdd7dc5c2769619001ce35062ed67a9fd0aa33",
+  "checks": [
+    {
+      "check": "native pause and trusted R retain only checked partial chunks plus selected metadata",
+      "result": "passed",
+      "verified_bytes": 12288,
+      "total_bytes": 192044,
+      "generation": 1,
+      "complete": false
+    },
+    {
+      "check": "fresh native consent resumes retained verified chunks from seed2 after seed1 shutdown",
+      "result": "passed",
+      "verified_reused": 12288,
+      "remaining_bytes": 179756,
+      "provider": 2,
+      "payload_sha256": "1c48ba6744c43c50753c622a7d6e4839defd71a40d07efd734ee711857c7bfdb",
+      "old_authority_restored": false
+    },
+    {
+      "check": "fresh U/Enter recovers selected collection/content and emits exact offline native PCM",
+      "result": "passed",
+      "pcm_bytes": 192000,
+      "pcm_sha256": "bc3895b7cc6263679d470a0e46e73dc82a3b4823088f7ef2a23b74242450f357",
+      "network_providers_running": false,
+      "recipient_network_configured": false,
+      "speaker_output": false,
+      "native_input": "wait actual trusted focus/repaint; H then Space attach; AltTab then Space play"
+    }
+  ],
+  "limitations": [
+    "explicit development backing file; no physical-vault durability claim",
+    "captured decoded samples; speaker output not exercised"
+  ],
+  "continuation_image": "e3767c2d12d335649bf9acf3e731e23abb24e453c1a03b85a5d8580dab02769a",
+  "kind": "observed native graphical checkpoint, provider failover and offline PCM",
+  "scripts": [
+    "tests/library_checkpoint_failover.py",
+    "tests/library_checkpoint_resume.py"
+  ],
+  "packages": {
+    "retain-library.ltrel": {
+      "project": "retain-library",
+      "version": "1.0.0",
+      "release_id": "901501f6ec24121c5ff4f87b581cf99171eb18be604977bd7ee0bf26affc640c",
+      "publisher_key_id": "fadcee1d85f60fdad9140951bf001b0aa52b08cd077231aeb70ff8bf0596e19b",
+      "project_id": "05b7800b0d8e1ef048cdc57f2d9169808a9e1dadf1b750c8b4ce5591d153056c",
+      "rights": 1919,
+      "executable_sha256": "8f86f80180fefe9428100371e36ccf5a76611ef08532bf2c0ff814efa8a5c600",
+      "source_root": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "manifest_root": "a74560b1a3df0116090133b310bc52144653881d4fd7fb65799f801588cff6dc",
+      "parent": "0000000000000000000000000000000000000000000000000000000000000000",
+      "size": 260020,
+      "signature_verified": true,
+      "manifest_checked": false,
+      "identity_scheme": 0,
+      "logical_project_id": null
+    },
+    "retain-registry.ltrel": {
+      "project": "retain-registry",
+      "version": "1.0.0",
+      "release_id": "cfd292b52a7361d1ae876ff30765c570115586129cafa83c98b403f1fc936f67",
+      "publisher_key_id": "fadcee1d85f60fdad9140951bf001b0aa52b08cd077231aeb70ff8bf0596e19b",
+      "project_id": "4b61fe453839a61215c561c9643ee709aaea2affed933e47bc87dd4a1209e1b1",
+      "rights": 2175,
+      "executable_sha256": "0b284a806d4b41893d7cad9dd8c35a80e1f8db32e9d73171775539d09718e2c3",
+      "source_root": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "manifest_root": "f674ec6b905c8b9ea9753e01aa126f533024f9543a980c694beca54e5db99f28",
+      "parent": "0000000000000000000000000000000000000000000000000000000000000000",
+      "size": 99120,
+      "signature_verified": true,
+      "manifest_checked": false,
+      "identity_scheme": 0,
+      "logical_project_id": null
+    },
+    "retain-peer.ltrel": {
+      "project": "retain-peer",
+      "version": "1.0.0",
+      "release_id": "f5dd6ed1853b0ecfe30c4721a677b15af4f2bf80525dd0d67ed9241b29268e0a",
+      "publisher_key_id": "fadcee1d85f60fdad9140951bf001b0aa52b08cd077231aeb70ff8bf0596e19b",
+      "project_id": "ebfa18efc8867e77cac70f4c99a0111e5a0766df61b9b982269aaffc61bf85f8",
+      "rights": 1025,
+      "executable_sha256": "9ad94f72bc4a86c3db80f88b4e5ee9baba41efa22e3a2b1563b2c4186e8e60ce",
+      "source_root": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "manifest_root": "0e97b50ff57d18fd5c40edcba63623db813c5d916e3b97addbbece4ab06a4822",
+      "parent": "0000000000000000000000000000000000000000000000000000000000000000",
+      "size": 47340,
+      "signature_verified": true,
+      "manifest_checked": false,
+      "identity_scheme": 0,
+      "logical_project_id": null
+    }
+  },
+  "player": {
+    "project": "native-player",
+    "version": "0.5.3",
+    "release_id": "a6b702b7b78fc16f4364815cc50b1cdb3a7a0dbebf7146ca50e65ce858d9d580",
+    "publisher_key_id": "fadcee1d85f60fdad9140951bf001b0aa52b08cd077231aeb70ff8bf0596e19b",
+    "project_id": "1914a6ef9670ee3bfb421383fcfdb4061f0da1d4f32dcd0f054887dfe7f3c7fe",
+    "rights": 4865,
+    "executable_sha256": "932538bd2ef299f51d382d598a12534f21cde7178aae9ded55b82018f4ffa1ea",
+    "source_root": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "manifest_root": "e9a1fd1768421a1f842d916d62b4eb192661b2f054a43145c273110e114cc83b",
+    "parent": "01f4d32dc2995c9d44378a7b6cb47280dbec7138b4a4a8d8a57c4e3800b213e2",
+    "size": 43248,
+    "signature_verified": true,
+    "manifest_checked": false,
+    "identity_scheme": 0,
+    "logical_project_id": null
+  },
+  "offline_pcm": {
+    "bytes": 192000,
+    "sha256": "bc3895b7cc6263679d470a0e46e73dc82a3b4823088f7ef2a23b74242450f357"
+  },
+  "inputs": "QMP raw keyboard: F2/1/2/3/Enter, Q/A/G/Enter, P/R/Enter; fresh U/Enter and fresh G/Enter; H/Space, trusted focus Alt-Tab then Space",
+  "harness_repairs": [
+    "short Unix socket paths after p2 host path length failure; no payload reimport",
+    "wait actual trusted incarnation/focused repaint and completed attach before Alt-Tab; original premature action capture retained"
+  ]
+}

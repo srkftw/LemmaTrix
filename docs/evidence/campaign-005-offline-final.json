@@ -1,0 +1,28 @@
+{
+  "result": "passed",
+  "image": "22f9f9bde6c210ffe0f0ec52d7b8f5d697bed11d61fda7edda5f7c319079c70f",
+  "packages": [
+    {
+      "release_id": "efa8056ec4741b55326b30bc99fb5aae1770b5cb0983a7dc7e492d7c86071ae2",
+      "rights": 4865,
+      "instance": 8539562068796244231
+    },
+    {
+      "release_id": "5ed024795ca8a89d33d9268f415591f7189937bcb5757f85bbded0fbe5d8e1c7",
+      "rights": 1919,
+      "instance": 8539562068796244232
+    }
+  ],
+  "retained_backing": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign005/mg6/personal.vault",
+  "native_actions": "U / physical Enter / H / Space / Alt-Tab / Space",
+  "network_configured": false,
+  "providers_started": false,
+  "media_input_supplied": false,
+  "acquisition_authority_recovered": false,
+  "pcm_bytes": 1152000,
+  "pcm_sha256": "fb0af16f34ddbee9935e45f06f2c73549f0b50236315378f97bd8c38dce9c929",
+  "seconds_to_submit_samples": 3.2011062940582633,
+  "speaker_output": false,
+  "schema": 1,
+  "note": "Recovered the existing explicitly approved six-second checkpoint without network configuration or host media input; fresh execution and native U approval; current monitoring/acquisition grant remained zero."
+}
