@@ -57,13 +57,16 @@ class PCMSink:
    while not self.closed.is_set():
     raw=self.local.recv(4096)
     if not raw:break
-    if self.output:self.output.write(raw)
     if self.player:
      remaining=memoryview(raw)
      while remaining and not self.closed.is_set():
       written=self.player.stdin.write(remaining)
       if not written:raise OSError('PCM output process accepted no samples')
       remaining=remaining[written:]
+     if remaining:break
+    # Combined capture acknowledges a complete block only after the raw child
+    # pipe accepted every byte. It does not acknowledge physical speaker drain.
+    if self.output:self.output.write(raw)
   except (OSError,ValueError) as error:self.fail(error)
  def stop_player(self):
   if not self.player:return
