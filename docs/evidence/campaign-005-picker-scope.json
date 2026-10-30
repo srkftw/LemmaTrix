@@ -1,0 +1,152 @@
+{
+  "schema": 1,
+  "result": "passed",
+  "image_sha256": "22ed2b68787a3b484955ab4aa9df6de79730edb2f92da6e0e156f74cb6f9679b",
+  "backend": "qemu",
+  "compositor_instance": 12667038658298118404,
+  "packages": {
+    "picker-full": {
+      "instance": 12667038658298118407,
+      "rights": 383,
+      "release": "04849cdcc3d53d90d65836d9d44a1fe61dc5b0f243b00f32df5389acc9a28ee0"
+    },
+    "picker-read": {
+      "instance": 12667038658298118408,
+      "rights": 257,
+      "release": "0a3cab3566b7b2f2f189cf9d258cfc75eb712560597a6ffd8cdfe487636aa38b"
+    }
+  },
+  "probe_sha256": "bbcfc41326bd043f6a64348c709c3995c7f8c5185bc2f493cbe03b6d16ab80b9",
+  "checks": [
+    {
+      "check": "Launcher cannot bypass graphical endpoint admission",
+      "result": "passed",
+      "denial": "guest rejected command150, status1"
+    },
+    {
+      "check": "unsupported mask, zero nonce or version denied without a panel",
+      "requested": 0,
+      "nonce": 100,
+      "version": 1,
+      "result": "passed"
+    },
+    {
+      "check": "unsupported mask, zero nonce or version denied without a panel",
+      "requested": 3,
+      "nonce": 101,
+      "version": 1,
+      "result": "passed"
+    },
+    {
+      "check": "unsupported mask, zero nonce or version denied without a panel",
+      "requested": 73,
+      "nonce": 102,
+      "version": 1,
+      "result": "passed"
+    },
+    {
+      "check": "unsupported mask, zero nonce or version denied without a panel",
+      "requested": 127,
+      "nonce": 103,
+      "version": 1,
+      "result": "passed"
+    },
+    {
+      "check": "unsupported mask, zero nonce or version denied without a panel",
+      "requested": 4096,
+      "nonce": 104,
+      "version": 1,
+      "result": "passed"
+    },
+    {
+      "check": "unsupported mask, zero nonce or version denied without a panel",
+      "requested": 25,
+      "nonce": 0,
+      "version": 1,
+      "result": "passed"
+    },
+    {
+      "check": "unsupported mask, zero nonce or version denied without a panel",
+      "requested": 25,
+      "nonce": 105,
+      "version": 2,
+      "result": "passed"
+    },
+    {
+      "check": "ordinary read1+display caller denied requested read/share/revoke25",
+      "actual_rights": 257,
+      "requested": 25,
+      "result": "passed"
+    },
+    {
+      "check": "exact trusted label, caller/nonce isolation and repeatable physical Escape cancellation",
+      "caller": "picker-full",
+      "actual_rights": 383,
+      "operation": 14,
+      "requested": 1,
+      "nonce": 301,
+      "label": "ACCESS: READ ONLY / NO EDIT OR PUBLISH AUTHORITY",
+      "frame_sha256": "2653b3c55a273a809a797c6bfab236e431b4473c82d130b62790dbb357721bc0",
+      "returned_handle": 0,
+      "state": 3,
+      "result": "passed"
+    },
+    {
+      "check": "exact trusted label, caller/nonce isolation and repeatable physical Escape cancellation",
+      "caller": "picker-full",
+      "actual_rights": 383,
+      "operation": 14,
+      "requested": 25,
+      "nonce": 302,
+      "label": "ALLOW READ SHARE REVOKE - DATA ONLY",
+      "frame_sha256": "2a7ffb0d3b7c1852262a9873d47a2927d4a7bab4cb34204d62f5b6923a7b1adf",
+      "returned_handle": 0,
+      "state": 3,
+      "result": "passed"
+    },
+    {
+      "check": "exact trusted label, caller/nonce isolation and repeatable physical Escape cancellation",
+      "caller": "picker-read",
+      "actual_rights": 257,
+      "operation": 14,
+      "requested": 1,
+      "nonce": 303,
+      "label": "ACCESS: READ ONLY / NO EDIT OR PUBLISH AUTHORITY",
+      "frame_sha256": "958b944da8873043d17ebfe82e89359f6b22e854a6706e491058eae37d2bbc78",
+      "returned_handle": 0,
+      "state": 3,
+      "result": "passed"
+    },
+    {
+      "check": "exact trusted label, caller/nonce isolation and repeatable physical Escape cancellation",
+      "caller": "picker-full",
+      "actual_rights": 383,
+      "operation": 3,
+      "requested": 0,
+      "nonce": 304,
+      "label": "ACCESS: READ CREATE REVISE SHARE REVOKE ENUMERATE EXPORT",
+      "frame_sha256": "752c22cb972cfd9afc311cb30f37dcb7aa971e98315a28299f1f4662b82e1d68",
+      "returned_handle": 0,
+      "state": 3,
+      "result": "passed"
+    }
+  ],
+  "scope": "public operation14 request masks and cancellation; no root approval/delegation or remote mod acquisition claimed",
+  "artifact_sha256": "e3d1bf1daab5fa64e75ec310c4372d3697c851a49137737e5771be1fec3aca8a",
+  "source_sha256": {
+    "Guest/Compositor.lean": "bb29cdad8d69ee5416e51e01c60087c00915771420523d96caca0d0dd6188ecd",
+    "Guest/LiveKernel.lean": "3d59cc7a21e9c02280700b735de6f78d6c6308641bd36cad1e91b24fbf24f320",
+    "tests/fixtures/PickerProbe.lean": "63b2920d765fc74e7e3e7eb2362b6566c7c8869c825e5724a65bb89e2bbe0c05",
+    "tests/project_picker_scope.py": "d66c77903690424be030e4fded742c0c078caba6d5d85991dd4704c71fedd05f"
+  },
+  "authority_notes": [
+    "Compositor endpoint4 requires display256. Read-only data caller therefore has257, and full object test caller has383; their kernel-delivered identities and rights remain distinct.",
+    "Launcher object127 has no display256 and its direct150 request was denied by the kernel.",
+    "Operation14 accepts exactly1 or25; legacy operation3 keeps its existing full/read derivation.",
+    "The test used physical QMP Escape and read actual trusted-label pixels, without root approval, guest memory edits or host UI setters."
+  ],
+  "limitations": [
+    "QEMU reference only; changed-image representative backend checks are recorded separately.",
+    "No selected-root approval/delegation or actual mod acquisition is claimed by this cancellation test."
+  ]
+}
