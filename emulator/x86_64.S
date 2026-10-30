@@ -2359,7 +2359,7 @@ hex_loop:
 .section .rodata
 usage_message: .ascii "usage: ltemu-x86_64 guest.bin [--interactive] [--vault backing.img] [--vault-readonly] [--display-out frame.bgrx] [--input-events events.evdev]\n"
 usage_end:
-image_message: .ascii "ltemu-x86_64: cannot load nonempty guest image (maximum 128 MiB)\n"
+image_message: .ascii "ltemu-x86_64: cannot load nonempty guest image (maximum 160 MiB)\n"
 image_end:
 budget_message: .ascii "ltemu-x86_64: instruction budget exhausted; pc=0x"
 budget_end:

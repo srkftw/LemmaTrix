@@ -5,6 +5,19 @@ import driver
 ROOT=driver.ROOT
 B=ROOT/'build/live'
 MODULES=['Primitives','Policy','DevicePrimitives','Devices','GraphicsDevice','Effects','Structured','LiveMemory','ServiceSHA256','ServiceHash','ServiceSignature','LiveSDK','VaultCrypto','VaultPolicy','Vault','Objects','LiveApps','LiveKernel','Launcher','Raster','Labels','Compositor','BuildJobs','Desktop','TextTools','Network']
+def service_image_bounds(pid):
+ if pid not in range(1,7):raise ValueError('unknown built-in service')
+ return (0x480000,393216) if pid==2 else (0x300000+(pid-1)*262144,262144)
+def check_service_layout():
+ ranges=sorted((*service_image_bounds(pid),pid) for pid in range(1,7))
+ for i,(start,size,pid) in enumerate(ranges):
+  if start<0x300000 or start+size>0x600000 or (i and ranges[i-1][0]+ranges[i-1][1]>start):
+   raise ValueError('built-in image regions overlap or exceed the common image')
+  code_bytes=393216 if pid==2 else 262144
+  data_offset=393216 if pid==2 else 262144
+  stack_offset=458752 if pid==2 else 327680
+  if code_bytes>data_offset or data_offset+65536>stack_offset or stack_offset+16384>524288:
+   raise ValueError('built-in private code/data/stack exceed or overlap their512KiB physical slot')
 def content(paths):
  h=hashlib.sha256()
  for p in paths:h.update(str(p.relative_to(ROOT)).encode());h.update(p.read_bytes())
@@ -53,10 +66,13 @@ def compile_module(module_name):
  stamp=B/(module_name+'.module.sha256');key=content([path,*deps,ROOT/'lean-toolchain'])+build_identity()
  if not output.exists() or not stamp.exists() or stamp.read_text()!=key:
   driver.lean(['-o',str(output),str(path)]);stamp.write_text(key)
-def artifact(module_name,entry,prefix,kernel=False,wide=False):
+def artifact(module_name,entry,prefix,kernel=False,wide=False,objects_profile=False):
+ if objects_profile and (kernel or not wide or module_name!='Guest.Objects' or entry!='Guest.Objects.main'):
+  raise ValueError('extended built-in profile is restricted to the Objects service')
  assembly=B/(prefix+'.S');elf=B/(prefix+'.elf');binary=B/(prefix+'.bin')
- files=[*module_inputs(module_name),ROOT/'Compiler/Main.lean',ROOT/'runtime/primitives.S',ROOT/'runtime/live_boot.S' if kernel else ROOT/'runtime/app.S',ROOT/'runtime/kernel.ld' if kernel else ROOT/('runtime/app2.ld' if wide else 'runtime/app.ld')]
- key=content(files)+entry+str(wide)+build_identity();stamp=B/(prefix+'.sha256')
+ linker=ROOT/('runtime/kernel.ld' if kernel else 'runtime/service3.ld' if objects_profile else 'runtime/app2.ld' if wide else 'runtime/app.ld')
+ files=[*module_inputs(module_name),ROOT/'Compiler/Main.lean',ROOT/'runtime/primitives.S',ROOT/'runtime/live_boot.S' if kernel else ROOT/'runtime/app.S',linker]
+ key=content(files)+entry+str(wide)+str(objects_profile)+build_identity();stamp=B/(prefix+'.sha256')
  if binary.exists() and stamp.exists() and stamp.read_text()==key:return binary
  driver.lean(['--run','Compiler/Main.lean',module_name,str(assembly),entry,*(['Guest.Live.trapDispatch'] if kernel else [])])
  startup=ROOT/'runtime/live_boot.S'
@@ -65,29 +81,30 @@ def artifact(module_name,entry,prefix,kernel=False,wide=False):
  objects=[]
  for i,src in enumerate([assembly,startup,ROOT/'runtime/primitives.S']):
   out=B/f'{prefix}.{i}.o';driver.asm(src,out);objects.append(out)
- driver.run([driver.tool('ld.lld'),'-m','elf64lriscv','--no-relax','-T',ROOT/('runtime/kernel.ld' if kernel else ('runtime/app2.ld' if wide else 'runtime/app.ld')),*objects,'-o',elf])
+ driver.run([driver.tool('ld.lld'),'-m','elf64lriscv','--no-relax','-T',linker,*objects,'-o',elf])
  undefined=driver.run([driver.tool('llvm-nm'),'-u',elf],capture_output=True,text=True).stdout
  if undefined.strip():raise RuntimeError('unresolved live guest symbols:'+undefined)
  driver.run([driver.tool('llvm-objcopy'),'-O','binary',elf,binary]);stamp.write_text(key);return binary
 def build(clean=False):
- B.mkdir(parents=True,exist_ok=True);driver.validate_toolchain()
+ B.mkdir(parents=True,exist_ok=True);driver.validate_toolchain();check_service_layout()
  if clean:
   for path in B.iterdir():
    if path.is_file() and path.suffix in ('.sha256','.S','.bin','.o','.elf'):path.unlink()
   for path in (ROOT/'Guest').glob('*.olean'):path.unlink()
  for name in MODULES:compile_module('Guest.'+name)
  kernel=artifact('Guest.LiveKernel','Guest.Live.kernelMain','kernel',True)
- services=[artifact('Guest.Launcher','Guest.Launcher.main','launcher',wide=True),artifact('Guest.Objects','Guest.Objects.main','objects',wide=True),artifact('Guest.Vault','Guest.Vault.appMain','vault',wide=True),artifact('Guest.Compositor','Guest.Compositor.main','compositor',wide=True),artifact('Guest.BuildJobs','Guest.BuildJobs.main','build-jobs',wide=True),artifact('Guest.Network','Guest.Network.main','network',wide=True)]
+ services=[artifact('Guest.Launcher','Guest.Launcher.main','launcher',wide=True),artifact('Guest.Objects','Guest.Objects.main','objects',wide=True,objects_profile=True),artifact('Guest.Vault','Guest.Vault.appMain','vault',wide=True),artifact('Guest.Compositor','Guest.Compositor.main','compositor',wide=True),artifact('Guest.BuildJobs','Guest.BuildJobs.main','build-jobs',wide=True),artifact('Guest.Network','Guest.Network.main','network',wide=True)]
  for name in ['workbench','inspector','worker']:artifact('Guest.LiveApps','Guest.LiveApps.'+name+'Main',name)
  data=bytearray(0x600000)
  part=kernel.read_bytes();data[:len(part)]=part
  import struct
  for pid,path in enumerate(services,1):
   part=path.read_bytes()
-  if len(part)>262144:raise RuntimeError(f'{path.name} exceeds256KiB code')
-  offset=0x300000+(pid-1)*262144;data[offset:offset+len(part)]=part
+  offset,limit=service_image_bounds(pid)
+  if len(part)>limit:raise RuntimeError(f'{path.name} exceeds its explicit{limit}-byte built-in code profile')
+  data[offset:offset+len(part)]=part
   rights={1:0x1000000ff,2:0,3:127,4:127,5:127,6:0}[pid]
-  struct.pack_into('<QQ',data,0x200000+pid*32,len(part),rights)
+  struct.pack_into('<4Q',data,0x200000+pid*32,len(part),rights,2,limit)
  try:
   import build_jobs
   compiler_id=bytes.fromhex(build_jobs.compiler_identity())

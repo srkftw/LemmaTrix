@@ -12,8 +12,16 @@ def queue (p : UInt64) : UInt64 := 0x80c00000+p*16384
 def rx : UInt64 := 0x80d00000
 def code (p : UInt64) : UInt64 := 0x81000000+p*524288
 def arena (p : UInt64) : UInt64 := 0x81800000+p*0x200000
+-- Built-in Objects profile3 uses the same private512KiB physical slot. Native
+-- signed application profile2 retains its256KiB ceiling and existing mapping.
+def codeLimit (p service : UInt64) : UInt64 := if p == 2 && service == 2 then 393216 else 262144
+def dataOffset (p : UInt64) : UInt64 := if p == 2 then 393216 else 262144
+def stackOffset (p : UInt64) : UInt64 := if p == 2 then 458752 else 327680
+def serviceSource (p : UInt64) : UInt64 := if p == 2 then 0x80480000 else 0x80300000+(p-1)*262144
+theorem ordinary_application_code_limit (p : UInt64) : codeLimit p 0 = 262144 := by
+  simp [codeLimit]
 def physical (p v : UInt64) : UInt64 :=
-  if v >= 0x600000 then arena p+v-0x600000 else code p+262144+v-0x410000
+  if v >= 0x600000 then arena p+v-0x600000 else code p+dataOffset p+v-0x410000
 def valid (ptr len bound : UInt64) : Bool := ptr >= 0x410000 && ptr <= 0x420000 && len <= bound && len <= 0x420000-ptr
 def validFor (p ptr len bound t : UInt64) : Bool :=
   valid ptr len bound || (Guest.load64 (proc p+96) t == 2 && ptr >= 0x600000 && ptr <= 0x800000 && len <= bound && len <= 0x800000-ptr)
@@ -51,9 +59,9 @@ def tables (p t : UInt64) : UInt64 :=
   let wideLeaf := 0x80130000+p*4096
   let t := zero wideLeaf 512 t
   let t := Guest.store64 (mid+8) (pte wideLeaf 1) t
-  let t := if wide then pages wideLeaf (code p) 64 219 t else pages leaf (code p) 16 219 t
-  let t := pages (leaf+128) (code p+262144) 16 215 t
-  let t := pages (leaf+384) (code p+327680) 4 215 t
+  let t := if wide then pages wideLeaf (code p) (codeLimit p (Guest.load64 (proc p+24) t)/4096) 219 t else pages leaf (code p) 16 219 t
+  let t := pages (leaf+128) (code p+dataOffset p) 16 215 t
+  let t := pages (leaf+384) (code p+stackOffset p) 4 215 t
   if p == 1 then privatePages (mid+24) 0x83000000 2 t
   else if p == 2 then privatePages (mid+24) 0x84000000 4 t
   else if p == 3 then privatePages (mid+24) 0x85000000 2 t
@@ -90,12 +98,15 @@ def teardown (p why t : UInt64) : UInt64 :=
   let t := zero (queue p) 2048 t
   let t := clearPrivate p t
   let t := if p >= 6 then zero (0x87200000+(p-5)*0x100000) 112640 t else t
-  let t := zero (code p+262144) 18432 t
+  let t := if p == 2 then zero (code p+stackOffset p) 2048 (zero (code p+dataOffset p) 8192 t)
+    else zero (code p+262144) 18432 t
   zero (frame p) 34 t
 
 def start (p source len rights entry service t : UInt64) : UInt64 :=
   let generation := Guest.load64 (proc p+8) t
-  if generation >= 0x00ffffffffffffff || (generation &&& 0xffffff) == 0xffffff || len == 0 || len > 262144 || (entry != 0x200000 && entry != 0x400000) || (entry == 0x400000 && len > 65536) then err else
+  if generation >= 0x00ffffffffffffff || (generation &&& 0xffffff) == 0xffffff ||
+    (p == 2 && service != 2) || len == 0 || len > codeLimit p service ||
+    (entry != 0x200000 && entry != 0x400000) || (entry == 0x400000 && len > 65536) then err else
     let t := zero (proc p) 64 t
     let t := zero (queue p) 2048 t
     let t := zero (code p) 65536 t
@@ -382,7 +393,8 @@ def dispatch (p op h ptr n v t : UInt64) : UInt64 :=
       let t := if slot == 6 then Devices.streamInit t else t
       if ptr == 0 then t else
         let descriptor := 0x80200000+slot*32
-        let result := start slot (0x80300000+(slot-1)*262144) (Guest.load64 descriptor t) (Guest.load64 (descriptor+8) t) 0x200000 slot t
+        if Guest.load64 (descriptor+16) t != 2 || Guest.load64 (descriptor+24) t != codeLimit slot slot then err else
+        let result := start slot (serviceSource slot) (Guest.load64 descriptor t) (Guest.load64 (descriptor+8) t) 0x200000 slot t
         if result == err then err else identity slot result
   else if op == 60 || op == 61 then
     if p != 3 || n == 0 || n > 4096 || n%512 != 0 || !valid ptr n 4096 then err else
@@ -605,7 +617,8 @@ partial def bootServices (p t : UInt64) : UInt64 :=
   if p == 7 then t else
     let descriptor := 0x80200000+p*32
     let t := clearPrivate p t
-    let result := start p (0x80300000+(p-1)*262144) (Guest.load64 descriptor t) (Guest.load64 (descriptor+8) t) 0x200000 p t
+    let result := if Guest.load64 (descriptor+16) t != 2 || Guest.load64 (descriptor+24) t != codeLimit p p then err else
+      start p (serviceSource p) (Guest.load64 descriptor t) (Guest.load64 (descriptor+8) t) 0x200000 p t
     if result == err then Guest.finish 1 else bootServices (p+1) result
 
 def kernelMain (initial : UInt64) : UInt64 :=

@@ -1,0 +1,264 @@
+{
+  "schema": 1,
+  "result": "passed",
+  "clean_build": {
+    "result": "passed",
+    "command": "./lt build --clean",
+    "sha256": "22f9f9bde6c210ffe0f0ec52d7b8f5d697bed11d61fda7edda5f7c319079c70f",
+    "image_bytes": 6291456,
+    "matches_incremental_image": true
+  },
+  "layout": {
+    "image": "22f9f9bde6c210ffe0f0ec52d7b8f5d697bed11d61fda7edda5f7c319079c70f",
+    "result": "passed",
+    "image_bytes": 6291456,
+    "services": [
+      {
+        "slot": 1,
+        "image_offset": 3145728,
+        "length": 155940,
+        "limit": 262144,
+        "descriptor": 2,
+        "sha256": "f8b9abf0de24cc78e61d5aebde317b2f9eca8483eb4ed85379930dd49a9739ba"
+      },
+      {
+        "slot": 2,
+        "image_offset": 4718592,
+        "length": 298276,
+        "limit": 393216,
+        "descriptor": 2,
+        "sha256": "a38b51e9fbb6885356abc5c92386a0b3cda618ab07d2ed432edf2e7c40e30abe"
+      },
+      {
+        "slot": 3,
+        "image_offset": 3670016,
+        "length": 235244,
+        "limit": 262144,
+        "descriptor": 2,
+        "sha256": "28319298bc44e8d2951e0d5305430b8c85eb655b7c987b6052555ad10b730e3e"
+      },
+      {
+        "slot": 4,
+        "image_offset": 3932160,
+        "length": 251488,
+        "limit": 262144,
+        "descriptor": 2,
+        "sha256": "cbb312e104ef3d74a07e4a8b2a9628f192959c41a50d18fa061b15f8a7f551a3"
+      },
+      {
+        "slot": 5,
+        "image_offset": 4194304,
+        "length": 116776,
+        "limit": 262144,
+        "descriptor": 2,
+        "sha256": "df6564c3753821fa232fac102c50adb34dd44caedd46d4ae79df27373f6e2783"
+      },
+      {
+        "slot": 6,
+        "image_offset": 4456448,
+        "length": 119056,
+        "limit": 262144,
+        "descriptor": 2,
+        "sha256": "5e463d29538420a5e65ee886f3264d4dec1b2eaf454b6e31572e42d1b23a14ed"
+      }
+    ],
+    "objects_physical": {
+      "code": [
+        2165309440,
+        2165702656
+      ],
+      "data": [
+        2165702656,
+        2165768192
+      ],
+      "stack": [
+        2165768192,
+        2165784576
+      ],
+      "next_service_code": 2165833728
+    },
+    "ordinary_signed_application_code_limit": 262144,
+    "process_slots": 12,
+    "ram_bytes": 167772160,
+    "assumptions": "static ranges correspond to the documented kernel functions; actual boot/IPC/restart tested separately"
+  },
+  "backend_checks": [
+    {
+      "result": "passed",
+      "image": "22f9f9bde6c210ffe0f0ec52d7b8f5d697bed11d61fda7edda5f7c319079c70f",
+      "backend": "qemu",
+      "content": {
+        "schema": 1,
+        "boundary": "native guest ContentJobs-v1 endpoint5 via ABI2 portal",
+        "input_bytes": 9644,
+        "chunks": 3,
+        "max_chunk_buffer_per_job": 4096,
+        "manifest_sha256": "c7aee1cb63a6dcd285e150027e61ff4b4e17e24449b414f865c932d6f906550d",
+        "actual_read_sha256": "92b1b570197dc18a4cb69aadb274b12f556bded16f037524e3e7757e8785c32f",
+        "elapsed_seconds": 5.273529149824753,
+        "retention": "explicitly volatile; durable reservation rejected",
+        "checks": [
+          "privacy mode enum, unsupported durable retention, byte budget and manifest substitution reject",
+          "aggregate reservation quota, idempotency, conflicting operation, stale handle, missing range and malformed proof reject",
+          "pause/resume/cancel, terminal retrieval and stale forgotten job reject",
+          "chunk-byte and position/Merkle substitution fail without range publication",
+          "validated partial range readable; unvalidated/cross-chunk/oversized ranges and premature completion reject",
+          {
+            "unrelated_objects_import_and_read_between_content_quanta": true,
+            "job_state_before": 2,
+            "cursor_before": 32,
+            "job_state_after": 4,
+            "cursor_after": 65
+          },
+          "complete root publishes once; all actual streamed range bytes match source SHA256",
+          "authorized complete-root proof exports match independently constructed paths",
+          "released root grant cannot read; collection enqueues bounded page reclamation"
+        ]
+      },
+      "objects_service_restart": {
+        "previous": 8462256918075801858,
+        "replacement": 8462256918075802114,
+        "vault_neighbor_live": true,
+        "stale_after_fresh_allocation": "denied"
+      },
+      "progress247_foreign_caller": "denied",
+      "audio_release": "2e40bf0247065590981c100cbfec5e0a5475e639db5f4f9405a3f962c92f0220",
+      "pcm_bytes": 1024,
+      "pcm_sha256": "afd965583de875f77d2b1ca7e3b6f2104922b1c0d1b45aea718b330c8df25bdc",
+      "speaker_output": false
+    },
+    {
+      "result": "passed",
+      "image": "22f9f9bde6c210ffe0f0ec52d7b8f5d697bed11d61fda7edda5f7c319079c70f",
+      "backend": "x86_64",
+      "content": {
+        "schema": 1,
+        "boundary": "native guest ContentJobs-v1 endpoint5 via ABI2 portal",
+        "input_bytes": 9644,
+        "chunks": 3,
+        "max_chunk_buffer_per_job": 4096,
+        "manifest_sha256": "c7aee1cb63a6dcd285e150027e61ff4b4e17e24449b414f865c932d6f906550d",
+        "actual_read_sha256": "92b1b570197dc18a4cb69aadb274b12f556bded16f037524e3e7757e8785c32f",
+        "elapsed_seconds": 9.230376797029749,
+        "retention": "explicitly volatile; durable reservation rejected",
+        "checks": [
+          "privacy mode enum, unsupported durable retention, byte budget and manifest substitution reject",
+          "aggregate reservation quota, idempotency, conflicting operation, stale handle, missing range and malformed proof reject",
+          "pause/resume/cancel, terminal retrieval and stale forgotten job reject",
+          "chunk-byte and position/Merkle substitution fail without range publication",
+          "validated partial range readable; unvalidated/cross-chunk/oversized ranges and premature completion reject",
+          {
+            "unrelated_objects_import_and_read_between_content_quanta": true,
+            "job_state_before": 2,
+            "cursor_before": 8,
+            "job_state_after": 2,
+            "cursor_after": 32
+          },
+          "complete root publishes once; all actual streamed range bytes match source SHA256",
+          "authorized complete-root proof exports match independently constructed paths",
+          "released root grant cannot read; collection enqueues bounded page reclamation"
+        ]
+      },
+      "objects_service_restart": {
+        "previous": 2960980982489940226,
+        "replacement": 2960980982489940482,
+        "vault_neighbor_live": true,
+        "stale_after_fresh_allocation": "denied"
+      },
+      "progress247_foreign_caller": "denied",
+      "audio_release": "2e40bf0247065590981c100cbfec5e0a5475e639db5f4f9405a3f962c92f0220",
+      "pcm_bytes": 1024,
+      "pcm_sha256": "afd965583de875f77d2b1ca7e3b6f2104922b1c0d1b45aea718b330c8df25bdc",
+      "speaker_output": false
+    },
+    {
+      "result": "passed",
+      "image": "22f9f9bde6c210ffe0f0ec52d7b8f5d697bed11d61fda7edda5f7c319079c70f",
+      "backend": "aarch64",
+      "content": {
+        "schema": 1,
+        "boundary": "native guest ContentJobs-v1 endpoint5 via ABI2 portal",
+        "input_bytes": 9644,
+        "chunks": 3,
+        "max_chunk_buffer_per_job": 4096,
+        "manifest_sha256": "c7aee1cb63a6dcd285e150027e61ff4b4e17e24449b414f865c932d6f906550d",
+        "actual_read_sha256": "92b1b570197dc18a4cb69aadb274b12f556bded16f037524e3e7757e8785c32f",
+        "elapsed_seconds": 37.451577255968004,
+        "retention": "explicitly volatile; durable reservation rejected",
+        "checks": [
+          "privacy mode enum, unsupported durable retention, byte budget and manifest substitution reject",
+          "aggregate reservation quota, idempotency, conflicting operation, stale handle, missing range and malformed proof reject",
+          "pause/resume/cancel, terminal retrieval and stale forgotten job reject",
+          "chunk-byte and position/Merkle substitution fail without range publication",
+          "validated partial range readable; unvalidated/cross-chunk/oversized ranges and premature completion reject",
+          {
+            "unrelated_objects_import_and_read_between_content_quanta": true,
+            "job_state_before": 2,
+            "cursor_before": 8,
+            "job_state_after": 2,
+            "cursor_after": 32
+          },
+          "complete root publishes once; all actual streamed range bytes match source SHA256",
+          "authorized complete-root proof exports match independently constructed paths",
+          "released root grant cannot read; collection enqueues bounded page reclamation"
+        ]
+      },
+      "objects_service_restart": {
+        "previous": 12876360967574782210,
+        "replacement": 12876360967574782466,
+        "vault_neighbor_live": true,
+        "stale_after_fresh_allocation": "denied"
+      },
+      "progress247_foreign_caller": "denied",
+      "audio_release": "2e40bf0247065590981c100cbfec5e0a5475e639db5f4f9405a3f962c92f0220",
+      "pcm_bytes": 1024,
+      "pcm_sha256": "afd965583de875f77d2b1ca7e3b6f2104922b1c0d1b45aea718b330c8df25bdc",
+      "speaker_output": false
+    }
+  ],
+  "mixed_network": {
+    "image": "22f9f9bde6c210ffe0f0ec52d7b8f5d697bed11d61fda7edda5f7c319079c70f",
+    "client_backend": "qemu",
+    "server_backend": "x86_64",
+    "connections": 3,
+    "service_operation": 2,
+    "public_description_schema": 2,
+    "separate_endpoints": true,
+    "bytes_per_connection": 4097,
+    "payload_sha256": [
+      "5be9a3ec29fc6fdc4e4d6c5d8494b9afe2b8265b81d81f7c9a75ba99e217dbad",
+      "812a3cfdb8bb3b3cd077e30b78347b9a9ff0fa8b47ad6b30a3e7f3be6d88a114",
+      "0de6786ddb201f5cb9d915cd61e5632822a9822a50ffc5b346420cf0eceffa45"
+    ],
+    "surviving_sessions": [
+      0,
+      2
+    ],
+    "stale_epoch_grant": "denied",
+    "request_binding": "authenticated",
+    "duplicate_receive_scope": "denied",
+    "fresh_boot_authority": {
+      "old_grant": 8531573236352155649,
+      "fresh_grant": 1660691264397377537,
+      "old_job": 8531573238499639297,
+      "fresh_job": 1660691266544861185,
+      "stale_after_new_allocation": "denied",
+      "fresh_job_state": "completed"
+    },
+    "consumer_admission": "not tested by this transport component check"
+  },
+  "forge_compile": {
+    "result": "compiled",
+    "command": "./lt app --profile 2 --module Guest.Forge --entry Guest.Forge.main --name forge",
+    "bytes": 252140,
+    "limit": 262144,
+    "sha256": "050d88a84f6114595d2e3e4fe6bb6450d3686c9bd1dbb13773bb0853d10550f0",
+    "runtime_rerun": false
+  },
+  "limits": [
+    "aarch64 assembly interpreter ran under qemu-aarch64; not native ARM64 hardware",
+    "all services are Lean freestandingRV64; ISA/device emulation is assembly",
+    "sample capture is actual guest-producedPCM, not speaker-output evidence",
+    "the static layout checker assumes documented kernel mapping functions; runtime restart/IPC checks separately exercised them"
+  ]
+}

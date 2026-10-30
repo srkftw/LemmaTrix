@@ -2176,7 +2176,7 @@ uart_poll_done:
 .section .rodata
 usage_msg: .ascii "usage: lemmatrix-arm64 guest.bin [--interactive] [--vault backing.img] [--vault-readonly] [--display-out frame.bgrx] [--input-events events.evdev]\n"
 .equ usage_len, .-usage_msg
-io_msg: .ascii "arm64 emulator: cannot load image (empty, inaccessible, or larger than 128 MiB)\n"
+io_msg: .ascii "arm64 emulator: cannot load image (empty, inaccessible, or larger than 160 MiB)\n"
 .equ io_len, .-io_msg
 interactive_arg: .asciz "--interactive"
 vault_arg: .asciz "--vault"
