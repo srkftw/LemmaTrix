@@ -695,7 +695,7 @@ def retainGameSave (handle t : UInt64) : UInt64 :=
       let root := Guest.load64 buf t
       let t := copy (buf+8) (projectTxn+8) 32 t
       retainProject root t
-  else if (op >= 230 && op <= 256) then
+  else if (op >= 230 && op <= 299) then
     if len < 64 || len > 1024 || Guest.load64 buf t != op then err else forward 3 len t
   else if (op >= 200 && op <= 206) || (op >= 210 && op <= 217) then
     if len < 64 || len > 1024 || Guest.load64 buf t != op then err else

@@ -15,7 +15,7 @@ def backing : UInt64 := base+0x40000
 -- has at most4096 nodes. Payload capacity remains explicitly5.75MiB.
 def tree (ri index : UInt64) : UInt64 := base+0x600000+ri*131072+index*32
 def capacity : UInt64 := 1472
-def root (i : UInt64) : UInt64 := roots+i*1024
+def root (i : UInt64) : UInt64 := if i < 4 then roots+i*1024 else base+0x700000+(i-4)*1024
 def grant (i : UInt64) : UInt64 := grants+i*64
 def job (i : UInt64) : UInt64 := jobs+i*8192
 def page (i : UInt64) : UInt64 := pages+i*64
@@ -63,7 +63,7 @@ def authorized (caller h permission t : UInt64) : UInt64 :=
   if h == 0 || slot >= 64 then error else
     let g := grant slot
     let ri := load64 (g+16) t
-    if ri >= 4 || load64 g t != h || load64 (g+8) t != caller ||
+    if ri >= 20 || load64 g t != h || load64 (g+8) t != caller ||
       (load64 (g+32) t &&& permission) != permission ||
       load64 (root ri) t == 0 || load64 (root ri+8) t != load64 (g+24) t then error else ri
 def ownedJob (caller h t : UInt64) : UInt64 :=
@@ -72,7 +72,7 @@ def ownedJob (caller h t : UInt64) : UInt64 :=
 partial def callerJobs (caller i count t : UInt64) : UInt64 :=
   if i == 4 then count else callerJobs caller (i+1) (if load64 (job i) t != 0 && load64 (job i+8) t == caller then count+1 else count) t
 partial def duplicateOperation (caller operation i t : UInt64) : UInt64 :=
-  if i == 4 then error else
+  if i == 20 then error else
     if load64 (root i) t != 0 && load64 (root i+16) t == caller && load64 (root i+80) t == operation then i
     else duplicateOperation caller operation (i+1) t
 partial def ownerGrant (caller ri i t : UInt64) : UInt64 :=
@@ -80,6 +80,69 @@ partial def ownerGrant (caller ri i t : UInt64) : UInt64 :=
     if load64 (grant i) t != 0 && load64 (grant i+8) t == caller && load64 (grant i+16) t == ri &&
       load64 (grant i+24) t == load64 (root ri+8) t && (load64 (grant i+32) t &&& 2) == 2 then load64 (grant i) t
     else ownerGrant caller ri (i+1) t
+def backingCall (length t : UInt64) : UInt64 := syscall 30 3 wire length 1024 t
+partial def freeBackedRoot (i t : UInt64) : UInt64 :=
+  if i == 20 then error else if load64 (root i) t == 0 then i else freeBackedRoot (i+1) t
+def installBacked (ri caller handle rootState bytes chunks binding t : UInt64) : UInt64 :=
+  let r := root ri
+  let generation := load64 (r+8) t+1
+  let t := zero r 128 t
+  let t := store64 r rootState t
+  let t := store64 (r+8) generation t
+  let t := store64 (r+16) caller t
+  let t := store64 (r+32) (load64 (binding+24) t) t
+  let t := store64 (r+40) (load64 (binding+32) t) t
+  let t := store64 (r+48) bytes t
+  let t := store64 (r+56) chunks t
+  let t := store64 (r+64) (load64 (binding+40) t) t
+  let t := store64 (r+72) (load64 (binding+48) t) t
+  let t := store64 (r+88) (load64 (binding+24) t) t
+  let t := store64 (r+112) 3 t
+  let t := store64 (r+120) handle t
+  let t := copy (binding+256) (r+128) 96 t
+  copy binding (r+256) 256 t
+partial def duplicateWriter (caller operation i t : UInt64) : UInt64 :=
+  if i == 20 then error else
+  if load64 (root i) t != 0 && load64 (root i+16) t == caller && load64 (root i+80) t == operation &&
+    load64 (root i+96) t == 0 && ownerGrant caller i 0 t != error then i else duplicateWriter caller operation (i+1) t
+def reserveBacked (caller rights length t : UInt64) : UInt64 :=
+  let previous := duplicateWriter caller (load64 (command+16) t) 0 t
+  if previous != error then
+    let h := ownerGrant caller previous 0 t
+    if h == error || !eq (root previous+128) (command+320) 32 t ||
+      load64 (root previous+104) t != load64 (command+40) t ||
+      load64 (root previous+88) t != load64 (command+24) t then malformed t else
+    response 0 h (load64 (root previous) t) (load64 (root previous+48) t) (load64 (root previous+32) t) 0 0 t
+  else
+  let ri := freeBackedRoot 4 t
+  let gi := freeGrant 0 t
+  if ri == error || gi == error || (rights &&& 2) == 0 || length != 416 then quota t else
+  let operation := load64 (command+16) t
+  let t := header 268 2 caller operation (load64 (command+24) t) (load64 (command+32) t) (load64 (command+40) t) t
+  let t := copy (command+64) (wire+64) 352 t
+  let result := backingCall 416 t
+  if result == error || load64 wire result != 0 then if result == error then denied result else result else
+  let backendHandle := load64 (wire+8) result
+  let t := installBacked ri caller backendHandle (load64 (wire+16) result) (load64 (wire+24) result)
+    (load64 (wire+40) result) (command+64) result
+  let t := store64 (root ri+80) operation t
+  let t := store64 (root ri+104) (load64 (command+40) t) t
+  let t := store64 (root ri+88) (load64 (command+24) t) t
+  let t := grantRoot gi ri caller 3 t
+  response 0 (load64 (grant gi) t) (load64 (root ri) t) (load64 (root ri+48) t) (load64 (root ri+32) t) 0 0 t
+def attachBacked (caller length t : UInt64) : UInt64 :=
+  if caller != syscall 97 3 0 0 0 t || length != 416 || !ContentFormat.valid (command+64) t then denied t else
+  let recipient := load64 (command+16) t
+  let actual := syscall 34 recipient 0 0 0 t
+  let ri := freeBackedRoot 4 actual
+  let gi := freeGrant 0 actual
+  if actual == error || (actual &&& 1) == 0 || ri == error || gi == error then quota actual else
+  let t := installBacked ri recipient (load64 (command+8) actual) (load64 (command+24) actual)
+    (load64 (command+32) actual) (load64 (command+40) actual) (command+64) actual
+  let t := store64 (root ri+96) 1 t
+  let t := store64 (root ri+80) (load64 (command+48) t) t
+  let t := grantRoot gi ri recipient 1 t
+  response 0 (load64 (grant gi) t) (load64 (root ri) t) (load64 (root ri+48) t) (load64 (root ri+32) t) 0 (load64 (root ri+80) t) t
 def reserve (caller rights length t : UInt64) : UInt64 :=
   let op := load64 (command+16) t
   let budget := load64 (command+24) t
@@ -87,7 +150,7 @@ def reserve (caller rights length t : UInt64) : UInt64 :=
   let durable := load64 (command+40) t
   if length != 416 || op == 0 || (rights &&& 2) == 0 then denied t else
   if mode != 3 then response 7 0 0 0 0 0 0 t else
-  if durable != 0 then response 8 0 0 0 0 0 0 t else
+  if durable != 0 then reserveBacked caller rights length t else
   if !ContentFormat.valid (command+64) t || allZero (command+352) 32 t || allZero (command+384) 32 t then malformed t else
     let total := load64 (command+88) t
     if total > budget || budget > ContentFormat.maxBytes then quota t else
@@ -128,7 +191,7 @@ def reserve (caller rights length t : UInt64) : UInt64 :=
       response 0 (load64 (grant gi) t) 1 0 total 0 0 t
 def liveRoot (j t : UInt64) : Bool :=
   let ri := load64 (j+32) t
-  ri < 4 && load64 (root ri) t != 0 && load64 (root ri+8) t == load64 (j+40) t &&
+  ri < 20 && load64 (root ri) t != 0 && load64 (root ri+8) t == load64 (j+40) t &&
     load64 (root ri+96) t == 0 && load64 (root ri+16) t == load64 (j+8) t
 def initializeJob (ji ri caller kind index t : UInt64) : UInt64 :=
   let j := job ji
@@ -145,15 +208,21 @@ def initializeJob (ji ri caller kind index t : UInt64) : UInt64 :=
   let t := store64 (j+48) index t
   let t := store64 (j+56) (ContentFormat.chunkLength (load64 (root ri+32) t) index) t
   let t := store64 (j+88) (load64 (root ri+72) t) t
-  let t := copy (root ri+160) (j+544) 64 t
-  let t := store64 (j+608) (load64 (root ri+80) t) t
-  let t := store64 (j+616) (load64 (root ri+112) t) t
-  let t := store64 (j+624) (load64 (root ri+88) t) t
-  store64 (j+632) (now t) t
+  let t := copy (root ri+160) (j+1536) 64 t
+  let t := store64 (j+1600) (load64 (root ri+80) t) t
+  let t := store64 (j+1608) (load64 (root ri+112) t) t
+  let t := store64 (j+1616) (load64 (root ri+88) t) t
+  store64 (j+1624) (now t) t
 partial def chunkBusy (ri index i t : UInt64) : Bool :=
   if i == 4 then false else
     (load64 (job i) t != 0 && load64 (job i+32) t == ri && load64 (job i+48) t == index &&
       load64 (job i+24) t == 1 && load64 (job i+16) t <= 3) || chunkBusy ri index (i+1) t
+def inspectChunk (caller h index t : UInt64) : UInt64 :=
+  let ri := authorized caller h 1 t
+  if ri == error then denied t else
+  if index >= load64 (root ri+40) t then malformed t else
+  if load64 (root ri+120) t != 0 then backingCall 64 (header 268 8 (load64 (root ri+120) t) index 0 0 0 t) else
+  response 0 (if load64 (entry ri index) t == 0 then 0 else 1) (load64 (root ri) t) index (load64 (root ri+32) t) 0 0 t
 def beginChunk (caller h length t : UInt64) : UInt64 :=
   let ri := authorized caller h 2 t
   if ri == error then denied t else
@@ -162,13 +231,17 @@ def beginChunk (caller h length t : UInt64) : UInt64 :=
   let proofDepth := load64 (root ri+72) t
   if length != 96+proofDepth*32 || index >= count then malformed t else
   if load64 (root ri+96) t != 0 then denied t else
-  if load64 (entry ri index) t != 0 then
+  let available := if load64 (root ri+120) t == 0 then 0 else inspectChunk caller h index t
+  if load64 (root ri+120) t != 0 && (available == error || load64 wire available != 0) then response 5 0 0 0 0 0 0 available else
+  if load64 (root ri+120) t != 0 && load64 (wire+8) available == 1 then response 0 0 4 index 0 0 0 available else
+  let t := if load64 (root ri+120) t == 0 then t else available
+  if load64 (root ri+120) t == 0 && load64 (entry ri index) t != 0 then
     let pi := load64 (entry ri index) t-1
     if pi >= capacity || !eq (page pi+24) (command+64) 32 t then response 5 0 0 0 0 0 0 t
     else response 0 0 4 index 0 0 0 t else
   if chunkBusy ri index 0 t || callerJobs caller 0 0 t >= 2 then quota t else
     let ji := freeJob 0 t
-    if ji == error || load64 (state+24) t >= capacity then quota t else
+    if ji == error || (load64 (root ri+120) t == 0 && load64 (state+24) t >= capacity) then quota t else
       let t := initializeJob ji ri caller 1 index t
       if t == error then quota t else
       let t := copy (command+64) (job ji+128) 32 t
@@ -182,7 +255,7 @@ def append (caller h length t : UInt64) : UInt64 :=
   let n := length-64
   let total := load64 (j+56) t
   if !liveRoot j t then denied t else
-  if length <= 64 || length > 576 || load64 (j+16) t != 1 || load64 (j+24) t != 1 ||
+  if length <= 64 || length > 992 || load64 (j+16) t != 1 || load64 (j+24) t != 1 ||
     offset != load64 (j+64) t || offset > total || n > total-offset then malformed t else
     let t := copy (command+64) (j+2048+offset) n t
     response 0 h 1 (offset+n) total 0 0 (store64 (j+64) (offset+n) t)
@@ -226,15 +299,30 @@ def describe (caller h t : UInt64) : UInt64 :=
     let r := root ri
     let t := response 0 h (load64 r t) (load64 (r+48) t) (load64 (r+32) t) (load64 (r+56) t) (load64 (r+40) t) t
     320+copy (r+256) (wire+64) 256 t
+def awaitChunk (h index t : UInt64) : UInt64 := store64 (grant ((h &&& 255)-1)+48) (index+1) t
+partial def notifyReaders (ri index i t : UInt64) : UInt64 :=
+  if i == 64 then t else
+  let g := grant i
+  let t := if load64 g t != 0 && load64 (g+16) t == ri && load64 (g+24) t == load64 (root ri+8) t &&
+      load64 (g+48) t == index+1 then
+    let t := store64 (g+48) 0 t
+    let r := syscall 126 (load64 (g+8) t) 0 0 0 t
+    if r == error then t else r
+    else t
+  notifyReaders ri index (i+1) t
 def read (caller h offset count t : UInt64) : UInt64 :=
   let ri := authorized caller h 1 t
   if ri == error then denied t else
   let r := root ri
   let total := load64 (r+32) t
-  if count == 0 || count > 512 || offset >= total || count > total-offset || offset%4096+count > 4096 then malformed t else
+  if count == 0 || count > 640 || offset >= total || count > total-offset || offset%4096+count > 4096 then malformed t else
     let index := offset/4096
+    if load64 (r+120) t != 0 then
+      let result := backingCall 64 (header 268 0 (load64 (r+120) t) offset count 0 0 t)
+      if result != error && load64 wire result == 6 then result+awaitChunk h index result else result
+    else
     let found := load64 (entry ri index) t
-    if found == 0 then response 6 h (load64 r t) 0 total index 0 t else
+    if found == 0 then response 6 h (load64 r t) 0 total index 0 (awaitChunk h index t) else
     let pi := found-1
     if pi >= capacity || load64 (page pi) t != ri+1 || load64 (page pi+8) t != load64 (r+8) t ||
       load64 (page pi+16) t != index then response 5 0 0 0 0 0 0 t else
@@ -295,6 +383,7 @@ def proof (caller h index t : UInt64) : UInt64 :=
   if ri == error then denied t else
   let r := root ri
   if index >= load64 (r+40) t then malformed t else
+  if load64 (r+120) t != 0 then backingCall 64 (header 268 1 (load64 (r+120) t) index 0 0 0 t) else
   if load64 (entry ri index) t == 0 then response 6 h (load64 r t) 0 0 0 0 t else
   let pi := load64 (entry ri index) t-1
   let depth := load64 (r+72) t
@@ -307,11 +396,35 @@ def proof (caller h index t : UInt64) : UInt64 :=
     96+depth*32+t
 -- A committed chunk is immutable. Validated pages are installed in one short
 -- non-yielding transition; a cancelled or dead owner's job cannot install one.
+partial def appendBacked (handle source offset total t : UInt64) : UInt64 :=
+  if offset == total then t else
+  let n := if total-offset < 928 then total-offset else 928
+  let t := header 268 4 handle offset 0 0 0 t
+  let t := copy (source+offset) (wire+64) n t
+  let r := backingCall (64+n) t
+  if r == error || load64 wire r != 0 then error else appendBacked handle source (offset+n) total r
+def commitBacked (j t : UInt64) : UInt64 :=
+  let ri := load64 (j+32) t
+  let handle := load64 (root ri+120) t
+  let length := 32+load64 (j+88) t*32
+  let t := header 268 3 handle (load64 (j+48) t) 0 0 0 t
+  let t := copy (j+128) (wire+64) 32 t
+  let t := copy (j+192) (wire+96) (length-32) t
+  let r := backingCall (64+length) t
+  if r == error || load64 wire r != 0 then terminal j 6 (100+load64 wire r) r else
+  let r := appendBacked handle (j+2048) 0 (load64 (j+56) r) r
+  if r == error then terminal j 6 104 r else
+  let r := backingCall 64 (header 268 5 handle 0 0 0 0 r)
+  if r == error || load64 wire r != 0 then terminal j 6 (200+load64 wire r) r else
+  let t := store64 (root ri+48) (load64 (wire+24) r) r
+  let t := store64 (root ri+56) (load64 (wire+16) t) t
+  terminal j 4 0 (notifyReaders ri (load64 (j+48) t) 0 t)
 def commitChunk (j t : UInt64) : UInt64 :=
   let ri := load64 (j+32) t
   let index := load64 (j+48) t
   if !liveRoot j t || load64 (root ri+48) t > load64 (root ri+88) t ||
     load64 (j+56) t > load64 (root ri+88) t-load64 (root ri+48) t then terminal j 6 1 t else
+  if load64 (root ri+120) t != 0 then commitBacked j t else
   if load64 (entry ri index) t != 0 then terminal j 6 2 t else
   let pi := freePage 0 t
   if pi == error then terminal j 6 4 t else
@@ -326,7 +439,22 @@ def commitChunk (j t : UInt64) : UInt64 :=
     let t := store64 (root ri+48) (load64 (root ri+48) t+load64 (j+56) t) t
     let t := store64 (root ri+56) (load64 (root ri+56) t+1) t
     let t := store64 (state+24) (load64 (state+24) t+1) t
-    terminal j 4 0 t
+    terminal j 4 0 (notifyReaders ri index 0 t)
+partial def proofQuantum (j fuel t : UInt64) : UInt64 :=
+  let cursor := load64 (j+96) t
+  if cursor < load64 (j+88) t then
+    if fuel == 0 then t else
+    let sibling := j+192+cursor*32
+    let index := load64 (j+48) t >>> cursor
+    let t := if (index &&& 1) == 0 then ContentFormat.branch (j+704) (j+1024) (j+800) (j+160) sibling t
+      else ContentFormat.branch (j+704) (j+1024) (j+800) sibling (j+160) t
+    let t := copy (j+800) (j+160) 32 t
+    let t := copy (j+800) (j+6144+(cursor+1)*32) 32 t
+    let t := store64 (j+96) (cursor+1) t
+    proofQuantum j (fuel-1) t
+  else
+    let ri := load64 (j+32) t
+    if !eq (j+160) (root ri+352) 32 t then terminal j 6 5 t else commitChunk j t
 def hashQuantum (j t : UInt64) : UInt64 :=
   let phase := load64 (j+80) t
   if phase == 0 then
@@ -334,7 +462,7 @@ def hashQuantum (j t : UInt64) : UInt64 :=
     let cursor := load64 (j+72) t
     let blocks := (n+72)/64
     if cursor < blocks then
-      let next := if blocks-cursor < 8 then blocks else cursor+8
+      let next := if blocks-cursor < 32 then blocks else cursor+32
       let t := ServiceHash.blocks (j+1024) (j+2048) n (blocks*64) cursor next t
       store64 (j+72) next t
     else
@@ -343,24 +471,15 @@ def hashQuantum (j t : UInt64) : UInt64 :=
         let t := ContentFormat.leaf (j+704) (j+1024) (j+160) (load64 (j+48) t) n (j+128) t
         let t := copy (j+160) (j+6144) 32 t
         store64 (j+80) 1 t
-  else
-    let cursor := load64 (j+96) t
-    if cursor < load64 (j+88) t then
-      let sibling := j+192+cursor*32
-      let index := load64 (j+48) t >>> cursor
-      let t := if (index &&& 1) == 0 then ContentFormat.branch (j+704) (j+1024) (j+800) (j+160) sibling t
-        else ContentFormat.branch (j+704) (j+1024) (j+800) sibling (j+160) t
-      let t := copy (j+800) (j+160) 32 t
-      let t := copy (j+800) (j+6144+(cursor+1)*32) 32 t
-      store64 (j+96) (cursor+1) t
-    else
-      let ri := load64 (j+32) t
-      if !eq (j+160) (root ri+352) 32 t then terminal j 6 5 t else commitChunk j t
+  else proofQuantum j 4 t
 def finalQuantum (j t : UInt64) : UInt64 :=
   let ri := load64 (j+32) t
   let r := root ri
   let cursor := load64 (j+72) t
-  if cursor < load64 (r+40) t then
+  if load64 (r+120) t != 0 then
+    let result := backingCall 64 (header 268 6 (load64 (r+120) t) 0 0 0 0 t)
+    if result == error || load64 wire result != 0 then terminal j 6 5 result else terminal j 4 0 (store64 r 2 result)
+  else if cursor < load64 (r+40) t then
     let found := load64 (entry ri cursor) t
     let pi := found-1
     if found == 0 || pi >= capacity || load64 (page pi) t != ri+1 ||
@@ -378,7 +497,7 @@ def quantum (ji t : UInt64) : UInt64 :=
   if alive == error || (alive &&& 2) == 0 || !liveRoot j alive then terminal j 5 1 alive else
   if load64 (j+16) alive != 2 then alive else
   if load64 (j+24) alive == 1 then hashQuantum j alive else finalQuantum j alive
--- Round-robin, at most eight SHA blocks per private validation quantum. The
+-- Round-robin, at most32 SHA blocks andfour Merkle branches per private validation quantum. The
 -- caller may wait on the service deadline; input/other RPCs run between turns.
 partial def runnable (cursor fuel t : UInt64) : UInt64 :=
   if fuel == 0 then error else
@@ -413,9 +532,10 @@ def gcQuantum (t : UInt64) : UInt64 :=
     else t
     store64 (state+48) (i+1) t
 partial def collectRoots (i t : UInt64) : UInt64 :=
-  if i == 4 then t else
+  if i == 20 then t else
     let t := if load64 (root i) t != 0 && !rootReferenced i 0 t then
-      let t := store64 (state+32) (load64 (state+32) t-load64 (root i+40) t) t
+      let t := if load64 (root i+120) t == 0 then store64 (state+32) (load64 (state+32) t-load64 (root i+40) t) t else
+        backingCall 64 (header 268 7 (load64 (root i+120) t) 0 0 0 0 t)
       store64 (root i) 0 t else t
     collectRoots (i+1) t
 def collect (rights t : UInt64) : UInt64 :=
@@ -455,6 +575,7 @@ def adopt (caller rights h length t : UInt64) : UInt64 :=
   let budget := load64 (command+24) t
   let mode := load64 (command+32) t
   if ri == error || (rights &&& 2) == 0 then denied t else
+  if load64 (root ri+120) t != 0 then response 8 0 0 0 0 0 0 t else
   if length != 160 || operation == 0 || mode != 3 || budget < load64 (root ri+32) t || budget > ContentFormat.maxBytes ||
     allZero (command+64) 32 t || allZero (command+96) 32 t || !eq (command+128) (root ri+128) 32 t then malformed t else
   if load64 (root ri+96) t != 1 || pendingForRoot ri 0 t then response 7 0 0 0 0 0 0 t else
@@ -474,7 +595,8 @@ def adopt (caller rights h length t : UInt64) : UInt64 :=
 def dispatch (caller rights length t : UInt64) : UInt64 :=
   let op := load64 command t
   let h := load64 (command+8) t
-  if length < 64 || length > 1024 || load64 (command+56) t != 1 || load64 (command+48) t != 0 then malformed t else
+  if length < 64 || length > 1024 || load64 (command+56) t != 1 || (load64 (command+48) t != 0 && op != 317) then malformed t else
+  if op == 317 then attachBacked caller length t else
   if op == 300 then reserve caller rights length t else
   if op == 301 then beginChunk caller h length t else
   if op == 302 then append caller h length t else
@@ -492,7 +614,8 @@ def dispatch (caller rights length t : UInt64) : UInt64 :=
   if op == 311 then revoke caller h t else
   if op == 312 then collect rights t else
   if op == 313 then proof caller h (load64 (command+16) t) t else
-  if op == 316 then checkDelegation caller h (load64 (command+16) t) t else malformed t
+  if op == 316 then checkDelegation caller h (load64 (command+16) t) t else
+  if op == 318 then inspectChunk caller h (load64 (command+16) t) t else malformed t
 def startStore (serviceInstance t : UInt64) : UInt64 :=
   -- Token high32 must include the randomized kernel boot epoch. Shifting the
   -- full process identity directly would discard those high bits and reuse
@@ -501,5 +624,6 @@ def startStore (serviceInstance t : UInt64) : UInt64 :=
   let incarnation := (serviceInstance >>> 8) &&& 0xffffff
   let epoch := ((serviceInstance >>> 32)+incarnation) &&& 0xffffffff
   let t := zero base 32768 t
+  let t := zero (root 4) 2048 t
   store64 state epoch t
 end Guest.ContentStore

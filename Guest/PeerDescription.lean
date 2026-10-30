@@ -24,9 +24,12 @@ partial def endpointText (i n t : UInt64) : Bool :=
 def valid (t : UInt64) : Bool :=
   let kind := load64 (description+16) t
   let n := load64 (description+160) t
-  load64 description t == magic && (load64 (description+8) t == (if kind <= 4 then 1 else 2)) && kind >= 1 && kind <= 6 &&
+  let version := load64 (description+8) t
+  let profile := (version == (if kind <= 4 then 1 else 2) && load64 (description+48) t == 16777216) ||
+    (kind >= 5 && version == 3 && load64 (description+48) t == 134217728)
+  load64 description t == magic && profile && kind >= 1 && kind <= 6 &&
   load64 (description+24) t == 3 && load64 (description+32) t == (if kind <= 2 then 2 else if kind <= 4 then 6 else 4) &&
-  load64 (description+40) t == 720 && load64 (description+48) t == 16777216 && load64 (description+56) t == 65536 &&
+  load64 (description+40) t == 720 && load64 (description+56) t == 65536 &&
   !Guest.ProjectGraph.allZero (description+64) 32 t && !Guest.ProjectGraph.allZero (description+96) 32 t &&
   !equal (description+64) (description+96) 32 t && equal hashes (description+96) 32 t &&
   n > 0 && n <= 96 && endpointText 0 n t && Guest.ProjectGraph.allZero (description+168+n) (96-n) t &&

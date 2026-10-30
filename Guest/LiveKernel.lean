@@ -12,12 +12,12 @@ def queue (p : UInt64) : UInt64 := 0x80c00000+p*16384
 def rx : UInt64 := 0x80d00000
 def code (p : UInt64) : UInt64 := 0x81000000+p*524288
 def arena (p : UInt64) : UInt64 := 0x81800000+p*0x200000
--- Built-in Objects profile3 uses the same private512KiB physical slot. Native
+-- Built-in Objects/Vault profile3 uses the same private512KiB physical slot. Native
 -- signed application profile2 retains its256KiB ceiling and existing mapping.
-def codeLimit (p service : UInt64) : UInt64 := if p == 2 && service == 2 then 393216 else 262144
-def dataOffset (p : UInt64) : UInt64 := if p == 2 then 393216 else 262144
-def stackOffset (p : UInt64) : UInt64 := if p == 2 then 458752 else 327680
-def serviceSource (p : UInt64) : UInt64 := if p == 2 then 0x80480000 else 0x80300000+(p-1)*262144
+def codeLimit (p service : UInt64) : UInt64 := if (p == 2 && service == 2) || (p == 3 && service == 3) then 393216 else 262144
+def dataOffset (p : UInt64) : UInt64 := if p == 2 || p == 3 then 393216 else 262144
+def stackOffset (p : UInt64) : UInt64 := if p == 2 || p == 3 then 458752 else 327680
+def serviceSource (p : UInt64) : UInt64 := if p == 2 then 0x80480000 else if p == 3 then 0x80500000 else 0x80300000+(p-1)*262144
 theorem ordinary_application_code_limit (p : UInt64) : codeLimit p 0 = 262144 := by
   simp [codeLimit]
 def physical (p v : UInt64) : UInt64 :=
@@ -98,14 +98,14 @@ def teardown (p why t : UInt64) : UInt64 :=
   let t := zero (queue p) 2048 t
   let t := clearPrivate p t
   let t := if p >= 6 then zero (0x87200000+(p-5)*0x100000) 112640 t else t
-  let t := if p == 2 then zero (code p+stackOffset p) 2048 (zero (code p+dataOffset p) 8192 t)
+  let t := if p == 2 || p == 3 then zero (code p+stackOffset p) 2048 (zero (code p+dataOffset p) 8192 t)
     else zero (code p+262144) 18432 t
   zero (frame p) 34 t
 
 def start (p source len rights entry service t : UInt64) : UInt64 :=
   let generation := Guest.load64 (proc p+8) t
   if generation >= 0x00ffffffffffffff || (generation &&& 0xffffff) == 0xffffff ||
-    (p == 2 && service != 2) || len == 0 || len > codeLimit p service ||
+    ((p == 2 || p == 3) && service != p) || len == 0 || len > codeLimit p service ||
     (entry != 0x200000 && entry != 0x400000) || (entry == 0x400000 && len > 65536) then err else
     let t := zero (proc p) 64 t
     let t := zero (queue p) 2048 t
@@ -201,6 +201,8 @@ def rpcBudget (caller target endpoint ptr len t : UInt64) : UInt64 :=
       Guest.load64 (physical caller ptr+56) t == 1 then 60000
   else if target == 2 && len == 64 && (operation == 38 || operation == 43) &&
       Guest.load64 (physical caller ptr+56) t == 1 then 30000
+  else if target == 6 && operation == 12 && len == 320 &&
+      (Guest.load64 (physical caller ptr+56) t &&& 255) == 2 then 30000
   else if target == 3 || endpoint == Guest.load64 (state+200) t then 30000
   else 5000
 
@@ -208,14 +210,31 @@ def call (p endpoint ptr len capacity t : UInt64) : UInt64 :=
   let target := endpoint &&& 255
   if target == 0 || target >= 12 || target == p || !validFor p ptr len 1024 t || capacity > 1024 || !validFor p ptr capacity 1024 t then err else
     let operation := if len >= 64 then Guest.load64 (physical p ptr) t else err
-    let contentCall := target == 5 && (endpoint == 5 || endpoint == identity 5 t) && operation >= 300 && operation <= 316 && (Guest.load64 (proc p+16) t &&& 127) != 0
+    let contentCall := target == 5 && (endpoint == 5 || endpoint == identity 5 t) &&
+      ((operation >= 300 && operation <= 316) || operation == 318) && (Guest.load64 (proc p+16) t &&& 127) != 0
     -- Trusted compositor progress never calls back through a Launcher that
     -- may itself be inspecting the Library. This single read-only operation
     -- neither grants a vault mount nor changes the caller's domain rights.
+    -- Only the content compartment may resolve a retained locator. Vault owns
+    -- keys/block I/O; an application cannot turn a locator into a disk mount.
+    let retainedRead := p == 5 && target == 3 && (endpoint == 3 || endpoint == identity 3 t) &&
+      (operation == 268 || operation == 269) && len >= 64 && len <= 1024 &&
+      Guest.load64 (physical p ptr+56) t == 1
+    -- Attaching metadata creates fresh read authority, never old grant numbers.
+    let retainedSelection := identity p t == Guest.load64 (state+216) t && target == 3 &&
+      (endpoint == 3 || endpoint == identity 3 t) && operation == 264 && len == 64 &&
+      Guest.load64 (physical p ptr+56) t == 1
+    let retainedAttach := p == 3 && target == 5 && (endpoint == 5 || endpoint == identity 5 t) &&
+      operation == 317 && len >= 64 && len <= 1024 && Guest.load64 (physical p ptr+56) t == 1
+    -- A serving app can charge/inspect only an already bound service job.
+    -- Vault validates the exact fresh owner, request and policy on each call.
+    let serviceProgress := target == 3 && (endpoint == 3 || endpoint == identity 3 t) &&
+      (Guest.load64 (proc p+16) t &&& 1025) == 1025 && len == 64 &&
+      (operation == 283 || operation == 284 || operation == 285) && Guest.load64 (physical p ptr+56) t == 1
     let contentProgress := p == 4 && Guest.load64 (proc p+24) t == 4 && target == 3 &&
       (endpoint == 3 || endpoint == identity 3 t) && len == 64 && operation == 247 &&
       Guest.load64 (physical p ptr+16) t == 3 && Guest.load64 (physical p ptr+56) t == 1
-    if !live (identity target t) t || (!contentCall && !contentProgress && !allowedEndpoint p target endpoint t) then err else
+    if !live (identity target t) t || (!contentCall && !contentProgress && !retainedRead && !retainedAttach && !retainedSelection && !serviceProgress && !allowedEndpoint p target endpoint t) then err else
       let t := if Guest.load64 (proc target) t == 4 then
         let t := Guest.store64 (frame target+80) 0 t
         Guest.store64 (proc target) 1 t else t
@@ -540,11 +559,20 @@ def dispatch (p op h ptr n v t : UInt64) : UInt64 :=
   else if op == 117 then
     let now := Guest.load64 (state+16) t
     let q := proc p
+    if Guest.load64 (q+224) t != 0 then Guest.store64 (q+224) 0 t else
     if h <= now || Guest.load64 (queue p+16) t != 0 || Guest.load64 (q+176) t != Guest.load64 (q+184) t then 0 else
     let t := Guest.store64 (q+48) 0 t
     let t := Guest.store64 (q+56) 0 t
     let t := Guest.store64 (q+120) (if h-now > 100 then now+100 else h) t
     Guest.store64 q 4 t
+  else if op == 126 then
+    -- Coalesced readiness only; no IPC payload, capability or data disclosure.
+    if (p != 2 && p != 3 && p != 5 && p != 6) || Guest.load64 (proc p+24) t != p || !live h t then err else
+    let target := h &&& 255
+    let t := Guest.store64 (proc target+224) 1 t
+    if Guest.load64 (proc target) t != 4 then t else
+      let t := Guest.store64 (frame target+80) 0 t
+      Guest.store64 (proc target) 1 t
   else if op == 118 then
     if p != 1 || (h != 0 && (!live h t || (h &&& 255) < 7)) then err else Guest.store64 (state+216) h t
   else if op == 119 then

@@ -9,9 +9,12 @@ def magic : UInt64 := 0x31544e434d544c
 def leafDomain : UInt64 := 0x314641454c544c
 def branchDomain : UInt64 := 0x3148434e42544c
 def chunkBytes : UInt64 := 4096
-def maxChunks : UInt64 := 1472
+def legacyMaxChunks : UInt64 := 1472
+def maxChunks : UInt64 := 16384
 def maxBytes : UInt64 := maxChunks*chunkBytes
+def legacyMaxBytes : UInt64 := legacyMaxChunks*chunkBytes
 def wavePCM48 : UInt64 := 1
+def genericArtifact : UInt64 := 2
 partial def equal (a b n t : UInt64) : Bool :=
   if n == 0 then true else load8 a t == load8 b t && equal (a+1) (b+1) (n-1) t
 partial def allZero (p n t : UInt64) : Bool :=
@@ -24,9 +27,9 @@ def chunkLength (total index : UInt64) : UInt64 :=
 def valid (p t : UInt64) : Bool :=
   let total := load64 (p+24) t
   let count := load64 (p+32) t
-  load64 p t == magic && load64 (p+8) t == 1 && load64 (p+16) t == chunkBytes &&
-  total > 0 && total <= maxBytes && count == (total+4095)/4096 &&
-  load64 (p+40) t == wavePCM48 && load64 (p+48) t == depth count &&
+  load64 p t == magic && (load64 (p+8) t == 1 || load64 (p+8) t == 2) && load64 (p+16) t == chunkBytes &&
+  total > 0 && total <= (if load64 (p+8) t == 1 then legacyMaxChunks*chunkBytes else maxBytes) && count == (total+4095)/4096 &&
+  (load64 (p+40) t == wavePCM48 || (load64 (p+8) t == 2 && load64 (p+40) t == genericArtifact)) && load64 (p+48) t == depth count &&
   load64 (p+56) t == 0 && !allZero (p+64) 32 t &&
   !allZero (p+96) 32 t && allZero (p+160) 96 t
 -- Leaf bytes: domain8,index8,exact-length8,SHA256(raw bytes)32. Branch

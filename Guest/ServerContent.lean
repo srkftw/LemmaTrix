@@ -20,7 +20,7 @@ def permit (rights length t : UInt64) : UInt64 :=
   let actual := syscall 34 target 0 0 0 t
   if (rights &&& 0x100000000) == 0 || length != 128 || actual == error ||
     ((actual &&& 2048) == 0 && (actual &&& 0x100000000) == 0) ||
-    quota == 0 || quota > ContentFormat.maxBytes || archive >= 4 || load64 (command+32) t != 2 ||
+    quota == 0 || quota > ContentFormat.legacyMaxBytes || archive >= 4 || load64 (command+32) t != 2 ||
     load64 (command+40) t != 3 || ContentFormat.allZero (command+64) 32 actual || ContentFormat.allZero (command+96) 32 actual then response 1 0 actual else
     let capacity := syscall 64 2 0 0 0 actual
     if capacity == error || capacity < 62552+archive*29464 then response 6 0 capacity else

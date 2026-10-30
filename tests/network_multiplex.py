@@ -1,4 +1,4 @@
-"""Three live authenticated guest relationships over independent TCP endpoints.
+"""Two or three authenticated guest relationships over separate TCP endpoints.
 
 Uses the normal run/management portal. No guest memory writes or shared socket
 replacements. Transport-only assertions are separate from consumer admission.
@@ -16,7 +16,9 @@ def wait(check,seconds=300):
   time.sleep(.04)
  raise TimeoutError('bounded multi-peer condition did not complete')
 
-def run(client_backend='qemu',server_backend='x86_64',library_profile=False,image=None,restart_check=False):
+def run(client_backend='qemu',server_backend='x86_64',library_profile=False,image=None,restart_check=False,connections=3,payload_bytes=4097):
+ if connections not in (2,3) or not 1<=payload_bytes<=4097:raise ValueError('select two/three relationships and1..4097 bytes')
+ if restart_check and connections!=3:raise ValueError('restart check uses the full three-relationship profile')
  image=Path(image or ROOT/'build/live/guest.bin').resolve()
  image_id=hashlib.sha256(image.read_bytes()).hexdigest()
  operation=2 if library_profile else 1
@@ -27,7 +29,7 @@ def run(client_backend='qemu',server_backend='x86_64',library_profile=False,imag
     path=base/f'{index}.sock';log=(base/f'{index}.log').open('wb');logs.append(log)
     processes.append(subprocess.Popen([str(ROOT/'lt'),'run','--backend',backend,'--image',str(image),'--socket',str(path),'--network-mux'],cwd=ROOT,stdout=log,stderr=subprocess.STDOUT,start_new_session=True))
     wait(path.exists,90);clients.append(live.Client(path,timeout=180))
-   for slot in range(3):
+   for slot in range(connections):
     probe=socket.socket();probe.bind(('127.0.0.1',0));port=probe.getsockname()[1];probe.close()
     key=base/f'role{slot}.pem';pub=base/f'role{slot}.pub';capsule.generate_key(key,pub)
     identity=hashlib.sha256(os.getrandom(32)).digest();description=base/f'peer{slot}.service'
@@ -39,9 +41,9 @@ def run(client_backend='qemu',server_backend='x86_64',library_profile=False,imag
      network.configure(clients[index],creds[index],description,slot=slot)
      wait(lambda:network.call(clients[index],13,slot=slot,allow_error=True)[0][0]==0)
     print('opened independent slot',slot,flush=True)
-   def authenticated():return all(network.status(c,slot)['endpoint_authenticated'] for c in clients for slot in range(3))
+   def authenticated():return all(network.status(c,slot)['endpoint_authenticated'] for c in clients for slot in range(connections))
    wait(authenticated,600)
-   roots=[hashlib.sha256(b'explicit immutable scope'+bytes([i])).digest() for i in range(3)]
+   roots=[hashlib.sha256(b'explicit immutable scope'+bytes([i])).digest() for i in range(connections)]
    grants=[[],[]]
    for index,c in enumerate(clients):
     for slot,(client_id,server_id,service_id) in enumerate(records):
@@ -51,16 +53,17 @@ def run(client_backend='qemu',server_backend='x86_64',library_profile=False,imag
      # A response must not ambiguously select another owner/operation grant.
      f,_=network.call(c,2,a=2,b=3,c=32768,d=8192,e=100000,data=peer+service_id+roots[slot]+struct.pack('<QQ',operation,0x1000+slot),slot=slot,allow_error=True)
      assert f[0]==4,('duplicate response scope admitted',slot,f)
-   f,_=network.call(clients[0],6,grants[0][1],slot=2,allow_error=True);assert f[0]==3,'cross-context local handle accepted'
-   payloads=[bytes((j*179+slot)%256 for j in range(4097)) for slot in range(3)]
-   received=[bytearray() for _ in range(3)]
+   paused=connections-2;active=connections-1
+   f,_=network.call(clients[0],6,grants[0][paused],slot=active,allow_error=True);assert f[0]==3,'cross-context local handle accepted'
+   payloads=[bytes((j*179+slot)%256 for j in range(payload_bytes)) for slot in range(connections)]
+   received=[bytearray() for _ in range(connections)]
    first_jobs=[]
-   for offset in range(0,4097,700):
+   for offset in range(0,payload_bytes,700):
     jobs=[]
-    for slot in range(3):
+    for slot in range(connections):
      f,_=network.call(clients[0],3,grants[0][slot],a=operation,b=offset+1,data=payloads[slot][offset:offset+700],slot=slot);jobs.append(f[1])
     if offset==0:first_jobs=jobs[:]
-    for slot in range(3):
+    for slot in range(connections):
      wait(lambda:network.call(clients[0],4,jobs[slot],slot=slot)[0][2]==3)
      def take():
       f,data=network.call(clients[1],6,grants[1][slot],slot=slot,allow_error=True)
@@ -69,16 +72,27 @@ def run(client_backend='qemu',server_backend='x86_64',library_profile=False,imag
       return data
      received[slot].extend(wait(take))
    assert received==payloads,'cross-session bytes or order mismatch'
-   before=[network.status(clients[0],i) for i in range(3)]
-   network.call(clients[1],14,slot=1)
-   wait(lambda:not network.status(clients[0],1)['endpoint_authenticated'])
-   assert network.status(clients[0],0)['endpoint_authenticated'] and network.status(clients[0],2)['endpoint_authenticated'],'unrelated relationship lost'
-   f,_=network.call(clients[0],3,grants[0][1],a=operation,b=99,data=b'stale',slot=1,allow_error=True);assert f[0]==3,'lost epoch kept old grant'
+   # Fill one relationship's four-record inbox and leave that consumer paused.
+   # Further opaque data must exert per-channel backpressure while a different
+   # authenticated relationship still completes an actual content record.
+   for index in range(8):
+    f,_=network.call(clients[0],3,grants[0][paused],a=operation,b=9000+index,data=b'paused consumer'+bytes(685),slot=paused)
+    wait(lambda:network.call(clients[0],4,f[1],slot=paused)[0][2]==3)
+   f,_=network.call(clients[0],3,grants[0][active],a=operation,b=9100,data=b'progress beside paused consumer',slot=active)
+   wait(lambda:network.call(clients[0],4,f[1],slot=active)[0][2]==3)
+   def beside_paused():
+    fields,data=network.call(clients[1],6,grants[1][active],slot=active,allow_error=True)
+    return data if fields[0]==0 else None
+   assert wait(beside_paused)==b'progress beside paused consumer','paused peer blocked an unrelated relationship'
+   network.call(clients[1],14,slot=paused)
+   wait(lambda:not network.status(clients[0],paused)['endpoint_authenticated'])
+   assert all(network.status(clients[0],i)['endpoint_authenticated'] for i in range(connections) if i!=paused),'unrelated relationship lost'
+   f,_=network.call(clients[0],3,grants[0][paused],a=operation,b=99,data=b'stale',slot=paused,allow_error=True);assert f[0]==3,'lost epoch kept old grant'
    # Existing unrelated grants and their sessions survive the close.
-   f,_=network.call(clients[0],3,grants[0][2],a=operation,b=999,data=b'surviving seed',slot=2)
-   wait(lambda:network.call(clients[0],4,f[1],slot=2)[0][2]==3)
+   f,_=network.call(clients[0],3,grants[0][active],a=operation,b=999,data=b'surviving seed',slot=active)
+   wait(lambda:network.call(clients[0],4,f[1],slot=active)[0][2]==3)
    def surviving():
-    f,data=network.call(clients[1],6,grants[1][2],slot=2,allow_error=True)
+    f,data=network.call(clients[1],6,grants[1][active],slot=active,allow_error=True)
     return data if f[0]==0 else None
    assert wait(surviving)==b'surviving seed'
    restart_result='not requested'
@@ -102,7 +116,7 @@ def run(client_backend='qemu',server_backend='x86_64',library_profile=False,imag
     for op,h in ((6,old_grant),(4,old_job)):
      f,_=network.call(clients[0],op,h,slot=0,allow_error=True);assert f[0]==3,('old authority resolved after fresh allocation',op,f)
     restart_result=dict(old_grant=old_grant,fresh_grant=fresh_grant,old_job=old_job,fresh_job=fresh_job,stale_after_new_allocation='denied',fresh_job_state='completed')
-   return {'image':image_id,'client_backend':client_backend,'server_backend':server_backend,'connections':3,'service_operation':operation,'public_description_schema':2 if library_profile else 1,'separate_endpoints':True,'bytes_per_connection':4097,'payload_sha256':[hashlib.sha256(p).hexdigest() for p in payloads],'surviving_sessions':[0,2],'stale_epoch_grant':'denied','request_binding':'authenticated','duplicate_receive_scope':'denied','fresh_boot_authority':restart_result,'consumer_admission':'not tested by this transport component check'}
+   return {'image':image_id,'client_backend':client_backend,'server_backend':server_backend,'connections':connections,'service_operation':operation,'public_description_schema':struct.unpack_from('<Q',network.load_description(base/'peer0.service')[1],8)[0],'separate_endpoints':True,'bytes_per_connection':payload_bytes,'payload_sha256':[hashlib.sha256(p).hexdigest() for p in payloads],'paused_consumer_independent_progress':True,'stalled_records':8,'stalled_records_stage':'provider device accepted; paused consumer not drained, not client integrity acceptance','surviving_sessions':[i for i in range(connections) if i!=paused],'stale_epoch_grant':'denied','request_binding':'authenticated','duplicate_receive_scope':'denied','fresh_boot_authority':restart_result,'consumer_admission':'not tested by this transport component check'}
   finally:
    for c in clients:
     try:c.request(70)
@@ -117,7 +131,7 @@ def run(client_backend='qemu',server_backend='x86_64',library_profile=False,imag
    for log in logs:log.close()
 
 if __name__=='__main__':
- parser=argparse.ArgumentParser();parser.add_argument('--client-backend',default='qemu');parser.add_argument('--server-backend',default='x86_64');parser.add_argument('--library-profile',action='store_true');parser.add_argument('--image',type=Path);parser.add_argument('--restart-check',action='store_true');parser.add_argument('--output',type=Path);args=parser.parse_args()
- result=run(args.client_backend,args.server_backend,args.library_profile,args.image,args.restart_check)
+ parser=argparse.ArgumentParser();parser.add_argument('--client-backend',default='qemu');parser.add_argument('--server-backend',default='x86_64');parser.add_argument('--library-profile',action='store_true');parser.add_argument('--image',type=Path);parser.add_argument('--restart-check',action='store_true');parser.add_argument('--connections',type=int,choices=(2,3),default=3);parser.add_argument('--bytes',type=int,default=4097);parser.add_argument('--output',type=Path);args=parser.parse_args()
+ result=run(args.client_backend,args.server_backend,args.library_profile,args.image,args.restart_check,args.connections,args.bytes)
  if args.output:args.output.write_text(json.dumps(result,indent=2)+'\n')
  print(json.dumps(result,indent=2))

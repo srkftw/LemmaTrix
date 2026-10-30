@@ -1,7 +1,7 @@
 import Guest.NetworkSDK
 namespace Guest.LibraryPeerSDK
 open Guest.LiveSDK
--- LibraryPeer-v1 is carried only by authenticated Network-v2 operation2.
+-- LibraryPeer-v1, with operation10 bounded chunk batches, is carried only by authenticated Network-v2 operation2.
 -- A remote protocol ID is never a local capability. A grant binds the selected
 -- federation/content manifest commitment and the caller incarnation separately.
 def magic : UInt64 := 0x31524545504c544c
@@ -18,7 +18,7 @@ def grant (slot pins stream budget lifetime t : UInt64) : UInt64 :=
   let t := store64 (chunk+48) stream t
   Guest.NetworkSDK.grantPeer slot pins chunk t
 def request (slot grantHandle requestId operation h a b t : UInt64) : UInt64 :=
-  if requestId == 0 || operation == 0 || operation > 9 then error else
+  if requestId == 0 || operation == 0 || operation > 10 then error else
   let t := zero chunk 8 t
   let t := store64 chunk magic t
   let t := store64 (chunk+8) 1 t

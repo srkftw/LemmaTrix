@@ -453,6 +453,7 @@ def archiveInspection (t : UInt64) : UInt64 :=
 -- Keeping bounded operations separate also avoids inflating the freestanding
 -- register frame merely by adding another public inspection operation.
 def controlRead (op t : UInt64) : UInt64 :=
+  if op == 64 then Guest.RemoteBuild.inspectArtifact t else
   if op == 58 then Guest.ForgeFederation.inspect t else
   if op == 59 then Guest.ForgeFederation.inspectLocal t else
   if op == 60 then Guest.ForgeSubscription.inspect t else
@@ -471,6 +472,10 @@ def controlAdmin (op n t : UInt64) : UInt64 :=
       let t := store64 (st+288) (if load64 (command+24) t == 3 then 3 else 2) t
       64+zero wire 8 t
   else if op == 54 && n == 96 then Guest.RemoteBuild.inspect t else
+  if op == 65 && n == 96 then
+    let r := Guest.RemoteBuild.bindArtifactService (load64 (command+16) t) t
+    if r == error then error else 64+zero wire 8 r
+  else
   if op == 57 && n == 128 then
     let r := Guest.ForgeFederation.configure (load64 (command+16) t) (load64 (command+24) t) (command+64) t
     if r == error then error else 64+zero wire 8 (store64 (st+248) 1 r)
@@ -487,7 +492,7 @@ def pollControl (t : UInt64) : UInt64 :=
     let token := load64 (incoming+8) n
     let op := load64 command n
     let admin := (load64 incoming n &&& 255) == 1
-    let r := if op == 1 || op == 50 || op == 54 || op == 57 || op == 61 then
+    let r := if op == 1 || op == 50 || op == 54 || op == 57 || op == 61 || op == 65 then
       if admin then controlAdmin op n n else error
       else if n == 96 then controlRead op n else error
     let t := if r == error then store64 wire 1 (zero wire 8 r) else r
@@ -806,10 +811,10 @@ def drawFooter (t : UInt64) : UInt64 :=
     let t := store64 (0x414000+16) 4836930207080409459 t
     let t := store64 (0x414000+24) 7023117823009772880 t
     let t := store64 (0x414000+32) 8007526788302466156 t
-    let t := store64 (0x414000+40) 5419016125447959669 t
-    let t := store64 (0x414000+48) 3273961234287837801 t
-    let t := store64 (0x414000+56) 435459551856 t
-    Guest.Raster.text 0x414000 61 10 290 0xe9bc75 0x101b25 t
+    let t := store64 (0x414000+40) 3906083727581672565 t
+    let t := store64 (0x414000+48) 8030592660756654411 t
+    let t := store64 (0x414000+56) 111477645275181 t
+    Guest.Raster.text 0x414000 62 10 290 0xe9bc75 0x101b25 t
   let t := if Guest.ForgeFederation.enabled t && load64 Guest.RemoteBuild.st t == 0 then
     let t := Guest.Raster.hex (load64 (Guest.ForgeFederation.st+136) t) 2 10 306 0xe9bc75 0x101b25 t
     let t := Guest.Raster.hex (Guest.ForgeFederation.remotePhase t) 2 70 306 0xe9bc75 0x101b25 t

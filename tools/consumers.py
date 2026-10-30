@@ -35,12 +35,12 @@ def create(*,key,project,collection,item,edition,title,resource,facet='media',se
  else:
   if executable is not None or len(resource)!=256:raise ValueError('media requires exact ContentManifest-v1 and no executable')
   q=lambda n:struct.unpack_from('<Q',resource,n)[0]
-  if q(0)!=0x31544e434d544c or q(8)!=1 or q(16)!=4096 or q(40)!=1:raise ValueError('supported PCM content manifest required')
+  if q(0)!=0x31544e434d544c or q(8) not in (1,2) or q(16)!=4096 or q(40)!=1:raise ValueError('supported PCM content manifest required')
   total_bytes=q(24);content=resource[64:96]
-  if not 1<=frames<=3145728 or channels not in (1,2):raise ValueError('explicit measurable PCM duration/channels required')
- if not 1<=total_bytes<=6291456:raise ValueError('declared bytes exceed profile')
+  if not 1<=frames<=(3145728 if q(8)==1 else 33554432) or channels not in (1,2):raise ValueError('explicit measurable PCM duration/channels required')
+ if not 1<=total_bytes<=67108864:raise ValueError('declared bytes exceed profile')
  raw=bytearray(512)
- for offset,value in {0:MAGIC,8:1,16:2 if game else 1,24:2 if game else 1,288:sequence,296:edition_version,336:len(title),408:total_bytes,416:frames,424:channels,432:0 if game else 48000,440:0 if game else 16,448:license_id,456:1,464:limitations,472:3,480:1 if game else 0}.items():struct.pack_into('<Q',raw,offset,value)
+ for offset,value in {0:MAGIC,8:2 if not game and q(8)==2 else 1,16:2 if game else 1,24:2 if game else 1,288:sequence,296:edition_version,336:len(title),408:total_bytes,416:frames,424:channels,432:0 if game else 48000,440:0 if game else 16,448:license_id,456:1,464:limitations,472:3,480:1 if game else 0}.items():struct.pack_into('<Q',raw,offset,value)
  for offset,value in [(32,publication),(64,digest(modulus)),(96,identity(collection)),(128,identity(item)),(160,identity(edition)),(192,digest(resource)),(224,content),(256,bytes(executable)[160:192] if game else bytes(32)),(304,identity(supersedes) if supersedes else bytes(32))]:raw[offset:offset+32]=value
  raw[344:344+len(title)]=title
  with tempfile.TemporaryDirectory(prefix='lt-consumer-sign-') as temporary:
@@ -52,12 +52,12 @@ def create(*,key,project,collection,item,edition,title,resource,facet='media',se
 def inspect(raw,public=None):
  if len(raw)!=768:raise ValueError('exact ConsumerRelease-v1 record required')
  q=lambda n:struct.unpack_from('<Q',raw,n)[0]
- if q(0)!=MAGIC or q(8)!=1:raise ValueError('unsupported consumer format')
+ if q(0)!=MAGIC or q(8) not in (1,2):raise ValueError('unsupported consumer format')
  if public is not None:
   modulus=releases.public_modulus(public);number=int.from_bytes(modulus,'big');signature=int.from_bytes(raw[512:],'big')
   expected=b'\0\1'+b'\xff'*202+b'\0'+bytes.fromhex('3031300d060960864801650304020105000420')+digest(raw[:512])
   if digest(modulus)!=raw[64:96] or signature>=number or pow(signature,65537,number).to_bytes(256,'big')!=expected:raise ValueError('consumer publisher signature invalid')
- return dict(schema=1,facet=q(16),format=q(24),publication=raw[32:64].hex(),publisher=raw[64:96].hex(),collection=raw[96:128].hex(),item=raw[128:160].hex(),edition=raw[160:192].hex(),manifest_sha256=raw[192:224].hex(),content_id=raw[224:256].hex(),executable_release=raw[256:288].hex(),sequence=q(288),edition_version=q(296),title=raw[344:344+q(336)].decode('ascii'),total_bytes=q(408),duration_frames=q(416),channels=q(424),sample_rate=q(432),sample_bits=q(440),license=q(448),provider_policy=q(456),limitations=q(464),network_mode=q(472),save_schema=q(480),record_sha256=digest(raw).hex(),signature_verified=public is not None)
+ return dict(schema=q(8),facet=q(16),format=q(24),publication=raw[32:64].hex(),publisher=raw[64:96].hex(),collection=raw[96:128].hex(),item=raw[128:160].hex(),edition=raw[160:192].hex(),manifest_sha256=raw[192:224].hex(),content_id=raw[224:256].hex(),executable_release=raw[256:288].hex(),sequence=q(288),edition_version=q(296),title=raw[344:344+q(336)].decode('ascii'),total_bytes=q(408),duration_frames=q(416),channels=q(424),sample_rate=q(432),sample_bits=q(440),license=q(448),provider_policy=q(456),limitations=q(464),network_mode=q(472),save_schema=q(480),record_sha256=digest(raw).hex(),signature_verified=public is not None)
 
 def attach(client,raw,resource,*,name,root=None):
  metadata=inspect(raw)

@@ -20,11 +20,11 @@ def main():
   length,rights,version,limit=struct.unpack_from('<4Q',raw,0x200000+slot*32)
   offset,expected=live_build.service_image_bounds(slot)
   assert version==2 and limit==expected and 0<length<=limit and length%4==0
-  assert rights=={1:0x1000000ff,2:0,3:127,4:127,5:127,6:0}[slot]
+  assert rights=={1:0x1000000ff,2:0,3:127,4:127,5:2175,6:0}[slot]
   body=raw[offset:offset+length]
   if a.artifacts:assert body==(a.artifacts/(names[slot-1]+'.bin')).read_bytes()
   services.append(dict(slot=slot,image_offset=offset,length=length,limit=limit,descriptor=version,sha256=hashlib.sha256(body).hexdigest()))
- assert not any(raw[0x340000:0x380000]),'old narrow Objects image slot was silently reused'
+ assert not any(raw[0x340000:0x3c0000]),'old narrow Objects/Vault image slots was silently reused'
  device_magic,audio_profile,network_profile=struct.unpack_from('<8sQQ',raw,0x200420)
  if device_magic==bytes(8):
   assert audio_profile==0 and network_profile==0
@@ -41,6 +41,7 @@ def main():
   audio_profile=audio_profile,network_profile=network_profile,
   supervisor_dma_regions=[dict(start=start,end_exclusive=stop,purpose=name) for start,stop,name in dma],
   objects_physical=dict(code=[0x81100000,0x81160000],data=[0x81160000,0x81170000],stack=[0x81170000,0x81174000],next_service_code=0x81180000),
+  vault_physical=dict(code=[0x81180000,0x811e0000],data=[0x811e0000,0x811f0000],stack=[0x811f0000,0x811f4000],next_service_code=0x81200000),
   ordinary_signed_application_code_limit=262144,process_slots=12,ram_bytes=160*1024*1024,
   assumptions='static ranges correspond to the documented kernel functions; actual boot/IPC/restart tested separately')
  if a.output:a.output.write_text(json.dumps(result,indent=2)+'\n')
