@@ -12,11 +12,12 @@ import capsule,consumers,content,federation,library_peer,network,nodes,project_v
 from creator_journey import Journey,require,rendered_text
 from library_game_save import Guest,preserve_failure
 from library_journey import appcall,wait
+from player_audio import captured_bytes
 
 def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--image',type=Path,default=ROOT/'build/live/guest.bin');p.add_argument('--library',type=Path,default=ROOT/'build/live/apps/library.bin');p.add_argument('--registry',type=Path,default=ROOT/'build/live/apps/registry.bin');p.add_argument('--peer',type=Path,default=ROOT/'build/live/apps/library-peer.bin');p.add_argument('--player',type=Path,default=ROOT/'build/campaign005/player.ltrel');p.add_argument('--key',type=Path,default=ROOT/'build/campaign005/publisher.pem');p.add_argument('--public',type=Path,default=ROOT/'build/campaign005/publisher.pub');p.add_argument('--keep-running',action='store_true');p.add_argument('--seconds',type=int,default=1);p.add_argument('--output',type=Path,required=True);p.add_argument('--packages',type=Path);p.add_argument('--game',type=Path);a=p.parse_args();out=a.output.resolve();out.mkdir(parents=True,exist_ok=False);image=out/'platform.bin';image.write_bytes(a.image.read_bytes());image_id=hashlib.sha256(image.read_bytes()).hexdigest();guests=[];report=[]
  def passed(label,**facts):
-  report.append(dict(check=label,result='passed',**facts));print('PASS',label,flush=True);(out/'journey.json').write_text(json.dumps(dict(image=image_id,checks=report,limitations=['explicit development backing file; no physical-vault durability claim','captured decoded samples; speaker output not exercised']),indent=2)+'\n')
+  report.append(dict(check=label,result='passed',**facts));print('PASS',label,flush=True);(out/'journey.json').write_text(json.dumps(dict(image=image_id,packages=package_ids,checks=report,limitations=['explicit development backing file; no physical-vault durability claim','these seed guests are volatile; durable independent seeds are separately verified','captured decoded samples; speaker output not exercised']),indent=2)+'\n')
  def package(binary,name,rights):
   raw,_=releases.make(binary,name,'1.0.0',rights,a.key,profile=2,license='NOASSERTION');path=out/(name+'.ltrel');path.write_bytes(raw);return path
  # Freeze the exact bodies once; later rebuilds cannot retarget this run.
@@ -24,6 +25,8 @@ def main():
  peerpkg=a.packages/'library-peer.ltrel' if a.packages else package(a.peer,'retain-peer',1025)
  libpkg=a.packages/'library-native.ltrel' if a.packages else package(a.library,'retain-library',1919)
  libname='library-native' if a.packages else 'retain-library'
+ package_ids={name:releases.inspect(path.read_bytes())['release_id'] for name,path in [('library-registry',regpkg),('library-peer',peerpkg),('library-native',libpkg),('native-player',a.player)]}
+ if a.game:package_ids['game']=releases.inspect(a.game.read_bytes())['release_id']
  def install(node,path):
   raw=path.read_bytes();info=releases.inspect(raw)
   with node.client() as c:return nodes.start_package(c,nodes.approved_package(path,a.public,info['release_id'],info['rights']),raw)
@@ -53,6 +56,14 @@ def main():
    def word(offset):
     with node.client() as c:return struct.unpack_from('<Q',appcall(c,lib,701)[1],offset)[0]
    return j,player,lib,word
+  def retained(expected_state,expected_bytes):
+   with personal.client() as c:
+    _,data=appcall(c,lib,701)
+    if struct.unpack_from('<Q',data,376)[0]!=0:return False
+    raw=c.request(246,struct.pack('<8Q',246,0,3,0,0,0,0,1))
+    if len(raw)<64:return False
+    fields=struct.unpack_from('<8Q',raw)
+    return fields[0]==0 and fields[2]==expected_state and fields[3]==expected_bytes and fields[4]==len(wave)
   j,player,lib,word=approve_apps(personal);personal.ui.press(60)
   for slot in range(3):
    personal.ui.press(slot+2);personal.ui.press(28)
@@ -62,12 +73,20 @@ def main():
   with registry.client() as c:library_peer.call(c,regpeer,400,0,1,1,0,16777216,100000,identity+bytes.fromhex(relationships[0]['details']['service_id'])+fid)
   for index,seed in enumerate(seeds):
    with seed.client() as c:library_peer.call(c,seedpeers[index],400,0,2,int.from_bytes(rootsha[:8],'little')|1,seedhandles[index],16777216,100000,identity+bytes.fromhex(relationships[index+1]['details']['service_id'])+rootsha)
+  with personal.client() as c:peer_states=[network.status(c,slot) for slot in range(3)]
+  require(all(p['endpoint_authenticated'] and p['public_service_description_verified'] for p in peer_states),'three selected signed relationships are not independently authenticated')
+  passed('native provider selection keeps a registry and two distinct seed endpoints authenticated',connections=peer_states,server_ids=[r['details']['server_id'] for r in relationships])
   personal.ui.press(59);personal.ui.press(16);wait(lambda:word(16)==1,300,'native metadata catalog');personal.ui.press(30)
   def metadata_added():
    with personal.client() as c:
     fields,data=appcall(c,lib,703,0,8,8)
     return len(data)==8 and struct.unpack('<Q',data)[0]!=0
-  wait(metadata_added,60,'metadata-only Add retained reference');personal.ui.press(34);wait(lambda:word(208)==1,30,'native bounded acquisition approval');personal.ui.press(28)
+  wait(metadata_added,60,'metadata-only Add retained reference')
+  with personal.client() as c:
+   _,data=appcall(c,lib,703,0,8,8);metadata_reference=struct.unpack('<Q',data)[0]
+   require(content.api(c).objects(312)[0][1]==0,'metadata Add acquired personal payload pages')
+  passed('native Add stores the signed metadata reference without payload, retention or acquisition consent',metadata_reference=metadata_reference,manifest_sha256=rootsha.hex(),personal_content_pages=0)
+  personal.ui.press(34);wait(lambda:word(208)==1,30,'native bounded acquisition approval');personal.ui.press(28)
   def job_state():
    with personal.client() as c:return struct.unpack_from('<Q',appcall(c,lib,704,0,0,8)[1])[0]
   def job_words():
@@ -79,7 +98,7 @@ def main():
   wait(some_checked,600,'three validated chunks');personal.ui.press(25);wait(lambda:job_state()==11,60,'native transfer pause')
   with personal.client() as c:
    q,_=appcall(c,lib,705,0);checkpoint_read=q[1];state=content.api(c).objects(306,checkpoint_read)[0];checked=state[3];require(8192<=checked<len(wave),'transfer did not leave a meaningful partial checkpoint')
-  personal.ui.press(19);wait(lambda:word(376)==1,60,'native checkpoint approval request');wait(lambda:rendered_text(personal.ui.frame(),16,16,7)=='TRUSTED',300,'trusted partial checkpoint approval');personal.ui.press(28);wait(lambda:word(376)==0 and word(176)==17,1200,'native encrypted partial checkpoint commit')
+  personal.ui.press(19);wait(lambda:word(376)==1,60,'native checkpoint approval request');wait(lambda:rendered_text(personal.ui.frame(),16,16,7)=='TRUSTED',300,'trusted partial checkpoint approval');personal.ui.press(28);wait(lambda:retained(1,checked),1200,'native encrypted partial checkpoint committed state')
   with personal.client() as c:
    inventory=c.request(246,struct.pack('<8Q',246,0,3,0,0,0,0,1));fields=struct.unpack_from('<8Q',inventory);require(fields[2]==1 and fields[3]==checked,'retained partial index changed verified-byte count');generation=fields[1]
   passed('native pause and trusted R retain only checked partial chunks plus selected metadata',verified_bytes=checked,total_bytes=len(wave),generation=generation,complete=False)
@@ -121,11 +140,11 @@ def main():
   if responsive:
    persistence=responsive.persisting(300);responsive.focus_library()
    passed('game input and unrelated Objects complete during actual selected encrypted persistence',**persistence)
-  wait(lambda:word(376)==0 and word(176)==17,1200,'complete content retention')
+  wait(lambda:retained(2,len(wave)),1200,'complete content retained state')
   personal.stop();registry.stop();seeds[1].stop();personal=Guest('p3',out,image,vault);guests.append(personal);j,player,lib,word=approve_apps(personal)
   require(word(16)==0,'unapproved collection rows silently recovered');personal.ui.press(22)
   wait(lambda:rendered_text(personal.ui.frame(),16,16,7)=='TRUSTED',300,'native selected content recovery approval')
-  (out/'recovery-approval.ppm').write_bytes(personal.ui.frame().ppm());personal.ui.press(28);wait(lambda:word(16)==1 and word(176)==17,1200,'native U/Enter co-recovery')
+  (out/'recovery-approval.ppm').write_bytes(personal.ui.frame().ppm());personal.ui.press(28);wait(lambda:word(16)==1 and word(376)==0,1200,'native U/Enter co-recovery')
   wait(lambda:rendered_text(personal.ui.frame(),12,58,13)=='LEMMA LIBRARY',120,'offline Library repaint')
   personal.ui.press(35);wait(lambda:word(160)==player,120,'native Player binding');personal.ui.press(57)
   def attached():
@@ -136,8 +155,9 @@ def main():
   personal.ui.press(57)
   def ended():
    with personal.client() as c:return appcall(c,player,601)[0][2]==5
-  wait(ended,300,'actual offline decoded PCM playback');captured=personal.capture.read_bytes();require(captured==wave[44:],'retained offline guest PCM differs from selected media')
+  wait(ended,600,'actual offline decoded PCM playback');captured=captured_bytes(personal.capture,len(wave)-44);require(captured==wave[44:],'retained offline guest PCM differs from selected media')
   (out/'offline-playback.ppm').write_bytes(personal.ui.frame().ppm());passed('fresh U/Enter recovers co-committed selected collection and content; offline native player emits exact PCM',network_providers_running=False,recipient_network_configured=False,pcm_bytes=len(captured),pcm_sha256=hashlib.sha256(captured).hexdigest(),speaker_output=False)
+  result=json.loads((out/'journey.json').read_text());result['result']='passed';result['media_bytes']=len(wave);result['media_chunks']=(len(wave)+4095)//4096;(out/'result.json').write_text(json.dumps(result,indent=2)+'\n')
  except BaseException as error:
   preserve_failure(guests,out,error)
   if a.keep_running:
