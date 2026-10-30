@@ -1,0 +1,254 @@
+{
+  "schema": 1,
+  "result": "passed",
+  "image_sha256": "22f9f9bde6c210ffe0f0ec52d7b8f5d697bed11d61fda7edda5f7c319079c70f",
+  "prior_image_sha256": "d761cd47b372dab5ce4323da0da843ffdb3ade27357b092189ed12237e6c1b70",
+  "prior_result": "same full suite passed before complete JSON/release scratch wipe",
+  "test": "tests/import_jobs.py",
+  "test_command": "python3 tests/import_jobs.py --image build/campaign005/final-7/guest.bin --output build/campaign005/import-jobs-final",
+  "game_release": "3a56b13d0e211adf25e66d05c09dedc48506c84cb4fe328af8295b3460be7779",
+  "packages": [
+    {
+      "instance": 4608056534839066888,
+      "release": "1b64b42e9270f720d28a41a6982dd7c7042a6e436e5e59daec9654c1a4dc802f",
+      "binary_sha256": "0820c73f14010d7d983cf8cb3ec1f809dab01f9a1effb47c6720c793785079ed"
+    },
+    {
+      "instance": 4608056534839066889,
+      "release": "7a576125533651f20557068f4c220d5cbfbc950c5f4c643333e15ac09df9a5e8",
+      "binary_sha256": "0820c73f14010d7d983cf8cb3ec1f809dab01f9a1effb47c6720c793785079ed"
+    },
+    {
+      "instance": 4608056534839066890,
+      "release": "5f5e801f5641ac9f08734d380c9d09aaea6f809198bcc36c3ea3bc43c809242f",
+      "binary_sha256": "0820c73f14010d7d983cf8cb3ec1f809dab01f9a1effb47c6720c793785079ed"
+    }
+  ],
+  "private_job_context_bytes": 32768,
+  "hash_blocks_per_quantum": 8,
+  "checks": [
+    {
+      "check": "two independent job hashes advance while actual Game input and unrelated Objects request complete",
+      "result": "passed",
+      "before": {
+        "a": [
+          0,
+          4608056539134034176,
+          2,
+          0,
+          69664,
+          0,
+          2,
+          1
+        ],
+        "ad": [
+          0,
+          32,
+          2,
+          65536,
+          224,
+          0,
+          10001,
+          0
+        ],
+        "b": [
+          0,
+          4608056539134034177,
+          2,
+          0,
+          65696,
+          0,
+          2,
+          1
+        ],
+        "bd": [
+          0,
+          24,
+          2,
+          65536,
+          224,
+          0,
+          10002,
+          0
+        ]
+      },
+      "after": {
+        "fields": [
+          0,
+          4608056539134034176,
+          2,
+          0,
+          69664,
+          0,
+          2,
+          1
+        ],
+        "detail": [
+          0,
+          200,
+          2,
+          65536,
+          224,
+          0,
+          10001,
+          0
+        ]
+      },
+      "game": {
+        "generation": 1,
+        "level": 0,
+        "moves": 1,
+        "completed": 0,
+        "won": 0,
+        "undo": 1,
+        "game": "c77a40fc178d8ec017c8d31b8c86e8967540fcc72eebd4050da629602edc99ff",
+        "pack": "77ce47e71af7c4d7a3b915b11cdba694554f93e2039403bbe7195aa97a44c8b1",
+        "boxes": 268435456,
+        "player": 27,
+        "save": 0,
+        "notice": 15
+      },
+      "unrelated_sha256": "d33be3d2d53e8bb98e550e645bbc9ebdb0f1e73c11650864c95dc7795b4b3755"
+    },
+    {
+      "check": "foreign transaction cannot resolve typed private stages; final publication and lost-reply queries are exact",
+      "result": "passed",
+      "denial_state": [
+        0,
+        4608056539134034178,
+        6,
+        65824,
+        65824,
+        2,
+        90,
+        1
+      ],
+      "roots": [
+        {
+          "cap": 4608056539134034176,
+          "name": "async-b",
+          "head": "57e7a97b3789698fb0e2bf9a091effe48663222c091319e719addf984cedb4c0"
+        },
+        {
+          "cap": 4608056539134034177,
+          "name": "async-a",
+          "head": "260f955c921d4b1d713cabefda7cbda2f84a206d1315e65b23dd1faafebfefdb"
+        }
+      ],
+      "checked_payload_sha256": "540e958c53be87b1a138e4f9f07693a1acead857d5097922056ddc508f904d56"
+    },
+    {
+      "check": "pause freezes actual hash state, resume advances, cancel never publishes and staged writes/legacy commit are frozen",
+      "result": "passed",
+      "cancelled": [
+        0,
+        4608056539134034432,
+        5,
+        0,
+        65696,
+        0,
+        90,
+        1
+      ]
+    },
+    {
+      "check": "final quota recheck rejects both selected roots atomically after concurrent ordinary publication",
+      "result": "passed",
+      "terminal": [
+        0,
+        4608056539134034433,
+        6,
+        65856,
+        65856,
+        4,
+        90,
+        1
+      ],
+      "visible_names": [
+        "async-a",
+        "async-b",
+        "quota-racer"
+      ]
+    },
+    {
+      "check": "revoked exact dependency witness is rejected between quanta",
+      "result": "passed",
+      "terminal": [
+        0,
+        4608056539134034688,
+        6,
+        65824,
+        65824,
+        2,
+        90,
+        1
+      ]
+    },
+    {
+      "check": "current secure Game Release imports through the asynchronous public adapter with every node byte checked",
+      "result": "passed",
+      "head": "4c8ed47412020b886df5d8abc373dcc66fc4f7532382c78c8ab52d21d015c3bd",
+      "nodes": 19,
+      "payload_bytes": 129807,
+      "elapsed_seconds": 14.609008200932294,
+      "node_payload_sha256": {
+        "af65571a8f5497ddb4e3a1ced7662eab0aabc0fd5153302b0996860dbdd598b5": "dfbf9316e74c9c56e1305df8e212f25cec68ee08cdd4a4f5c67b03fb644390b9",
+        "04bb43bda7a12d2534a5bd655b66a0028d81ece1445a0e123d3db00cf14d0cc5": "931e8fa5333d1dbc599b1d0c7902b1d821d858520611c8b34d2201fad7db5e0a",
+        "2457d727cdf2d5a94d67dd01d8ba2e01e5ade1dec99003db69a8aaffd51f466d": "118d85e1e61cccd83d838cb04d28d0abdca721b05fda50e0b8c5a3588458b116",
+        "cd417045f1a52f4663a69669282b1394434de561f89a2d07d22ad492539b471e": "9434db0ee959d7c76cc915cd3e409d425315830bbd3057be046025d8d74664f8",
+        "7b7fd16bf96a4d1be7f2a37c15f69362fc7df2443678481430200b912564d44a": "77ce47e71af7c4d7a3b915b11cdba694554f93e2039403bbe7195aa97a44c8b1",
+        "20d969562e593a7ff70b716d2b627d286f9a40b549b7e177b12a81103af51513": "8171d2047520dcf43bdb944a93e9e1ed84d55e5aa48e560b18a1b6df3886f71f",
+        "aefda8c8a4d816abbcea48b20e30978e8ce1b2b34656ccb95b3860da2bc5b8ff": "83cbcfd67ac3fc285da937a117a40267621088dba63d7ca247b782e8991c09f2",
+        "4f663a31073168cd615252e31e45cd5e29f508939a3f295f7cb808dad230f151": "6da6743c4f61455640d3a314d1c7f7f1452bfda8c55cc8f77cb3d3f3fc899df9",
+        "f87a3cabd96c60707081e6dceeeaab181bbff847471d457e85ffef7bfba49e67": "1b9dc7cb8a5c8b33868c6d05b4617e39366362abd6507c0cb4fae5a7319cee50",
+        "999ec69778068504f3768737724dd91f55b6fcac83a5f9735a17167503f4d90c": "ba3a713f6b60552ad093add6f491230734a3af11ffd4a377221ad16861147712",
+        "bbd729249cfe6a5ca353c2526924056f2d2871e2aaba52c457550a48e16d162c": "edfc31e0febe2f8fc8705375ff38015bbb6c01c6dc0a3851efe8be445b039675",
+        "2296a52ef0a407c225f999234fbfcdddbfbb049677452f7582d246f483be1bd3": "c6bda1abfcc07b7154987b510605de5999d2b132786669777c9321450c0eedab",
+        "5a9cb1394d6674eb78940c6b028e3b7ec7dfb29878231f63d800b48c193edb2a": "f779dcf8a0cdf9c9edf684773a22fbfb8786cae54f0ff9ef597d260f1a4a2c7f",
+        "28281caba2f3dc413fa1bc0b66eb97230d697ad125ba4ccbf58dbf198d638e11": "fe20e0f516004ab935e17caa619a1a9cd758e12392546102381ac4eb16b3390c",
+        "546c7f8e2c334a95621a3d09adc22490d3bc8e4e4336141e9c8837b92865833c": "5880a18d87a1f51f011252430e668675d60d67050dfc180c2ceef8fe9ece48a4",
+        "8f94aa1339a25caf7b0b063068e0a8747d9bde86087df17c9a2d356874633e92": "f720bf746b91f38c211fcc5c2c8bc430190e8447ef51c1d5d4dbeea838a46b78",
+        "cbedd5d760d5d742fa3be1a9ec482c2a136dd376315665d273fcc139b195c37f": "a5575fbaf08418575576ace492cf1ab81b707b198bfd3995ebdef016843086e2",
+        "cf61c3613985ee1239174a7f13029e0e5fd9b7af4dfd0b778fa5a63e842f793d": "9eefd1dee20fbe2e19c7b7634c49baefa8b3dad05aca2305517adcb42f43217d",
+        "4c8ed47412020b886df5d8abc373dcc66fc4f7532382c78c8ab52d21d015c3bd": "478310c74a9877966b15c4791630a206e0b305bde4587132b4c153e230f5d5ae"
+      }
+    }
+  ],
+  "fetch_candidate": {
+    "project": "library-fetch",
+    "version": "0.5.3",
+    "release_id": "38b372cd782a95138381f7062ad82e26c9472b4d4e33f4a9c1abaae3df27b5cb",
+    "publisher_key_id": "fadcee1d85f60fdad9140951bf001b0aa52b08cd077231aeb70ff8bf0596e19b",
+    "project_id": "774c17f57643702a77efd1635be542fd25ac5f9b977d811d07d25865daab5fe4",
+    "rights": 1151,
+    "executable_sha256": "293ad06764c3b1d5c64678fc24f3b79399182e8d059bfaf36411d615fd12d012",
+    "source_root": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "manifest_root": "a3dd6d4b8a9f88ec1c0ffe734025d25ff810ca0a72ed670fe55b569b94f876e6",
+    "parent": "05cdf938508c44ce53f3d10a1bae1edddcc72079cb1127439aa9101f1cc9ddfa",
+    "size": 59808,
+    "signature_verified": true,
+    "manifest_checked": false,
+    "identity_scheme": 0,
+    "logical_project_id": null,
+    "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign005/final-7/packages/library-fetch.ltrel",
+    "actual_binary_bytes": 59808
+  },
+  "fetch_remote_consumer_executed": false,
+  "legacy_synchronous_operations": [
+    38,
+    43
+  ],
+  "limits": [
+    "raw38 and raw43 compatibility paths remain synchronous; current SDK and LibraryFetch use44/45/46",
+    "host forwards explicit public fixture records; no memory patching or internal job-state setters"
+  ],
+  "scope_clear": "scope/context zero plus marks512,small scratch1024,SHA640,release digest32,JSON8192 before dispatch",
+  "platform_profile": {
+    "objects_code_bytes": 298276,
+    "objects_code_limit": 393216,
+    "native_app_code_limit": 262144,
+    "image_blob_offset": 4718592,
+    "profile": "built-in service2 only; descriptor2; same512KiB physical slot"
+  },
+  "root_verification": "QEMU focused suite; other backend/profile tests recorded separately by campaign aggregation"
+}

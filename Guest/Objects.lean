@@ -2,6 +2,7 @@ import Guest.LiveSDK
 import Guest.ServiceHash
 import Guest.Policy
 import Guest.ProjectGraph
+import Guest.ImportJobs
 namespace Guest.Objects
 open Guest.LiveSDK
 -- Private VA600000..dfffff belongs only to this user service.
@@ -534,6 +535,7 @@ def eraseImport (j t : UInt64) : UInt64 :=
 partial def freeImport (i t : UInt64) : UInt64 :=
   if i == 4 then error else
     let j := importAt i
+    if load64 (Guest.ImportJobs.ctx i) t != 0 then freeImport (i+1) t else
     if load64 j t == 0 && load64 (j+8) t < 0xffffff then Guest.Effects.effectValue i t else
       let alive := syscall 34 (load64 (j+16) t) 0 0 0 t
       if alive == error && load64 (j+8) alive < 0xffffff then Guest.Effects.effectValue i (eraseImport j alive)
@@ -649,7 +651,8 @@ def readVerifiedImport (caller rights h t : UInt64) : UInt64 :=
     let bytes := load64 (r+32) t
     if (load64 r t != 3 && load64 r t != 4) || load64 (r+8) t != caller || load64 (r+64) t != h ||
       load64 (r+24) t != bytes || offset > bytes then respond 2 0 0 0 t else
-      let checked := verifyImportBytes r t
+      let context := Guest.ImportJobs.ctx (h &&& 255)
+      let checked := if load64 context t != 0 && load64 (context+8) t == h && load64 (r+240) t != load64 (r+16) t then error else verifyImportBytes r t
       if checked == error then respond 5 0 0 0 checked else
         let count := if requested <= bytes-offset then requested else bytes-offset
         let t := respond 0 count 0 0 checked
@@ -728,9 +731,88 @@ def finishImport (caller rights h t : UInt64) : UInt64 :=
         let result := commitImportRoots caller rights j 0 t
         Guest.Effects.effectValue result (store64 j 0 result)
 
+-- Async import-v1: private jobs share the existing immutable import encoding.
+def asyncContext (h : UInt64) : UInt64 := Guest.ImportJobs.ctx (h &&& 255)
+def asyncOwned (caller h t : UInt64) : Bool :=
+  (h &&& 255) < 4 && load64 (asyncContext h) t != 0 && load64 (asyncContext h+8) t == h && load64 (asyncContext h+16) t == caller
+def asyncReply (c code t : UInt64) : UInt64 :=
+  let t := header code (load64 (c+8) t) (load64 c t) (load64 (c+64) t) (load64 (c+72) t) (load64 (c+80) t) (load64 (c+40) t) t
+  let count := if load64 c t == 4 then load64 (c+224) t else 0
+  let t := store64 (wire+56) 1 t
+  64+count*8+copy (c+256) (wire+64) (count*8) t
+def asyncDispatch (op caller rights length t : UInt64) : UInt64 :=
+  let h := load64 (command+8) t
+  let action := load64 (command+16) t
+  if length != 64 || (h &&& 255) >= 4 || load64 (command+24) t != 0 || load64 (command+32) t != 0 || load64 (command+40) t != 0 then respond 2 0 0 0 t else
+  let c := asyncContext h
+  if op == 44 && !asyncOwned caller h t then
+    if !importValid caller h t || action == 0 || !has rights 6 then respond 3 0 0 0 t else
+    let j := importAt (h &&& 255)
+    if load64 c t != 0 then respond 7 0 0 0 t else
+    if load64 (j+32) t != load64 (j+24) t || load64 (j+40) t != load64 (j+48) t || load64 (j+1344) t != load64 (j+48) t then respond 6 0 0 0 t else
+      let t := Guest.ImportJobs.begin (h &&& 255) h caller rights action t
+      asyncReply c 0 t
+  else if !asyncOwned caller h t then respond 3 0 0 0 t else
+  if op == 44 then asyncReply c (if action == load64 (c+32) t then 0 else 2) t else
+  if op == 45 then
+    if action == 0 then asyncReply c 0 t else
+    if action != 1 then respond 2 0 0 0 t else
+      let t := asyncReply c 0 t
+      let t := store64 (wire+64) (load64 (c+48) t) (store64 (wire+72) (load64 (c+56) t) t)
+      let t := store64 (wire+80) (load64 (Guest.ImportJobs.txn c t+32) t) (store64 (wire+88) (load64 (c+96) t) t)
+      let t := store64 (wire+96) (load64 (c+128) t) (store64 (wire+104) (load64 (c+120) t) t)
+      128+store64 (wire+112) (load64 (c+32) t) (store64 (wire+120) 0 t)
+  else
+  if action == 1 && load64 c t == 2 then asyncReply c 0 (store64 c 3 t) else
+  if action == 2 && load64 c t == 3 then asyncReply c 0 (store64 c 2 t) else
+  if action == 3 && load64 c t < 4 then
+    let t := Guest.ImportJobs.fail c 0 t
+    asyncReply c 0 (store64 c 5 t)
+  else if action == 4 && load64 c t >= 4 then
+    let t := if load64 (c+40) t == 90 then store64 (c+240) 1 t else zero c 1024 t
+    respond 0 0 0 0 t
+  else asyncReply c (if action >= 1 && action <= 3 then 0 else 2) t
+partial def asyncStages (c i t : UInt64) : Bool :=
+  let j := Guest.ImportJobs.txn c t
+  if i == load64 (j+32) t then true else
+  let index := load64 (j+832+i*8) t
+  let r := recordAt index
+  load64 r t == 4 && load64 (r+16) t == load64 (c+1280+i*8) t && load64 (r+8) t == load64 (c+16) t &&
+    load64 (r+64) t == load64 (c+8) t && load64 (r+224) t == 1 && load64 (r+240) t == load64 (r+16) t &&
+    load64 (c+2304+index*8) t == 1 && asyncStages c (i+1) t
+partial def asyncDependencies (c i t : UInt64) : Bool :=
+  if i == 64 then true else
+  (load64 (c+2304+i*8) t == 0 || Guest.ImportJobs.usableIndex c i t) && asyncDependencies c (i+1) t
+partial def asyncNames (c i t : UInt64) : Bool :=
+  let j := Guest.ImportJobs.txn c t
+  if i == load64 (j+56) t then true else
+  let e := j+64+i*128
+  !ProjectGraph.duplicateRoot (load64 (c+16) t) (e+48) (load64 (e+8) t) 0 0 t && asyncNames c (i+1) t
+def asyncPublish (c t : UInt64) : UInt64 :=
+  let caller := load64 (c+16) t
+  let rights := syscall 34 caller 0 0 0 t
+  let j := Guest.ImportJobs.txn c rights
+  let count := load64 (j+56) rights
+  let t := Guest.ImportJobs.scope c rights
+  if rights == error || !has rights (load64 (c+24) t) || !importRootQuota caller rights count t ||
+    freeRootsCount 0 0 t < count || freeRootCapsCount 0 0 t < count || !asyncStages c 0 t || !asyncDependencies c 0 t || !asyncNames c 0 t then
+      Guest.ImportJobs.clearScope (Guest.ImportJobs.fail c 4 t)
+  else
+    let t := Guest.ImportJobs.clearScope t
+    let t := commitImportRecords j 0 t
+    let result := commitImportRoots caller (load64 (c+24) t) j 0 t
+    let t := copy (wire+64) (c+256) (count*8) result
+    store64 j 0 (store64 c 4 (store64 (c+224) count (store64 (c+40) 100 t)))
+def pumpImports (t : UInt64) : UInt64 :=
+  let t := Guest.ImportJobs.pump t
+  let selected := Guest.ImportJobs.ready 0 t
+  if selected == error then t else asyncPublish (Guest.ImportJobs.ctx selected) t
+
 def importDispatch (op caller rights length t : UInt64) : UInt64 :=
   let h := load64 (command+8) t
+  if op >= 44 && op <= 46 then asyncDispatch op caller rights length t else
   if op == 35 then beginImport caller rights length t else
+  if asyncOwned caller h t && op != 40 && op != 43 then respond 7 0 0 0 t else
   if !importValid caller h t then respond 3 0 0 0 t else
   if op == 36 then offerImport caller h length t else
   if op == 37 then appendImport h length t else
@@ -983,7 +1065,7 @@ def validReserved (op t : UInt64) : Bool :=
   let d := load64 (command+40) t
   let e := load64 (command+48) t
   if e != 0 then false else
-  if op >= 20 && op <= 43 then true else
+  if op >= 20 && op <= 46 then true else
   if op == 1 then true else
   if c != 0 || d != 0 then false else
   if op == 4 || op == 6 || op == 14 then true else
@@ -1002,7 +1084,7 @@ def dispatch (caller rights length t : UInt64) : UInt64 :=
     else if op == 3 then commitObject caller rights length t
     else if op == 41 then checkpointRoot caller rights length t
     else if op == 42 then forkRoot caller rights length t
-    else if (op >= 35 && op <= 40) || op == 43 then importDispatch op caller rights length t
+    else if (op >= 35 && op <= 40) || (op >= 43 && op <= 46) then importDispatch op caller rights length t
     else if op >= 20 && op <= 34 then graphDispatch op caller rights length t
     else if length != 64 then respond 2 0 0 0 t
     else if op == 4 then readObject caller rights 1 t
@@ -1032,8 +1114,10 @@ def dispatch (caller rights length t : UInt64) : UInt64 :=
     else if op == 14 then readObject caller rights 64 t
     else respond 7 0 0 0 t
 
-partial def serve (t : UInt64) : UInt64 :=
-  let n := receive 2 t
+partial def serve (initial : UInt64) : UInt64 :=
+  let t := pumpImports initial
+  let n := if Guest.ImportJobs.hasWork t then syscall 36 2 incoming 1024 0 t else receive 2 t
+  if n == 0 then serve (syscall 117 (syscall 116 0 0 0 0 n+1) 0 0 0 n) else
   if n == error then serve n else
     let caller := load64 incoming n
     let requestToken := load64 (incoming+8) n
@@ -1047,7 +1131,7 @@ partial def initializeRecords (i t : UInt64) : UInt64 :=
   if i == 64 then t else initializeRecords (i+1) (zero (recordAt i) 32 t)
 
 def main (initial : UInt64) : UInt64 :=
-  let t := zero importBase 1024 (initializeRecords 0 (zero state 8192 initial))
+  let t := zero Guest.ImportJobs.base 4097 (zero importBase 1024 (initializeRecords 0 (zero state 8192 initial)))
   let currentInstance := self t
   let incarnation := (currentInstance >>> 8) &&& 0xffffff
   let epoch := ((currentInstance >>> 32)+incarnation) &&& 0xffffffff

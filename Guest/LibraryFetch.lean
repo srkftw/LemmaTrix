@@ -26,19 +26,33 @@ def response (code t : UInt64) : UInt64 :=
   let t := header code (load64 (st+160) t) (state t) (load64 (st+128) t) (load64 (st+96) t) (load64 (st+136) t) (load64 (st+104) t) t
   64+t
 def denied (t : UInt64) : UInt64 := 64+header 1 0 0 0 0 0 0 t
+-- Cleanup is reconciled in later turns if a reply is lost. A replacement
+-- operation cannot overwrite the transaction until its terminal result is read.
+def discardImport (t : UInt64) : UInt64 :=
+  let transaction := load64 (st+80) t
+  let r := Guest.ProjectSDK.importControl transaction 3 t
+  if r == error || r < 64 then r else
+  if status r == 3 then
+    let r := Guest.ProjectSDK.importAbort transaction r
+    if r == error then r else store64 (st+48) 31 (store64 (st+80) 0 r)
+  else if status r != 0 || load64 (wire+16) r < 4 then r else
+  let r := if load64 (wire+16) r == 4 then
+    if r != 72 then error else Guest.ProjectSDK.remove (load64 (wire+64) r) r
+    else r
+  if r == error then r else
+  let r := Guest.ProjectSDK.importControl transaction 4 r
+  if r == error || r < 64 || (status r != 0 && status r != 3) then r else
+    store64 (st+48) 31 (store64 (st+80) 0 r)
 def fail (code final t : UInt64) : UInt64 :=
   let transaction := load64 (st+80) t
-  let t := if transaction == 0 then t else Guest.ProjectSDK.importAbort transaction t
   let grant := load64 (st+56) t
   let slot := load64 (st+24) t
   let t := if load64 (st+64) t == 0 then t else Guest.NetworkSDK.cancelPeer slot (load64 (st+64) t) t
   let t := if grant == 0 then t else Guest.NetworkSDK.revokePeer slot grant t
-  let t := store64 (st+80) 0 t
-  let t := store64 (st+56) 0 t
-  let t := store64 (st+64) 0 t
+  let t := store64 (st+56) 0 (store64 (st+64) 0 t)
   let t := zero payload 80 t
-  let t := store64 (st+136) code t
-  store64 st final t
+  let t := store64 (st+136) code (store64 st final t)
+  if transaction == 0 then t else store64 (st+48) 30 t
 partial def alias (index value t : UInt64) : UInt64 :=
   if index == 16 then t else
   let digit := (value >>> ((15-index)*4)) &&& 15
@@ -52,7 +66,7 @@ def start (caller length t : UInt64) : UInt64 :=
     load64 (command+32) t != 0 || load64 (command+40) t != 0 || load64 (command+48) t != 0 then response 2 t else
   if operation == load64 (st+16) t && caller == load64 (st+8) t then
     if slot != load64 (st+24) t || budget != load64 (st+32) t || !Guest.ContentFormat.equal (command+64) admission 768 t then response 2 t else response 0 t
-  else if state t == 1 then response 7 t else
+  else if state t == 1 || phase t == 30 then response 7 t else
   let t := zero st 32 t
   let t := store64 st 1 t
   let t := store64 (st+8) caller t
@@ -89,7 +103,9 @@ def dispatch (caller length t : UInt64) : UInt64 :=
   if caller != load64 (st+8) t || operation != load64 (st+16) t then denied t else
   if op == 711 then inspect caller operation t else
   if op == 712 then
-    if state t == 1 && phase t == 12 then response 0 (store64 (st+232) 1 t) else
+    if state t == 1 && (phase t == 12 || phase t == 11 || phase t == 10) then
+      let r := if phase t != 12 then Guest.ProjectSDK.importControl (load64 (st+80) t) 3 t else t
+      response 0 (store64 (st+48) (if phase r == 10 then 11 else phase r) (store64 (st+232) 1 r)) else
     if state t == 1 then response 0 (fail 0 3 t) else response 0 t
   else response 2 t
 -- Each request carries a new monotonically increasing protocol identity. The
@@ -199,11 +215,15 @@ def reconcile (t : UInt64) : UInt64 :=
     fail 0 3 t
   else store64 (st+240) (load64 (wire+24) r) r
 def pump (t : UInt64) : UInt64 :=
+  if phase t == 30 then discardImport t else
   if state t != 1 then t else
   let now := Guest.WaitSDK.now t
   if syscall 119 0 0 0 0 now != load64 (st+8) now then fail 1 4 now else
-  if now >= load64 (st+40) now && phase now != 12 then fail 23 4 now else
-  let t := now
+  if now >= load64 (st+40) now && phase now != 12 && phase now != 11 && phase now != 10 then fail 23 4 now else
+  let t := if now >= load64 (st+40) now && (phase now == 11 || phase now == 10) then
+      let r := Guest.ProjectSDK.importControl (load64 (st+80) now) 3 now
+      store64 (st+48) 11 (store64 (st+232) 1 r)
+    else now
   let p := phase t
   if p == 1 then
     let r := verified 1 t
@@ -221,9 +241,27 @@ def pump (t : UInt64) : UInt64 :=
     let r := verified 0 t
     if state r != 1 then r else store64 (st+48) 10 r
   else if p == 10 then
-    let r := Guest.ProjectSDK.importCommit (load64 (st+80) t) t
-    if r == 72 && status r == 0 && result r == 1 then ready (load64 (wire+64) r) r else
-    if r == error then store64 (st+48) 12 (store64 (st+240) 0 r) else fail 24 4 r
+    let r := Guest.ProjectSDK.importSubmit (load64 (st+80) t) (load64 (st+16) t) t
+    if r == error then r else
+    if r < 64 || status r != 0 then fail 24 4 r else store64 (st+48) 11 r
+  else if p == 11 then
+    let r := Guest.ProjectSDK.importInspect (load64 (st+80) t) t
+    if r == error then r else
+    if r < 64 || status r != 0 then
+      if r >= 64 && status r == 3 && load64 (st+232) r != 0 then fail 0 3 r else fail 24 4 r
+    else
+    let state := load64 (wire+16) r
+    if state == 4 then
+      if r != 72 then fail 24 4 r else
+      let root := load64 (wire+64) r
+      let t := Guest.ProjectSDK.importControl (load64 (st+80) r) 4 r
+      if load64 (st+232) t == 0 then ready root t else
+        fail 0 3 (Guest.ProjectSDK.remove root (store64 (st+80) 0 t))
+    else if state >= 5 then
+      let reason := load64 (wire+40) r
+      let t := Guest.ProjectSDK.importControl (load64 (st+80) r) 4 r
+      fail reason (if load64 (st+232) t == 0 then 4 else 3) (store64 (st+80) 0 t)
+    else r
   else if p == 12 then reconcile t else
   if p == 20 then
     let r := Guest.NetworkSDK.pollPeer (load64 (st+24) t) (load64 (st+64) t) t
@@ -250,7 +288,7 @@ partial def serve (endpoint t : UInt64) : UInt64 :=
     let r := dispatch (load64 incoming n) (n-32) n
     reply token r r else n
   let now := Guest.WaitSDK.now t
-  let t := Guest.WaitSDK.deadline (now+(if state now == 1 && phase now != 21 then 1 else 10)) now
+  let t := Guest.WaitSDK.deadline (now+(if phase now == 30 || (state now == 1 && phase now != 21) then 1 else 10)) now
   serve endpoint t
 def main (t : UInt64) : UInt64 := serve (self t) (zero st 128 t)
 end Guest.LibraryFetch
