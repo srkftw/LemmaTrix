@@ -1,0 +1,141 @@
+{
+  "schema": 1,
+  "result": "passed",
+  "backend": "qemu",
+  "image_sha256": "c9309452ea552b204ce85b0440525b2222770a651319dcf96cd7dee48451b2d4",
+  "launcher_source_sha256": "3b3a7fabc1ce6b338fefea682d99c437e795a66dfd0ad557f0eebcd8249e0a30",
+  "command": [
+    "/home/sreekumaar/Desktop/LemmaTrix/lt",
+    "run",
+    "--backend",
+    "qemu",
+    "--image",
+    "build/campaign005/final-12/guest.bin",
+    "--socket",
+    "/home/sreekumaar/Desktop/LemmaTrix/build/campaign005/launcher-recovery-failure12/portal.sock",
+    "--vault",
+    "/home/sreekumaar/Desktop/LemmaTrix/build/campaign005/launcher-recovery-failure12/objects.vault"
+  ],
+  "checks": [
+    {
+      "check": "real v1 ciphertext corruption fails closed before stage allocation;65 or more Launcher207 failures preserve actual owned records, reserved bytes, grants and unrelated Objects",
+      "result": "passed",
+      "attempts": 65,
+      "typed_save_bytes": 192,
+      "generation": 1,
+      "root_sector": 1,
+      "bank_sector": 152,
+      "ciphertext_byte_offset": 77969,
+      "authenticated_header_and_tag_unchanged": true,
+      "public_cipher_checksum_recomputed": true,
+      "vault204_status": 5,
+      "launcher207_error": "guest rejected command207, status1",
+      "owned_records_reserved_bytes_grants_before": [
+        1,
+        64,
+        1
+      ],
+      "owned_records_reserved_bytes_grants_after": [
+        1,
+        64,
+        1
+      ],
+      "before_allocation_handle": 4503385063689290497,
+      "after_allocation_handle": 4503385063689290753,
+      "allocation_generation_delta": 1,
+      "stage_created_during207": false,
+      "selected_payload_sha256": "758c6347522a0bfbdd4327d98f8e609da76790482ec52cd06b5fd3112d8a0d34",
+      "unrelated_object_sha256": "59c189f245e0c010b96b1f36fc7afd2af538bc57ccc7d75b072e6bf662f304ef",
+      "backing_sha256_before": "ac7284e77ce6394dffccc5aaa31e584a20addb819366cd6c51d9846cd7c1cc4c",
+      "backing_sha256_after": "b76acfcf355bef64a4e77cd12348aab2d1b0e6c4d7013b1c43b74938e125c98e"
+    },
+    {
+      "check": "ordinary signed caller creates real192-byte stages; actual Launcher.restoreChunks receives Vault206 authority denial and exact discardRecoveredSave reclaims every failed stage",
+      "result": "passed",
+      "attempts": 65,
+      "actual_caller_rights": 127,
+      "caller_instance": 4503385059394322695,
+      "restored_vault_authority": false,
+      "baseline_probe_owned_records_bytes_grants": [
+        0,
+        0,
+        0
+      ],
+      "stage_created": true,
+      "launcher_role_impersonated": false,
+      "scope": "function-boundary negative; not end-to-end207 post-stage fault injection",
+      "observation_summary": {
+        "count": 65,
+        "unique_stage_handles": 65,
+        "first": {
+          "stage_handle": 4503385063689291009,
+          "restore_result": 18446744073709551615,
+          "pending_cleanup": 0,
+          "after_owned_records_bytes_grants": [
+            0,
+            0,
+            0
+          ],
+          "during_owned_records_bytes_grants": [
+            1,
+            192,
+            1
+          ],
+          "stale_stage_status": 3
+        },
+        "last": {
+          "stage_handle": 4503385063689307393,
+          "restore_result": 18446744073709551615,
+          "pending_cleanup": 0,
+          "after_owned_records_bytes_grants": [
+            0,
+            0,
+            0
+          ],
+          "during_owned_records_bytes_grants": [
+            1,
+            192,
+            1
+          ],
+          "stale_stage_status": 3
+        },
+        "every_during_owned_records_bytes_grants": [
+          1,
+          192,
+          1
+        ],
+        "every_after_owned_records_bytes_grants": [
+          0,
+          0,
+          0
+        ],
+        "every_pending_cleanup": 0,
+        "every_stale_stage_status": 3,
+        "full_observations_result": "build/campaign005/launcher-recovery-failure12/result.json",
+        "full_result_sha256": "8dbdbca09f33afcd780645d413d2724715434daaca712e66ccb08fa6ff7d6832"
+      }
+    }
+  ],
+  "probe": {
+    "source": "tests/fixtures/LauncherRecoveryProbe.lean",
+    "source_sha256": "97d2e4077e5c064191f4b9bdf2eb2223f789c51dcb1c7a9290d02c5a2753dde6",
+    "binary_sha256": "5dc3e8a8b500135e5070a9db129bc7999aacfc5f32235f075d92de9514940a4b",
+    "release_id": "b7868d70ef26f7ff70d0490a893216d956024d858f88b107fd541c5aaa38a197",
+    "package_sha256": "36cb771c6364ea52b9c225bc576e2c336a563f06e555602c21ec883328c1aae1",
+    "actual_rights": 127,
+    "instance": 4503385059394322695
+  },
+  "limitations": [
+    "dedicated newly initialized explicit development Objects-v1 backing; intentional ciphertext fault only",
+    "Vault204 authenticates the complete v1 payload before Launcher207 allocates a stage, so this real207 fault is pre-stage rejection",
+    "optional ordinary fixture exercises actual imported restoreChunks/discard helper after its own stage allocation and an actual kernel-denied Vault206; it has no Launcher or Vault authority",
+    "no graphical N/save recovery, Game execution, media pipeline, speaker output, physical durability or corruption recovery success claimed"
+  ],
+  "component_source_commit": "e453cc7bebdb232e0b23887f2043241739b350aa",
+  "compile_command": "./lt app --profile 2 --module tests.fixtures.LauncherRecoveryProbe --entry Guest.LauncherRecoveryProbe.main --name launcher-recovery-probe",
+  "run_command": "python3 tests/launcher_recovery_failure_refs.py --image build/campaign005/final-12/guest.bin --probe build/live/apps/launcher-recovery-probe.bin --attempts 65 --output build/campaign005/launcher-recovery-failure12",
+  "script": "tests/launcher_recovery_failure_refs.py",
+  "output_directory": "build/campaign005/launcher-recovery-failure12",
+  "guest_shutdown": "normal public command70; controller and all owned guest processes exited",
+  "backing_scope": "new512-sector Objects-only encrypted development vault; initial selected192-byte diagnostic save, key and ciphertext fault belong exclusively to this fixture"
+}
