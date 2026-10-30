@@ -493,7 +493,13 @@ def dispatch (caller rights length t : UInt64) : UInt64 :=
   if op == 312 then collect rights t else
   if op == 313 then proof caller h (load64 (command+16) t) t else
   if op == 316 then checkDelegation caller h (load64 (command+16) t) t else malformed t
-def startStore (epoch t : UInt64) : UInt64 :=
+def startStore (serviceInstance t : UInt64) : UInt64 :=
+  -- Token high32 must include the randomized kernel boot epoch. Shifting the
+  -- full process identity directly would discard those high bits and reuse
+  -- the same token sequence in every fresh service5 instance. Match Objects
+  -- by folding boot epoch and process incarnation before token generation.
+  let incarnation := (serviceInstance >>> 8) &&& 0xffffff
+  let epoch := ((serviceInstance >>> 32)+incarnation) &&& 0xffffffff
   let t := zero base 32768 t
   store64 state epoch t
 end Guest.ContentStore
