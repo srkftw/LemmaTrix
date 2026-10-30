@@ -16,10 +16,11 @@ from crate_game import state as game_state
 from library_journey import appcall,wait
 
 class Guest:
- def __init__(self,name,out,image,vault=None):
+ def __init__(self,name,out,image,vault=None,pcm_play=False):
   self.base=out/name;self.base.mkdir();self.socket=self.base/'portal.sock';self.graphics=self.base/'display.qmp';self.capture=self.base/'guest.pcm';self.ui=None
   self.log=(self.base/'guest.log').open('wb');cmd=[ROOT/'lt','run','--image',image,'--socket',self.socket,'--network-mux']
   if vault:cmd+=['--vault',vault,'--graphics',self.graphics,'--pcm-sink',self.capture]
+  if pcm_play:cmd+=['--pcm-play']
   self.proc=subprocess.Popen(list(map(str,cmd)),cwd=ROOT,stdout=self.log,stderr=self.log,start_new_session=True)
   def ready():
    if self.proc.poll() is not None:raise RuntimeError(name+' exited before portal readiness; see '+str(self.base/'guest.log'))
@@ -34,7 +35,15 @@ class Guest:
  def stop(self):
   if self.ui:self.ui.close();self.ui=None
   if self.proc.poll() is None:
-   os.killpg(self.proc.pid,signal.SIGTERM)
+   # Let the guest finish and the raw adapter close/reap its selected sink.
+   # A bounded fallback remains for a deliberately faulted/unresponsive VM.
+   try:
+    c=live.Client(self.socket,timeout=5)
+    try:
+     try:c.request(70)
+     except EOFError:pass
+    finally:c.close()
+   except (OSError,ValueError,TimeoutError):os.killpg(self.proc.pid,signal.SIGTERM)
    try:self.proc.wait(10)
    except subprocess.TimeoutExpired:os.killpg(self.proc.pid,signal.SIGKILL);self.proc.wait()
   self.log.close()

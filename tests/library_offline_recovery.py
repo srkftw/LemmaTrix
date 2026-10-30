@@ -18,8 +18,9 @@ def main():
  for name in ('image','vault','vault-key','federation-public','library','player','public','output'):
   p.add_argument('--'+name,type=Path,required=True)
  p.add_argument('--seconds',type=int,required=True)
+ p.add_argument('--pcm-play',action='store_true')
  a=p.parse_args();out=a.output.resolve();out.mkdir(parents=True,exist_ok=False)
- guest=Guest('personal',out,a.image.resolve(),a.vault.resolve())
+ guest=Guest('personal',out,a.image.resolve(),a.vault.resolve(),pcm_play=a.pcm_play)
  image_id=hashlib.sha256(a.image.read_bytes()).hexdigest()
  records=[]
  try:
@@ -61,12 +62,14 @@ def main():
   require(rendered_text(guest.ui.frame(),520,34,16)==f'{player:016x}','actual Player not focused')
   began=time.monotonic();guest.ui.press(57)
   wait(lambda:state()[2]==5,600,'offline native decoded PCM complete')
-  elapsed=time.monotonic()-began;actual=guest.capture.read_bytes()
+  elapsed=time.monotonic()-began
+  from player_audio import captured_bytes
+  actual=captured_bytes(guest.capture,a.seconds*192000)
   # Expected original composition is constructed only after playback; it is
   # not an input supplied to the guest or the sample adapter.
   require(actual==content.original_wave(a.seconds,2)[44:],'actual offline PCM differs from original retained composition')
   (out/'playback.ppm').write_bytes(guest.ui.frame().ppm())
-  report=dict(result='passed',image=image_id,packages=records,retained_backing=str(a.vault.resolve()),native_actions='U / physical Enter / H / Space / Alt-Tab / Space',network_configured=False,providers_started=False,media_input_supplied=False,acquisition_authority_recovered=False,pcm_bytes=len(actual),pcm_sha256=hashlib.sha256(actual).hexdigest(),seconds_to_submit_samples=elapsed,speaker_output=False)
+  report=dict(result='passed',image=image_id,packages=records,retained_backing=str(a.vault.resolve()),native_actions='U / physical Enter / H / Space / Alt-Tab / Space',network_configured=False,providers_started=False,media_input_supplied=False,acquisition_authority_recovered=False,pcm_bytes=len(actual),pcm_sha256=hashlib.sha256(actual).hexdigest(),seconds_to_submit_samples=elapsed,host_pcm_output_requested=a.pcm_play,speaker_output=False)
   (out/'result.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2),flush=True)
  except BaseException as error:
   preserve_failure([guest],out,error);raise
