@@ -64,6 +64,11 @@ def run(backend, directory, signer_package, probe_package):
         raise AssertionError('forbidden call succeeded')
     with accept.Session(backend, directory) as c:
         service = identity.start(c, signer_package, ROOT/'tests/keys/development-rsa-public.pem')
+        before = {r[0] for r in identity.instances(c) if 0 < r[1] < 5}
+        denied(lambda: identity.start(c, signer_package, ROOT/'tests/keys/development-rsa-public.pem'))
+        after = {r[0] for r in identity.instances(c) if 0 < r[1] < 5}
+        assert before == after
+        passed('failed duplicate provisioning reclaims its process and preserves the current signer')
         launcher = next(row[0] for row in identity.instances(c) if row[0] & 255 == 1)
         assert next(row[2] for row in identity.instances(c) if row[0] == service['service']) == 0
         federation = hashlib.sha256(b'qualification selected federation').digest()
@@ -164,6 +169,8 @@ def run(backend, directory, signer_package, probe_package):
         denied(lambda: identity.invoke(c, 401, h=key))
         f, fresh = identity.invoke(c, 400, a=2, data=federation+scope)
         assert fresh[96:128] != exported[96:128]
+        assert f[1] != key
+        denied(lambda: identity.invoke(c, 401, h=key))
         passed('independent new guest owns a new key and cannot recover unretained old authority')
     return {'backend':backend, 'checks':checks, 'public':public, 'limits':{'identity_keys':8,'one_use_approvals':16,'private_arena_bytes':2097152}}
 

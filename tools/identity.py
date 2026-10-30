@@ -85,8 +85,17 @@ def start(client, release_path, public_path):
     slot, admitted = client.install(release_path)
     service = struct.unpack_from('<Q', client.request(25, struct.pack('<Q', slot)), 8)[0]
     launcher = next(row[0] for row in instances(client) if row[0] & 255 == 1)
-    generations = {op: bind(client, service, launcher, bytes.fromhex(admitted['release_id']), bytes(32), op)
-                   for op in OPERATIONS}
+    try:
+        generations = {op: bind(client, service, launcher, bytes.fromhex(admitted['release_id']), bytes(32), op)
+                       for op in OPERATIONS}
+    except BaseException:
+        # Stop only the process created by this attempt. Kernel teardown revokes
+        # its partial bindings and preserves any independently running signer.
+        try:
+            client.request(26, struct.pack('<Q', service))
+        except (ValueError, OSError, EOFError, TimeoutError):
+            pass
+        raise
     return {'service': service, 'release': admitted['release_id'], 'rights': 0,
             'bindings': generations, 'retention': 'ephemeral'}
 

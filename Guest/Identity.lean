@@ -33,7 +33,10 @@ def fail (code t : UInt64) : UInt64 := response code 0 0 0 (clearScratch t)
 def serial (t : UInt64) : UInt64 :=
   let next := load64 st t+1
   if next > 0xffffffff then error else
-  ((self t &&& 0xffffffff) <<< 32) ||| next
+  -- Include the full incarnation, including the randomized high boot epoch.
+  -- A low32-only token deterministically aliases a new boot's same-slot key.
+  -- Handles remain finite ephemeral names, not a rollback/freshness anchor.
+  (self t) ^^^ ((next <<< 32) ||| next)
 def takeSerial (t : UInt64) : UInt64 := store64 st (load64 st t+1) t
 partial def freeKey (i t : UInt64) : UInt64 :=
   if i == 8 then error else if load64 (keyAt i) t == 0 then i else freeKey (i+1) t
@@ -219,7 +222,7 @@ def dispatch (caller rights token length t : UInt64) : UInt64 :=
   else if op == 403 then if admin && length == 64 then revokeKey t else fail 1 t
   else if op == 404 then if admin && length == 64 then lock t else fail 1 t
   else if op == 405 then if admin && length == 96 then authorize token t else fail 1 t
-  else if op == 406 then if length == 64 then
+  else if op == 406 then if admin && length == 64 then
     64+header 0 1 8 16 (countKeys 0 0 t) (countGrants 0 0 t) 0 t else fail 2 t
   else if op == 407 then if length == 64 then
     cancelApproval (load64 (command+8) t) caller (if admin then 1 else 0) 0 t else fail 2 t
