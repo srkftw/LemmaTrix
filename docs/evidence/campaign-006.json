@@ -1,0 +1,948 @@
+{
+  "schema": 1,
+  "campaign": 6,
+  "date": "2026-10-30",
+  "branch": "codex/persistent-collections",
+  "starting_revision": "7ab6a71db7fa83025f2a7d377354a7881ca93c85",
+  "implementation_revision": "befca02e28aa91d0b84ff7845d64104f48039e6f",
+  "acceptance": "substantial connected increment; full requested acceptance remains partial",
+  "common_image": {
+    "sha256": "ed78bb68a08290f94ffc138e073d8b294ae1b2c5f1362908187d29df9be43e48",
+    "bytes": 6291456,
+    "path": "build/campaign006/candidate-final-worker/guest.bin",
+    "ram_bytes": 167772160,
+    "ordinary_slots": 5,
+    "clean_byte_identical": true,
+    "source_snapshot_files": 147,
+    "build_basis": "fresh isolated source copy, no prior .olean files or build artifacts; ordinary ./lt build",
+    "rebuild_evidence": "build/campaign006/repro-final-build-result3.json",
+    "source_manifest_sha256": "c664d044bb68d6a152fed728271487e943b81d769517b0fc0170de5bcbef4aae",
+    "builtin_code_bounds": [
+      {
+        "service": 1,
+        "name": "Launcher",
+        "image_offset": 3145728,
+        "code_bytes": 163932,
+        "code_limit_bytes": 262144,
+        "remaining_code_bytes": 98212,
+        "binary_sha256": "090ea9c524c1cff9039cef4049c4e6bde44d0ed75a1f46ecd3d7ef7a02cb0cd4",
+        "profile": 2
+      },
+      {
+        "service": 2,
+        "name": "Objects",
+        "image_offset": 4718592,
+        "code_bytes": 300880,
+        "code_limit_bytes": 393216,
+        "remaining_code_bytes": 92336,
+        "binary_sha256": "7559360b221ab33c8d46005bc248e435ce7110f9f4f8ce7815c99390b81b2c85",
+        "profile": 2
+      },
+      {
+        "service": 3,
+        "name": "Vault",
+        "image_offset": 5242880,
+        "code_bytes": 383740,
+        "code_limit_bytes": 393216,
+        "remaining_code_bytes": 9476,
+        "binary_sha256": "f486e3e93a520c9ad0130ad4d2efec21abc38210946f774240be9ea476f4c560",
+        "profile": 2
+      },
+      {
+        "service": 4,
+        "name": "Compositor",
+        "image_offset": 3932160,
+        "code_bytes": 254940,
+        "code_limit_bytes": 262144,
+        "remaining_code_bytes": 7204,
+        "binary_sha256": "0f4e54c2fffb24dbc9ec98c5d133ab3a037092d9d63b2f63a94d044bd9fec843",
+        "profile": 2
+      },
+      {
+        "service": 5,
+        "name": "BuildJobs",
+        "image_offset": 4194304,
+        "code_bytes": 239244,
+        "code_limit_bytes": 262144,
+        "remaining_code_bytes": 22900,
+        "binary_sha256": "3ad5748dc2c7c5de9ff796f1560e21f80a0a885fe492ccf7104eac3e45313e0e",
+        "profile": 2
+      },
+      {
+        "service": 6,
+        "name": "Network",
+        "image_offset": 4456448,
+        "code_bytes": 137144,
+        "code_limit_bytes": 262144,
+        "remaining_code_bytes": 125000,
+        "binary_sha256": "63a0ab533dc67d1e0cd895995dbf4268834ba0f6b76122998480a75dc6ea5973",
+        "profile": 2
+      }
+    ],
+    "all_clean_build_inputs_match_implementation_commit": true
+  },
+  "privacy": "Redacted execution summary. No credentials, keys, live capability handles, namespaces, private watchlists or scoped requester/provider associations are published here.",
+  "bounds": {
+    "volatile_payload_pool_bytes": 6029312,
+    "indexed_verified_chunk_cache_bytes": 4096,
+    "indexed_working_region_bytes": 65536,
+    "indexed_selections_per_purpose": 16,
+    "indexed_max_item_bytes": 67108864,
+    "indexed_minimum_sectors": 5394976,
+    "independent_collection_policies": 8,
+    "active_library_jobs": 4,
+    "durable_service_rows": 16,
+    "build_artifact_contexts": 4,
+    "build_artifact_context_bytes": 16384,
+    "network_context_banks_bytes": 262144,
+    "network_receive_credit_bytes_per_channel": 1008,
+    "network_transmit_window_bytes_per_channel": 65536,
+    "ordinary_code_bytes": 262144,
+    "objects_vault_code_bytes": 393216
+  },
+  "final_application_binaries": {
+    "library": {
+      "path": "build/live/apps/library006.bin",
+      "bytes": 261360,
+      "sha256": "500d5280eeb7a8a8b8905f17858fa18943b538864b55465943b10049d977c521"
+    },
+    "operator": {
+      "path": "build/live/apps/library-operator006.bin",
+      "bytes": 149556,
+      "sha256": "3f20e561985beb61075e19e63cd925edd832f2e17b2d6cedbef79f80383c1a2a"
+    },
+    "acquirer": {
+      "path": "build/live/apps/library-acquirer006.bin",
+      "bytes": 138012,
+      "sha256": "0d3c668a2a5a5fb01063ad5b8ebd93222a9fd5cbbbea8ca5fc6fff1deb70049a"
+    },
+    "peer": {
+      "path": "build/live/apps/library-peer-renewal006.bin",
+      "bytes": 68900,
+      "sha256": "ad74170c64290f5af737ed6127b6bc83efb0bdc9c7f4ef82da1b607e650e4972"
+    },
+    "registry": {
+      "path": "build/live/apps/registry-current006.bin",
+      "bytes": 99824,
+      "sha256": "ff9c3f429d4825fe663e17a535478d9a26eada4467d0b954b5a54d1597fc5ef4"
+    },
+    "player": {
+      "path": "build/live/apps/player006.bin",
+      "bytes": 47352,
+      "sha256": "dd4e1d9eb5b2477b908ccff7f52d9c0116565c80fd70e6b11bac1b933c23ff23"
+    }
+  },
+  "performance": {
+    "payload_bytes": 1152044,
+    "payload_sha256": "f94e8e379da64b756d7b8341267cf4ddc9ec92c94b05c8b8c3228d1be2ff5580",
+    "manifest_sha256": "073980a32193d7edd1fee1a32a4a2bc4dcea02b7de7f8af3fb51266fa6da8eab",
+    "before": {
+      "image_sha256": "c9309452ea552b204ce85b0440525b2222770a651319dcf96cd7dee48451b2d4",
+      "acquirer_sha256": "48fade5001ba4e3652a4781b107c85166aa62e26e02febe05f4fda134cbcb21f",
+      "peer_sha256": "0942b7ece8bd9d014365b79255fd71e73602042524522109317315ddbc5593d7",
+      "registry_binary_sha256": "ff9c3f429d4825fe663e17a535478d9a26eada4467d0b954b5a54d1597fc5ef4",
+      "elapsed_seconds": 738.9651841409504,
+      "preparation_seconds": 197.62626502895728,
+      "payload_bytes_per_second": 1558.9963163680777
+    },
+    "after": {
+      "image_sha256": "31b11d867abfbf07195916b895c137152ffb09c4398de4abaaec858b6e43a468",
+      "acquirer_sha256": "c3a3e1debefe0f36b41eb07b4f236ff06fd40f46de0ae91d2cbcf70069cb71c2",
+      "peer_sha256": "533fb96c244659a7a9c4e5a324e35c1b59d52735bd74ea71851aa7e01c63dc0c",
+      "registry_binary_sha256": "ff9c3f429d4825fe663e17a535478d9a26eada4467d0b954b5a54d1597fc5ef4",
+      "elapsed_seconds": 100.57954796007834,
+      "payload_bytes_per_second": 11454.058239128943
+    },
+    "observed_speedup": 7.347072035303417,
+    "includes": "normal Library policy/discovery/transfer/chunk validation/publication/WAVE parse; excludes source preload/setup",
+    "resident_payload_bytes": 1155072,
+    "measurement_qualification": "Shared development host; after is identified31b image before final idle-build waiter. Historical compatibility-Registry runs are excluded. No universal throughput or large-network-transfer claim."
+  },
+  "large_content": {
+    "title": "Beethoven Moonlight I - Paul Pitman / Musopen",
+    "source_page": "https://commons.wikimedia.org/wiki/File:Ludwig_van_Beethoven_-_sonata_no._14_in_c_sharp_minor_'moonlight',_op._27_no._2_-_i._adagio_sostenuto.ogg",
+    "source_sha256": "035a31b8d67de4b0574110592a6f8ce2f6e51dfc7f884e16f918e47e327d7d66",
+    "frames": 16116855,
+    "output_rate": 48000,
+    "channels": 2,
+    "output_bytes": 64467464,
+    "output_sha256": "786aa30c3232cdfb917dd5e6b95a570d9f8a4bc1ab2c6265e99b8bfe6c75f8bb",
+    "rights": "Commons identifies recording as Musopen public-domain release; attribute Paul Pitman and Musopen. Composition Beethoven public domain.",
+    "conversion": "Explicit one-time bootstrap conversion of complete recording: libsndfile Vorbis decode, libsamplerate sinc-best44.1to48k, PCM16 WAVE. Guest playback decodes only WAVE itself. No padding, repetition, duration extension or clip.",
+    "manifest_sha256": "6ff29b5501131cf7fe48b3abe7c3e6f8797e0144f60c3f56696365837bc781d1",
+    "retained_roots": 6,
+    "aggregate_retained_bytes": 65427684,
+    "other_roots": "Five distinct authorized one-second excerpts of the same performance; no padding",
+    "acquisition": "explicit native operator block ingestion, not network retrieval",
+    "interrupted_after_verified_bytes": 18386944,
+    "interrupted_chunks": 4489,
+    "publication_image": "0875f242e3c669e07e0079f9e6de0f936df33c0294fbe6ef236511daf7ff742b",
+    "whole_operation_seconds": null,
+    "raw_input_extent_removed": true
+  },
+  "native_library_journey": {
+    "image_sha256": "ed78bb68a08290f94ffc138e073d8b294ae1b2c5f1362908187d29df9be43e48",
+    "result": "passed",
+    "original_host_media_bound": false,
+    "cold_inventory_rows": 6,
+    "cold_inventory_seconds": 6.475753064034507,
+    "cold_inventory_resident_payload_pages": 0,
+    "network_device_attached": true,
+    "original_provider_required_for_retained_reader": false,
+    "policy_B_edit_preserved_A": true,
+    "ui_packages": {
+      "check": "native Library lists six retained items and two independent collection policies",
+      "library_release": "6bc93ae271ff86c8a88b5c1d756ab80413de25126029752d2669f43e83ddf490",
+      "player_release": "180c4dfec7d715defa9151fba0b08992dc2ca5296cf28de74f3f0804fd1d218c",
+      "registry_release": "814bb394f58725c2c4c749e21baf78d3c25f6a1a4c4abfe3f236f01ee9c16583"
+    },
+    "selected_export": {
+      "check": "native selected export portal writes exact one-root destination",
+      "bytes": 192044,
+      "sha256": "0ef241f0572476d341512e5b2ae611806d2b28b6da2110fd214a2393c6f5af18"
+    },
+    "same_guest_concurrency": {
+      "check": "same guest completes normal signed-collection network acquisition and foreground transaction while nonresident playback advances",
+      "acquired_bytes": 192044,
+      "acquired_sha256": "01c3b2ee8eb591a349cf2c6d9ad2a0beaab0d6fe93f250ed1e8e5a09eda45e80",
+      "elapsed_seconds": 34.990239983890206,
+      "player_frame": 8662784,
+      "resident_payload_pages": 47,
+      "provider": "separate local guest with separately imported authorized excerpt",
+      "network_mode": 3
+    },
+    "retained_seek_pcm": {
+      "check": "offline nonresident seek beyond32MiB decodes exact human-performance PCM",
+      "seek_frame": 8400000,
+      "seek_byte_offset": 33600044,
+      "decoded_frames": 324096,
+      "pcm_sha256": "e282dd6e7a80eee313d8cf92aa5994c87a837fa12b6fa07d92ce852dc0bce3df",
+      "bytes": 1296384,
+      "host_decoder": false,
+      "original_provider_required": false
+    },
+    "evidence": "build/c006-concur3/journey.json",
+    "package_qualification": "This complete UI flow precedes the isolated bounded-reconnect helper; final binaries and focused reconnect checks have their own identities."
+  },
+  "personal_indexed": {
+    "image_sha256": "ed78bb68a08290f94ffc138e073d8b294ae1b2c5f1362908187d29df9be43e48",
+    "backend": "QEMU RV64",
+    "encryption": "guest per-index/per-item AEAD",
+    "source_bytes": 8193,
+    "source_sha256": "24c3859d565006d8643dcd8eb2d32311596eac956a19e5165a1c3fabf0d34391",
+    "manifest_sha256": "ffc0456649c57525fb95ea2899e76eed8ec03547fe81e49a9579f29bb01cbfc8",
+    "independent_bytes": 2668,
+    "independent_sha256": "dfbf9316e74c9c56e1305df8e212f25cec68ee08cdd4a4f5c67b03fb644390b9",
+    "independent_manifest_sha256": "0583200f816e045b7bc6c955f7e2e09ef63f648a659d026003a55cdb74920f86",
+    "private_key_persisted": false,
+    "personal_plaintext_cache_files_created": false,
+    "both_commit_seconds": 1.5809467730578035,
+    "old_grant_denied": "ContentJobs status1",
+    "old_permit_denied": "indexed inventory status1",
+    "metadata_only_two_item_inventory_seconds": 0.251103657996282,
+    "metadata_only_two_item_open_seconds": 0.26876974501647055,
+    "recovered_A_sha256": "24c3859d565006d8643dcd8eb2d32311596eac956a19e5165a1c3fabf0d34391",
+    "recovered_B_sha256": "dfbf9316e74c9c56e1305df8e212f25cec68ee08cdd4a4f5c67b03fb644390b9",
+    "tombstone_hides_A": "indexed inventory status6",
+    "tombstone_blocks_new_open": "indexed inventory status5",
+    "held_reader_after_delete_sha256": "24c3859d565006d8643dcd8eb2d32311596eac956a19e5165a1c3fabf0d34391",
+    "B_after_A_reclaim_sha256": "dfbf9316e74c9c56e1305df8e212f25cec68ee08cdd4a4f5c67b03fb644390b9",
+    "A_root_directory_actually_zero_after_reclaim": true,
+    "logical_reclamation_only": true,
+    "physical_secure_erase_claimed": false,
+    "fresh_authority_after_restart": true,
+    "result": "passed"
+  },
+  "personal_collection_policy_recovery": {
+    "image_sha256": "ed78bb68a08290f94ffc138e073d8b294ae1b2c5f1362908187d29df9be43e48",
+    "release_id": "28cc113700aacaa17104222c177f1608ca7e10ff0da6d9cf86df69325a514c87",
+    "checks": [
+      "updating collection B leaves A generation, consent, budget and identity byte-exact",
+      "A and B commit to distinct encrypted selected slots with independent approved budgets and provider sets",
+      "unsupported privacy modes reject without modifying either collection",
+      "restart recovers both authenticated selected policies/history with distinct budgets/providers, zero live grants and no autonomous acquisition approval",
+      "corrupted newer A ciphertext falls back to previous complete A; independent committed B survives byte-exact and both still require fresh acquisition approval"
+    ],
+    "after_restart": [
+      {
+        "slot": 0,
+        "collection_slot": 0,
+        "approved_budget": 2000000,
+        "provider_mask": 6,
+        "generation": 2,
+        "monitoring": 1,
+        "acquisition": 0,
+        "awaiting_fresh_approval": 1,
+        "live_retention_grant": 0
+      },
+      {
+        "slot": 1,
+        "collection_slot": 1,
+        "approved_budget": 4000000,
+        "provider_mask": 4,
+        "generation": 3,
+        "monitoring": 1,
+        "acquisition": 0,
+        "awaiting_fresh_approval": 1,
+        "live_retention_grant": 0
+      }
+    ],
+    "after_corrupted_newer_A": [
+      {
+        "slot": 0,
+        "collection_slot": 0,
+        "approved_budget": 2000000,
+        "provider_mask": 6,
+        "generation": 2,
+        "monitoring": 1,
+        "acquisition": 0,
+        "awaiting_fresh_approval": 1,
+        "live_retention_grant": 0
+      },
+      {
+        "slot": 1,
+        "collection_slot": 1,
+        "approved_budget": 4000000,
+        "provider_mask": 4,
+        "generation": 3,
+        "monitoring": 1,
+        "acquisition": 0,
+        "awaiting_fresh_approval": 1,
+        "live_retention_grant": 0
+      }
+    ],
+    "result": "passed",
+    "policy_slots": 8,
+    "record_bytes": 512,
+    "whole_store_rollback_freshness": false
+  },
+  "replication": {
+    "image": "ed78bb68a08290f94ffc138e073d8b294ae1b2c5f1362908187d29df9be43e48",
+    "content": {
+      "manifest": "073980a32193d7edd1fee1a32a4a2bc4dcea02b7de7f8af3fb51266fa6da8eab",
+      "payload_sha256": "f94e8e379da64b756d7b8341267cf4ddc9ec92c94b05c8b8c3228d1be2ff5580",
+      "bytes": 1152044,
+      "offered_editions": {
+        "mono_bytes": 576044,
+        "stereo_bytes": 1152044
+      },
+      "selected_edition": "stereo"
+    },
+    "clients": 2,
+    "concurrent_native_acquisition": true,
+    "provider_terminated_during_both_transfers": true,
+    "automatic_failover_to_second_provider": true,
+    "partial_checkpoint_before_first_client_crash": 253952,
+    "partial_checkpoint_before_final_cold_recovery": 749568,
+    "completed_own_backings": 2,
+    "actual_payload_bytes_checked_per_backing": 1152044,
+    "whole_payload_rehydration": false,
+    "content_stats_before_each_full_range_read": [
+      [
+        0,
+        0,
+        1472,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      [
+        0,
+        0,
+        1472,
+        0,
+        0,
+        0,
+        0,
+        1
+      ]
+    ],
+    "destination_a_terminal": {
+      "state": "complete",
+      "generation": 293,
+      "attempts": 6,
+      "reserved_transmission_bytes": 1164332,
+      "consumed_work_quanta": 285,
+      "result_bytes": 1152044,
+      "byte_ceiling": 2304088,
+      "attempt_ceiling": 16,
+      "work_quantum_ceiling": 65536
+    },
+    "destination_b_terminal": {
+      "state": "complete",
+      "generation": 287,
+      "attempts": 2,
+      "reserved_transmission_bytes": 1156140,
+      "consumed_work_quanta": 283,
+      "result_bytes": 1152044,
+      "byte_ceiling": 2304088,
+      "attempt_ceiling": 16,
+      "work_quantum_ceiling": 65536
+    },
+    "other_terminal_unchanged": true,
+    "final_cold_recovery_completion_and_full_validation_seconds": 352.1755055950489,
+    "timing_boundary": "includes native cold startup, fresh admission, remaining acquisition and every-byte validation; diagnostic journey is not a comparable throughput benchmark",
+    "provider_recovered_own_nonresident_range": {
+      "offset": 900000,
+      "bytes": 512,
+      "sha256": "cd2958a28ca81c4848484230acf6819c2b38cc835ad07d30ee94b681953da408",
+      "stats": [
+        0,
+        0,
+        1472,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "fresh_authority": true,
+      "budget_replenished": false
+    },
+    "storage_receipt": {
+      "state": "complete",
+      "role": "storage",
+      "record_generation": 293,
+      "reserved_transmission_bytes": 1164332,
+      "attempts": 6,
+      "result_bytes": 1152044,
+      "consumed_work_quanta": 285,
+      "signature": "RSA2048/SHA256 verified in the guest",
+      "provider_assertion": true,
+      "client_integrity_acceptance": "not asserted",
+      "independent_verification": "not asserted",
+      "settlement": "unavailable; voluntary zero-price",
+      "signer_boundary": "explicit host bootstrap outside the key-free network-disabled compiler sandbox"
+    },
+    "host_chunk_scheduler": false,
+    "independent_operators": false,
+    "independent_hardware": false,
+    "qualified_package_history": {
+      "continuing_operator_binary_sha256": "a40049caf7e98f16392ea88d6fc2a183eca6c681ab5d31a82cafc33a613849c7",
+      "continuing_operator_release": "2be69638231311d2ca921cd1fbef306e1166417d7f38da2685f6afef68d36612",
+      "seed_release": "a81b3acb021f5504ca7881cae3db0e295656024d610856cd9e97f10bca5aeac3",
+      "later_reconnect_and_scope_renewal": "separately exercised final packages, not retroactively attributed to this acquisition"
+    }
+  },
+  "retrievability": {
+    "image_sha256": "ed78bb68a08290f94ffc138e073d8b294ae1b2c5f1362908187d29df9be43e48",
+    "sampler_release": "9a64f349cd03121c4bb9836b7c9fb54cadd01e7dcb679ed259898412520b1f00",
+    "sampler_sha256": "47461919d78c40d31652de99b34ceb19cd001a151f928ba53d50f8f7111021f7",
+    "provider_open_seconds": 0.8809636379592121,
+    "sample_seconds": 2.9612222500145435,
+    "evidence": {
+      "state": "complete",
+      "completed_samples": 8,
+      "requested_samples": 8,
+      "verified_response_bytes": 32768,
+      "manifest_sha256": "6ff29b5501131cf7fe48b3abe7c3e6f8797e0144f60c3f56696365837bc781d1",
+      "merkle_root": "114dea0009291761426f44b21b7abcce4d5fbe78af0dbdfeca63d73968537cc6",
+      "declared_payload_bytes": 64467464,
+      "declared_chunks": 15740,
+      "native_evidence_sha256": "6be9ca188ee2e3ebe234ec3d0d40d968d0c8d193b4e222c24c363ce849a96ac9",
+      "signature": "none; native unsigned sampled-response evidence",
+      "qualification": "Only the listed completed samples passed native chunk and Merkle verification. This unsigned result does not prove permanent preservation, independent administration, absence of collusion, remote attestation, or paid settlement."
+    },
+    "samples": [
+      {
+        "index": 11244,
+        "bytes": 4096
+      },
+      {
+        "index": 4716,
+        "bytes": 4096
+      },
+      {
+        "index": 985,
+        "bytes": 4096
+      },
+      {
+        "index": 3903,
+        "bytes": 4096
+      },
+      {
+        "index": 8855,
+        "bytes": 4096
+      },
+      {
+        "index": 800,
+        "bytes": 4096
+      },
+      {
+        "index": 14011,
+        "bytes": 4096
+      },
+      {
+        "index": 15240,
+        "bytes": 4096
+      }
+    ],
+    "exact_retry_same_terminal_result": true,
+    "conflicting_request": "native retrievability status1",
+    "quota_rejection": {
+      "state": "failed",
+      "completed_samples": 0,
+      "verified_response_bytes": 0,
+      "reason": 204,
+      "reason_text": "provider refused data request (remote status4)"
+    },
+    "all_checks_passed": true
+  },
+  "build_verification": {
+    "executions": [
+      {
+        "role": "builder",
+        "image": "31b11d867abfbf07195916b895c137152ffb09c4398de4abaaec858b6e43a468",
+        "source_root": "57e748fce3e600a518e46bb3c923de43c9a2d41e31e2d090f27b12a8f75bbc67",
+        "source_bytes": 25538,
+        "artifact": {
+          "bytes": 74000,
+          "sha256": "253ba92c4f556b5c0bdffb1812b91b2658886e62ee044ab5155a160d4bb8cbd2"
+        },
+        "whole_operation_seconds": 94.9828306781128,
+        "terminal": {
+          "generation": 5,
+          "state": "complete",
+          "attempts": 1,
+          "checkpoint": 1,
+          "consumed_work_quanta": 1,
+          "result_root": "9cf84efe5461a0ecc7b500d20e7b04e06538f0d8466e3695c05886a085f209d5",
+          "result_bytes": 74000
+        },
+        "receipt": {
+          "state": "complete",
+          "role": "builder",
+          "record_generation": 5,
+          "result_root": "9cf84efe5461a0ecc7b500d20e7b04e06538f0d8466e3695c05886a085f209d5",
+          "result_bytes": 74000,
+          "client_integrity_acceptance": "not asserted",
+          "independent_verification": "not asserted",
+          "settlement": "unavailable; voluntary zero-price",
+          "remote_attestation": false,
+          "zero_knowledge": false,
+          "signature": "RSA2048/SHA256 verified in the guest",
+          "receipt_sha256": "26971bc6cf71e61185aa66c39f283a458670cceefe6bdc06350b8ba1e8b9ac52",
+          "signer_boundary": "explicit host bootstrap outside the key-free network-disabled compiler sandbox"
+        },
+        "normal_client_artifact": {
+          "phase": 10,
+          "format": 2,
+          "chunk": 19,
+          "chunk_offset": 272,
+          "retries": 0
+        },
+        "independent_operators": false,
+        "independent_hardware": false
+      },
+      {
+        "role": "verifier",
+        "image": "31b11d867abfbf07195916b895c137152ffb09c4398de4abaaec858b6e43a468",
+        "source_root": "57e748fce3e600a518e46bb3c923de43c9a2d41e31e2d090f27b12a8f75bbc67",
+        "source_bytes": 25538,
+        "artifact": {
+          "bytes": 74000,
+          "sha256": "253ba92c4f556b5c0bdffb1812b91b2658886e62ee044ab5155a160d4bb8cbd2"
+        },
+        "whole_operation_seconds": 94.50754588306881,
+        "terminal": {
+          "generation": 5,
+          "state": "complete",
+          "attempts": 1,
+          "checkpoint": 1,
+          "consumed_work_quanta": 1,
+          "result_root": "9cf84efe5461a0ecc7b500d20e7b04e06538f0d8466e3695c05886a085f209d5",
+          "result_bytes": 74000
+        },
+        "receipt": {
+          "state": "complete",
+          "role": "verifier",
+          "record_generation": 5,
+          "result_root": "9cf84efe5461a0ecc7b500d20e7b04e06538f0d8466e3695c05886a085f209d5",
+          "result_bytes": 74000,
+          "client_integrity_acceptance": "not asserted",
+          "independent_verification": "not asserted",
+          "settlement": "unavailable; voluntary zero-price",
+          "remote_attestation": false,
+          "zero_knowledge": false,
+          "signature": "RSA2048/SHA256 verified in the guest",
+          "receipt_sha256": "5e81bb034c5d8eb0f46f209f563c5ae8b03e716e0abb71cd3856718eec8eeea8",
+          "signer_boundary": "explicit host bootstrap outside the key-free network-disabled compiler sandbox"
+        },
+        "normal_client_artifact": {
+          "phase": 10,
+          "format": 2,
+          "chunk": 19,
+          "chunk_offset": 272,
+          "retries": 0
+        },
+        "independent_operators": false,
+        "independent_hardware": false
+      }
+    ],
+    "toolchain_id": "865beadba892c107db60d391aba7c88390477c0518d59c27dfc493d93293d089",
+    "actual_bytes_equal": true,
+    "final_image_recovery": {
+      "image_sha256": "ed78bb68a08290f94ffc138e073d8b294ae1b2c5f1362908187d29df9be43e48",
+      "before": {
+        "generation": 5,
+        "state": "complete",
+        "attempts": 1,
+        "checkpoint": 1,
+        "consumed_work_quanta": 1,
+        "result_root": "9cf84efe5461a0ecc7b500d20e7b04e06538f0d8466e3695c05886a085f209d5",
+        "result_bytes": 74000
+      },
+      "after": {
+        "generation": 5,
+        "state": "complete",
+        "attempts": 1,
+        "checkpoint": 1,
+        "consumed_work_quanta": 1,
+        "result_root": "9cf84efe5461a0ecc7b500d20e7b04e06538f0d8466e3695c05886a085f209d5",
+        "result_bytes": 74000
+      },
+      "duplicate_computation": false,
+      "duplicate_publication": false,
+      "old_grants_restored": false
+    },
+    "lost_first_terminal_response": {
+      "image_sha256": "31b11d867abfbf07195916b895c137152ffb09c4398de4abaaec858b6e43a468",
+      "first_terminal_response_consumed": false,
+      "after_lost_reply": {
+        "generation": 203,
+        "state": "complete",
+        "attempts": 2,
+        "reserved_transmission_bytes": 74000,
+        "consumed_work_quanta": 199,
+        "result_bytes": 74000
+      },
+      "after_exact_repeat": {
+        "generation": 203,
+        "state": "complete",
+        "attempts": 2,
+        "reserved_transmission_bytes": 74000,
+        "consumed_work_quanta": 199,
+        "result_bytes": 74000
+      },
+      "duplicate_accounting": false,
+      "rpc_boundary": "ServiceJobs terminal-completion management RPC after native client acquisition/export; not a lost RemoteBuild wire payload/completion frame"
+    },
+    "refusals": {
+      "paid": 2,
+      "unavailable_privacy_mode": 2,
+      "unsupported_durable_absolute_time": 2,
+      "conflicting_idempotency_terms": 2,
+      "unbound_caller_reservation": 1
+    },
+    "queued_job_notification": {
+      "image": "ed78bb68a08290f94ffc138e073d8b294ae1b2c5f1362908187d29df9be43e48",
+      "source_root": "57e748fce3e600a518e46bb3c923de43c9a2d41e31e2d090f27b12a8f75bbc67",
+      "source_bytes": 25538,
+      "scoped_queued_notification": {
+        "fields": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "seconds": 0.18026867392472923
+      },
+      "compiler_executions": 0,
+      "headless_provider": true
+    }
+  },
+  "explicit_scope_renewal": {
+    "image_sha256": "ed78bb68a08290f94ffc138e073d8b294ae1b2c5f1362908187d29df9be43e48",
+    "peer_sha256": "ad74170c64290f5af737ed6127b6bc83efb0bdc9c7f4ef82da1b607e650e4972",
+    "qualification": "Separate local QEMU guests; no independent administration. Provider reservations and actual returned bytes are distinct; no monetary rewards.",
+    "checks": [
+      {
+        "check": "initial actual scoped range",
+        "payload_bytes": 64,
+        "payload_sha256": "391a0043f17a7a20d36f0a8acac9a1d6f377192d7479c5deda3e1200f19fdeb5",
+        "journal": {
+          "state": "active",
+          "generation": 3,
+          "attempts": 1,
+          "reserved_transmission_bytes": 64,
+          "consumed_work_quanta": 1,
+          "byte_ceiling": 4096,
+          "attempt_ceiling": 3,
+          "work_quantum_ceiling": 16
+        }
+      },
+      {
+        "check": "explicit live window renewed under unchanged finite contract",
+        "returned_bytes": 64,
+        "payload_sha256": "a327681b6d906122e192c5b0fb5d9b084814707ec9d4934c304e5c482281853f",
+        "journal": {
+          "state": "active",
+          "generation": 6,
+          "attempts": 2,
+          "reserved_transmission_bytes": 128,
+          "consumed_work_quanta": 3,
+          "byte_ceiling": 4096,
+          "attempt_ceiling": 3,
+          "work_quantum_ceiling": 16
+        }
+      },
+      {
+        "check": "retained resume is not renewal consent; paused contract cannot renew",
+        "nonopted_journal": {
+          "state": "active",
+          "generation": 2,
+          "attempts": 1,
+          "reserved_transmission_bytes": 0,
+          "consumed_work_quanta": 0,
+          "byte_ceiling": 4096,
+          "attempt_ceiling": 8,
+          "work_quantum_ceiling": 16
+        },
+        "paused_journal": {
+          "state": "paused",
+          "generation": 3,
+          "attempts": 1,
+          "reserved_transmission_bytes": 0,
+          "consumed_work_quanta": 0,
+          "byte_ceiling": 4096,
+          "attempt_ceiling": 8,
+          "work_quantum_ceiling": 16
+        }
+      },
+      {
+        "check": "renewal exhausts finite attempt budget without replenishing bytes",
+        "journal": {
+          "state": "active",
+          "generation": 8,
+          "attempts": 3,
+          "reserved_transmission_bytes": 128,
+          "consumed_work_quanta": 4,
+          "byte_ceiling": 4096,
+          "attempt_ceiling": 3,
+          "work_quantum_ceiling": 16
+        }
+      },
+      {
+        "check": "fresh request after active-scope revocation received no response or additional reservation"
+      },
+      {
+        "check": "future serving revocation removes selected relationship scopes while unrelated relationship serves actual range",
+        "payload_bytes": 64,
+        "payload_sha256": "c9c766ab785f98346949796e5bd959fac9cf4fc79887cccc579b977b484d05cd",
+        "removed_relationship": 0,
+        "unrelated_relationship": 1,
+        "unrelated_journal": {
+          "state": "active",
+          "generation": 3,
+          "attempts": 1,
+          "reserved_transmission_bytes": 64,
+          "consumed_work_quanta": 1,
+          "byte_ceiling": 4096,
+          "attempt_ceiling": 8,
+          "work_quantum_ceiling": 16
+        }
+      }
+    ]
+  },
+  "assembly_storage": {
+    "image_sha256": "ed78bb68a08290f94ffc138e073d8b294ae1b2c5f1362908187d29df9be43e48",
+    "source": "Guest/CrateModel.lean",
+    "source_bytes": 2668,
+    "source_sha256": "dfbf9316e74c9c56e1305df8e212f25cec68ee08cdd4a4f5c67b03fb644390b9",
+    "checks": [
+      {
+        "backend": "x86_64",
+        "execution": "native x86-64 assembly RISC-V interpreter",
+        "emulator_sha256": "3b7a6a43297d9b84253f095bbdab01755993980196d2aa768fbe68b8d41b519a",
+        "chunk_record_offset": 2678341632,
+        "write_validate_flush_commit_seconds": 6.083189140772447,
+        "metadata_only_inventory_seconds": 2.5318082738667727,
+        "metadata_only_open_seconds": 1.7822065600194037,
+        "actual_range_bytes": 2668,
+        "actual_range_sha256": "dfbf9316e74c9c56e1305df8e212f25cec68ee08cdd4a4f5c67b03fb644390b9",
+        "restart_without_payload_rehydration": true,
+        "direct_ranges_match": true,
+        "authenticated_chunk_presence": true,
+        "proof_matches": true,
+        "vault_extended_mapping_actual": true,
+        "physical_write_above_2GiB_confirmed": true,
+        "all_checks_passed": true
+      },
+      {
+        "backend": "aarch64",
+        "execution": "AArch64 assembly RISC-V interpreter executed under qemu-aarch64",
+        "emulator_sha256": "73be76bd91c7da28592889549fbc10aa3b6086e53bfb248d7ac18ac919a99372",
+        "chunk_record_offset": 2678341632,
+        "write_validate_flush_commit_seconds": 39.78592586913146,
+        "metadata_only_inventory_seconds": 15.249832700937986,
+        "metadata_only_open_seconds": 11.343380785081536,
+        "actual_range_bytes": 2668,
+        "actual_range_sha256": "dfbf9316e74c9c56e1305df8e212f25cec68ee08cdd4a4f5c67b03fb644390b9",
+        "restart_without_payload_rehydration": true,
+        "direct_ranges_match": true,
+        "authenticated_chunk_presence": true,
+        "proof_matches": true,
+        "vault_extended_mapping_actual": true,
+        "physical_write_above_2GiB_confirmed": true,
+        "all_checks_passed": true
+      }
+    ]
+  },
+  "assembly_network": [
+    {
+      "image": "ed78bb68a08290f94ffc138e073d8b294ae1b2c5f1362908187d29df9be43e48",
+      "client_backend": "qemu",
+      "server_backend": "x86_64",
+      "connections": 2,
+      "service_operation": 2,
+      "public_description_schema": 3,
+      "separate_endpoints": true,
+      "bytes_per_connection": 129,
+      "payload_sha256": [
+        "a222d6fcca7221a3c753b3c4e0146ea4a1c4192c2ab37e9a4ac742faaabe2d45",
+        "c18f70548f70fa32246520874e17c99ec3d41582ca2548f43187dfb445e428a3"
+      ],
+      "paused_consumer_independent_progress": true,
+      "stalled_records": 8,
+      "surviving_sessions": [
+        1
+      ],
+      "stale_epoch_grant": "denied",
+      "request_binding": "authenticated",
+      "duplicate_receive_scope": "denied",
+      "fresh_boot_authority": "not requested",
+      "consumer_admission": "not tested by this transport component check",
+      "stalled_records_stage": "provider device accepted; paused consumer not drained, not client integrity acceptance"
+    },
+    {
+      "image": "ed78bb68a08290f94ffc138e073d8b294ae1b2c5f1362908187d29df9be43e48",
+      "client_backend": "qemu",
+      "server_backend": "aarch64",
+      "connections": 2,
+      "service_operation": 2,
+      "public_description_schema": 3,
+      "separate_endpoints": true,
+      "bytes_per_connection": 129,
+      "payload_sha256": [
+        "a222d6fcca7221a3c753b3c4e0146ea4a1c4192c2ab37e9a4ac742faaabe2d45",
+        "c18f70548f70fa32246520874e17c99ec3d41582ca2548f43187dfb445e428a3"
+      ],
+      "paused_consumer_independent_progress": true,
+      "stalled_records": 8,
+      "surviving_sessions": [
+        1
+      ],
+      "stale_epoch_grant": "denied",
+      "request_binding": "authenticated",
+      "duplicate_receive_scope": "denied",
+      "fresh_boot_authority": "not requested",
+      "consumer_admission": "not tested by this transport component check",
+      "execution_environment": "AArch64 assembly emulator executed by qemu-aarch64 on the development host; not native ARM hardware",
+      "stalled_records_stage": "provider device accepted; paused consumer not drained, not client integrity acceptance"
+    }
+  ],
+  "game_interface": {
+    "result": "passed",
+    "image_sha256": "ed78bb68a08290f94ffc138e073d8b294ae1b2c5f1362908187d29df9be43e48",
+    "game_release": "4bc96b74880bfaf03e7feeab2b535b1dd0fd268c50509217f46cdf35bca13489",
+    "native_parent": "3a56b13d0e211adf25e66d05c09dedc48506c84cb4fe328af8295b3460be7779",
+    "snapshot_count": 9,
+    "unique_save_payloads": 2,
+    "unchanged_snapshot_reuses": 9,
+    "preserved_reader_sha256": "ad129f736a9b9fc90068f491a36bcbe1f55f0c8441237307fe7f5e8613543bf7",
+    "preserved_reader_bytes": 192,
+    "released_reader_denial": "Objects status3",
+    "actual_native_input": true,
+    "private_memory_access": false,
+    "retention": false,
+    "scope": "native Game cached owner reference and scoped immutable readers; Library K/N quota flow has separate evidence"
+  },
+  "historical_changed_storage_checks": {
+    "migration": {
+      "image": "0875f242e3c669e07e0079f9e6de0f936df33c0294fbe6ef236511daf7ff742b",
+      "payload_bytes": 19244,
+      "payload_sha256": "13d66e785d115873d052dfc1faad6ed759ce0a365b466420fb885e85dd226e78",
+      "old_legacy_root_preserved": true,
+      "evidence": "build/indexed-personal-migration-result.json"
+    },
+    "corruption": {
+      "image": "0875f242e3c669e07e0079f9e6de0f936df33c0294fbe6ef236511daf7ff742b",
+      "actual_operator_chunk_and_both_index_copies_rejected": true,
+      "unrelated_operator_and_encrypted_personal_content_usable": true,
+      "evidence": "build/indexed-focused-corruption.json"
+    },
+    "crash_qualification": "Actual acquisition/checkpoint interruption and recovery ran. No deterministic every-flush crash matrix or interrupted migration execution is claimed."
+  },
+  "requirement_mapping": {
+    "LIB/DAT/SDK/VAULT/STORE": "usable backing-based selected collection paths; broader obligations incomplete",
+    "SRV-001/002": "common-guest separate local roles, own backing and finite recoverable policies; independent administration unproven",
+    "SRV-003/004": "real generic build/retrieval/storage and reproduced output; signed qualified provider assertions only",
+    "ECON-001..005": "zero-price voluntary work; no settlement/rewards/coalition-economic invariant implemented",
+    "RG-06/RG-08": "identified portions exercised; full gates not claimed",
+    "RG-09": "not completed"
+  },
+  "remaining_blocking_work": [
+    "Full32-MiB network-to-personal-AEAD acquisition/playback journey was not run; large full recording used explicit operator native ingestion, then final direct playback/sampling.",
+    "Dynamic future durable destinations and broad catalog pagination beyond bounded selected rows; one exact durable target per collection/single federation initial operator profile.",
+    "General durable lease/reference accounting and arbitrary-fleet desired-replica monitoring/automatic repair.",
+    "Complete signed per-stage retrieval/storage contract and signed client-integrity-acceptance protocol; sampling results remain explicitly unsigned.",
+    "Automatic reconstruction of interrupted RemoteBuild request into a newly authorized execution; compilers have no resumable execution checkpoint; initial profiles remain bounded.",
+    "Durable absolute expiry, malicious whole-store rollback freshness and key-rotation migrations.",
+    "Independent administration/hardware, confidential execution, post-quantum/zkCompute obligations and private routing.",
+    "Real Wallet/LemmaCoin consensus, shielded payments, bounded spending, escrow/refunds and financially net-negative colluding self-service economics."
+  ],
+  "operator_scope_guards": {
+    "image_sha256": "ed78bb68a08290f94ffc138e073d8b294ae1b2c5f1362908187d29df9be43e48",
+    "operator_sha256": "3f20e561985beb61075e19e63cd925edd832f2e17b2d6cedbef79f80383c1a2a",
+    "checks": [
+      {
+        "case": "permit-retarget",
+        "guarded_policy_generation": 2,
+        "result": "phase12 before manifest/data reservation",
+        "reserved_bytes_before": 0,
+        "reserved_bytes_after": 0,
+        "work_quanta_before": 0,
+        "work_quanta_after": 0,
+        "fresh_separate_backing": true,
+        "empty_target_inventory": true,
+        "payload_redownloaded": false
+      },
+      {
+        "case": "generation-renewal",
+        "guarded_policy_generation": 2,
+        "result": "phase12 before manifest/data reservation",
+        "reserved_bytes_before": 0,
+        "reserved_bytes_after": 0,
+        "work_quanta_before": 0,
+        "work_quanta_after": 0,
+        "fresh_separate_backing": true,
+        "empty_target_inventory": true,
+        "payload_redownloaded": false
+      }
+    ]
+  },
+  "late_provider_reconnect": {
+    "image_sha256": "ed78bb68a08290f94ffc138e073d8b294ae1b2c5f1362908187d29df9be43e48",
+    "acquirer_sha256": "0d3c668a2a5a5fb01063ad5b8ebd93222a9fd5cbbbea8ca5fc6fff1deb70049a",
+    "peer_sha256": "ad74170c64290f5af737ed6127b6bc83efb0bdc9c7f4ef82da1b607e650e4972",
+    "registry_binary_sha256": "ff9c3f429d4825fe663e17a535478d9a26eada4467d0b954b5a54d1597fc5ef4",
+    "payload_bytes": 192044,
+    "payload_sha256": "1c48ba6744c43c50753c622a7d6e4839defd71a40d07efd734ee711857c7bfdb",
+    "manifest_sha256": "adb8b4cd76ebc9976efa96d1a34a7575059481e9af3a2f92fa2e3948b9943358",
+    "elapsed_seconds": 33.0808806209825,
+    "resident_payload_bytes": 192512,
+    "focused_boundary": "normal Library opens the exact configured provider after it starts late; no client administrative re-open after work submission",
+    "client_authority_refreshed_by": "native bounded availablePeer retry",
+    "provider_initial_session": 0,
+    "provider_initial_device_error": 10,
+    "no_fresh_client_administrative_open": true,
+    "validation_and_publication_complete": true,
+    "evidence": "build/c006-openretry3/result.json"
+  }
+}
