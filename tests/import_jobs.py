@@ -149,14 +149,22 @@ def main():
    actor.objects(46,h,4);actor.objects(46,hb,4)
    passed('foreign transaction cannot resolve typed private stages; final publication and lost-reply queries are exact',denial_state=list(failure),roots=roots_before,checked_payload_sha256=hashlib.sha256(records[0]['payload']).hexdigest())
    # Freeze and cancellation use the same actual hash path, not a synthetic job.
-   selected,records=graph('cancelled',19);hc=stage(actor,selected,records);actor.objects(44,hc,10004)
+   selected,records=graph('cancelled',19,edges=32);hc=stage(actor,selected,records);actor.objects(44,hc,10004)
    actor.objects(46,hc,1);frozen=detail(actor,hc);time.sleep(.15);require(detail(actor,hc)==frozen,'paused hash cursor advanced')
    denied(lambda:actor.objects(37,hc,0,0,data=b'x'),7);denied(lambda:actor.objects(38,hc),7)
    actor.objects(46,hc,2)
    wait(lambda:detail(actor,hc)[1][1]>=8,60,'resumed real hash cursor')
-   actor.objects(46,hc,3);cancelled,_=terminal(actor,hc);require(cancelled[2]==5,'cancel did not become terminal')
+   def checked_payload():
+    f,d=detail(actor,hc)
+    return (f,d)if f[2]==2 and d[5]>=1 else None
+   wait(checked_payload,120,'verified payload before cancellation');actor.objects(46,hc,1)
+   verified=actor.objects(43,hc,0,0,512)[1];require(verified==records[0]['payload'][:512],'checked stage bytes differ before cancellation')
+   actor.objects(46,hc,3)
+   denied(lambda:actor.objects(43,hc,0,0,512),3)
+   cleaning,cleaning_detail=detail(actor,hc);require(cleaning[2]==5 and cleaning[6]==90,'cancelled record was not denied during active bounded cleanup')
+   cancelled,_=terminal(actor,hc);require(cancelled[2]==5,'cancel did not become terminal')
    require('cancelled'not in {r['name']for r in projects.roots(actor)},'cancelled job published a root');actor.objects(46,hc,4)
-   passed('pause freezes actual hash state, resume advances, cancel never publishes and staged writes/legacy commit are frozen',cancelled=list(cancelled))
+   passed('pause freezes actual hash state, resume advances, cancel never publishes and staged writes/legacy commit are frozen',cancelled=list(cancelled),verified_stage_sha256=hashlib.sha256(verified).hexdigest(),cancelled_read_denied_during_cleanup=dict(fields=list(cleaning),detail=list(cleaning_detail)))
    # Both roots were valid under the begin-time quota. A separate ordinary
    # commit consumes capacity after submission; the final two-root effect fails.
    selected,records=graph('quota-first',23)

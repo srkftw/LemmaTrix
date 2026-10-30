@@ -647,11 +647,13 @@ def readVerifiedImport (caller rights h t : UInt64) : UInt64 :=
   let offset := load64 (command+24) t
   let requested := load64 (command+32) t
   if !has rights 1 || index >= load64 (j+32) t || requested > 512 || load64 (command+40) t != 0 then respond 2 0 0 0 t else
+    let context := Guest.ImportJobs.ctx (h &&& 255)
+    if load64 context t != 0 && load64 (context+8) t == h &&
+      (load64 context t >= 4 || load64 (context+40) t >= 90) then respond 3 0 0 0 t else
     let r := recordAt (load64 (j+832+index*8) t)
     let bytes := load64 (r+32) t
     if (load64 r t != 3 && load64 r t != 4) || load64 (r+8) t != caller || load64 (r+64) t != h ||
       load64 (r+24) t != bytes || offset > bytes then respond 2 0 0 0 t else
-      let context := Guest.ImportJobs.ctx (h &&& 255)
       let checked := if load64 context t != 0 && load64 (context+8) t == h && load64 (r+240) t != load64 (r+16) t then error else verifyImportBytes r t
       if checked == error then respond 5 0 0 0 checked else
         let count := if requested <= bytes-offset then requested else bytes-offset
@@ -794,7 +796,7 @@ def asyncPublish (c t : UInt64) : UInt64 :=
   let j := Guest.ImportJobs.txn c rights
   let count := load64 (j+56) rights
   let t := Guest.ImportJobs.scope c rights
-  if rights == error || !has rights (load64 (c+24) t) || !importRootQuota caller rights count t ||
+  if !Guest.ImportJobs.currentRightsPermit c rights t || !importRootQuota caller (load64 (c+24) t) count t ||
     freeRootsCount 0 0 t < count || freeRootCapsCount 0 0 t < count || !asyncStages c 0 t || !asyncDependencies c 0 t || !asyncNames c 0 t then
       Guest.ImportJobs.clearScope (Guest.ImportJobs.fail c 4 t)
   else

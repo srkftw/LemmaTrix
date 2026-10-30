@@ -13,6 +13,13 @@ def clearScope (t : UInt64) : UInt64 :=
   let t := store64 Guest.ProjectGraph.importContext 0 (store64 Guest.ProjectGraph.importScope 0 t)
   zero Guest.ProjectGraph.marks 64 (zero Guest.ProjectGraph.scratch 128 (zero 0xd00000 80 (zero Guest.ProjectGraph.releaseHash 4 (zero Guest.ProjectGraph.jsonBuffer 1024 t))))
 def fail (c code t : UInt64) : UInt64 := step c 90 (store64 c 6 (store64 (c+80) code (store64 (c+208) 0 (store64 (c+216) 0 t))))
+-- IPC attaches immutable service-role flags, while syscall34 returns raw
+-- process rights. Keep those flags in the job for recovery quotas, but compare
+-- only raw rights here. The exact full owner incarnation must remain live.
+-- In particular, Launcher administration bit0x100000000 is not removed.
+def currentRightsPermit (c rights t : UInt64) : Bool :=
+  let required := load64 (c+24) t &&& 0xfffffff9ffffffff
+  rights != error && (rights &&& required) == required
 def validRecord (c r gen t : UInt64) : Bool :=
   load64 (r+16) t == gen && ((load64 r t == 4 && load64 (r+64) t == load64 (c+8) t && load64 (r+8) t == load64 (c+16) t) ||
     (load64 r t == 2 && Guest.ProjectGraph.cachedVisible (load64 (c+16) t) ((r-0x610000)/0x11000) t))
@@ -270,6 +277,8 @@ def cleanup (c t : UInt64) : UInt64 :=
   if load64 (r+16) t != load64 (c+1280+i*8) t || load64 (r+64) t != load64 (c+8) t || load64 (r+8) t != load64 (c+16) t then
     store64 (c+208) (i+1) (store64 (c+216) 0 t)
   else
+  -- A verified private record becomes unreadable before its first wipe slice.
+  let t := store64 (r+240) 0 t
   let offset := load64 (c+216) t
   let bytes := load64 (r+32) t
   if offset >= bytes then store64 (c+208) (i+1) (store64 (c+216) 0 (store64 r 0 t)) else
@@ -281,7 +290,7 @@ def work (c t : UInt64) : UInt64 :=
   let p := load64 (c+40) t
   if p == 90 then cleanup c t else
   let rights := syscall 34 (load64 (c+16) t) 0 0 0 t
-  if rights == error || (rights &&& load64 (c+24) rights) != load64 (c+24) rights then fail c 1 rights else
+  if !currentRightsPermit c rights rights then fail c 1 rights else
   let t := rights
   if p > 0 && p < 20 && load64 (c+48) t < load64 (txn c t+32) t && !stagedValid c (rec c (load64 (c+48) t) t) t then fail c 3 t else
   if p == 0 then
