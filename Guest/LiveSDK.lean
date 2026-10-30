@@ -52,6 +52,8 @@ def checkDelegation (h issuer t : UInt64) : UInt64 := call 64 (header 15 h issue
 def share (h recipient rights t : UInt64) : UInt64 := call 64 (header 6 h recipient rights 0 0 0 t)
 def revoke (h recipientHandle t : UInt64) : UInt64 := call 64 (header 7 h recipientHandle 0 0 0 0 t)
 def drop (h t : UInt64) : UInt64 := call 64 (header 8 h 0 0 0 0 0 t)
+-- Release only this caller's reference; other readers and graph pins survive.
+def releaseReference (h t : UInt64) : UInt64 := call 64 (header 47 h 0 0 0 0 0 t)
 def list (cursor t : UInt64) : UInt64 := call 64 (header 9 0 cursor 0 0 0 0 t)
 def abortStage (h t : UInt64) : UInt64 := call 64 (header 13 h 0 0 0 0 0 t)
 def stageDigest (h t : UInt64) : UInt64 := call 64 (header 12 h 0 0 0 0 0 t)

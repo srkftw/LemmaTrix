@@ -214,7 +214,22 @@ partial def restoreChunks (handle total offset t : UInt64) : UInt64 :=
       let got := forward 2 (count+64) t
       if got != 64 || Guest.load64 buf got != 0 then err else restoreChunks handle total (offset+count) got
 
+-- Recovery owns a temporary stage until its successful reply. On read/hash
+-- failure, discard it explicitly; an uncertain cleanup stays bounded and is
+-- retried before another recovery can allocate a stage.
+def cleanupAbandonedRecovery (t : UInt64) : UInt64 :=
+  let handle := Guest.load64 (control+560) t
+  if handle == 0 then t else
+  let t := zero buf 8 t
+  let t := Guest.store64 buf 8 t
+  let t := Guest.store64 (buf+8) handle t
+  let r := forward 2 64 (Guest.store64 (buf+56) 1 t)
+  if r == 64 && (Guest.load64 buf r == 0 || Guest.load64 buf r == 3) then Guest.store64 (control+560) 0 r else r
+def discardRecoveredSave (handle t : UInt64) : UInt64 :=
+  keep err (cleanupAbandonedRecovery (Guest.store64 (control+560) handle t))
 def recover (t : UInt64) : UInt64 :=
+  let t := cleanupAbandonedRecovery t
+  if Guest.load64 (control+560) t != 0 then err else
   let t := zero buf 8 t
   let t := Guest.store64 buf 204 t
   let t := Guest.store64 (buf+16) 3 t
@@ -232,7 +247,10 @@ def recover (t : UInt64) : UInt64 :=
     let t := Guest.store64 (buf+56) 1 t
     let t := copy (control+192) (buf+64) 32 t
     let got := forward 2 96 t
-    if got != 64 || Guest.load64 buf got != 0 then err else restoreChunks (Guest.load64 (buf+8) got) len 0 got
+    if got != 64 || Guest.load64 buf got != 0 then err else
+      let handle := Guest.load64 (buf+8) got
+      let restored := restoreChunks handle len 0 got
+      if restored != 96 || Guest.load64 buf restored != 0 then discardRecoveredSave handle restored else restored
 
 def candidateMaterial (h t : UInt64) : UInt64 :=
   if Guest.load64 (control+272) t != 1 then err else
@@ -542,11 +560,16 @@ def retainProject (root t : UInt64) : UInt64 :=
           let t := copy projectReply buf received revoked
           releaseFrozenProject received t
 
-def discardRecoveredSave (handle t : UInt64) : UInt64 :=
+-- At most one creator reference awaits cleanup; retry only when another
+-- explicit recovery is requested. Status3 also confirms an earlier lost reply.
+def cleanupRecoveredSave (t : UInt64) : UInt64 :=
+  let handle := Guest.load64 (control+552) t
+  if handle == 0 then t else
   let t := zero buf 8 t
-  let t := Guest.store64 buf 8 t
+  let t := Guest.store64 buf 47 t
   let t := Guest.store64 (buf+8) handle t
-  keep err (forward 2 64 (Guest.store64 (buf+56) 1 t))
+  let r := forward 2 64 (Guest.store64 (buf+56) 1 t)
+  if r == 64 && (Guest.load64 buf r == 0 || Guest.load64 buf r == 3) then Guest.store64 (control+552) 0 r else r
 def retainGameSave (handle t : UInt64) : UInt64 :=
   let t := zero buf 8 t
   let t := Guest.store64 buf 5 t
@@ -599,6 +622,8 @@ def retainGameSave (handle t : UInt64) : UInt64 :=
       let current := Guest.syscall 119 0 0 0 0 t
       if recipient == 0 || recipient != current || Guest.syscall 34 recipient 0 0 0 current == err then err else
         let t := copy (buf+8) 0x638000 64 current
+        let t := cleanupRecoveredSave t
+        if Guest.load64 (control+552) t != 0 then err else
         let r := recover t
         if r != 96 || Guest.load64 buf r != 0 then err else
         let handle := Guest.load64 (buf+8) r
@@ -617,7 +642,11 @@ def retainGameSave (handle t : UInt64) : UInt64 :=
           let t := Guest.store64 (buf+8) handle t
           let t := Guest.store64 (buf+16) recipient t
           let t := Guest.store64 (buf+24) 25 t
-          forward 2 64 (Guest.store64 (buf+56) 1 t)
+          let r := forward 2 64 (Guest.store64 (buf+56) 1 t)
+          if r != 64 || Guest.load64 buf r != 0 then discardRecoveredSave handle r else
+          let t := copy buf 0x638040 64 r
+          let t := cleanupRecoveredSave (Guest.store64 (control+552) handle t)
+          64+copy 0x638040 buf 64 t
   else err
 
 @[noinline] def commandIO (op len t : UInt64) : UInt64 :=

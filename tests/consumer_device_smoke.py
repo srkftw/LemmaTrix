@@ -18,6 +18,7 @@ def main():
  p.add_argument('--public',type=Path,required=True)
  p.add_argument('--output',type=Path,required=True)
  p.add_argument('--service-restart',action='store_true')
+ p.add_argument('--reference-release',action='store_true')
  a=p.parse_args();out=a.output.resolve();out.mkdir(parents=True,exist_ok=False)
  sock=out/'portal.sock';capture=out/'samples.pcm';log=(out/'transport.log').open('wb');proc=None
  try:
@@ -43,6 +44,17 @@ def main():
     else:raise AssertionError('stale Objects handle resolved after fresh allocation')
     after=c.request(2);assert struct.unpack_from('<Q',after,3*32)[0]==vault and 0<struct.unpack_from('<Q',after,3*32+8)[0]<5
     restarted=dict(previous=old,replacement=replacement,vault_neighbor_live=True,stale_after_fresh_allocation='denied')
+   reference_release=None
+   if a.reference_release:
+    payload=b'committed caller reference through Objects47'
+    h=c.import_object(payload,2);assert c.read_object(h)==payload
+    released=c.objects(47,h)[0];assert released[0]==0
+    replacement_handle=c.import_object(b'fresh generation after last reference',2)
+    assert replacement_handle!=h and c.read_object(replacement_handle)==b'fresh generation after last reference'
+    try:c.read_object(h)
+    except ValueError:pass
+    else:raise AssertionError('released reference named a fresh allocation')
+    reference_release=dict(status=released[0],stale_after_fresh_allocation='denied',replacement_sha256=hashlib.sha256(c.read_object(replacement_handle)).hexdigest())
    # A Launcher management caller cannot impersonate the trusted compositor
    # even when its request names the Objects domain and guesses an operation.
    denied=c.request(247,struct.pack('<8Q',247,1,3,0,0,0,0,1))
@@ -60,7 +72,7 @@ def main():
     time.sleep(.05)
    assert capture.read_bytes()==struct.pack('<I',0x33441122)*256
    call(812,epoch);assert call(811,epoch,1024)==(1<<64)-1
-  report=dict(result='passed',image=hashlib.sha256(a.image.read_bytes()).hexdigest(),backend=a.backend,content=checked,objects_service_restart=restarted,progress247_foreign_caller='denied',audio_release=info['release_id'],pcm_bytes=1024,pcm_sha256=hashlib.sha256(capture.read_bytes()).hexdigest(),speaker_output=False)
+  report=dict(result='passed',image=hashlib.sha256(a.image.read_bytes()).hexdigest(),backend=a.backend,content=checked,objects_service_restart=restarted,own_reference_release=reference_release,progress247_foreign_caller='denied',audio_release=info['release_id'],pcm_bytes=1024,pcm_sha256=hashlib.sha256(capture.read_bytes()).hexdigest(),speaker_output=False)
   (out/'result.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2))
  finally:
   if proc and proc.poll() is None:

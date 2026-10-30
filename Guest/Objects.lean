@@ -111,7 +111,7 @@ partial def collectDead (i t : UInt64) : UInt64 :=
     let r := recordAt i
     let t := if load64 r t != 0 then
       let alive := syscall 34 (load64 (r+8) t) 0 0 0 t
-      if alive == error && !ProjectGraph.pinned i alive && !survivingGrant i (load64 (r+16) alive) 0 alive then
+      if (alive == error || load64 r alive == 2) && !ProjectGraph.pinned i alive && !survivingGrant i (load64 (r+16) alive) 0 alive then
         let t := invalidate i (load64 (r+16) alive) 0 alive
         store64 r 0 t
       else alive
@@ -261,6 +261,20 @@ def dropObject (caller rights t : UInt64) : UInt64 :=
     if load64 (r+8) t != caller && !admin rights then respond 1 0 0 0 t else
       let t := invalidate ((r-records)/0x11000) (load64 (r+16) t) 0 t
       respond 0 0 0 0 (store64 r 0 t)
+
+-- Relinquish one caller-owned committed reference without deleting another
+-- reader's authority. A creator can release its reference while readers keep
+-- the immutable record. Stages require the explicit abort operation instead.
+def releaseReference (caller t : UInt64) : UInt64 :=
+  let h := load64 (command+8) t
+  if !grantValid caller h 0 t then respond 3 0 0 0 t else
+  let r := grantedRecord h t
+  if load64 r t != 2 then respond 2 0 0 0 t else
+  let t := store64 (capAt (h &&& 255)+40) 0 t
+  let t := ProjectGraph.markAll (cleanDeadGrants 0 t)
+  let t := if ProjectGraph.pinned ((r-records)/0x11000) t || survivingGrant ((r-records)/0x11000) (load64 (r+16) t) 0 t then t
+    else store64 r 0 t
+  respond 0 0 0 0 t
 
 def abortStage (caller rights t : UInt64) : UInt64 :=
   let h := load64 (command+8) t
@@ -1099,6 +1113,7 @@ def dispatch (caller rights length t : UInt64) : UInt64 :=
     else if op == 6 then shareObject caller rights t
     else if op == 7 then revokeObject caller rights t
     else if op == 8 then dropObject caller rights t
+    else if op == 47 then releaseReference caller t
     else if op == 9 then listObjects caller rights t
     else if op == 10 then
       if has rights 32 then

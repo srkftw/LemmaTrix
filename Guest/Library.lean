@@ -861,7 +861,7 @@ def play (t : UInt64) : UInt64 :=
   let answer := syscall 30 player wire 64 1024 t
   if answer != 64 || status answer != 0 || load64 (wire+16) answer == 6 then notice 42 answer else notice 16 answer
 
-def portal (op h nonce data length t : UInt64) : UInt64 :=
+@[noinline] def portal (op h nonce data length t : UInt64) : UInt64 :=
   let shell := syscall 97 4 0 0 0 t
   let t := header op h nonce 0 0 0 0 shell
   let t := if length == 0 then t else copy data (wire+64) length t
@@ -1206,12 +1206,26 @@ def gameCurrent (t : UInt64) : UInt64 :=
   let who := load64 (st+168) t
   let r := syscall 125 who work 32 0 t
   if who == 0 || r != 32 || !eq work (selected r+1024+256) 32 r then error else who
+-- One pending release per row bounds cleanup after a lost reply. A new
+-- snapshot/recovery cannot overwrite that reference until release is confirmed.
+@[noinline] def releaseSavePending (r t : UInt64) : UInt64 :=
+  let h := load64 (r+112) t
+  if h == 0 then t else
+  let answer := Guest.LiveSDK.releaseReference h t
+  if answer == 64 && (status answer == 0 || status answer == 3) then store64 (r+112) 0 answer else answer
+@[noinline] def replaceGameSave (r h t : UInt64) : UInt64 :=
+  let previous := load64 (r+96) t
+  let t := store64 (r+96) h t
+  let t := if previous == 0 || previous == h then t else releaseSavePending r (store64 (r+112) previous t)
+  notice 61 t
 @[noinline] partial def gameSave (t : UInt64) : UInt64 :=
+  let t := releaseSavePending (selected t) t
+  if load64 (st+400) t != 0 || load64 (selected t+112) t != 0 then notice 18 t else
   let who := gameCurrent t
   if who == error then notice 42 who else
   let r := Guest.GameSDK.exportSave who who
   if r != 64 || status r != 0 then notice 42 r else
-    notice 61 (store64 (selected r+96) (result r) r)
+    replaceGameSave (selected r) (result r) r
 @[noinline] partial def gameLoad (t : UInt64) : UInt64 :=
   let who := gameCurrent t
   if who == error then notice 42 who else
@@ -1225,21 +1239,24 @@ def gameCurrent (t : UInt64) : UInt64 :=
   let t := Guest.LiveSDK.revoke save saveScope r
   notice (if ok then 16 else 42) t
 @[noinline] partial def retainGameSave (t : UInt64) : UInt64 :=
+  if load64 (st+400) t != 0 then notice 18 t else
   let save := load64 (selected t+96) t
   if save == 0 then notice 42 t else
+  let r := Guest.LiveSDK.metadata save t
+  if r != 96 || status r != 0 || load64 (wire+16) r != 192 then notice 42 r else
+  let t := copy (wire+64) work 32 r
   let shell := syscall 97 4 0 0 0 t
   let r := Guest.LiveSDK.share save shell 25 shell
   if r != 64 || status r != 0 then notice 42 r else
   let saveScope := result r
-  let r := Guest.LiveSDK.metadata save r
-  if r != 96 || status r != 0 || load64 (wire+16) r != 192 then notice 42 r else
-  let t := copy (wire+64) work 32 r
-  let t := nextId t
+  let t := nextId r
   let nonce := load64 (st+184) t
   let r := portal 11 saveScope nonce work 32 t
-  if r != 64 || status r != 0 then notice 21 r else
+  if r != 64 || status r != 0 then notice 21 (Guest.LiveSDK.revoke save saveScope r) else
     dirty (store64 (st+400) nonce (store64 (st+408) (load64 (st+8) r+1) (store64 (st+416) 1 (store64 (st+424) saveScope r))))
 @[noinline] partial def recoverGameSave (t : UInt64) : UInt64 :=
+  let t := releaseSavePending (selected t) t
+  if load64 (st+400) t != 0 || load64 (selected t+112) t != 0 then notice 18 t else
   let who := gameCurrent t
   if who == error then notice 42 who else
   let r := Guest.GameSDK.inspect who who
@@ -1265,7 +1282,20 @@ def saveRecoveryPump (t : UInt64) : UInt64 :=
   let t := if mode == 2 then t else Guest.LiveSDK.revoke (load64 (row i+96) t) (load64 (st+424) t) t
   if state != 2 then notice 21 t else
   if mode == 1 then notice 17 t else
-  if recovered == 0 then notice 42 t else notice 61 (store64 (row i+96) recovered t)
+  if recovered == 0 then notice 42 t else replaceGameSave (row i) recovered t
+
+@[noinline] def removeLocal (t : UInt64) : UInt64 :=
+  let r := selected t
+  let t := releaseSavePending r t
+  if load64 (st+400) t != 0 || load64 (st+376) t != 0 || load64 (r+112) t != 0 then notice 18 t else
+  let h := load64 (r+16) t
+  let t := if h == 0 then t else Guest.ContentSDK.release h t
+  if h != 0 && (t != 64 || (status t != 0 && status t != 3)) then notice 18 t else
+  let t := replaceGameSave r 0 t
+  if load64 (r+112) t != 0 then notice 18 t else
+  let h := load64 (r+8) t
+  let t := store64 (r+112) h (store64 (r+8) 0 t)
+  notice 44 (store64 (r+16) 0 (store64 (r+24) 0 (releaseSavePending r t)))
 
 def input (ev t : UInt64) : UInt64 :=
   let code := (ev >>> 32) &&& 65535
@@ -1319,14 +1349,23 @@ def input (ev t : UInt64) : UInt64 :=
   if code == 50 then modBegin t else
   if code == 57 then play t else
   if code == 2 || code == 3 then dirty (store64 (st+136) (code-1) t) else
-  if code == 111 then
-    let r := selected t
-    let h := load64 (r+16) t
-    let t := if h == 0 then t else Guest.ContentSDK.release h t
-    let h := load64 (r+8) t
-    let t := if h == 0 then t else drop h t
-    notice 44 (store64 (r+8) 0 (store64 (r+16) 0 (store64 (r+24) 0 t)))
+  if code == 111 then removeLocal t
   else t
+
+@[noinline] def requestJobControl (token t : UInt64) : UInt64 :=
+  let ji := load64 (command+8) t
+  let action := load64 (command+16) t
+  let provider := load64 (command+24) t
+  let valid := ji < 4 && load64 (job ji) t != 0 && load64 (job ji+8) t < load64 (st+16) t &&
+    action >= 1 && action <= 3 && (action != 2 || provider == 1 || provider == 2)
+  let chosen := load64 (st+8) t
+  let selectedProvider := load64 (st+136) t
+  let t := if !valid then t else
+    let t := store64 (st+8) (load64 (job ji+8) t) t
+    let t := if action != 2 then t else store64 (st+136) provider t
+    if action == 1 then pause t else if action == 2 then retry t else cancel t
+  let t := store64 (st+8) chosen (store64 (st+136) selectedProvider t)
+  reply token 64 (header (if valid then 0 else 2) ji (if valid then load64 (job ji) t else 0) 0 0 0 0 t)
 
 def request (n t : UInt64) : UInt64 :=
   let token := load64 (incoming+8) t
@@ -1357,19 +1396,7 @@ def request (n t : UInt64) : UInt64 :=
       let t := header 0 ji 0 0 0 0 0 t
       reply token 128 (copy work (wire+64) 64 t)
   else if admin && n == 96 && op == 707 then
-    let ji := load64 (command+8) t
-    let action := load64 (command+16) t
-    let provider := load64 (command+24) t
-    let valid := ji < 4 && load64 (job ji) t != 0 && load64 (job ji+8) t < load64 (st+16) t &&
-      action >= 1 && action <= 3 && (action != 2 || provider == 1 || provider == 2)
-    let chosen := load64 (st+8) t
-    let selectedProvider := load64 (st+136) t
-    let t := if !valid then t else
-      let t := store64 (st+8) (load64 (job ji+8) t) t
-      let t := if action != 2 then t else store64 (st+136) provider t
-      if action == 1 then pause t else if action == 2 then retry t else cancel t
-    let t := store64 (st+8) chosen (store64 (st+136) selectedProvider t)
-    reply token 64 (header (if valid then 0 else 2) ji (if valid then load64 (job ji) t else 0) 0 0 0 0 t)
+    requestJobControl token t
   else if admin && n == 96 && (op == 703 || op == 704) then
     let i := load64 (command+8) t
     let off := load64 (command+16) t
