@@ -51,7 +51,7 @@ def device (op sector ptr bytes t : UInt64) : UInt64 :=
     if op == 61 then syscall 66 sector ptr bytes 2 t else
     if op == 62 then syscall 67 2 0 0 0 t else error
   else syscall op sector ptr bytes 0 t
-def backendAuthorized (t : UInt64) : Bool :=
+@[noinline] def backendAuthorized (t : UInt64) : Bool :=
   if !isServer t then load64 0x620000 t == 1 else
   let g := load64 (backend+112) t
   g >= 0x7a1000 && g < 0x7a1800 && g%128 == 0 &&
@@ -67,7 +67,7 @@ partial def transfer (op sector ptr remaining t : UInt64) : UInt64 :=
     if result != 0 then error else
       let t := if op == 60 then copy chunk ptr n result else result
       transfer op (sector+n/512) (ptr+n) (remaining-n) t
-def response (code t : UInt64) : UInt64 :=
+@[noinline] def response (code t : UInt64) : UInt64 :=
   -- Retention progress advances only after the encrypted record's block writes
   -- complete. Plaintext staged for the next write is not reported as written.
   let progressed := if load64 st t == 1 && indexLength candidate t == 2560 then load64 (st+192) t else
@@ -89,7 +89,7 @@ def chunkAAD (root index length t : UInt64) : UInt64 :=
   let t := copy (metadata+256) (aad+128) 32 t
   let t := store64 (aad+160) index t
   store64 (aad+168) length t
-def writeStored (root part input len out t : UInt64) : UInt64 :=
+@[noinline] def writeStored (root part input len out t : UInt64) : UInt64 :=
   if isServer t then
     let t := copy input out len t
     ServiceHash.sha256At hashScratch out len (out+len) t
@@ -98,7 +98,7 @@ def writeStored (root part input len out t : UInt64) : UInt64 :=
     if part == 0 then VaultCrypto.encrypt key nonce root 128 input len out t else
       let t := chunkAAD root (part-1) (load64 (input+8) t) t
       VaultCrypto.encrypt key nonce aad 176 input len out t
-def openStored (root part len out t : UInt64) : UInt64 :=
+@[noinline] def openStored (root part len out t : UInt64) : UInt64 :=
   if isServer t then
     let t := ServiceHash.sha256At hashScratch cipher len hashed t
     if !eq hashed (cipher+len) 32 t then error else copy cipher out len t
@@ -112,7 +112,7 @@ def validRoot (r t : UInt64) : Bool :=
   (if isServer t then load64 (r+8) t == 5 || load64 (r+8) t == 6 else load64 (r+8) t == 3 || load64 (r+8) t == 4 || load64 (r+8) t == 5) &&
   load64 (r+16) t == (if isServer t then 4 else 3) &&
   load64 (r+24) t > 0 && load64 (r+32) t == load64 (r+24) t%2 &&
-  load64 (r+40) t > 0 && load64 (r+40) t <= ContentFormat.maxBytes &&
+  load64 (r+40) t > 0 && load64 (r+40) t <= ContentFormat.legacyMaxBytes &&
   load64 (r+48) t == (load64 (r+40) t+4095)/4096 &&
   (if !isServer t && load64 (r+8) t == 5 then load64 (r+56) t == 2560 && (load64 (r+64) t == 0 || load64 (r+64) t == 1536)
    else if load64 (r+8) t == 3 || load64 (r+8) t == 5 then load64 (r+56) t == 512 && load64 (r+64) t == 0
@@ -120,12 +120,12 @@ def validRoot (r t : UInt64) : Bool :=
   (if indexLength r t == 2560 then load64 (r+72) t == 1 && load64 (r+80) t <= load64 (r+48) t && load64 (r+88) t == 0 else allZero (r+72) 24 t) &&
   allZero (r+108) 20 t &&
   (if isServer t then eq (r+176) (backend+24) 32 t && allZero (r+208) 304 t else allZero (r+176) 336 t)
-def validSelection (offset t : UInt64) : Bool :=
+@[noinline] def validSelection (offset t : UInt64) : Bool :=
   ConsumerFormat.valid (metadata+offset+768) t &&
   eq (metadata+offset+960) (metadata+256) 32 t &&
   eq (metadata+offset+992) (metadata+64) 32 t &&
   load64 (metadata+offset+1176) t == load64 (metadata+24) t
-def selectionHash (offset t : UInt64) : UInt64 :=
+@[noinline] def selectionHash (offset t : UInt64) : UInt64 :=
   let t := ServiceHash.sha256At hashScratch (metadata+offset+768) 768 hashed t
   if !eq hashed (metadata+offset+400) 32 t || !validSelection offset t then error else t
 def tryRoot (r t : UInt64) : UInt64 :=
@@ -160,7 +160,7 @@ def scan (t : UInt64) : UInt64 :=
   let r := tryRoot low b
   if r != error then r else
   if allZero rootA 512 b && allZero rootB 512 b then zero current 64 b else error
-def finish (state code t : UInt64) : UInt64 :=
+@[noinline] def finish (state code t : UInt64) : UInt64 :=
   let content := load64 (st+48) t
   let t := if state >= 5 && content != 0 then ContentSDK.release content t else t
   let t := if state >= 5 then store64 (st+48) 0 t else t
@@ -176,7 +176,7 @@ def finish (state code t : UInt64) : UInt64 :=
   let t := zero cipher 640 t
   let t := zero nonce 4 t
   zero aad 32 t
-def newJob (caller operation mode recipient t : UInt64) : UInt64 :=
+@[noinline] def newJob (caller operation mode recipient t : UInt64) : UInt64 :=
   let t := zero st 32 t
   let t := store64 st mode t
   let t := store64 (st+8) operation t
@@ -207,7 +207,7 @@ def startRetain (caller content operation selectedMetadata t : UInt64) : UInt64 
   let t := copy (metadata+256) (metadata+320) 32 t
   let t := store64 (metadata+352) operation t
   let generation := load64 (current+24) t+1
-  if generation == 0 || total > ContentFormat.maxBytes || count > ContentFormat.maxChunks then rejectRetain 4 content t else
+  if generation == 0 || total > ContentFormat.legacyMaxBytes || count > ContentFormat.legacyMaxChunks then rejectRetain 4 content t else
   let t := zero candidate 64 t
   let t := store64 candidate (if isServer t then serverMagic else magic) t
   let t := store64 (candidate+8) (if partialContent then 5 else (if selectedMetadata == 0 then 3 else 4)+(if isServer t then 2 else 0)) t

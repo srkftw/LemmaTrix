@@ -154,6 +154,9 @@ def main():
     if len(sys.argv)>1 and sys.argv[1]=='project-vault':
         import project_vault
         sys.exit(project_vault.main(sys.argv[2:]))
+    if len(sys.argv)>1 and sys.argv[1] in ('service-jobs','inventory','indexed-import','indexed-migrate'):
+        import importlib
+        sys.exit(importlib.import_module({'service-jobs':'service_jobs','inventory':'inventory','indexed-import':'indexed_import','indexed-migrate':'indexed_migrate'}[sys.argv[1]]).main(sys.argv[2:]))
     if len(sys.argv)>1 and sys.argv[1]=='server-content':
         import server_content
         sys.exit(server_content.main(sys.argv[2:]))
@@ -178,6 +181,9 @@ def main():
     if len(sys.argv)>1 and sys.argv[1]=='library-node':
         import library_node
         sys.exit(library_node.main(sys.argv[2:]))
+    if len(sys.argv)>1 and sys.argv[1]=='retrievability':
+        import retrievability
+        sys.exit(retrievability.main(sys.argv[2:]))
     if len(sys.argv)>1 and sys.argv[1]=='library-fetch':
         import library_fetch
         sys.exit(library_fetch.main(sys.argv[2:]))

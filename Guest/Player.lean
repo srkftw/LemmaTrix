@@ -98,15 +98,28 @@ def stopOutput (t : UInt64) : UInt64 :=
   let t := zero samples 128 t
   let t := zero Guest.Wave.bytes 64 t
   store64 (st+64) 0 (store64 (st+32) 0 t)
+def invalidInput (h t : UInt64) : UInt64 :=
+  let t := stopOutput t
+  let t := if h == 0 then t else Guest.ContentSDK.release h t
+  mark 6 (store64 st 0 (store64 (st+104) 0 t))
+def parsedMatches (t : UInt64) : Bool :=
+  (load64 (st+88) t == 0 || load64 (st+88) t == load64 (Guest.Wave.info+24) t) &&
+  (load64 (st+96) t == 0 || load64 (st+96) t == load64 (Guest.Wave.info+48) t)
 def attach (h channels frames t : UInt64) : UInt64 :=
   let t := stopOutput t
   let previous := load64 st t
   let t := if previous == 0 || previous == h then t else Guest.ContentSDK.release previous t
-  let t := store64 st 0 t
+  let t := store64 st h t
+  let t := store64 (st+88) channels t
+  let t := store64 (st+96) frames t
+  let t := store64 (st+104) 0 t
+  let t := store64 (st+112) 0 t
+  let t := store64 (st+16) 0 t
   let r := Guest.Wave.parse h t
-  if r == error || (channels != 0 && channels != load64 (Guest.Wave.info+24) r) ||
-    (frames != 0 && frames != load64 (Guest.Wave.info+48) r) then mark 6 (Guest.ContentSDK.release h r) else
-    mark 1 (store64 st h (store64 (st+16) 0 r))
+  if r == error then
+    if load64 (Guest.Wave.info+56) r == 6 then mark 4 (store64 (st+104) 1 r) else invalidInput h r
+  else if !parsedMatches r then invalidInput h r else mark 1 r
+
 partial def mono (i frames t : UInt64) : UInt64 :=
   if i == frames then t else
     let v := Guest.Wave.u16 (Guest.Wave.bytes+i*2) t
@@ -115,13 +128,17 @@ partial def mono (i frames t : UInt64) : UInt64 :=
     mono (i+1) frames t
 def play (t : UInt64) : UInt64 :=
   if load64 st t == 0 || load64 (st+8) t == 6 then t else
-  if load64 (st+8) t == 2 || load64 (st+8) t == 4 then mark 3 t else
+  if load64 (st+104) t != 0 then
+    let wanted := if load64 (st+112) t == 0 then 1 else 0
+    mark (if wanted == 1 then 4 else 3) (store64 (st+112) wanted t)
+  else if load64 (st+8) t == 2 || load64 (st+8) t == 4 then mark 3 t else
   let epoch := if load64 (st+32) t == 0 then Guest.AudioSDK.acquire t else load64 (st+32) t
   if epoch == error then mark 7 epoch else
     let t := store64 (st+32) epoch epoch
     let t := if load64 (st+16) t >= load64 (Guest.Wave.info+48) t then store64 (st+16) 0 t else t
     mark 2 t
 def seek (forward t : UInt64) : UInt64 :=
+  if load64 (st+104) t != 0 then t else
   let was := load64 (st+8) t
   let t := stopOutput t
   let pos := load64 (st+16) t
@@ -143,11 +160,28 @@ def prepare (t : UInt64) : UInt64 :=
   let count := if total-pos > 512/align then 512/align else total-pos
   let offset := load64 (Guest.Wave.info+8) t+pos*align
   let r := Guest.Wave.range (load64 st t) offset (count*align) Guest.Wave.bytes t
-  if r == error then mark 4 r else
+  if r == error then
+    if load64 (Guest.Wave.info+56) r == 6 then mark 4 r else invalidInput (load64 st r) r
+  else
     let t := if channels == 1 then mono 0 count r else copy Guest.Wave.bytes samples (count*4) r
-    store64 (st+64) (count*4) (store64 (st+8) 2 t)
+    let t := store64 (st+64) (count*4) t
+    if load64 (st+8) t == 4 then mark 2 t else store64 (st+8) 2 t
+-- A missing verified header is distinct from an unsupported decoder format.
+-- Collection metadata is an expectation until the actual WAVE parser agrees.
+def headerPump (t : UInt64) : UInt64 :=
+  if load64 (st+104) t == 0 then t else
+  let h := load64 st t
+  let r := Guest.Wave.parse h t
+  if r == error then
+    if load64 (Guest.Wave.info+56) r == 6 then r else invalidInput h r
+  else if !parsedMatches r then invalidInput h r else
+    let t := store64 (st+104) 0 r
+    let t := mark 1 t
+    if load64 (st+112) t == 1 then play t else t
+
 def pump (t : UInt64) : UInt64 :=
-  if load64 (st+8) t != 2 && load64 (st+8) t != 4 then t else
+  let t := headerPump t
+  if load64 (st+104) t != 0 || (load64 (st+8) t != 2 && load64 (st+8) t != 4) then t else
   let t := if load64 (st+64) t == 0 then prepare t else t
   let count := load64 (st+64) t
   if count == 0 then t else
@@ -197,7 +231,7 @@ def input (_surface ev t : UInt64) : UInt64 :=
   let code := (ev >>> 32) &&& 65535
   if ev >>> 48 != 1 || (ev &&& 0xffffffff) != 1 then t else
   if code == 57 then play t else
-  if code == 31 then mark 1 (store64 (st+16) 0 (stopOutput t)) else
+  if code == 31 then mark 1 (store64 (st+112) 0 (store64 (st+16) 0 (stopOutput t))) else
   if code == 106 && load64 st t != 0 then seek 1 t else
   if code == 105 && load64 st t != 0 then seek 0 t else t
 partial def loop (surface initial : UInt64) : UInt64 :=
@@ -214,7 +248,9 @@ partial def loop (surface initial : UInt64) : UInt64 :=
       let drawn := drawPosition surface now
       store64 (st+72) (Guest.WaitSDK.now drawn+20) drawn
     else now
-  let deadline := Guest.WaitSDK.now t+(if load64 (st+8) t == 2 || load64 (st+8) t == 4 then 1 else 100)
+  -- Verified-range publication wakes this reader through its exact scoped
+  -- grant. The bounded fallback also supports older Content services.
+  let deadline := Guest.WaitSDK.now t+(if load64 (st+8) t == 2 then 1 else 100)
   -- Each successful block already performs a scoped range IPC, and timer
   -- preemption bounds CPU use. Do not add an entire scheduling round per
   -- 128 frames; wait only when output reports backpressure or playback rests.

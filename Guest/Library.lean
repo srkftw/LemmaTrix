@@ -10,6 +10,8 @@ import Guest.WaitSDK
 import Guest.Wave
 import Guest.GameSDK
 import Guest.LibraryFetchSDK
+import Guest.LibraryCollections
+import Guest.PrivateRecords
 namespace Guest.Library
 open Guest.LiveSDK Guest.Raster
 
@@ -34,141 +36,57 @@ def notice (id t : UInt64) : UInt64 := dirty (store64 (st+176) id t)
   notice 42 (store64 j 12 t)
 def selected (t : UInt64) : UInt64 := row (load64 (st+8) t)
 def consumer (i : UInt64) : UInt64 := row i+1024
-partial def label0 (id x y color t : UInt64) : UInt64 :=
-  if id == 0 then
-    let t := store64 (0x414000+0) 5281631927840621900 t
-    let t := store64 (0x414000+8) 383632101954 t
-    text 0x414000 13 x y color bg t
-  else if id == 1 then
-    let t := store64 (0x414000+0) 7809651189923983686 t
-    let t := store64 (0x414000+8) 5773669999057069935 t
-    let t := store64 (0x414000+16) 8318822943647231858 t
-    let t := store64 (0x414000+24) 7310838768846905376 t
-    let t := store64 (0x414000+32) 5125153851738973557 t
-    let t := store64 (0x414000+40) 2319107656866164065 t
-    let t := store64 (0x414000+48) 114776330036563 t
-    text 0x414000 54 x y color bg t
-  else if id == 2 then
-    let t := store64 (0x414000+0) 8388363463661282640 t
-    let t := store64 (0x414000+8) 2334111870320076140 t
-    let t := store64 (0x414000+16) 2340029477534397809 t
-    let t := store64 (0x414000+24) 7955443209958945377 t
-    let t := store64 (0x414000+32) 7883939740836193381 t
-    let t := store64 (0x414000+40) 7095809806264449907 t
-    let t := store64 (0x414000+48) 8314037906472395617 t
-    let t := store64 (0x414000+56) 5567381664665268853 t
-    text 0x414000 64 x y color bg t
-  else if id == 3 then
-    let t := store64 (0x414000+0) 5989823119953567809 t
-    let t := store64 (0x414000+8) 8245937438911843616 t
-    let t := store64 (0x414000+16) 8031172958083293216 t
-    let t := store64 (0x414000+24) 2340010785837641760 t
-    let t := store64 (0x414000+32) 7599104617365914656 t
-    let t := store64 (0x414000+40) 7588600870562981234 t
-    let t := store64 (0x414000+48) 5917813770744242286 t
-    let t := store64 (0x414000+56) 435778710885 t
-    text 0x414000 61 x y color bg t
-  else if id == 4 then
-    let t := store64 (0x414000+0) 8315178071121600593 t
-    let t := store64 (0x414000+8) 7020074018743001192 t
-    let t := store64 (0x414000+16) 4706353008050595193 t
-    let t := store64 (0x414000+24) 2340008599224337731 t
-    let t := store64 (0x414000+32) 7593478425241735712 t
-    let t := store64 (0x414000+40) 7162221081223241838 t
-    let t := store64 (0x414000+48) 3409260241649759855 t
-    let t := store64 (0x414000+56) 5517123 t
-    text 0x414000 59 x y color bg t
-  else if id == 5 then
-    let t := store64 (0x414000+0) 7308892947869626190 t
-    let t := store64 (0x414000+8) 7887337240561655908 t
-    let t := store64 (0x414000+16) 8245918730096243301 t
-    let t := store64 (0x414000+24) 8462580707610227556 t
-    let t := store64 (0x414000+32) 7310222300147184229 t
-    let t := store64 (0x414000+40) 8223683306485671276 t
-    let t := store64 (0x414000+48) 3348833642404734821 t
-    text 0x414000 56 x y color bg t
-  else if id == 6 then
-    let t := store64 (0x414000+0) 8243105097092919888 t
-    let t := store64 (0x414000+8) 2322295501785690912 t
-    let t := store64 (0x414000+16) 8751185064972739954 t
-    let t := store64 (0x414000+24) 7234299921575981088 t
-    let t := store64 (0x414000+32) 2334111870315733107 t
-    let t := store64 (0x414000+40) 7162256579379608370 t
-    let t := store64 (0x414000+48) 7597414673048477812 t
-    let t := store64 (0x414000+56) 7598532952375653486 t
-    let t := store64 (0x414000+64) 6646882 t
-    text 0x414000 67 x y color bg t
-  else if id == 7 then
-    let t := store64 (0x414000+0) 7301214825104944945 t
-    let t := store64 (0x414000+8) 8030604370248951148 t
-    let t := store64 (0x414000+16) 4981016863571208566 t
-    let t := store64 (0x414000+24) 7957652872685245518 t
-    let t := store64 (0x414000+32) 2330648130927945070 t
-    let t := store64 (0x414000+40) 7286935756435449170 t
-    let t := store64 (0x414000+48) 7954884629262987886 t
-    let t := store64 (0x414000+56) 116 t
-    text 0x414000 57 x y color bg t
-  else if id == 8 then
-    let t := store64 (0x414000+0) 7885649520038539086 t
-    let t := store64 (0x414000+8) 8387235364479792225 t
-    let t := store64 (0x414000+16) 2318912282932047461 t
-    let t := store64 (0x414000+24) 7953753191868164432 t
-    let t := store64 (0x414000+32) 7163386859017692519 t
-    let t := store64 (0x414000+40) 7310028429769795956 t
-    let t := store64 (0x414000+48) 2334381307661018470 t
-    let t := store64 (0x414000+56) 199605644911 t
-    text 0x414000 61 x y color bg t
+@[noinline] partial def label0b (id x y color t : UInt64) : UInt64 :=
+  if id == 8 then
+    let t := store64 (0x414000+0) 8511930191083104592 t
+    let t := store64 (0x414000+8) 4279946221065432175 t
+    let t := store64 (0x414000+16) 7310874250626224672 t
+    let t := store64 (0x414000+24) 8242553123633329267 t
+    let t := store64 (0x414000+32) 7309940760746684537 t
+    let t := store64 (0x414000+40) 31084746153813364 t
+    text 0x414000 47 x y color bg t
   else if id == 9 then
-    let t := store64 (0x414000+0) 2334402202894889025 t
-    let t := store64 (0x414000+8) 2334101988909084514 t
-    let t := store64 (0x414000+16) 7598805593930102113 t
-    let t := store64 (0x414000+24) 8316307316775395427 t
-    let t := store64 (0x414000+32) 4981050931419903081 t
-    let t := store64 (0x414000+40) 8102082521086645326 t
-    let t := store64 (0x414000+48) 4981046554681306994 t
-    let t := store64 (0x414000+56) 7305804385079018323 t
-    let t := store64 (0x414000+64) 29548 t
-    text 0x414000 66 x y color bg t
+    let t := store64 (0x414000+0) 2334397779128968001 t
+    let t := store64 (0x414000+8) 7813572869537491060 t
+    let t := store64 (0x414000+16) 4570713170542552428 t
+    let t := store64 (0x414000+24) 6998684278654387488 t
+    let t := store64 (0x414000+32) 3395825678387671152 t
+    let t := store64 (0x414000+40) 7953747407132640544 t
+    let t := store64 (0x414000+48) 7103843 t
+    text 0x414000 51 x y color bg t
   else if id == 10 then
-    let t := store64 (0x414000+0) 2338324109331885907 t
-    let t := store64 (0x414000+8) 3615037497570321779 t
-    let t := store64 (0x414000+16) 8386658447326912571 t
-    let t := store64 (0x414000+24) 8243105079639434341 t
-    let t := store64 (0x414000+32) 7286889542587085921 t
-    let t := store64 (0x414000+40) 7234316402863268718 t
-    let t := store64 (0x414000+48) 8029109356424684064 t
-    let t := store64 (0x414000+56) 3368292 t
-    text 0x414000 59 x y color bg t
+    let t := store64 (0x414000+0) 7234318597473988673 t
+    let t := store64 (0x414000+8) 6998720695968822048 t
+    let t := store64 (0x414000+16) 8243105079639434350 t
+    let t := store64 (0x414000+24) 7286889542587085921 t
+    let t := store64 (0x414000+32) 7234316402863268718 t
+    let t := store64 (0x414000+40) 8029109356424684064 t
+    let t := store64 (0x414000+48) 3368292 t
+    text 0x414000 51 x y color bg t
   else if id == 11 then
     let t := store64 (0x414000+0) 8820707168001226049 t
-    let t := store64 (0x414000+8) 5773667787737097317 t
-    let t := store64 (0x414000+16) 8246126356433489219 t
-    let t := store64 (0x414000+24) 7310594678324553317 t
-    let t := store64 (0x414000+32) 7594585336717469042 t
-    let t := store64 (0x414000+40) 3616450013580650860 t
-    let t := store64 (0x414000+48) 8392847271002190649 t
-    let t := store64 (0x414000+56) 29541 t
-    text 0x414000 58 x y color bg t
+    let t := store64 (0x414000+8) 4049946916415366245 t
+    let t := store64 (0x414000+16) 8026947690928742459 t
+    let t := store64 (0x414000+24) 8029968104952963131 t
+    let t := store64 (0x414000+32) 8392847272196663660 t
+    let t := store64 (0x414000+40) 32767015939481701 t
+    text 0x414000 47 x y color bg t
   else if id == 12 then
-    let t := store64 (0x414000+0) 4706900758732755013 t
-    let t := store64 (0x414000+8) 7022640558675868492 t
-    let t := store64 (0x414000+16) 4285582364663488620 t
-    let t := store64 (0x414000+24) 7742373268247899680 t
-    let t := store64 (0x414000+32) 7453010347690386208 t
-    let t := store64 (0x414000+40) 7309377664828913201 t
-    let t := store64 (0x414000+48) 7431065164980428914 t
-    let t := store64 (0x414000+56) 1953390962 t
-    text 0x414000 60 x y color bg t
+    let t := store64 (0x414000+0) 7308332243887091542 t
+    let t := store64 (0x414000+8) 8223692119759287584 t
+    let t := store64 (0x414000+16) 4279657070797616229 t
+    let t := store64 (0x414000+24) 7234298802019983904 t
+    let t := store64 (0x414000+32) 8315168227309482528 t
+    let t := store64 (0x414000+40) 7021788157845594400 t
+    let t := store64 (0x414000+48) 7566446 t
+    text 0x414000 51 x y color bg t
   else if id == 13 then
-    let t := store64 (0x414000+0) 7020677651101545798 t
-    let t := store64 (0x414000+8) 7308324465885667702 t
-    let t := store64 (0x414000+16) 3201618883719929902 t
-    let t := store64 (0x414000+24) 7236828443317988640 t
-    let t := store64 (0x414000+32) 7310575256332300320 t
-    let t := store64 (0x414000+40) 8243122732211659552 t
-    let t := store64 (0x414000+48) 7811882189719500064 t
-    let t := store64 (0x414000+56) 199270097505 t
-    text 0x414000 61 x y color bg t
+    let t := store64 (0x414000+0) 7597131870759712070 t
+    let t := store64 (0x414000+8) 7147063527858990703 t
+    let t := store64 (0x414000+16) 8439871481763296620 t
+    let t := store64 (0x414000+24) 7089066488320385390 t
+    let t := store64 (0x414000+32) 25964 t
+    text 0x414000 34 x y color bg t
   else if id == 14 then
     let t := store64 (0x414000+0) 4707459271918634317 t
     let t := store64 (0x414000+8) 383532289824 t
@@ -179,6 +97,72 @@ partial def label0 (id x y color t : UInt64) : UInt64 :=
     let t := store64 (0x414000+16) 4541506 t
     text 0x414000 19 x y color bg t
   else t
+partial def label0 (id x y color t : UInt64) : UInt64 :=
+  if id == 0 then
+    let t := store64 (0x414000+0) 5281631927840621900 t
+    let t := store64 (0x414000+8) 383632101954 t
+    text 0x414000 13 x y color bg t
+  else if id == 1 then
+    let t := store64 (0x414000+0) 7809651189923983686 t
+    let t := store64 (0x414000+8) 7300370396264556399 t
+    let t := store64 (0x414000+16) 5341325534346572389 t
+    let t := store64 (0x414000+24) 5125153851744412271 t
+    let t := store64 (0x414000+32) 2320838288168283489 t
+    let t := store64 (0x414000+40) 8315168162700881744 t
+    let t := store64 (0x414000+48) 7022349122379597344 t
+    let t := store64 (0x414000+56) 1684369001 t
+    text 0x414000 60 x y color bg t
+  else if id == 2 then
+    let t := store64 (0x414000+0) 7142819395816352083 t
+    let t := store64 (0x414000+8) 8079523098445570412 t
+    let t := store64 (0x414000+16) 7521891478339674476 t
+    let t := store64 (0x414000+24) 8386653723097260901 t
+    let t := store64 (0x414000+32) 21747584627138933 t
+    text 0x414000 39 x y color bg t
+  else if id == 3 then
+    let t := store64 (0x414000+0) 2329241047831486529 t
+    let t := store64 (0x414000+8) 2338053702334443341 t
+    let t := store64 (0x414000+16) 8746950815728541767 t
+    let t := store64 (0x414000+24) 5269339542357296160 t
+    let t := store64 (0x414000+32) 5495873826357596192 t
+    let t := store64 (0x414000+40) 28559193596580384 t
+    text 0x414000 47 x y color bg t
+  else if id == 4 then
+    let t := store64 (0x414000+0) 8315178071121600593 t
+    let t := store64 (0x414000+8) 8746391042724995176 t
+    let t := store64 (0x414000+16) 4990904625304466021 t
+    let t := store64 (0x414000+24) 2328959663001587744 t
+    let t := store64 (0x414000+32) 6134024091364255058 t
+    let t := store64 (0x414000+40) 8243124913752592928 t
+    text 0x414000 48 x y color bg t
+  else if id == 5 then
+    let t := store64 (0x414000+0) 7308892947869626190 t
+    let t := store64 (0x414000+8) 7887337240561655908 t
+    let t := store64 (0x414000+16) 8245918730096243301 t
+    let t := store64 (0x414000+24) 8462580707610227556 t
+    let t := store64 (0x414000+32) 7310222300147184229 t
+    let t := store64 (0x414000+40) 8223683306485671276 t
+    let t := store64 (0x414000+48) 3348833642404734821 t
+    text 0x414000 56 x y color bg t
+  else if id == 6 then
+    let t := store64 (0x414000+0) 8751185064972739922 t
+    let t := store64 (0x414000+8) 7234299921576173616 t
+    let t := store64 (0x414000+16) 7594230310270415219 t
+    let t := store64 (0x414000+24) 7236832841296995698 t
+    let t := store64 (0x414000+32) 8511930239636041584 t
+    let t := store64 (0x414000+40) 111516181951337 t
+    text 0x414000 46 x y color bg t
+  else if id == 7 then
+    let t := store64 (0x414000+0) 7301214825104944945 t
+    let t := store64 (0x414000+8) 8030604370248951148 t
+    let t := store64 (0x414000+16) 4981016863571208566 t
+    let t := store64 (0x414000+24) 7957652872685245518 t
+    let t := store64 (0x414000+32) 2330648130927945070 t
+    let t := store64 (0x414000+40) 7286935756435449170 t
+    let t := store64 (0x414000+48) 7954884629262987886 t
+    let t := store64 (0x414000+56) 116 t
+    text 0x414000 57 x y color bg t
+  else label0b id x y color t
 partial def label1 (id x y color t : UInt64) : UInt64 :=
   if id == 16 then
     let t := store64 (0x414000+0) 5713977594995623250 t
@@ -218,16 +202,13 @@ partial def label1 (id x y color t : UInt64) : UInt64 :=
     let t := store64 (0x414000+8) 121424956188018 t
     text 0x414000 14 x y color bg t
   else if id == 28 then
-    let t := store64 (0x414000+0) 7234316402526741345 t
-    let t := store64 (0x414000+8) 7310012263327687712 t
-    let t := store64 (0x414000+16) 8388354946792235108 t
-    let t := store64 (0x414000+24) 7237112413330357113 t
-    let t := store64 (0x414000+32) 7236270204636914789 t
-    let t := store64 (0x414000+40) 7308044107532935283 t
-    let t := store64 (0x414000+48) 2338042707166961764 t
-    let t := store64 (0x414000+56) 8388362677733385057 t
-    let t := store64 (0x414000+64) 7237481 t
-    text 0x414000 67 x y color bg t
+    let t := store64 (0x414000+0) 2340029477534397777 t
+    let t := store64 (0x414000+8) 7234314139196417380 t
+    let t := store64 (0x414000+16) 7306086968195293243 t
+    let t := store64 (0x414000+24) 8316850424063926386 t
+    let t := store64 (0x414000+32) 2336349463790182688 t
+    let t := store64 (0x414000+40) 495623371106 t
+    text 0x414000 45 x y color bg t
   else if id == 29 then
     let t := store64 (0x414000+0) 7234316346692625778 t
     let t := store64 (0x414000+8) 8386104319403237434 t
@@ -266,48 +247,36 @@ partial def label2 (id x y color t : UInt64) : UInt64 :=
     let t := store64 (0x414000+56) 1684107084 t
     text 0x414000 60 x y color bg t
   else if id == 35 then
-    let t := store64 (0x414000+0) 8247626254411852115 t
-    let t := store64 (0x414000+8) 8319108855239880549 t
-    let t := store64 (0x414000+16) 8295757408969322345 t
-    let t := store64 (0x414000+24) 2334399943741108325 t
-    let t := store64 (0x414000+32) 7165064418700522086 t
-    let t := store64 (0x414000+40) 8458716092899028065 t
-    let t := store64 (0x414000+48) 8102082521559165300 t
-    let t := store64 (0x414000+56) 465491619698 t
-    text 0x414000 61 x y color bg t
+    let t := store64 (0x414000+0) 8028074750291829825 t
+    let t := store64 (0x414000+8) 8243107283012427886 t
+    let t := store64 (0x414000+16) 7286944522513555571 t
+    let t := store64 (0x414000+24) 7957695015493526904 t
+    let t := store64 (0x414000+32) 7022923206234235168 t
+    let t := store64 (0x414000+40) 108 t
+    text 0x414000 41 x y color bg t
   else if id == 36 then
-    let t := store64 (0x414000+0) 6998727288811188048 t
-    let t := store64 (0x414000+8) 2334102066235076720 t
-    let t := store64 (0x414000+16) 8461539573182394214 t
-    let t := store64 (0x414000+24) 8101729874644984180 t
-    let t := store64 (0x414000+32) 8317708060514677349 t
-    let t := store64 (0x414000+40) 8386658447326912571 t
-    let t := store64 (0x414000+48) 7957404669984010089 t
-    let t := store64 (0x414000+56) 8241996772119966831 t
-    let t := store64 (0x414000+64) 7882821570751915367 t
-    text 0x414000 72 x y color bg t
+    let t := store64 (0x414000+0) 7234318597473988673 t
+    let t := store64 (0x414000+8) 4285565824861696032 t
+    let t := store64 (0x414000+16) 7958740646438595104 t
+    let t := store64 (0x414000+24) 8367816129496969313 t
+    let t := store64 (0x414000+32) 7954877705875973480 t
+    let t := store64 (0x414000+40) 31084746152964709 t
+    text 0x414000 47 x y color bg t
   else if id == 37 then
     let t := store64 (0x414000+0) 8243105097092919888 t
-    let t := store64 (0x414000+8) 7811882189719500064 t
-    let t := store64 (0x414000+16) 7521891242115621473 t
-    let t := store64 (0x414000+24) 8391720272443699055 t
-    let t := store64 (0x414000+32) 2334102083314282344 t
-    let t := store64 (0x414000+40) 8386105418748030049 t
-    let t := store64 (0x414000+48) 6998648999207335529 t
-    let t := store64 (0x414000+56) 8387235364223345774 t
-    let t := store64 (0x414000+64) 31090 t
-    text 0x414000 66 x y color bg t
+    let t := store64 (0x414000+8) 7308895159564267296 t
+    let t := store64 (0x414000+16) 8386658447326912570 t
+    let t := store64 (0x414000+24) 7954879164785504049 t
+    let t := store64 (0x414000+32) 8751185004989535264 t
+    text 0x414000 40 x y color bg t
   else if id == 38 then
-    let t := store64 (0x414000+0) 7598807758542761795 t
-    let t := store64 (0x414000+8) 7310575247904763503 t
-    let t := store64 (0x414000+16) 7161113873270858016 t
-    let t := store64 (0x414000+24) 2334397743343297896 t
-    let t := store64 (0x414000+32) 7308332243887091574 t
-    let t := store64 (0x414000+40) 7286943397266224416 t
-    let t := store64 (0x414000+48) 2338609982203523192 t
-    let t := store64 (0x414000+56) 2338340601787474511 t
-    let t := store64 (0x414000+64) 7809653449870569569 t
-    text 0x414000 72 x y color bg t
+    let t := store64 (0x414000+0) 7308332243887091542 t
+    let t := store64 (0x414000+8) 8391735975095138080 t
+    let t := store64 (0x414000+16) 8246214480173621536 t
+    let t := store64 (0x414000+24) 7164775246990767727 t
+    let t := store64 (0x414000+32) 8511913682638240114 t
+    let t := store64 (0x414000+40) 1953264993 t
+    text 0x414000 44 x y color bg t
   else if id == 39 then
     let t := store64 (0x414000+0) 6061921335340450126 t
     let t := store64 (0x414000+8) 4692825876278236498 t
@@ -315,15 +284,12 @@ partial def label2 (id x y color t : UInt64) : UInt64 :=
     let t := store64 (0x414000+24) 4919428642889614674 t
     text 0x414000 32 x y color bg t
   else if id == 40 then
-    let t := store64 (0x414000+0) 7234316346692756819 t
-    let t := store64 (0x414000+8) 8247343714165682720 t
-    let t := store64 (0x414000+16) 8029390865575714937 t
-    let t := store64 (0x414000+24) 8295745358448977440 t
-    let t := store64 (0x414000+32) 7596482287037736809 t
-    let t := store64 (0x414000+40) 8027139014440612979 t
-    let t := store64 (0x414000+48) 7142835905570807922 t
-    let t := store64 (0x414000+56) 491496108661 t
-    text 0x414000 61 x y color bg t
+    let t := store64 (0x414000+0) 7526470944280309582 t
+    let t := store64 (0x414000+8) 2334102031740531488 t
+    let t := store64 (0x414000+16) 2334956331019233644 t
+    let t := store64 (0x414000+24) 2338328528881218657 t
+    let t := store64 (0x414000+32) 125823003817315 t
+    text 0x414000 38 x y color bg t
   else if id == 41 then
     let t := store64 (0x414000+0) 8028075781016806739 t
     let t := store64 (0x414000+8) 8029390865575714926 t
@@ -333,14 +299,12 @@ partial def label2 (id x y color t : UInt64) : UInt64 :=
     let t := store64 (0x414000+40) 29806 t
     text 0x414000 42 x y color bg t
   else if id == 42 then
-    let t := store64 (0x414000+0) 7308623593077498189 t
-    let t := store64 (0x414000+8) 7954892334483841124 t
-    let t := store64 (0x414000+16) 7162240872924258420 t
-    let t := store64 (0x414000+24) 4850412414248837484 t
-    let t := store64 (0x414000+32) 8247625154749603917 t
-    let t := store64 (0x414000+40) 7214893546953076069 t
-    let t := store64 (0x414000+48) 491327481449 t
-    text 0x414000 53 x y color bg t
+    let t := store64 (0x414000+0) 8388361569363586633 t
+    let t := store64 (0x414000+8) 7020393216920792185 t
+    let t := store64 (0x414000+16) 5567381664649126004 t
+    let t := store64 (0x414000+24) 7166460029768920352 t
+    let t := store64 (0x414000+32) 104 t
+    text 0x414000 33 x y color bg t
   else if id == 43 then
     let t := store64 (0x414000+0) 7598258067103182669 t
     let t := store64 (0x414000+8) 4285575741986334574 t
@@ -382,13 +346,11 @@ partial def label3 (id x y color t : UInt64) : UInt64 :=
     text 0x414000 20 x y color bg t
   else if id == 54 then
     let t := store64 (0x414000+0) 7598807758542761795 t
-    let t := store64 (0x414000+8) 7163375908187827823 t
-    let t := store64 (0x414000+16) 8531350552824062073 t
-    let t := store64 (0x414000+24) 8462580614265400175 t
-    let t := store64 (0x414000+32) 8170480940731430245 t
-    let t := store64 (0x414000+40) 7957695015293249909 t
-    let t := store64 (0x414000+48) 28259044236029984 t
-    text 0x414000 55 x y color bg t
+    let t := store64 (0x414000+8) 7741536462551674479 t
+    let t := store64 (0x414000+16) 7599372962075665509 t
+    let t := store64 (0x414000+24) 8079584675319805797 t
+    let t := store64 (0x414000+32) 521358896239 t
+    text 0x414000 37 x y color bg t
   else if id == 58 then
     let t := store64 (0x414000+0) 8103230749690118992 t
     let t := store64 (0x414000+8) 7019813714331202677 t
@@ -398,15 +360,12 @@ partial def label3 (id x y color t : UInt64) : UInt64 :=
     let t := store64 (0x414000+40) 28259048229268581 t
     text 0x414000 47 x y color bg t
   else if id == 61 then
-    let t := store64 (0x414000+0) 7665811700669899091 t
-    let t := store64 (0x414000+8) 8387235364748944229 t
-    let t := store64 (0x414000+16) 8749489599638563169 t
-    let t := store64 (0x414000+24) 6998719601003880736 t
-    let t := store64 (0x414000+32) 8386109743963665184 t
-    let t := store64 (0x414000+40) 8386658438684287077 t
-    let t := store64 (0x414000+48) 8534165646137696371 t
-    let t := store64 (0x414000+56) 27745 t
-    text 0x414000 58 x y color bg t
+    let t := store64 (0x414000+0) 8387235364514193747 t
+    let t := store64 (0x414000+8) 7935463968216477285 t
+    let t := store64 (0x414000+16) 8099006088107812197 t
+    let t := store64 (0x414000+24) 8097789225105191521 t
+    let t := store64 (0x414000+32) 119165854642800 t
+    text 0x414000 38 x y color bg t
   else t
 partial def label4 (id x y color t : UInt64) : UInt64 :=
   if id == 66 then
@@ -427,13 +386,11 @@ partial def label4 (id x y color t : UInt64) : UInt64 :=
   else if id == 70 then
     let t := store64 (0x414000+0) 4707459271363940173 t
     let t := store64 (0x414000+8) 8606172383467085882 t
-    let t := store64 (0x414000+16) 7310309144435826798 t
-    let t := store64 (0x414000+24) 7311142561566699040 t
-    let t := store64 (0x414000+32) 7310589338300740460 t
-    let t := store64 (0x414000+40) 2318338277832925298 t
-    let t := store64 (0x414000+48) 7164771135566082885 t
-    let t := store64 (0x414000+56) 27749 t
-    text 0x414000 58 x y color bg t
+    let t := store64 (0x414000+16) 8386658447326912622 t
+    let t := store64 (0x414000+24) 2338042707299344428 t
+    let t := store64 (0x414000+32) 8306080462789504876 t
+    let t := store64 (0x414000+40) 7810758454475432035 t
+    text 0x414000 48 x y color bg t
   else if id == 71 then
     let t := store64 (0x414000+0) 5641130483175736129 t
     let t := store64 (0x414000+8) 71 t
@@ -459,16 +416,31 @@ def label (id x y color t : UInt64) : UInt64 :=
   if id < 64 then label3 id x y color t else
   label4 id x y color t
 
-def current (descriptor expected t : UInt64) : UInt64 :=
+@[noinline] def current (descriptor expected t : UInt64) : UInt64 :=
   let r := Guest.RegistrySDK.current descriptor expected t
   if r == 64 && status r == 2 then Guest.RegistrySDK.verify descriptor expected r else r
 def nextId (t : UInt64) : UInt64 := store64 (st+184) (load64 (st+184) t+1) t
+-- Retry only the already configured endpoint while an approved caller needs
+-- it. A connected Noise handshake is never reset. Ten seconds exceeds the
+-- opaque adapter's five-second connect deadline; this is a bounded retry,
+-- not provider selection or renewal of collection/service terms.
+def availablePeer (slot t : UInt64) : UInt64 :=
+  let p := peer slot
+  let r := Guest.NetworkSDK.inspectPeer slot t
+  if r != 64 || status r != 0 then r else
+  if result r == 3 then 64+store64 (p+104) 0 r else
+  if result r != 0 || (load64 (wire+24) r &&& 3) == 3 then r else
+  let now := Guest.WaitSDK.now r
+  if load64 (p+104) now == 0 then store64 (p+104) (now+1000) now else
+  if now < load64 (p+104) now then now else
+    let t := store64 (p+104) (now+1000) now
+    Guest.NetworkSDK.inspectPeer slot (Guest.NetworkSDK.openPeer slot t)
 -- A grant is made only for a separately verified selected enrollment and the
 -- immutable federation/manifest root. No local capability is sent to the peer.
 def ensureGrant (slot root t : UInt64) : UInt64 :=
   let p := peer slot
   if load64 p t != 0 && eq (p+768) root 32 t then t else
-  let r := Guest.NetworkSDK.inspectPeer slot t
+  let r := availablePeer slot t
   if r != 64 || status r != 0 || result r != 3 then notice 37 (store64 p 0 r) else
   let r := Guest.NetworkSDK.callPeer slot 64 (header 15 0 0 0 0 0 0 r)
   if r != 576 || status r != 0 then notice 37 r else
@@ -479,7 +451,11 @@ def ensureGrant (slot root t : UInt64) : UInt64 :=
   let t := hash (p+128) 512 (work+32) t
   let t := copy root (work+64) 32 t
   let t := if load64 p t == 0 then t else Guest.NetworkSDK.callPeer slot 64 (header 8 (load64 p t) 0 0 0 0 0 t)
-  let r := Guest.LibraryPeerSDK.grant slot work (if slot == 0 then 1 else load64 root t ||| 1) 16777216 100000 t
+  let budget := if slot == 0 then 16777216 else load64 (root-632) t
+  let wanted := if budget <= 8388608 then 16777216 else budget+budget/2+65536
+  let limit := load64 (p+176) t
+  if slot != 0 && limit < budget then notice 21 (store64 p 0 t) else
+  let r := Guest.LibraryPeerSDK.grant slot work (if slot == 0 then 1 else load64 root t ||| 1) (if wanted < limit then wanted else limit) 100000 t
   let t := store64 (st+544) r r
   let t := store64 (st+552) (if r == error then error else status r) t
   let t := store64 (st+560) slot t
@@ -511,12 +487,18 @@ def issue (slot ji operation h a b initial : UInt64) : UInt64 :=
 partial def findEdition (id i t : UInt64) : UInt64 :=
   if i == load64 (st+16) t then error else
   if eq (consumer i+160) id 32 t then i else findEdition id (i+1) t
+@[noinline] def metadataAdmission (t : UInt64) : UInt64 :=
+  let r := Guest.RegistrySDK.current metadata (metadata+320) t
+  if (r == 64 && (status r == 6 || status r == 2)) ||
+    (r == 832 && status r == 3 && load64 (metadata+48) r > load64 (wire+112) r) then
+    Guest.RegistrySDK.verify metadata (metadata+320) r
+  else r
 def acceptMetadata (t : UInt64) : UInt64 :=
   let classification := load64 (metadata+16) t
   if !Guest.RegistrySDK.consumerAdmitted classification || !Guest.ConsumerFormat.valid (metadata+768) t then notice 29 t else
   let t := hash (metadata+768) 768 hashOut t
   if !eq hashOut (metadata+400) 32 t then notice 29 t else
-  let r := Guest.RegistrySDK.verify metadata (metadata+320) t
+  let r := metadataAdmission t
   if r != 832 || status r != 0 || !Guest.RegistrySDK.consumerAdmitted (result r) then notice 29 r else
   let old := findEdition (metadata+768+160) 0 r
   let i := if old == error then load64 (st+16) r else old
@@ -531,21 +513,20 @@ def acceptMetadata (t : UInt64) : UInt64 :=
   let t := store64 (row i) 1 t
   let t := if old == error then store64 (st+16) (i+1) t else t
   notice 14 t
+@[noinline] def collectionFor (i t : UInt64) : UInt64 :=
+  Guest.LibraryCollections.find (consumer i+96) (row i+256+288) 0 t
+@[noinline] def jobPolicy (j t : UInt64) : UInt64 :=
+  let i := load64 (j+400) t-1
+  if i >= Guest.LibraryCollections.count then 0 else Guest.LibraryCollections.record i
+@[noinline] def policyLive (j t : UInt64) : Bool :=
+  let p := jobPolicy j t
+  p != 0 && load64 (p+24) t == 1 && load64 (p+96) t == 0 &&
+    load64 (p+8) t == load64 (j+64) t
 partial def freeJob (i t : UInt64) : UInt64 :=
   if i == 4 then error else if load64 (job i) t == 0 || load64 (job i) t == 10 || load64 (job i) t >= 12 then i else freeJob (i+1) t
-def queue (i t : UInt64) : UInt64 :=
-  if i >= load64 (st+16) t then t else
+@[noinline] def initializeAcquisition (ji i ci t : UInt64) : UInt64 :=
   let m := consumer i
-  let existing := load64 (row i+64) t
-  if existing > 0 && existing <= 4 && load64 (job (existing-1)) t != 13 && load64 (job (existing-1)) t != 14 then notice 18 t else
-  let fresh := current (row i+256) (row i+256+320) t
-  if fresh != 832 || status fresh != 0 || !Guest.RegistrySDK.consumerAdmitted (result fresh) then notice 54 fresh else
-  if load64 (m+16) t != 1 then notice 34 t else
-  if load64 (st+96) t != 1 then notice 21 (store64 (st+208) 1 (store64 (st+216) (i+1) t)) else
-  if !eq (m+96) (st+288) 32 t || load64 (m+408) t > load64 (st+112) t ||
-    load64 (st+120) t > load64 (st+112) t-load64 (m+408) t then notice 21 t else
-  let ji := freeJob 0 t
-  if ji == error then notice 21 ji else
+  let policyRecord := Guest.LibraryCollections.record ci
   let j := job ji
   let oldHandle := load64 (j+48) t
   let t := if oldHandle == 0 then t else Guest.ContentSDK.control oldHandle 3 t
@@ -557,22 +538,51 @@ def queue (i t : UInt64) : UInt64 :=
   let t := copy (row i+256) (j+1280) 768 t
   let t := store64 j 1 t
   let t := store64 (j+8) i t
-  let t := store64 (j+16) (load64 (st+136) t) t
-  let t := if load64 (row i+48) t != 2 then t else store64 (j+24) (load64 (row i+16) t) t
-  let t := store64 (j+64) (load64 (st+128) t) t
-  let t := store64 (j+72) (load64 (st+112) t) t
+  let requestedProvider := load64 (st+136) t
+  let providers := load64 (policyRecord+64) t
+  let chosenProvider := if ((providers >>> requestedProvider) &&& 1) != 0 then requestedProvider else if (providers &&& 2) != 0 then 1 else 2
+  let t := store64 (j+16) chosenProvider t
+  let durableResume := load64 (row i+48) t == 2 && load64 (policyRecord+128) t != 0 && load64 (row i+120) t != 0
+  let t := if load64 (row i+48) t != 2 || durableResume then t else store64 (j+24) (load64 (row i+16) t) t
+  let t := store64 (j+64) (load64 (policyRecord+8) t) t
+  let t := store64 (j+72) (load64 (m+408) t) t
+  let t := store64 (j+400) (ci+1) t
+  let t := copy policyRecord (j+2048) 512 t
+  let t := store64 (j+408) (load64 (policyRecord+128) t) t
   let t := nextId t
-  let t := store64 (j+80) (load64 (st+184) t) t
+  let t := store64 (j+80) (if durableResume then load64 (row i+120) t else load64 (st+184) t) t
   let t := store64 (j+104) 3 t
-  let t := store64 (j+112) (load64 (st+104) t) t
+  let t := store64 (j+112) (load64 (policyRecord+64) t) t
   let t := store64 (row i+64) (ji+1) t
-  let t := store64 (st+120) (load64 (st+120) t+load64 (m+408) t) t
+  let t := if durableResume then t else store64 (policyRecord+56) (load64 (policyRecord+56) t+load64 (m+408) t) t
+  let t := copy (m+160) (policyRecord+224) 32 t
+  let t := store64 (policyRecord+256) (load64 (policyRecord+256) t+1) t
   notice 36 t
+
+@[noinline] def queue (i t : UInt64) : UInt64 :=
+  if i >= load64 (st+16) t then t else
+  let m := consumer i
+  let existing := load64 (row i+64) t
+  if existing > 0 && existing <= 4 && load64 (job (existing-1)) t != 13 && load64 (job (existing-1)) t != 14 then notice 18 t else
+  let fresh := current (row i+256) (row i+256+320) t
+  if fresh != 832 || status fresh != 0 || !Guest.RegistrySDK.consumerAdmitted (result fresh) then notice 54 fresh else
+  if load64 (m+16) t != 1 then notice 34 t else
+  let ci := collectionFor i t
+  if ci == error then notice 21 (store64 (st+208) 1 (store64 (st+216) (i+1) t)) else
+  if load64 (Guest.LibraryCollections.record ci+88) t == 1 && load64 (Guest.LibraryCollections.record ci+128) t == 0 then notice 21 t else
+  let resume := load64 (row i+48) t == 2 && load64 (row i+120) t != 0 && load64 (Guest.LibraryCollections.record ci+128) t != 0
+  if load64 (m+408) t > load64 (Guest.LibraryCollections.record ci+48) t ||
+    !Guest.LibraryCollections.allowed ci m (if resume then 0 else load64 (m+408) t) t then notice 21 t else
+  let ji := freeJob 0 t
+  if ji == error then notice 21 ji else
+  initializeAcquisition ji i ci t
 -- Rules use stable collection/item identities. Claims remain unmeasured until
 -- the completed local WAV parser checks actual rate/channels/frame count.
 def eligible (i t : UInt64) : Bool :=
-  load64 (consumer i+16) t == 1 && eq (consumer i+96) (st+288) 32 t &&
-  load64 (consumer i+408) t <= load64 (st+112) t
+  let ci := collectionFor i t
+  ci != error && load64 (consumer i+16) t == 1 &&
+    load64 (Guest.LibraryCollections.record ci+16) t == 1 &&
+    load64 (consumer i+408) t <= load64 (Guest.LibraryCollections.record ci+48) t
 partial def offeredBetter (candidate i t : UInt64) : Bool :=
   if i == load64 (st+16) t then false else
   let a := consumer candidate
@@ -601,11 +611,13 @@ partial def reasons (i chosen t : UInt64) : UInt64 :=
     if load64 (consumer i+16) t != 1 then 29 else
     if chosen != error && eq (consumer i+128) (consumer chosen+128) 32 t && load64 (consumer i+424) t < load64 (consumer chosen+424) t then 31 else 28
   reasons (i+1) chosen (store64 (row i+40) code t)
-def monitorDecision (t : UInt64) : UInt64 :=
-  if load64 (st+88) t == 0 then t else
-  let chosen := best 0 error t
-  let t := reasons 0 chosen t
-  if chosen == error || load64 (st+96) t == 0 then dirty t else queue chosen t
+partial def monitorEach (i t : UInt64) : UInt64 :=
+  if i == load64 (st+16) t then t else
+  let ci := collectionFor i t
+  let t := if !eligible i t || offeredBetter i 0 t || acquiredEdition i 0 t then t else
+    if ci == error || !Guest.LibraryCollections.allowed ci (consumer i) (load64 (consumer i+408) t) t then t else queue i t
+  monitorEach (i+1) t
+def monitorDecision (t : UInt64) : UInt64 := dirty (monitorEach 0 t)
 
 def metadataReply (operation code t : UInt64) : UInt64 :=
   if code != 0 then
@@ -626,63 +638,76 @@ def metadataReply (operation code t : UInt64) : UInt64 :=
       let t := acceptMetadata t
       store64 (st+40) 1 t
 
-def seedReply (ji operation code t : UInt64) : UInt64 :=
+@[noinline] def manifestReply (ji t : UInt64) : UInt64 :=
+  let j := job ji
+  let n := load64 (wire+16) t-64
+  if n != 256 || !Guest.ContentFormat.valid Guest.LibraryPeerSDK.data t then notice 42 (store64 j 12 t) else
+  let t := copy Guest.LibraryPeerSDK.data (j+128) 256 t
+  let t := hash (j+128) 256 hashOut t
+  if !eq hashOut (j+512+192) 32 t || load64 (j+152) t != load64 (j+512+408) t then notice 42 (store64 j 12 t) else
+  if load64 (j+24) t != 0 then
+    let t := copy (peer (load64 (j+16) t)+224) work 32 t
+    let t := copy (j+1280+288) (work+32) 32 t
+    let t := copy (j+512+192) (work+64) 32 t
+    let recovered := load64 (row (load64 (j+8) t)+48) t == 2
+    let r := if recovered then Guest.ContentSDK.adopt (load64 (j+24) t) (load64 (j+80) t) (load64 (j+72) t) work t
+      else Guest.ContentSDK.reauthorize (load64 (j+24) t) work t
+    if r != 64 || status r != 0 then notice 21 (store64 j 14 r) else
+    let t := if !recovered then r else
+      let old := load64 (j+24) r
+      let fresh := result r
+      let t := Guest.ContentSDK.release old r
+      let t := store64 (j+24) fresh t
+      store64 (row (load64 (j+8) t)+16) fresh (store64 (row (load64 (j+8) t)+48) 0 t)
+    store64 j 3 t
+  else
+  let t := copy (j+128) work 256 t
+  let t := copy hashOut (work+256) 32 t
+  let t := copy (peer (load64 (j+16) t)+224) (work+288) 32 t
+  let t := copy (j+1280+288) (work+320) 32 t
+  let r := Guest.ContentSDK.reserve work (load64 (j+80) t) (load64 (j+72) t) 3 (load64 (j+408) t) t
+  if r != 64 || status r != 0 then notice 21 (store64 j 14 r) else
+    let t := store64 (j+24) (result r) r
+    let t := store64 (row (load64 (j+8) t)+16) (result t) t
+    dirty (store64 j 3 t)
+
+@[noinline] def proofReply (ji t : UInt64) : UInt64 :=
+  let j := job ji
+  let n := load64 (wire+16) t-64
+  let depth := load64 (j+176) t
+  if depth > 14 || n != 32+depth*32 then notice 42 (store64 j 12 t) else
+  let t := copy Guest.LibraryPeerSDK.data work n t
+  let r := Guest.ContentSDK.beginChunk (load64 (j+24) t) (load64 (j+32) t) work n t
+  if r != 64 || status r != 0 then jobFailure j r else
+  if result r == 0 && load64 (wire+16) r == 4 then
+    store64 (j+32) (load64 (j+32) r+1) (store64 j 3 r)
+  else store64 (j+48) (result r) (store64 (j+40) 0 (store64 j 5 r))
+
+@[noinline] def dataReply (ji operation t : UInt64) : UInt64 :=
+  let j := job ji
+  let n := load64 (wire+16) t-64
+  let total := Guest.ContentFormat.chunkLength (load64 (j+512+408) t) (load64 (j+32) t)
+  let offset := load64 (j+40) t
+  if n == 0 || n > (if operation == 10 then 640 else 512) || offset > total || n > total-offset ||
+    (operation == 10 && Guest.LibraryPeerSDK.resultId t != load64 (j+32) t*4096+offset) then notice 42 (store64 j 12 t) else
+  let t := copy Guest.LibraryPeerSDK.data work n t
+  let r := Guest.ContentSDK.append (load64 (j+48) t) offset work n t
+  if r != 64 || status r != 0 then jobFailure j r else
+  let t := store64 (j+40) (offset+n) r
+  let t := store64 (j+56) (load64 (j+32) t*4096+offset+n) t
+  if offset+n < total then store64 j 5 t else
+    let r := Guest.ContentSDK.validate (load64 (j+48) t) t
+    if r != 64 || status r != 0 then jobFailure j r else store64 j 7 r
+
+@[noinline] def seedReply (ji operation code t : UInt64) : UInt64 :=
   if ji >= 4 then t else
   let j := job ji
   if load64 j t == 11 || load64 j t >= 12 then t else
   if code != 0 then notice 37 (store64 j 12 (store64 (j+96) code t)) else
-  let n := load64 (wire+16) t-64
-  if operation == 3 then
-    if n != 256 || !Guest.ContentFormat.valid Guest.LibraryPeerSDK.data t then notice 42 (store64 j 12 t) else
-    let t := copy Guest.LibraryPeerSDK.data (j+128) 256 t
-    let t := hash (j+128) 256 hashOut t
-    if !eq hashOut (j+512+192) 32 t || load64 (j+152) t != load64 (j+512+408) t then notice 42 (store64 j 12 t) else
-    if load64 (j+24) t != 0 then
-      let t := copy (peer (load64 (j+16) t)+224) work 32 t
-      let t := copy (j+1280+288) (work+32) 32 t
-      let t := copy (j+512+192) (work+64) 32 t
-      let recovered := load64 (row (load64 (j+8) t)+48) t == 2
-      let r := if recovered then Guest.ContentSDK.adopt (load64 (j+24) t) (load64 (j+80) t) (load64 (j+72) t) work t
-        else Guest.ContentSDK.reauthorize (load64 (j+24) t) work t
-      if r != 64 || status r != 0 then notice 21 (store64 j 14 r) else
-      let t := if !recovered then r else
-        let old := load64 (j+24) r
-        let fresh := result r
-        let t := Guest.ContentSDK.release old r
-        let t := store64 (j+24) fresh t
-        store64 (row (load64 (j+8) t)+16) fresh (store64 (row (load64 (j+8) t)+48) 0 t)
-      store64 j 3 t
-    else
-    let t := copy (j+128) work 256 t
-    let t := copy hashOut (work+256) 32 t
-    let t := copy (peer (load64 (j+16) t)+224) (work+288) 32 t
-    let t := copy (j+1280+288) (work+320) 32 t
-    let r := Guest.ContentSDK.reserve work (load64 (j+80) t) (load64 (j+72) t) 3 0 t
-    if r != 64 || status r != 0 then notice 21 (store64 j 14 r) else
-      let t := store64 (j+24) (result r) r
-      let t := store64 (row (load64 (j+8) t)+16) (result t) t
-      dirty (store64 j 3 t)
-  else if operation == 4 then
-    if n < 32 || n > 384 then notice 42 (store64 j 12 t) else
-    let t := copy Guest.LibraryPeerSDK.data work n t
-    let r := Guest.ContentSDK.beginChunk (load64 (j+24) t) (load64 (j+32) t) work n t
-    if r != 64 || status r != 0 then jobFailure j r else
-    if result r == 0 && load64 (wire+16) r == 4 then
-      store64 (j+32) (load64 (j+32) r+1) (store64 j 3 r)
-    else store64 (j+48) (result r) (store64 (j+40) 0 (store64 j 5 r))
-  else if operation == 5 then
-    let total := Guest.ContentFormat.chunkLength (load64 (j+512+408) t) (load64 (j+32) t)
-    let offset := load64 (j+40) t
-    if n == 0 || n > 512 || offset > total || n > total-offset then notice 42 (store64 j 12 t) else
-    let t := copy Guest.LibraryPeerSDK.data work n t
-    let r := Guest.ContentSDK.append (load64 (j+48) t) offset work n t
-    if r != 64 || status r != 0 then jobFailure j r else
-    let t := store64 (j+40) (offset+n) r
-    let t := store64 (j+56) (load64 (j+32) t*4096+offset+n) t
-    if offset+n < total then store64 j 5 t else
-      let r := Guest.ContentSDK.validate (load64 (j+48) t) t
-      if r != 64 || status r != 0 then jobFailure j r else store64 j 7 r
-  else t
+  if operation == 3 then manifestReply ji t else
+  if operation == 4 then proofReply ji t else
+  if operation == 5 || operation == 10 then dataReply ji operation t else t
+
 partial def receivePeers (slot t : UInt64) : UInt64 :=
   if slot == 3 then t else
   let p := peer slot
@@ -692,7 +717,8 @@ partial def receivePeers (slot t : UInt64) : UInt64 :=
   let id := load64 (p+8) r
   let t := if Guest.LibraryPeerSDK.valid op id r then
     let code := Guest.LibraryPeerSDK.remoteStatus r
-    let t := store64 (p+16) 0 r
+    let r := store64 (st+640) 1 r
+    let t := if op == 10 && code == 0 && Guest.LibraryPeerSDK.next r != 0 then r else store64 (p+16) 0 r
     if slot == 0 then metadataReply op code t else
       let ji := load64 (p+32) t-1
       if ji >= 4 || load64 (p+80) t != load64 (job ji+80) t || load64 (job ji+16) t != slot then t else seedReply ji op code t
@@ -704,6 +730,9 @@ partial def receivePeers (slot t : UInt64) : UInt64 :=
   else r
   receivePeers (slot+1) t
 
+@[noinline] partial def monitored (i t : UInt64) : Bool :=
+  if i == Guest.LibraryCollections.count then false else
+  (load64 (Guest.LibraryCollections.record i) t == 1 && load64 (Guest.LibraryCollections.record i+16) t == 1) || monitored (i+1) t
 def catalogPump (t : UInt64) : UInt64 :=
   if load64 (st+224) t == 0 || load64 (peer 0+16) t != 0 then t else
   let phase := load64 (st+40) t
@@ -711,51 +740,9 @@ def catalogPump (t : UInt64) : UInt64 :=
   if phase == 2 then
     let off := load64 (st+56) t
     issue 0 0 2 (load64 (st+48) t) off (if 1536-off > 640 then 640 else 1536-off) t
-  else if load64 (st+88) t != 0 && Guest.WaitSDK.now t >= load64 (st+192) t then
+  else if monitored 0 t && Guest.WaitSDK.now t >= load64 (st+192) t then
     store64 (st+40) 1 (store64 (st+32) 0 t) else t
 
-def jobPump (ji t : UInt64) : UInt64 :=
-  let j := job ji
-  let phase := load64 j t
-  let slot := load64 (j+16) t
-  if phase == 0 || phase >= 10 then t else
-  let checked := if phase == 3 || phase == 8 then current (j+1280) (j+1280+320) t else t
-  let revoked := (phase == 3 || phase == 8) && (checked != 832 || status checked != 0 || !Guest.RegistrySDK.consumerAdmitted (result checked))
-  if load64 (st+96) checked == 0 || load64 (j+64) checked != load64 (st+128) checked || revoked then
-    let h := load64 (j+48) checked
-    let t := if h == 0 then checked else Guest.ContentSDK.control h 3 checked
-    let t := if h == 0 then t else Guest.ContentSDK.control h 4 t
-    let content := load64 (j+24) t
-    let t := if content == 0 then t else Guest.ContentSDK.revokeAcquisition content t
-    notice 54 (store64 j 14 (store64 (j+48) 0 t))
-  else
-  if phase == 1 then issue slot ji 3 0 0 0 t else
-  if phase == 3 then
-    if load64 (j+32) t >= load64 (j+160) t then store64 j 8 t else issue slot ji 4 (load64 (j+32) t) 0 0 t
-  else if phase == 5 then
-    let remaining := Guest.ContentFormat.chunkLength (load64 (j+512+408) t) (load64 (j+32) t)-load64 (j+40) t
-    issue slot ji 5 (load64 (j+32) t*4096+load64 (j+40) t) (if remaining > 512 then 512 else remaining) 0 t
-  else if phase == 7 || phase == 9 then
-    let r := Guest.ContentSDK.inspectJob (load64 (j+48) t) t
-    if r != 64 || status r != 0 then jobFailure j r else
-    let state := load64 (wire+16) r
-    if state >= 5 then notice 42 (store64 (j+96) (load64 (wire+40) r) (store64 (j+120) state (store64 j 12 r))) else
-    if state != 4 then r else
-    let t := Guest.ContentSDK.control (load64 (j+48) r) 4 r
-    let t := store64 (j+48) 0 t
-    if phase == 7 then store64 (j+32) (load64 (j+32) t+1) (store64 j 3 t) else
-      let r := Guest.Wave.parse (load64 (j+24) t) t
-      if r == error || load64 (Guest.Wave.info+24) r != load64 (j+512+424) r ||
-        load64 (Guest.Wave.info+48) r != load64 (j+512+416) r then notice 42 (store64 j 12 r) else
-      let t := store64 (row (load64 (j+8) r)+24) 2 r
-      notice 16 (store64 j 10 t)
-  else if phase == 8 then
-    let r := Guest.ContentSDK.publish (load64 (j+24) t) t
-    if r != 64 || status r != 0 then jobFailure j r else
-    store64 (j+48) (result r) (store64 j 9 r)
-  else t
-partial def jobsPump (i t : UInt64) : UInt64 :=
-  if i == 4 then t else jobsPump (i+1) (jobPump i t)
 -- Small native collection references are immutable Objects only after Add.
 -- They contain selected signed metadata, never session keys or transport grants.
 partial def appendSmall (h source length off t : UInt64) : UInt64 :=
@@ -763,7 +750,7 @@ partial def appendSmall (h source length off t : UInt64) : UInt64 :=
   let n := if length-off > 512 then 512 else length-off
   let r := Guest.LiveSDK.append h off (source+off) n t
   if r != 64 || status r != 0 then error else appendSmall h source length (off+n) r
-def add (t : UInt64) : UInt64 :=
+@[noinline] def add (t : UInt64) : UInt64 :=
   let r := selected t
   if load64 r t == 0 || load64 (r+8) t != 0 then t else
   let answer := stage 1536 2 0 t
@@ -777,52 +764,112 @@ def add (t : UInt64) : UInt64 :=
   let answer := commit h digest t
   if answer != 96 || status answer != 0 then notice 21 answer else
   notice 22 (store64 (r+8) h answer)
+@[noinline] def bindRetention (ji t : UInt64) : UInt64 :=
+  let j := job ji
+  if load64 (j+408) t == 0 || load64 (j+416) t == 1 then t else
+  let ri := load64 (j+8) t
+  let chosen := load64 (st+8) t
+  let t := store64 (st+8) ri t
+  let t := add t
+  let t := store64 (st+8) chosen t
+  if load64 (row ri+8) t == 0 then jobFailure j error else
+  let vault := syscall 97 3 0 0 0 t
+  let r := Guest.LiveSDK.share (load64 (row ri+8) vault) vault 1 vault
+  if r != 64 || status r != 0 then jobFailure j r else
+  let r := syscall 30 3 wire 64 1024 (header 264 (load64 (j+408) r) (result r) 0 0 0 0 r)
+  if r != 64 || status r != 0 then jobFailure j r else store64 (j+416) 1 r
+
+@[noinline] def validationCompletion (ji phase t : UInt64) : UInt64 :=
+  let j := job ji
+  let r := Guest.ContentSDK.inspectJob (load64 (j+48) t) t
+  if r != 64 || status r != 0 then jobFailure j r else
+  let state := load64 (wire+16) r
+  if state >= 5 then notice 42 (store64 (j+96) (load64 (wire+40) r) (store64 (j+120) state (store64 j 12 r))) else
+  if state != 4 then r else
+  let t := Guest.ContentSDK.control (load64 (j+48) r) 4 r
+  let t := store64 (j+48) 0 t
+  if phase == 7 then store64 (j+32) (load64 (j+32) t+1) (store64 j 3 t) else
+    let r := Guest.Wave.parse (load64 (j+24) t) t
+    if r == error || load64 (Guest.Wave.info+24) r != load64 (j+512+424) r ||
+      load64 (Guest.Wave.info+48) r != load64 (j+512+416) r then notice 42 (store64 j 12 r) else
+    let t := store64 (row (load64 (j+8) r)+24) 2 r
+    notice 16 (store64 j 10 t)
+
+@[noinline] def jobPump (ji t : UInt64) : UInt64 :=
+  let j := job ji
+  let phase := load64 j t
+  let slot := load64 (j+16) t
+  if phase == 0 || phase >= 10 then t else
+  let checked := if phase == 3 || phase == 8 then current (j+1280) (j+1280+320) t else t
+  let revoked := (phase == 3 || phase == 8) && (checked != 832 || status checked != 0 || !Guest.RegistrySDK.consumerAdmitted (result checked))
+  if !policyLive j checked || revoked then
+    let h := load64 (j+48) checked
+    let t := if h == 0 then checked else Guest.ContentSDK.control h 3 checked
+    let t := if h == 0 then t else Guest.ContentSDK.control h 4 t
+    let content := load64 (j+24) t
+    let t := if content == 0 then t else Guest.ContentSDK.revokeAcquisition content t
+    notice 54 (store64 j 14 (store64 (j+48) 0 t))
+  else
+  if phase == 1 then
+    let t := bindRetention ji t
+    if load64 j t != 1 then t else issue slot ji 3 0 0 0 t
+  else
+  if phase == 3 then
+    if load64 (j+32) t >= load64 (j+160) t then store64 j 8 t else
+    let r := Guest.ContentSDK.inspectChunk (load64 (j+24) t) (load64 (j+32) t) t
+    if r != 64 || status r != 0 then jobFailure j r else
+    if result r == 1 then dirty (store64 (st+640) 1 (store64 (j+32) (load64 (j+32) r+1) r))
+    else issue slot ji 4 (load64 (j+32) r) 0 0 r
+  else if phase == 5 then
+    let remaining := Guest.ContentFormat.chunkLength (load64 (j+512+408) t) (load64 (j+32) t)-load64 (j+40) t
+    issue slot ji (if load64 (peer slot+136) t >= 3 then 10 else 5) (load64 (j+32) t*4096+load64 (j+40) t)
+      (if load64 (peer slot+136) t >= 3 then remaining else if remaining > 512 then 512 else remaining) 0 t
+  else if phase == 7 || phase == 9 then
+    validationCompletion ji phase t
+  else if phase == 8 then
+    let r := Guest.ContentSDK.publish (load64 (j+24) t) t
+    if r != 64 || status r != 0 then jobFailure j r else
+    store64 (j+48) (result r) (store64 j 9 r)
+  else t
+partial def jobsPump (i t : UInt64) : UInt64 :=
+  if i == 4 then t else jobsPump (i+1) (jobPump i t)
 def policy (t : UInt64) : UInt64 :=
   if load64 (selected t) t == 0 then t else
   let t := store64 (st+216) (load64 (st+8) t+1) t
   notice 9 (store64 (st+208) 1 t)
--- Replacing the consent generation first revokes every unfinished operation.
--- Paused jobs also own staging state and must not retain the previous grant.
-partial def retirePolicy (i t : UInt64) : UInt64 :=
+-- Revocation is scoped to this collection. Other rows keep their frozen jobs.
+partial def retirePolicy (ci i t : UInt64) : UInt64 :=
   if i == 4 then t else
   let j := job i
   let phase := load64 j t
-  let t := if phase == 0 || phase == 10 || phase == 13 || phase == 14 then t else
+  let t := if load64 (j+400) t != ci+1 || phase == 0 || phase == 10 || phase == 13 || phase == 14 then t else
     let h := load64 (j+48) t
     let t := if h == 0 then t else Guest.ContentSDK.control h 3 t
     let t := if h == 0 then t else Guest.ContentSDK.control h 4 t
     let content := load64 (j+24) t
     let t := if content == 0 then t else Guest.ContentSDK.revokeAcquisition content t
     store64 j 14 (store64 (j+48) 0 t)
-  retirePolicy (i+1) t
+  retirePolicy ci (i+1) t
 def approvePolicy (t : UInt64) : UInt64 :=
-  let t := retirePolicy 0 t
   let chosen := load64 (st+216) t-1
   if chosen >= load64 (st+16) t then notice 21 (store64 (st+208) 0 t) else
-  let t := copy (consumer chosen+96) (st+288) 32 t
+  let ci := Guest.LibraryCollections.select (consumer chosen+96) (row chosen+256+288) t
+  if ci == error then notice 21 ci else
+  let t := retirePolicy ci 0 ci
+  let t := Guest.LibraryCollections.approve ci 6029312 6 0 t
+  let p := Guest.LibraryCollections.record ci
+  let t := copy (p+160) (st+288) 32 t
   let t := store64 (st+208) 0 t
   let t := store64 (st+88) 1 t
   let t := store64 (st+96) 1 t
-  let t := store64 (st+104) 6 t
-  let t := store64 (st+112) 6029312 t
-  let t := store64 (st+120) 0 t
-  let t := store64 (st+128) (load64 (st+128) t+1) t
+  let t := store64 (st+128) (load64 (p+8) t) t
   monitorDecision (notice 36 t)
--- Monitoring another collection is not consent to acquire that collection.
--- Retire the former generation before changing its collection binding; frozen
--- job identities remain unchanged while their unfinished authority is revoked.
 @[noinline] def subscribe (t : UInt64) : UInt64 :=
-  let collection := selected t+1024+96
-  let changed := !eq collection (st+288) 32 t
-  let t := if !changed then t else
-    let t := retirePolicy 0 t
-    let t := store64 (st+96) 0 t
-    let t := store64 (st+104) 0 t
-    let t := store64 (st+120) 0 t
-    let t := store64 (st+216) 0 t
-    store64 (st+128) (load64 (st+128) t+1) t
-  let enabled := if changed || load64 (st+88) t == 0 then 1 else 0
-  let t := copy collection (st+288) 32 t
+  let ci := Guest.LibraryCollections.select (selected t+1024+96) (selected t+256+288) t
+  if ci == error then notice 21 ci else
+  let p := Guest.LibraryCollections.record ci
+  let enabled := if load64 (p+16) ci == 0 then 1 else 0
+  let t := store64 (p+16) enabled ci
   notice 43 (store64 (st+88) enabled t)
 def chosenJob (t : UInt64) : UInt64 :=
   let h := load64 (selected t+64) t
@@ -846,7 +893,7 @@ def chosenJob (t : UInt64) : UInt64 :=
 @[noinline] partial def retry (t : UInt64) : UInt64 :=
   let j := chosenJob t
   if j == error then t else
-  if load64 (j+64) t != load64 (st+128) t || load64 (st+96) t == 0 then notice 69 t else
+  if !policyLive j t then notice 69 t else
   if load64 j t == 11 then
     let h := load64 (j+48) t
     let t := if h == 0 then t else Guest.ContentSDK.control h 2 t
@@ -872,9 +919,9 @@ def play (t : UInt64) : UInt64 :=
   let checked := current (r+256) (r+256+320) t
   let currentOK := checked == 832 && status checked == 0 && Guest.RegistrySDK.consumerAdmitted (result checked)
   let unavailable := checked == error || (checked == 64 && status checked == 6)
-  if !currentOK && !(load64 (r+48) checked == 1 && unavailable) then notice 54 checked else
+  if !currentOK && !(load64 (r+48) checked != 0 && unavailable) then notice 54 checked else
   if player == 0 then notice 58 t else
-  if (load64 (r+24) t != 2 && load64 (r+24) t != 3) || load64 (r+16) t == 0 then notice 41 t else
+  if (load64 (r+24) t != 1 && load64 (r+24) t != 2 && load64 (r+24) t != 3) || load64 (r+16) t == 0 then notice 41 t else
   let answer := Guest.ContentSDK.share (load64 (r+16) t) player t
   if answer != 64 || status answer != 0 then notice 41 answer else
   let t := header 600 (result answer) (load64 (r+1024+424) answer) (load64 (r+1024+416) answer) 0 0 0 answer
@@ -1049,6 +1096,26 @@ partial def readMetadata (h off t : UInt64) : UInt64 :=
   if off == 1536 then t else
   let r := Guest.LiveSDK.read h off 512 t
   if r != 576 || status r != 0 then error else readMetadata h (off+512) (copy (wire+64) (metadata+off) 512 r)
+@[noinline] def installRetained (h content complete t : UInt64) : UInt64 :=
+  let r := t
+  let old := findEdition (metadata+928) 0 r
+  let ri := if old == error then load64 (st+16) r else old
+  if ri >= 16 then notice 21 r else
+  let previousMetadata := load64 (row ri+8) r
+  let previousContent := load64 (row ri+16) r
+  let r := if previousMetadata == 0 || previousMetadata == h then r else Guest.LiveSDK.releaseReference previousMetadata r
+  let r := if previousContent == 0 || previousContent == content then r else Guest.ContentSDK.release previousContent r
+  let t := copy metadata (row ri+256) 1536 r
+  let t := store64 (row ri) 1 t
+  let t := store64 (row ri+8) h t
+  let t := store64 (row ri+16) content t
+  let t := store64 (row ri+24) (if complete == 1 then 3 else 1) t
+  let t := store64 (row ri+48) (if complete == 1 then 1 else 2) t
+  let t := store64 (row ri+104) 1 t
+  let t := if old == error then store64 (st+16) (ri+1) t else t
+  let t := store64 (st+8) ri t
+  notice 17 t
+
 def restoreSelection (h content t : UInt64) : UInt64 :=
   let r := readMetadata h 0 t
   if r == error || !Guest.ConsumerFormat.valid (metadata+768) r then notice 42 r else
@@ -1063,17 +1130,7 @@ def restoreSelection (h content t : UInt64) : UInt64 :=
   let r := if complete then Guest.Wave.parse content t else t
   if complete && (r == error || load64 (Guest.Wave.info+24) r != load64 (metadata+768+424) r ||
     load64 (Guest.Wave.info+48) r != load64 (metadata+768+416) r) then notice 42 r else
-  let t := copy metadata (row 0+256) 1536 r
-  let t := store64 (row 0) 1 t
-  let t := store64 (row 0+8) h t
-  let t := store64 (row 0+16) content t
-  let t := store64 (row 0+24) (if complete then 3 else 1) t
-  let t := store64 (row 0+48) (if complete then 1 else 2) t
-  let t := store64 (st+16) 1 t
-  let t := store64 (st+8) 0 t
-  let t := store64 (st+88) 0 t
-  let t := store64 (st+96) 0 t
-  notice 17 t
+  installRetained h content (if complete then 1 else 0) r
 
 def vaultPump (t : UInt64) : UInt64 :=
   let mode := load64 (st+376) t
@@ -1109,7 +1166,7 @@ partial def catalogRows (i stop line t : UInt64) : UInt64 :=
   if i == stop || line == 10 then t else
   let r := row i
   let m := r+1024
-  let visible := (load64 st t != 3 || load64 (m+16) t == 2) && titleMatches (m+344) (load64 (m+336) t) 0 (load64 (st+72) t) t
+  let visible := (load64 st t != 3 || load64 (m+16) t == 2) && (load64 st t != 5 || load64 (r+104) t == 1 || load64 (r+48) t > 0) && titleMatches (m+344) (load64 (m+336) t) 0 (load64 (st+72) t) t
   if !visible then catalogRows (i+1) stop line t else
   let y := 100+line*17
   let t := if i == load64 (st+8) t then fill 8 (y-2) 624 16 0x29495d t else t
@@ -1164,6 +1221,123 @@ partial def packRows (i stop line t : UInt64) : UInt64 :=
   let t := text (p+48) (load64 (p+8) t) 16 y fg bg t
   packRows (i+1) stop (line+1) t
 
+@[noinline] def collectionLabel (id x y t : UInt64) : UInt64 :=
+  if id == 0 then
+    let t := store64 (0x414000+0) 5283922227724308291 t
+    let t := store64 (0x414000+8) 7236837238369373775 t
+    let t := store64 (0x414000+16) 8389754637861089381 t
+    let t := store64 (0x414000+24) 7311153582385946912 t
+    let t := store64 (0x414000+32) 7594029311123791972 t
+    let t := store64 (0x414000+40) 29541 t
+    text 0x414000 42 x y fg bg t
+  else if id == 1 then
+    let t := store64 (0x414000+0) 2336936576420900949 t
+    let t := store64 (0x414000+8) 8944276830209992051 t
+    let t := store64 (0x414000+16) 2338609986426390304 t
+    let t := store64 (0x414000+24) 7597132135905042556 t
+    let t := store64 (0x414000+32) 2324737550145711988 t
+    let t := store64 (0x414000+40) 111512105936242 t
+    text 0x414000 46 x y fg bg t
+  else if id == 2 then
+    let t := store64 (0x414000+0) 7234318610140980594 t
+    let t := store64 (0x414000+8) 7596562555642851104 t
+    let t := store64 (0x414000+16) 8315180351695644526 t
+    let t := store64 (0x414000+24) 8243116074772495392 t
+    let t := store64 (0x414000+32) 2340781565013488737 t
+    let t := store64 (0x414000+40) 28554769915274081 t
+    text 0x414000 47 x y fg bg t
+  else if id == 3 then
+    let t := store64 (0x414000+0) 4928996481858627408 t
+    let t := store64 (0x414000+8) 2340781375932407918 t
+    let t := store64 (0x414000+16) 8247620832851013425 t
+    let t := store64 (0x414000+24) 2328959674796434787 t
+    let t := store64 (0x414000+32) 8031659162544202102 t
+    let t := store64 (0x414000+40) 111516300108140 t
+    text 0x414000 46 x y fg bg t
+  else if id == 4 then
+    let t := store64 (0x414000+0) 8097789280689352261 t
+    let t := store64 (0x414000+8) 8367814987270287984 t
+    let t := store64 (0x414000+16) 7596569198838638952 t
+    let t := store64 (0x414000+24) 7166147437900364131 t
+    let t := store64 (0x414000+32) 8317134089574507296 t
+    text 0x414000 40 x y fg bg t
+  else if id == 5 then
+    let t := store64 (0x414000+0) 7310016704525067602 t
+    let t := store64 (0x414000+8) 7594029311123791972 t
+    let t := store64 (0x414000+16) 8388342946312778597 t
+    let t := store64 (0x414000+24) 6998708665766274592 t
+    let t := store64 (0x414000+32) 7598814415692329315 t
+    let t := store64 (0x414000+40) 8030604713523179119 t
+    let t := store64 (0x414000+48) 7102838 t
+    text 0x414000 51 x y fg bg t
+  else if id == 6 then
+    let t := store64 (0x414000+0) 7308335520438826310 t
+    let t := store64 (0x414000+8) 8944275778110583907 t
+    let t := store64 (0x414000+16) 7022349122379597344 t
+    let t := store64 (0x414000+24) 8533873931757907561 t
+    let t := store64 (0x414000+32) 133532403134053 t
+    text 0x414000 38 x y fg bg t
+  else if id == 7 then
+    let t := store64 (0x414000+0) 5495890318593705029 t
+    let t := store64 (0x414000+8) 5711444230028936005 t
+    let t := store64 (0x414000+16) 5642809484373216332 t
+    text 0x414000 24 x y fg bg t
+  else t
+@[noinline] partial def collectionRows (i t : UInt64) : UInt64 :=
+  if i == Guest.LibraryCollections.count then t else
+  let p := Guest.LibraryCollections.record i
+  let y := 120+i*20
+  let t := if i == load64 (st+600) t then fill 8 (y-2) 624 18 0x29495d t else t
+  let t := if load64 p t == 0 then hex i 1 12 y fg bg t else
+    let t := hex i 1 12 y fg bg t
+    let t := hex (load64 (p+160) t) 12 30 y fg bg t
+    let t := byteNumber (load64 (p+56) t) 8 140 y t
+    let t := char 208 y 47 fg bg t
+    let t := byteNumber (load64 (p+48) t) 8 220 y t
+    let t := hex (load64 (p+8) t) 4 310 y fg bg t
+    let t := char 360 y (if load64 (p+16) t == 1 then 77 else 45) fg bg t
+    let t := char 380 y (if load64 (p+24) t == 1 then 65 else 45) fg bg t
+    let t := hex (load64 (p+64) t) 1 410 y fg bg t
+    let t := char 440 y (if load64 (p+88) t == 1 then 86 else 69) fg bg t
+    char 470 y (if load64 (p+96) t == 1 then 63 else 32) fg bg t
+  collectionRows (i+1) t
+@[noinline] def collectionInput (code t : UInt64) : UInt64 :=
+  let ci := load64 (st+600) t
+  let p := Guest.LibraryCollections.record ci
+  if load64 (st+608) t == 1 then
+    if code == 1 then dirty (store64 (st+608) 0 t) else
+    if code == 104 || code == 109 then
+      let old := load64 (st+616) t
+      let next := if code == 104 then if old > Guest.ContentFormat.maxBytes-1048576 then Guest.ContentFormat.maxBytes else old+1048576
+        else if old <= 1048576 then 1048576 else old-1048576
+      dirty (store64 (st+616) next t)
+    else if code == 2 || code == 3 then
+      let mask := load64 (st+624) t ^^^ ((1 : UInt64) <<< (code-1))
+      if mask == 0 then t else dirty (store64 (st+624) mask t)
+    else if code == 19 then dirty (store64 (st+632) (if load64 (st+632) t == 0 then 1 else 0) t)
+    else if code == 28 then
+      let t := retirePolicy ci 0 t
+      let t := Guest.LibraryCollections.approve ci (load64 (st+616) t) (load64 (st+624) t) (load64 (st+632) t) t
+      notice (if t == error then 21 else 36) (store64 (st+608) 0 t)
+    else t
+  else if code == 103 || code == 108 then
+    dirty (store64 (st+600) (if code == 103 then (ci+7)%8 else (ci+1)%8) t)
+  else if load64 p t == 0 then t else
+  if code == 34 then
+    let t := store64 (st+616) (load64 (p+48) t) t
+    let t := store64 (st+624) (load64 (p+64) t) t
+    dirty (store64 (st+608) 1 (store64 (st+632) (load64 (p+88) t) t))
+  else if code == 31 then dirty (store64 (p+16) (if load64 (p+16) t == 0 then 1 else 0) t)
+  else if code == 46 then
+    let t := retirePolicy ci 0 t
+    notice 54 (Guest.LibraryCollections.revoke ci t)
+  else t
+
+def exportLabel (t : UInt64) : UInt64 :=
+  let t := store64 work 8390891584591568984 t
+  let t := store64 (work+8) 7310309144435826746 t
+  text work 16 12 321 fg bg t
+
 def draw (surface t : UInt64) : UInt64 :=
   let t := fill 0 0 640 352 bg t
   let t := fill 0 0 640 32 0x203e50 t
@@ -1173,7 +1347,11 @@ def draw (surface t : UInt64) : UInt64 :=
   let t := label 49 12 77 fg t
   let t := text 0x6e0400 (load64 (st+72) t) 68 77 fg bg t
   let tab := load64 st t
-  let t := if tab == 1 then
+  let t := if tab == 4 then
+      let t := collectionLabel 0 12 94 t
+      let t := collectionRows 0 t
+      collectionLabel 1 12 285 t
+    else if tab == 1 then
       let t := label 6 12 94 fg t
       let t := providerRows 0 t
       label 7 12 298 fg t
@@ -1190,9 +1368,18 @@ def draw (surface t : UInt64) : UInt64 :=
     let t := hex (load64 (r+256+48) t) 8 120 232 fg bg t
     let t := hex (load64 (r+1024+160) t) 16 16 251 fg bg t
     label 35 16 275 fg t
-  let t := label (if tab == 3 then 34 else 3) 12 300 fg t
-  let t := label (if tab == 3 then 74 else 4) 12 316 fg t
+  let t := if tab == 4 then collectionLabel 2 12 300 t else label (if tab == 3 then 34 else 3) 12 300 fg t
+  let t := if tab == 4 then collectionLabel 5 12 316 t else label (if tab == 3 then 74 else 4) 12 316 fg t
+  let t := if tab == 4 || tab == 1 then t else exportLabel t
   let t := label (load64 (st+176) t) 12 337 0xe0bd80 t
+  let t := if tab != 4 || load64 (st+608) t == 0 then t else
+    let t := fill 4 90 632 204 0x28475b t
+    let t := collectionLabel 7 16 103 t
+    let t := collectionLabel 3 16 136 t
+    let t := byteNumber (load64 (st+616) t) 8 16 172 t
+    let t := hex (load64 (st+624) t) 1 130 172 fg bg t
+    let t := hex (load64 (st+632) t) 1 170 172 fg bg t
+    collectionLabel 4 16 235 t
   let t := if load64 (st+208) t == 0 then t else
     let t := fill 4 90 632 204 0x28475b t
     let t := label 9 16 103 fg t
@@ -1320,23 +1507,25 @@ def saveRecoveryPump (t : UInt64) : UInt64 :=
   let t := store64 (r+112) h (store64 (r+8) 0 t)
   notice 44 (store64 (r+16) 0 (store64 (r+24) 0 (releaseSavePending r t)))
 
-def input (ev t : UInt64) : UInt64 :=
-  let code := (ev >>> 32) &&& 65535
-  if ev >>> 48 != 1 || (ev &&& 0xffffffff) != 1 then t else
-  if load64 (st+432) t == 4 then
-    if code == 1 then dirty (store64 (st+432) 0 t) else
-    if code == 103 then dirty (store64 (st+464) (if load64 (st+464) t == 0 then 0 else load64 (st+464) t-1) t) else
-    if code == 108 then dirty (store64 (st+464) (if load64 (st+464) t+1 < load64 (st+472) t then load64 (st+464) t+1 else load64 (st+464) t) t) else
-    if code == 28 then modApply t else t
-  else if load64 (st+208) t != 0 then
-    if code == 28 then approvePolicy t else if code == 1 then dirty (store64 (st+208) 0 t) else t
-  else if load64 (st+80) t != 0 then
-    if code == 28 || code == 1 then dirty (store64 (st+80) 0 t) else
-    let n := load64 (st+72) t
-    if code == 14 then dirty (store64 (st+72) (if n == 0 then 0 else n-1) t) else
-    let c := Guest.Keyboard.scanCode code 0
-    if c < 32 || c > 126 || n >= 48 then t else dirty (store64 (st+72) (n+1) (store8 (0x6e0400+n) c t))
-  else if code >= 59 && code <= 62 then dirty (store64 st (code-59) (store64 (st+232) 0 t)) else
+@[noinline] def exportIntent (t : UInt64) : UInt64 :=
+  if ((syscall 34 (self t) 0 0 0 t) &&& 64) == 0 then notice 21 t else
+  let content := load64 (selected t+16) t
+  let r := Guest.ContentSDK.describe content t
+  if r != 320 || status r != 0 || load64 (wire+16) r != 2 then notice 21 r else
+  let length := load64 (wire+32) r
+  let old := load64 (st+672) r
+  let r := if old == 0 then r else Guest.ContentSDK.release old r
+  let r := Guest.ContentSDK.share content (self r) r
+  if r != 64 || status r != 0 then notice 21 r else
+  let t := store64 (st+672) (result r) r
+  let t := nextId t
+  let t := store64 (st+664) (load64 (st+184) t) t
+  let t := store64 (st+720) length t
+  notice 22 (store64 (st+656) 1 (store64 (st+680) 0 (zero (st+688) 4 t)))
+
+@[noinline] def regularInput (code t : UInt64) : UInt64 :=
+  if code >= 59 && code <= 64 then dirty (store64 st (code-59) (store64 (st+232) 0 t)) else
+  if load64 st t == 4 then collectionInput code t else
   if code == 53 then dirty (store64 (st+80) 1 t) else
   if code == 103 then dirty (store64 (st+8) (if load64 (st+8) t == 0 then 0 else load64 (st+8) t-1) t) else
   if code == 108 then dirty (store64 (st+8) (if load64 (st+8) t+1 < load64 (st+16) t then load64 (st+8) t+1 else load64 (st+8) t) t) else
@@ -1350,6 +1539,7 @@ def input (ev t : UInt64) : UInt64 :=
       let t := Guest.NetworkSDK.removePeer slot t
       dirty (zero (peer slot) 128 t) else t
   else if code == 30 then add t else
+  if code == 45 then exportIntent t else
   if code == 31 && load64 (selected t+8) t != 0 then
     subscribe t
   else if code == 34 then policy t else
@@ -1373,6 +1563,25 @@ def input (ev t : UInt64) : UInt64 :=
   if code == 111 then removeLocal t
   else t
 
+
+def input (ev t : UInt64) : UInt64 :=
+  let code := (ev >>> 32) &&& 65535
+  if ev >>> 48 != 1 || (ev &&& 0xffffffff) != 1 then t else
+  if load64 (st+432) t == 4 then
+    if code == 1 then dirty (store64 (st+432) 0 t) else
+    if code == 103 then dirty (store64 (st+464) (if load64 (st+464) t == 0 then 0 else load64 (st+464) t-1) t) else
+    if code == 108 then dirty (store64 (st+464) (if load64 (st+464) t+1 < load64 (st+472) t then load64 (st+464) t+1 else load64 (st+464) t) t) else
+    if code == 28 then modApply t else t
+  else if load64 (st+208) t != 0 then
+    if code == 28 then approvePolicy t else if code == 1 then dirty (store64 (st+208) 0 t) else t
+  else if load64 (st+80) t != 0 then
+    if code == 28 || code == 1 then dirty (store64 (st+80) 0 t) else
+    let n := load64 (st+72) t
+    if code == 14 then dirty (store64 (st+72) (if n == 0 then 0 else n-1) t) else
+    let c := Guest.Keyboard.scanCode code 0
+    if c < 32 || c > 126 || n >= 48 then t else dirty (store64 (st+72) (n+1) (store8 (0x6e0400+n) c t))
+  else regularInput code t
+
 @[noinline] def requestJobControl (token t : UInt64) : UInt64 :=
   let ji := load64 (command+8) t
   let action := load64 (command+16) t
@@ -1388,15 +1597,83 @@ def input (ev t : UInt64) : UInt64 :=
   let t := store64 (st+8) chosen (store64 (st+136) selectedProvider t)
   reply token 64 (header (if valid then 0 else 2) ji (if valid then load64 (job ji) t else 0) 0 0 0 0 t)
 
-def request (n t : UInt64) : UInt64 :=
-  let token := load64 (incoming+8) t
-  let op := load64 command t
-  let caller := load64 incoming t
+@[noinline] def bindExport (token nonce state t : UInt64) : UInt64 :=
+  if state == 2 && !eq (command+64) (st+688) 32 t then reply token 64 (header 2 0 0 0 0 0 0 t) else
+  let r := if state == 2 then t else Guest.ContentSDK.share (load64 (st+672) t) (load64 incoming t) t
+  if state == 1 && (r != 64 || status r != 0) then reply token 64 (header 1 0 0 0 0 0 0 r) else
+  let t := if state == 2 then r else store64 (st+680) (result r) (copy (command+64) (st+688) 32 r)
+  let t := store64 (st+656) 2 t
+  reply token 64 (header 0 nonce (load64 (st+720) t) (load64 (st+680) t) 2 0 0 t)
+
+@[noinline] def exportRequest (token op n t : UInt64) : UInt64 :=
+  let nonce := load64 (command+8) t
+  let state := load64 (st+656) t
+  if op == 725 && n == 96 && nonce == 0 then
+    reply token 64 (header 0 (load64 (st+664) t) (load64 (st+720) t) 0 state 0 0 t)
+  else if nonce == 0 || nonce != load64 (st+664) t || state == 0 then reply token 64 (header 3 0 0 0 0 0 0 t)
+  else if op == 726 && n == 96 && state == 3 then reply token 64 (header 0 nonce 0 0 3 0 0 t)
+  else if op == 726 && n == 96 && state == 2 then
+    let r := Guest.ContentSDK.release (load64 (st+672) t) t
+    reply token 64 (header 0 nonce 0 0 3 0 0 (dirty (store64 (st+656) 3 (store64 (st+672) 0 r))))
+  else if op == 725 && n == 128 && (state == 1 || state == 2) && !Guest.ContentFormat.allZero (command+64) 32 t then
+    bindExport token nonce state t
+  else reply token 64 (header 2 0 0 0 0 0 0 t)
+
+@[noinline] def policyRequest (token n t : UInt64) : UInt64 :=
+  if n != 160 then reply token 64 (header 2 0 0 0 0 0 0 t) else
+  let action := load64 (command+8) t
+  let mode := load64 (command+32) t
+  let requested := load64 (command+48) t
+  if mode != 3 || action < 1 || action > 3 || (Guest.ContentFormat.allZero (command+64) 32 t || Guest.ContentFormat.allZero (command+96) 32 t) then
+    reply token 64 (header 2 0 0 0 0 0 0 t) else
+  let ci := Guest.LibraryCollections.select (command+64) (command+96) t
+  if ci == error then reply token 64 (header 4 0 0 0 0 0 0 ci) else
+  let p := Guest.LibraryCollections.record ci
+  if requested != 0 && requested != load64 (p+8) ci then reply token 64 (header 3 ci 0 0 0 0 0 ci) else
+  let t := if action == 2 then store64 (p+16) (if load64 (command+16) ci == 0 then 0 else 1) ci else
+    let t := retirePolicy ci 0 ci
+    if action == 3 then Guest.LibraryCollections.revoke ci t else
+      Guest.LibraryCollections.approve ci (load64 (command+16) t) (load64 (command+24) t) (load64 (command+40) t) t
+  if t == error then reply token 64 (header 2 ci 0 0 0 0 0 t) else
+    reply token 64 (header 0 ci (load64 (p+8) t) (load64 (p+16) t) (load64 (p+24) t) (load64 (p+56) t) 0 (dirty t))
+
+@[noinline] def collectionRequest (token op n t : UInt64) : UInt64 :=
+  if op == 724 && n == 96 then
+    let t := restoreSelection (load64 (command+8) t) (load64 (command+16) t) t
+    let t := if load64 (st+176) t != 17 then t else store64 (selected t+120) (load64 (command+24) t) t
+    reply token 64 (header (if load64 (st+176) t == 17 then 0 else 5) (load64 (st+8) t) 0 0 0 0 0 t)
+  else if op == 723 && n == 608 then
+    let ci := load64 (command+8) t
+    if ci >= Guest.LibraryCollections.count || !Guest.PrivateRecords.validPolicy (command+64) t then reply token 64 (header 2 0 0 0 0 0 0 t) else
+    let t := retirePolicy ci 0 t
+    let t := copy (command+64) (Guest.LibraryCollections.record ci) 512 t
+    let t := Guest.LibraryCollections.recovered ci t
+    reply token 64 (header 0 ci 0 0 0 0 0 (dirty t))
+  else if op == 722 && n == 96 then
+    let ci := load64 (command+8) t
+    if ci >= Guest.LibraryCollections.count || load64 (Guest.LibraryCollections.record ci) t != 1 then reply token 64 (header 2 0 0 0 0 0 0 t) else
+    let t := store64 (Guest.LibraryCollections.record ci+128) (load64 (command+16) t) t
+    reply token 64 (header 0 ci 0 0 0 0 0 t)
+  else if op == 721 && n == 96 then
+    let i := load64 (command+8) t
+    let valid := i < Guest.LibraryCollections.count
+    let t := header (if valid then 0 else 2) i 0 0 0 0 0 t
+    reply token (if valid then 576 else 64) (if valid then
+      let t := copy (Guest.LibraryCollections.record i) (wire+64) 512 t
+      let t := store64 (wire+64+128) 0 t
+      store64 (wire+64+152) 0 t
+    else t)
+  else if op == 720 then policyRequest token n t
+  else reply token 64 (header 2 0 0 0 0 0 0 t)
+
+@[noinline] def configureRequest (caller op n t : UInt64) : UInt64 :=
   let t := if (caller &&& 255) == 1 && n == 128 && op == 700 then
       let t := copy (command+64) (st+256) 32 t
       store64 (st+224) 1 t
-    else if (caller &&& 255) == 1 && n == 160 && op == 706 && load64 (command+16) t > 0 && load64 (command+16) t <= 6029312 then
+    else if (caller &&& 255) == 1 && n == 160 && op == 706 && load64 (command+16) t > 0 && load64 (command+16) t <= Guest.ContentFormat.maxBytes then
       let t := copy (command+64) (st+256) 64 t
+      let ci := Guest.LibraryCollections.select (command+96) (command+64) t
+      let t := if ci == error then ci else Guest.LibraryCollections.approve ci (load64 (command+16) ci) 2 0 ci
       let t := store64 (st+112) (load64 (command+16) t) t
       let t := store64 (st+224) 1 t
       let t := store64 (st+88) 1 t
@@ -1407,8 +1684,17 @@ def request (n t : UInt64) : UInt64 :=
     else if (caller &&& 255) == 1 && n == 96 && op == 702 then
       store64 (st+160) (load64 (command+8) t) (store64 (st+168) (load64 (command+16) t) t)
     else t
+  t
+
+def request (n t : UInt64) : UInt64 :=
+  let token := load64 (incoming+8) t
+  let op := load64 command t
+  let caller := load64 incoming t
+  let t := configureRequest caller op n t
   let admin := (caller &&& 255) == 1
-  if admin && n == 96 && op == 708 then
+  if admin && (op == 725 || op == 726) then exportRequest token op n t
+  else if admin && (op >= 720 && op <= 724) then collectionRequest token op n t
+  else if admin && n == 96 && op == 708 then
     let ji := load64 (command+8) t
     let handle := if ji < 4 then load64 (job ji+48) t else 0
     let r := if handle == 0 then error else Guest.ContentSDK.inspectJob handle t
@@ -1443,7 +1729,7 @@ partial def loop (surface initial : UInt64) : UInt64 :=
   let t := if n >= 96 && n <= 1024 then request n n else n
   let ev := syscall 90 surface 0 0 0 t
   let t := input ev ev
-  let t := receivePeers 0 t
+  let t := receivePeers 0 (store64 (st+640) 0 t)
   let t := catalogPump t
   let t := jobsPump 0 t
   let t := installPump t
@@ -1456,11 +1742,14 @@ partial def loop (surface initial : UInt64) : UInt64 :=
   let t := if now >= load64 (st+352) t && (load64 (st+40) t != 0 || load64 (st+376) t != 0) then dirty (store64 (st+352) (now+20) t) else t
   let t := if load64 (st+24) t == 0 then t else draw surface t
   let active := load64 (st+40) t != 0 || transferActive 0 t || load64 (st+376) t != 0 || load64 (st+400) t != 0 || load64 (st+536) t != 0
-  let next := Guest.WaitSDK.now t+(if active then 1 else 100)
+  let ready := load64 (st+640) t == 1 && load64 (st+648) t < 4
+  let t := store64 (st+648) (if ready then load64 (st+648) t+1 else 0) t
+  let next := Guest.WaitSDK.now t+(if ready then 0 else if active then 1 else 100)
   loop surface (Guest.WaitSDK.deadline next t)
 def main (initial : UInt64) : UInt64 :=
   let t := zero st 1024 initial
   let t := zero 0x700000 20480 t
+  let t := zero Guest.LibraryCollections.base 512 t
   let t := store64 (st+136) 1 t
   let t := store64 (st+112) 6029312 t
   let t := store64 (st+176) 38 t
@@ -1473,16 +1762,19 @@ def main (initial : UInt64) : UInt64 :=
 partial def headlessLoop (initial : UInt64) : UInt64 :=
   let n := syscall 36 (self initial) incoming 1024 0 initial
   let t := if n >= 96 && n <= 1024 then request n n else n
-  let t := receivePeers 0 t
+  let t := receivePeers 0 (store64 (st+640) 0 t)
   let t := catalogPump t
   let t := jobsPump 0 t
   let now := Guest.WaitSDK.now t
   let t := if now >= load64 (st+344) now then providerStatus 0 (store64 (st+344) (now+100) now) else now
   let active := load64 (st+40) t != 0 || transferActive 0 t
-  headlessLoop (Guest.WaitSDK.deadline (Guest.WaitSDK.now t+(if active then 1 else 100)) t)
+  let ready := load64 (st+640) t == 1 && load64 (st+648) t < 4
+  let t := store64 (st+648) (if ready then load64 (st+648) t+1 else 0) t
+  headlessLoop (Guest.WaitSDK.deadline (Guest.WaitSDK.now t+(if ready then 0 else if active then 1 else 100)) t)
 def headlessMain (initial : UInt64) : UInt64 :=
   let t := zero st 1024 initial
   let t := zero 0x700000 20480 t
+  let t := zero Guest.LibraryCollections.base 512 t
   let t := store64 (st+136) 1 t
   let t := store64 (st+184) (self t <<< 24) t
   headlessLoop t

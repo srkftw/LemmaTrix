@@ -7,6 +7,10 @@ import Guest.ProjectVault
 import Guest.ServerStore
 import Guest.ContentVault
 import Guest.ServerContent
+import Guest.IndexedContent
+import Guest.IndexedImport
+import Guest.ServiceJobs
+import Guest.PrivateRecords
 namespace Guest.Vault
 open Guest.LiveSDK
 -- One explicitly authorized Objects record per vault. Dual authenticated roots select
@@ -58,6 +62,9 @@ def wipePlain (t : UInt64) : UInt64 :=
   store64 (state+16) 0 t
 
 def wipeSecrets (t : UInt64) : UInt64 :=
+  let t := PrivateRecords.clear t
+  let t := IndexedImport.lockPersonal t
+  let t := IndexedContent.lockPersonal t
   let t := ContentVault.abandonPersonal t
   let t := ProjectVault.clear t
   let t := zero plaintext 8192 t
@@ -237,6 +244,10 @@ def dispatch (caller rights length t : UInt64) : UInt64 :=
   if length < 64 || load64 (command+56) t != 1 then describe 2 0 t else
     let op := load64 command t
     let domain := load64 (command+16) t
+    if op == 267 || op == 269 || op == 270 then IndexedImport.dispatch caller rights length t else
+    if op >= 274 && op <= 276 then PrivateRecords.dispatch caller rights length t else
+    if op >= 260 && op <= 279 then IndexedContent.dispatch caller rights length t else
+    if op >= 280 && op <= 299 then ServiceJobs.dispatch caller rights length t else
     if op >= 230 && op <= 239 then ServerStore.dispatch caller rights length t else
     if op >= 250 && op <= 256 then ServerContent.dispatch caller rights length t else
     if op == 247 then
@@ -266,9 +277,9 @@ def dispatch (caller rights length t : UInt64) : UInt64 :=
       else describe 2 0 t
 
 partial def loop (initial : UInt64) : UInt64 :=
-  let t := ContentVault.pump initial
-  let received := if ContentVault.active t then syscall 36 3 incoming 1024 0 t else receive 3 t
-  if received == 0 then loop (syscall 117 (syscall 116 0 0 0 0 received+1) 0 0 0 received) else
+  let t := IndexedImport.pump (ContentVault.pump initial)
+  let received := if ContentVault.active t || IndexedImport.active t then syscall 36 3 incoming 1024 0 t else receive 3 t
+  if received == 0 then loop (if IndexedImport.active received then syscall 9 0 0 0 0 received else syscall 117 (syscall 116 0 0 0 0 received+1) 0 0 0 received) else
   if received == error then loop received else
   let token := load64 (incoming+8) received
   let caller := load64 incoming received
@@ -280,7 +291,7 @@ partial def loop (initial : UInt64) : UInt64 :=
   loop t
 
 def appMain (initial : UInt64) : UInt64 :=
-  let t := ProjectVault.clear (ContentVault.clear (ServerContent.clear initial))
+  let t := IndexedImport.clear (PrivateRecords.clear (IndexedContent.clear (ServiceJobs.clear (ProjectVault.clear (ContentVault.clear (ServerContent.clear initial))))))
   let t := zero state 256 t
   let t := zero 0x600000 16384 t
   let t := wipePlain t

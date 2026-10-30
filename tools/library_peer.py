@@ -20,6 +20,7 @@ def main(argv=None):
  setup=sub.add_parser('configure');setup.add_argument('--instance',type=int,required=True);setup.add_argument('--slot',type=int,choices=range(4),required=True);setup.add_argument('--role',choices=('registry','seed','game'),required=True);setup.add_argument('--credentials',type=Path,required=True);setup.add_argument('--root',required=True);setup.add_argument('--stream',type=int,help='default: registry1; seed little-endian first8 bytes of manifestSHA OR1');setup.add_argument('--content-handle',type=int,default=0);setup.add_argument('--budget',type=int,default=16777216);setup.add_argument('--lifetime',type=int,default=100000)
  for name in ('inspect','remove'):
   command=sub.add_parser(name);command.add_argument('--instance',type=int,required=True);command.add_argument('--slot',type=int,choices=range(16 if name=='inspect' else 4),required=True)
+ renewal=sub.add_parser('renewal');renewal.add_argument('--instance',type=int,required=True);renewal.add_argument('--scope',type=int,choices=range(16),required=True);renewal.add_argument('--window',type=int,required=True,help='explicit live window1..100000ticks;0 disables future renewal; requires a freshly owned bound finite durable contract')
  args=parser.parse_args(argv);client=live.Client(args.socket,timeout=180)
  try:
   if args.command=='start':
@@ -33,6 +34,9 @@ def main(argv=None):
    result={'instance':args.instance,'slot':args.slot,'role':args.role,'stream':stream,'scope_index':fields[1],'root':args.root,'configured':True,'retention':'separate explicit storage policy; no persistence created by this command'}
   elif args.command=='inspect':
    fields,_=call(client,args.instance,401,args.slot);result=dict(instance=args.instance,slot=args.slot,state=fields[2],active=fields[2]==1,waiting_for_authentication=fields[2]==2,role=fields[3],send_pending=bool(fields[4]),response_bytes=fields[5],snapshot_id=fields[6],last_error=fields[7])
+  elif args.command=='renewal':
+   if not 0<=args.window<=100000:raise ValueError('renewal window0..100000 required')
+   call(client,args.instance,404,args.scope,args.window);result=dict(instance=args.instance,scope=args.scope,renewal_window_ticks=args.window,remaining_limits='existing durable bytes, attempts and work quanta; existing live wire budget is never replenished')
   else:call(client,args.instance,402,args.slot);result={'instance':args.instance,'slot':args.slot,'removed':True}
  finally:client.close()
  print(json.dumps(result,indent=2));return 0

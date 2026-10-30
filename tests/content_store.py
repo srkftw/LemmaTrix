@@ -36,18 +36,18 @@ def run(client, large=True, tiny=False):
     binding = manifest + content.sha(manifest) + provider + federation
     for mode in (1, 2, 4, 7):
         rejected(lambda mode=mode: client.objects(300, a=operation, b=len(raw), c=mode, data=binding), 7)
-    rejected(lambda: client.objects(300, a=operation, b=len(raw), c=3, d=1, data=binding), 8)
+    rejected(lambda: client.objects(300, a=operation, b=len(raw), c=3, d=1, data=binding), 1)
     rejected(lambda: client.objects(300, a=operation, b=len(raw) - 1, c=3, data=binding), 4)
     bad = bytearray(binding)
     bad[256] ^= 1
     rejected(lambda: client.objects(300, a=operation, b=len(raw), c=3, data=bad), 5)
-    checks.append('privacy mode enum, unsupported durable retention, byte budget and manifest substitution reject')
+    checks.append('privacy mode enum, invalid durable permit, byte budget and manifest substitution reject')
     root, _, chunks, proofs = content.reserve(client, raw, operation, provider, federation)
     too_large = bytearray(manifest)
-    struct.pack_into('<QQ', too_large, 24, content.CAPACITY, content.CAPACITY // content.CHUNK)
+    struct.pack_into('<QQ', too_large, 24, content.VOLATILE_CAPACITY, content.VOLATILE_CAPACITY // content.CHUNK)
     struct.pack_into('<Q', too_large, 48, 11)
     full_binding = bytes(too_large) + content.sha(too_large) + provider + federation
-    rejected(lambda: client.objects(300, a=operation + 1, b=content.CAPACITY, c=3, data=full_binding), 4)
+    rejected(lambda: client.objects(300, a=operation + 1, b=content.VOLATILE_CAPACITY, c=3, data=full_binding), 4)
     assert client.objects(300, a=operation, b=len(raw), c=3, data=binding)[0][1] == root
     changed_binding = binding[:288] + bytes(reversed(provider)) + federation
     rejected(lambda: client.objects(300, a=operation, b=len(raw), c=3, data=changed_binding), 2)
@@ -92,7 +92,7 @@ def run(client, large=True, tiny=False):
     content.ingest_chunk(client, root, 0, chunks[0], proofs[0])
     assert client.objects(307, root, 0, 512)[1] == raw[:512]
     rejected(lambda: client.objects(307, root, 4090, 16), 2)
-    rejected(lambda: client.objects(307, root, 0, 513), 2)
+    rejected(lambda: client.objects(307, root, 0, 641), 2)
     rejected(lambda: client.objects(310, root), 6)
     checks.append('validated partial range readable; unvalidated/cross-chunk/oversized ranges and premature completion reject')
     # Ordinary Objects operations are served between hash quanta. A separate
@@ -140,7 +140,7 @@ def run(client, large=True, tiny=False):
             'input_bytes': len(raw), 'chunks': len(chunks), 'max_chunk_buffer_per_job': 4096,
             'manifest_sha256': hashlib.sha256(manifest).hexdigest(),
             'actual_read_sha256': actual.hexdigest(), 'elapsed_seconds': time.monotonic() - started,
-            'retention': 'explicitly volatile; durable reservation rejected', 'checks': checks}
+            'retention': 'this run uses volatile storage; unissued durable permits reject', 'checks': checks}
 
 
 def main():

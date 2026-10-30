@@ -18,7 +18,8 @@ MANIFEST_MAGIC = 0x31544e434d544c
 LEAF_DOMAIN = 0x314641454c544c
 BRANCH_DOMAIN = 0x3148434e42544c
 CHUNK = 4096
-CAPACITY = 1472 * CHUNK
+VOLATILE_CAPACITY = 1472 * CHUNK
+CAPACITY = 16384 * CHUNK
 RECIPE = b'LemmaTrix Original: Open Courtyard; integer triangle score v1; 48000 Hz; CC0-1.0 dedication for generated audio only'
 COLLECTION = hashlib.sha256(b'LemmaTrix Open Courtyard original collection v1').digest()
 
@@ -29,7 +30,7 @@ class ContentClient:
         self.client = client
 
     def objects(self, op, h=0, a=0, b=0, c=0, d=0, e=0, data=b''):
-        if not 300 <= op <= 316:
+        if not 300 <= op <= 318:
             return self.client.objects(op, h, a, b, c, d, e, data=data)
         raw = self.client.request(160, struct.pack('<8Q', op, h, a, b, c, d, e, 1) + data)
         if len(raw) < 64:
@@ -59,9 +60,11 @@ def branch(left, right):
     return sha(struct.pack('<Q', BRANCH_DOMAIN) + left + right)
 
 
-def commitments(raw, content_id=None, provenance=sha(RECIPE)):
+def commitments(raw, content_id=None, provenance=sha(RECIPE), format_id=1):
     if not 0 < len(raw) <= CAPACITY:
-        raise ValueError('content exceeds the explicitly volatile 6,029,312-byte profile')
+        raise ValueError('content exceeds the bounded 64-MiB indexed profile')
+    if format_id not in (1, 2):
+        raise ValueError('format1 PCM WAVE or format2 generic artifact required')
     chunks = [raw[offset:offset + CHUNK] for offset in range(0, len(raw), CHUNK)]
     hashes = [sha(part) for part in chunks]
     width = 1 << (len(chunks) - 1).bit_length()
@@ -74,7 +77,7 @@ def commitments(raw, content_id=None, provenance=sha(RECIPE)):
     content_id = content_id if content_id is not None else sha(b'LT-CONTENT-1' + sha(raw))
     if len(content_id) != 32:
         raise ValueError('immutable content identity must contain exactly 32 bytes')
-    manifest = (struct.pack('<8Q', MANIFEST_MAGIC, 1, CHUNK, len(raw), len(chunks), 1,
+    manifest = (struct.pack('<8Q', MANIFEST_MAGIC, 2 if len(raw) > VOLATILE_CAPACITY or format_id != 1 else 1, CHUNK, len(raw), len(chunks), format_id,
                             len(levels) - 1, 0) + content_id + level[0] + provenance + bytes(96))
     proofs = []
     for i, digest in enumerate(hashes):
@@ -169,11 +172,11 @@ def wait_job(client, handle, timeout=120):
     raise TimeoutError('job continues to be queryable; timeout does not roll back its effects')
 
 
-def reserve(client, raw, operation, provider, federation, durable=False):
+def reserve(client, raw, operation, provider, federation, durable=False, format_id=1, *, content_id=None, provenance=sha(RECIPE)):
     client = api(client)
     if len(provider) != 32 or len(federation) != 32:
         raise ValueError('provider and federation must be explicit 32-byte identities')
-    manifest, chunks, proofs = commitments(raw)
+    manifest, chunks, proofs = commitments(raw, content_id=content_id, provenance=provenance, format_id=format_id)
     binding = manifest + sha(manifest) + provider + federation
     fields, _ = client.objects(300, a=operation, b=len(raw), c=3, d=int(durable), data=binding)
     return fields[1], manifest, chunks, proofs
@@ -185,8 +188,8 @@ def ingest_chunk(client, content, index, raw, proof, timeout=120):
     if fields[1] == 0 and fields[2] == 4:
         return
     handle = fields[1]
-    for offset in range(0, len(raw), 512):
-        client.objects(302, handle, offset, data=raw[offset:offset + 512])
+    for offset in range(0, len(raw), 928):
+        client.objects(302, handle, offset, data=raw[offset:offset + 928])
     client.objects(303, handle)
     wait_job(client, handle, timeout)
     client.objects(305, handle, 4)

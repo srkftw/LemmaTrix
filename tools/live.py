@@ -346,7 +346,13 @@ def main(argv=None):
  if args.mode=='vault-init':
   if args.sectors<304:raise ValueError('development Objects vault needs >=304 sectors')
   if args.path.exists() or (args.key_out and args.key_out.exists()):raise ValueError('vault/key output exists; refusing overwrite')
-  with args.path.open('xb') as f:f.truncate(args.sectors*512)
+  import resource
+  soft,hard=resource.getrlimit(resource.RLIMIT_FSIZE)
+  wanted=args.sectors*512
+  if soft!=resource.RLIM_INFINITY and soft<wanted and (hard==resource.RLIM_INFINITY or hard>=wanted):
+   resource.setrlimit(resource.RLIMIT_FSIZE,(wanted,hard))
+  fd=os.open(args.path,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
+  with os.fdopen(fd,'wb') as f:f.truncate(wanted)
   if args.key_out:
    with args.key_out.open('xb') as key:
     os.fchmod(key.fileno(),0o600);key.write(os.urandom(32))
