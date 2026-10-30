@@ -2,6 +2,10 @@ import Guest.Labels
 import Guest.Keyboard
 import Guest.ProjectSDK
 import Guest.ProjectGraph
+import Guest.ContentSDK
+import Guest.ConsumerFormat
+import Guest.ServiceHash
+import Guest.GameSaveFormat
 namespace Guest.Compositor
 open Guest.LiveSDK
 open Guest.Raster
@@ -289,6 +293,10 @@ def approvalDraw (t : UInt64) : UInt64 :=
   let t := permission 0x7475706e69 5 512 430 t
   let t := permission 0x6b726f7774656e 7 1024 472 t
   let t := permission 0x65726f7473 5 2048 526 t
+  let t := if (load64 (0x710000+64) t &&& 4096) == 0 then t else
+    let t := store64 0x414000 0x74756f206f69647561 t
+    let t := store64 (0x414000+8) 0x74757074 t
+    text 0x414000 12 20 244 fg bg t
   let t := if (load64 (0x710000+64) t &&& 768) != 0 then Guest.Labels.say 50 16 148 fg bg t else t
   let t := if load64 (st+416) t == 1 then materialLabel t else Guest.Labels.say 57 16 184 fg bg t
   let t := Guest.Labels.say 6 16 166 0x9fc6a5 bg t
@@ -485,6 +493,14 @@ def pickerLabel (id x y t : UInt64) : UInt64 :=
     let t := store64 (0x414000+40) 68 t
     text 0x414000 41 x y fg bg t
   else
+  if id == 10 then
+    let t := store64 (0x414000+0) 4995090496071945281 t
+    let t := store64 (0x414000+8) 4995126715595375681 t
+    let t := store64 (0x414000+16) 2325347586728612384 t
+    let t := store64 (0x414000+24) 5701628958379089965 t
+    let t := store64 (0x414000+32) 5852238 t
+    text 0x414000 35 x y fg bg t
+  else
     t
 
 partial def drawPickerNames (i count selected t : UInt64) : UInt64 :=
@@ -506,7 +522,7 @@ def pickerDraw (t : UInt64) : UInt64 :=
   let t := hex (load64 (st+128) t) 16 152 30 fg bg t
   let t := pickerLabel 8 380 30 t
   let t := hex (load64 (st+160) t) 8 438 30 fg bg t
-  let t := pickerLabel (if load64 (st+136) t == 127 then 2 else 3) 12 50 t
+  let t := pickerLabel (if load64 (st+136) t == 127 then 2 else if load64 (st+136) t == 25 then 10 else 3) 12 50 t
   let t := pickerLabel 4 12 70 t
   let t := pickerLabel 7 12 88 t
   let count := load64 (st+144) t
@@ -522,10 +538,15 @@ def pickerDraw (t : UInt64) : UInt64 :=
   let t := upload 0 0 1024000 1 t
   store64 (st+32) 1 t
 
-def pickerRequest (caller nonce t : UInt64) : UInt64 :=
+-- Legacy op3 derives its former read/full request. Op14 requests precisely
+-- read-only or read/share/revoke data access, never creation/revision/export.
+-- The selected root's delegation independently enforces the approver's scope.
+def pickerRequest (caller nonce requested t : UInt64) : UInt64 :=
   let actual := syscall 34 caller 0 0 0 t
-  let rights := if (actual &&& 127) == 127 then 127 else if (actual &&& 1) == 1 then 1 else 0
-  if actual == error || rights == 0 || nonce == 0 then error else
+  let rights := if requested == 0 then
+    if (actual &&& 127) == 127 then 127 else if (actual &&& 1) == 1 then 1 else 0
+    else requested
+  if actual == error || rights == 0 || (actual &&& rights) != rights || nonce == 0 then error else
     let t := store64 (st+128) caller actual
     let t := store64 (st+136) rights t
     let t := store64 (st+152) 0 t
@@ -910,6 +931,504 @@ def recoveryRoute (code value t : UInt64) : UInt64 :=
     if digit >= 16 || n >= 64 then t else
       recoveryDraw (store64 (st+432) (n+1) (store8 (0x71c000+n) digit t))
 
+-- One caller-bound selected content transaction. Neither metadata text nor an
+-- app-supplied nonce can approve persistence: only the trusted physical gesture
+-- consumed by Launcher222/223 can start it.
+def contentState : UInt64 := 0x71f000
+def contentMetadata : UInt64 := 0x71d000
+def contentManifest : UInt64 := 0x71e800
+def contentHash : UInt64 := 0x71e400
+def contentHashScratch : UInt64 := 0x71e000
+def contentLabel (id x y t : UInt64) : UInt64 :=
+  if id == 0 then
+    let t := store64 (0x414000+0) 2325059536107688532 t
+    let t := store64 (0x414000+8) 2329298080182714959 t
+    let t := store64 (0x414000+16) 2319107879549092182 t
+    let t := store64 (0x414000+24) 5989873580938380626 t
+    let t := store64 (0x414000+32) 2325059535838202949 t
+    let t := store64 (0x414000+40) 23729957717823299 t
+    text 0x414000 47 x y fg bg t
+  else if id == 1 then
+    let t := store64 (0x414000+0) 2325059536107688532 t
+    let t := store64 (0x414000+8) 2329298080182714959 t
+    let t := store64 (0x414000+16) 2319107879549092182 t
+    let t := store64 (0x414000+24) 2329000194303280466 t
+    let t := store64 (0x414000+32) 4919430815874303315 t
+    let t := store64 (0x414000+40) 6074869175762764576 t
+    text 0x414000 48 x y fg bg t
+  else if id == 2 then
+    let t := store64 (0x414000+0) 4995709512579305045 t
+    let t := store64 (0x414000+8) 4919424236051963972 t
+    let t := store64 (0x414000+16) 3251675125095420960 t
+    let t := store64 (0x414000+24) 6431505650740184096 t
+    let t := store64 (0x414000+32) 5642764404748801056 t
+    let t := store64 (0x414000+40) 22860 t
+    text 0x414000 42 x y fg bg t
+  else if id == 3 then
+    let t := store64 (0x414000+0) 4995706231223176773 t
+    let t := store64 (0x414000+8) 6071772907867938884 t
+    let t := store64 (0x414000+16) 5641111808556408915 t
+    let t := store64 (0x414000+24) 5495890317970256672 t
+    let t := store64 (0x414000+32) 4993683039416763205 t
+    let t := store64 (0x414000+40) 3107555573013692756 t
+    let t := store64 (0x414000+48) 6074869175762764576 t
+    text 0x414000 56 x y fg bg t
+  else if id == 4 then
+    let t := store64 (0x414000+0) 7308335460644843342 t
+    let t := store64 (0x414000+8) 8315137088763666548 t
+    let t := store64 (0x414000+16) 6998719600786302323 t
+    let t := store64 (0x414000+24) 5629550607605261155 t
+    let t := store64 (0x414000+32) 7163375852442361967 t
+    let t := store64 (0x414000+40) 8245845058308633376 t
+    let t := store64 (0x414000+48) 7598827541045470496 t
+    let t := store64 (0x414000+56) 8030604713523179119 t
+    let t := store64 (0x414000+64) 778854774 t
+    text 0x414000 68 x y fg bg t
+  else if id == 5 then
+    let t := store64 (0x414000+0) 7809632533397203024 t
+    let t := store64 (0x414000+8) 6998684278654387488 t
+    let t := store64 (0x414000+16) 2338324190885736560 t
+    let t := store64 (0x414000+24) 7023474808933935220 t
+    let t := store64 (0x414000+32) 7162249965381645411 t
+    let t := store64 (0x414000+40) 4981033004210022772 t
+    let t := store64 (0x414000+48) 7305804385079018323 t
+    let t := store64 (0x414000+56) 3044204 t
+    text 0x414000 59 x y fg bg t
+  else if id == 6 then
+    let t := store64 (0x414000+0) 8391162021251277133 t
+    let t := store64 (0x414000+8) 15258138702271264 t
+    text 0x414000 15 x y fg bg t
+  else if id == 7 then
+    let t := store64 (0x414000+0) 7234316346692756819 t
+    let t := store64 (0x414000+8) 126879583003168 t
+    text 0x414000 14 x y fg bg t
+  else if id == 8 then
+    let t := store64 (0x414000+0) 7022349259821641295 t
+    let t := store64 (0x414000+8) 7957688057361428073 t
+    let t := store64 (0x414000+16) 7810775711973533044 t
+    let t := store64 (0x414000+24) 2322571457629283173 t
+    let t := store64 (0x414000+32) 8319678385385468528 t
+    let t := store64 (0x414000+40) 8387229111175570208 t
+    let t := store64 (0x414000+48) 2334399943775821925 t
+    let t := store64 (0x414000+56) 7959303596776977523 t
+    let t := store64 (0x414000+64) 7885080994132027764 t
+    let t := store64 (0x414000+72) 3044457 t
+    text 0x414000 75 x y fg bg t
+  else if id == 9 then
+    let t := store64 (0x414000+0) 8751168585283626322 t
+    let t := store64 (0x414000+8) 2338340648965531424 t
+    let t := store64 (0x414000+16) 7310222253137162854 t
+    let t := store64 (0x414000+24) 8223683306485671276 t
+    let t := store64 (0x414000+32) 2337214414352310629 t
+    let t := store64 (0x414000+40) 7091282790530508916 t
+    let t := store64 (0x414000+48) 7164779645390446962 t
+    let t := store64 (0x414000+56) 7957695015158706785 t
+    let t := store64 (0x414000+64) 46 t
+    text 0x414000 65 x y fg bg t
+  else if id == 10 then
+    let t := store64 (0x414000+0) 8461454959306957142 t
+    let t := store64 (0x414000+8) 7018141404138337395 t
+    let t := store64 (0x414000+16) 7959303536257300836 t
+    let t := store64 (0x414000+24) 8367798494410534764 t
+    let t := store64 (0x414000+32) 8367802901215539816 t
+    let t := store64 (0x414000+40) 8391179665156367720 t
+    let t := store64 (0x414000+48) 8389209267338503269 t
+    let t := store64 (0x414000+56) 7813589722905666336 t
+    let t := store64 (0x414000+64) 11891 t
+    text 0x414000 66 x y fg bg t
+  else if id == 11 then
+    let t := store64 (0x414000+0) 2327306890646798672 t
+    let t := store64 (0x414000+8) 5282529172110264387 t
+    let t := store64 (0x414000+16) 7162245557354386510 t
+    let t := store64 (0x414000+24) 8031079422287439211 t
+    let t := store64 (0x414000+32) 7310601557486887284 t
+    let t := store64 (0x414000+40) 115 t
+    text 0x414000 41 x y fg bg t
+  else t
+
+partial def contentReadMetadata (h off t : UInt64) : UInt64 :=
+  if off == 1536 then t else
+    let r := read h off 512 t
+    if r != 576 || status r != 0 || result r != 512 then error else
+      contentReadMetadata h (off+512) (copy (wire+64) (contentMetadata+off) 512 r)
+
+def contentDraw (t : UInt64) : UInt64 :=
+  let t := frameReady t
+  let t := fill 0 0 640 400 bg t
+  let recovering := load64 (contentState+16) t == 2
+  let t := contentLabel (if recovering then 1 else 0) 16 16 t
+  let t := contentLabel (if recovering then 9 else 2) 16 48 t
+  let t := if recovering then t else
+    text (contentMetadata+1112) (load64 (contentMetadata+1104) t) 16 70 0xcbb78e bg t
+  let t := if load64 (contentState+152) t != 1 then
+      let t := contentLabel 7 16 104 t
+      hex (load64 (contentState+128) t) 16 118 104 fg bg t
+    else
+      let t := contentLabel 11 16 93 t
+      let t := hex (load64 (contentState+160) t) 16 16 110 fg bg t
+      let t := char 120 110 47 fg bg t
+      hex (load64 (contentState+128) t) 16 134 110 fg bg t
+  let t := contentLabel 6 16 134 t
+  let t := hex (load64 (contentState+96) t) 16 16 154 fg bg t
+  let t := hex (load64 (contentState+104) t) 16 118 154 fg bg t
+  let t := hex (load64 (contentState+112) t) 16 220 154 fg bg t
+  let t := hex (load64 (contentState+120) t) 16 322 154 fg bg t
+  let t := contentLabel 3 16 200 t
+  let t := contentLabel 4 16 222 t
+  let t := contentLabel 8 16 244 t
+  let t := contentLabel 10 16 276 t
+  let t := contentLabel 5 16 310 t
+  let t := upload 0 0 1024000 1 t
+  store64 (st+32) 1 t
+
+def contentOpen (caller nonce mode t : UInt64) : UInt64 :=
+  let t := store64 contentState caller t
+  let t := store64 (contentState+8) nonce t
+  let t := store64 (contentState+16) mode t
+  let t := store64 (contentState+24) 1 t
+  let t := zero (contentState+256) 10 t
+  let t := store64 (st+48) (load64 st t) t
+  let t := syscall 85 0 0 0 0 t
+  let t := store64 (st+40) (if mode == 1 then 9 else 10) t
+  let t := store64 (st+64) 0 t
+  let t := store64 (st+120) 0 t
+  contentDraw t
+
+def contentRetainRequest (h metadataHandle expected caller t : UInt64) : UInt64 :=
+  let broker := syscall 119 0 0 0 0 t
+  if caller != broker || metadataHandle == 0 || load64 (contentState+24) broker == 2 then error else
+  let t := copy expected (contentState+96) 32 broker
+  let r := Guest.ContentSDK.checkDelegation h caller t
+  if r != 64 || status r != 0 then error else
+  let r := Guest.LiveSDK.checkDelegation metadataHandle caller r
+  if r != 64 || status r != 0 then error else
+  let r := metadata metadataHandle r
+  if r != 96 || status r != 0 || load64 (wire+16) r != 1536 || load64 (wire+32) r != 2 ||
+     (load64 (wire+48) r &&& 25) != 25 then error else
+  let r := contentReadMetadata metadataHandle 0 r
+  if r == error || !Guest.ConsumerFormat.valid (contentMetadata+768) r || load64 (contentMetadata+784) r != 1 ||
+     !Guest.ProjectGraph.equal (contentMetadata+960) (contentState+96) 32 r then error else
+  let t := Guest.ServiceHash.sha256At contentHashScratch (contentMetadata+768) 768 contentHash r
+  if !Guest.ProjectGraph.equal contentHash (contentMetadata+400) 32 t then error else
+  let r := Guest.ContentSDK.describe h t
+  if r != 320 || status r != 0 || (load64 (wire+16) r != 1 && load64 (wire+16) r != 2) then error else
+  let t := store64 (contentState+152) (load64 (wire+16) r) r
+  let t := store64 (contentState+160) (load64 (wire+24) t) t
+  let t := copy (wire+64) contentManifest 256 t
+  let t := Guest.ServiceHash.sha256At contentHashScratch contentManifest 256 contentHash t
+  if !Guest.ProjectGraph.equal contentHash (contentState+96) 32 t ||
+    load64 (contentManifest+24) t != load64 (contentMetadata+1176) t then error else
+  let t := store64 (contentState+128) (load64 (contentManifest+24) t) t
+  let t := store64 (contentState+32) h t
+  let t := store64 (contentState+40) metadataHandle t
+  contentOpen caller metadataHandle 1 t
+
+def contentRecoveryRequest (caller nonce t : UInt64) : UInt64 :=
+  let broker := syscall 119 0 0 0 0 t
+  if caller != broker || nonce == 0 || load64 (contentState+24) broker == 2 then error else
+  let r := management 246 64 (header 246 0 3 0 0 0 0 broker)
+  if r != 320 || status r != 0 then error else
+  let t := store64 (contentState+144) (result r) r
+  let t := store64 (contentState+152) (load64 (wire+16) t) t
+  let t := store64 (contentState+160) (load64 (wire+24) t) t
+  let t := copy (wire+64) contentManifest 256 t
+  let t := Guest.ServiceHash.sha256At contentHashScratch contentManifest 256 (contentState+96) t
+  let t := store64 (contentState+128) (load64 (contentManifest+24) t) t
+  let t := store64 (contentState+32) 0 t
+  let t := store64 (contentState+40) 0 t
+  contentOpen caller nonce 2 t
+
+def contentRevokeMetadata (t : UInt64) : UInt64 :=
+  let source := load64 (contentState+40) t
+  let delegated := load64 (contentState+56) t
+  if source == 0 || delegated == 0 then t else
+    let r := Guest.LiveSDK.revoke source delegated t
+    store64 (contentState+56) 0 r
+
+def contentCancel (t : UInt64) : UInt64 :=
+  let h := load64 (contentState+32) t
+  let t := if h == 0 then t else Guest.ContentSDK.release h t
+  let t := store64 (contentState+32) 0 t
+  let t := header 0 0 5 0 0 0 0 t
+  let t := copy wire (contentState+256) 64 t
+  dismiss (store64 (contentState+24) 5 t)
+
+def contentApprove (t : UInt64) : UInt64 :=
+  let caller := load64 contentState t
+  let broker := syscall 119 0 0 0 0 t
+  if caller != broker || syscall 34 caller 0 0 0 broker == error then contentCancel broker else
+  let gesture := syscall 99 0 0 0 0 broker
+  let t := store64 (contentState+64) gesture gesture
+  let r := if load64 (contentState+16) t == 2 then
+      let t := store64 wire caller t
+      let t := store64 (wire+8) gesture t
+      let t := store64 (wire+16) (load64 (contentState+144) t) t
+      let t := copy (contentState+96) (wire+24) 32 t
+      let t := store64 (wire+56) gesture t
+      management 223 64 t
+    else
+      let r := management 202 64 (header 202 0 3 0 0 0 0 t)
+      if r < 64 || status r != 0 || load64 (wire+40) r != 1 then error else
+      let vault := syscall 97 3 0 0 0 r
+      let r := Guest.ContentSDK.share (load64 (contentState+32) vault) vault vault
+      if r != 64 || status r != 0 then error else
+      let t := store64 (contentState+48) (result r) r
+      let r := Guest.LiveSDK.share (load64 (contentState+40) t) vault 1 t
+      if r != 64 || status r != 0 then error else
+      let t := store64 (contentState+56) (result r) r
+      let t := store64 wire (load64 (contentState+48) t) t
+      let t := store64 (wire+8) (load64 (contentState+56) t) t
+      let t := store64 (wire+16) gesture t
+      let t := store64 (wire+24) gesture t
+      management 222 32 t
+  if r != 80 || status r != 0 || result r != load64 (contentState+64) r then
+    contentCancel (contentRevokeMetadata r)
+  else
+    let t := copy wire (contentState+256) 80 r
+    let h := load64 (contentState+32) t
+    let t := if h == 0 then t else Guest.ContentSDK.release h t
+    let t := store64 (contentState+32) 0 t
+    dismiss (store64 (contentState+24) 2 t)
+
+def contentPoll (caller nonce t : UInt64) : UInt64 :=
+  if caller != load64 contentState t || nonce != load64 (contentState+8) t then
+    let t := zero wire 10 t
+    80+store64 wire 1 t
+  else if load64 (contentState+24) t == 1 then
+    let t := zero wire 10 t
+    80+store64 (wire+16) 1 t
+  else if load64 (contentState+24) t != 2 then
+    80+copy (contentState+256) wire 80 t
+  else
+    let r := syscall 30 3 wire 64 1024 (header 247 (load64 (contentState+64) t) 3 0 0 0 0 t)
+    if r != 80 || result r != load64 (contentState+64) r then
+      -- A superseded/malformed result cannot leave the application's pending
+      -- operation live forever. Preserve the frozen operation in a queryable
+      -- terminal failure, and retire only this approval's derived metadata.
+      let t := zero wire 10 r
+      let t := store64 wire 1 t
+      let t := store64 (wire+8) (load64 (contentState+64) t) t
+      let t := store64 (wire+16) 6 t
+      let t := copy wire (contentState+256) 80 t
+      let t := contentRevokeMetadata t
+      80+copy (contentState+256) wire 80 (store64 (contentState+24) 4 t)
+    else
+      -- Vault terminal errors carry a result just as successful commits do.
+      -- Do not erase their terminal state because status is nonzero.
+      let r := if status r != 0 && load64 (wire+16) r < 4 then store64 (wire+16) 6 r else r
+      let t := copy wire (contentState+256) 80 r
+      let t := if load64 (wire+16) t >= 4 then
+          let t := contentRevokeMetadata t
+          store64 (contentState+24) 4 t
+        else t
+      80+copy (contentState+256) wire 80 t
+
+-- Game saves use the legacy selected single-object encrypted vault, whose
+-- roots are disjoint from the additive streamed content-v4 region.
+def saveState : UInt64 := 0x721000
+def saveData : UInt64 := 0x720000
+def saveLabel (id x y t : UInt64) : UInt64 :=
+  if id == 0 then
+    let t := store64 (0x414000+0) 2325059536107688532 t
+    let t := store64 (0x414000+8) 2329298080182714959 t
+    let t := store64 (0x414000+16) 2319107879549092182 t
+    let t := store64 (0x414000+24) 5989873580938380626 t
+    let t := store64 (0x414000+32) 2325059535838202949 t
+    let t := store64 (0x414000+40) 6215340358814744903 t
+    let t := store64 (0x414000+48) 69 t
+    text 0x414000 49 x y fg bg t
+  else if id == 1 then
+    let t := store64 (0x414000+0) 2325059536107688532 t
+    let t := store64 (0x414000+8) 2329298080182714959 t
+    let t := store64 (0x414000+16) 2319107879549092182 t
+    let t := store64 (0x414000+24) 2329000194303280466 t
+    let t := store64 (0x414000+32) 4919430815874303315 t
+    let t := store64 (0x414000+40) 4707141517553256224 t
+    let t := store64 (0x414000+48) 17750 t
+    text 0x414000 50 x y fg bg t
+  else if id == 2 then
+    let t := store64 (0x414000+0) 7453294794717880647 t
+    let t := store64 (0x414000+8) 7306080083479978857 t
+    let t := store64 (0x414000+16) 521644110958 t
+    text 0x414000 21 x y fg bg t
+  else if id == 3 then
+    let t := store64 (0x414000+0) 7310222304408074309 t
+    let t := store64 (0x414000+8) 8295740900523599212 t
+    let t := store64 (0x414000+16) 3621255097245595233 t
+    let t := store64 (0x414000+24) 13877 t
+    text 0x414000 26 x y fg bg t
+  else if id == 4 then
+    let t := store64 (0x414000+0) 7308251979571099717 t
+    let t := store64 (0x414000+8) 7738135719178954102 t
+    let t := store64 (0x414000+16) 15258138702271264 t
+    text 0x414000 23 x y fg bg t
+  else if id == 5 then
+    let t := store64 (0x414000+0) 7521982385617264979 t
+    let t := store64 (0x414000+8) 2319107728487837029 t
+    let t := store64 (0x414000+16) 8243104048818909808 t
+    let t := store64 (0x414000+24) 8386109761109976864 t
+    let t := store64 (0x414000+32) 7237481 t
+    text 0x414000 35 x y fg bg t
+  else if id == 6 then
+    let t := store64 (0x414000+0) 7307199386200400199 t
+    let t := store64 (0x414000+8) 7161137258227264355 t
+    let t := store64 (0x414000+16) 7142827083590279284 t
+    let t := store64 (0x414000+24) 7593747870271958383 t
+    let t := store64 (0x414000+32) 7018685336384727404 t
+    let t := store64 (0x414000+40) 8245922028362690153 t
+    let t := store64 (0x414000+48) 7956000586370654309 t
+    let t := store64 (0x414000+56) 11879 t
+    text 0x414000 58 x y fg bg t
+  else if id == 7 then
+    let t := store64 (0x414000+0) 4995706231223176773 t
+    let t := store64 (0x414000+8) 6071772907867938884 t
+    let t := store64 (0x414000+16) 5641111808556408915 t
+    let t := store64 (0x414000+24) 5280563060298232608 t
+    let t := store64 (0x414000+32) 6431752911569625171 t
+    let t := store64 (0x414000+40) 2325359621174216020 t
+    let t := store64 (0x414000+48) 1498173007 t
+    text 0x414000 52 x y fg bg t
+  else if id == 8 then
+    let t := store64 (0x414000+0) 2334392246970904398 t
+    let t := store64 (0x414000+8) 8028075858292209765 t
+    let t := store64 (0x414000+16) 8534165646137696366 t
+    let t := store64 (0x414000+24) 7863407330726931553 t
+    let t := store64 (0x414000+32) 7014110319637783653 t
+    let t := store64 (0x414000+40) 2338053341741149292 t
+    let t := store64 (0x414000+48) 7306930302439613773 t
+    let t := store64 (0x414000+56) 8319104414226915442 t
+    let t := store64 (0x414000+64) 46 t
+    text 0x414000 65 x y fg bg t
+  else if id == 9 then
+    let t := store64 (0x414000+0) 7809632533397203024 t
+    let t := store64 (0x414000+8) 6998684278654387488 t
+    let t := store64 (0x414000+16) 2338324190885736560 t
+    let t := store64 (0x414000+24) 7023474808933935220 t
+    let t := store64 (0x414000+32) 2334402142776882275 t
+    let t := store64 (0x414000+40) 7017488117905301551 t
+    let t := store64 (0x414000+48) 51073274700654 t
+    text 0x414000 54 x y fg bg t
+  else if id == 10 then
+    let t := store64 (0x414000+0) 7310016704525067602 t
+    let t := store64 (0x414000+8) 7575166132352655460 t
+    let t := store64 (0x414000+16) 8315178069964955763 t
+    let t := store64 (0x414000+24) 8299963007743697000 t
+    let t := store64 (0x414000+32) 8531350617014296936 t
+    let t := store64 (0x414000+40) 7953764204163722095 t
+    let t := store64 (0x414000+48) 7595448454217998452 t
+    let t := store64 (0x414000+56) 8241994560063676531 t
+    let t := store64 (0x414000+64) 11897 t
+    text 0x414000 66 x y fg bg t
+  else t
+partial def saveHashRow (p x y i t : UInt64) : UInt64 :=
+  if i == 4 then t else saveHashRow p x y (i+1) (hex (load64 (p+i*8) t) 16 (x+i*102) y fg bg t)
+def saveDraw (t : UInt64) : UInt64 :=
+  let t := frameReady t
+  let t := fill 0 0 640 400 bg t
+  let recovering := load64 (saveState+16) t == 2
+  let t := saveLabel (if recovering then 1 else 0) 16 16 t
+  let t := saveLabel 2 16 48 t
+  let t := saveHashRow (saveState+64) 16 66 0 t
+  let t := saveLabel 3 16 96 t
+  let t := saveHashRow (saveState+96) 16 114 0 t
+  let t := if recovering then saveLabel 10 16 148 t else
+      let t := saveLabel 4 16 148 t
+      let t := saveHashRow (saveState+128) 16 166 0 t
+      let t := saveLabel 5 16 194 t
+      hex (load64 (saveState+160) t) 1 232 194 fg bg t
+  let t := saveLabel 6 16 226 t
+  let t := saveLabel 7 16 252 t
+  let t := saveLabel 8 16 274 t
+  let t := saveLabel 9 16 316 t
+  let t := upload 0 0 1024000 1 t
+  store64 (st+32) 1 t
+
+def saveOpen (caller nonce mode t : UInt64) : UInt64 :=
+  let t := store64 saveState caller t
+  let t := store64 (saveState+8) nonce t
+  let t := store64 (saveState+16) mode t
+  let t := store64 (saveState+24) 1 t
+  let t := store64 (saveState+184) 0 t
+  let t := store64 (saveState+192) 0 t
+  let t := store64 (st+48) (load64 st t) t
+  let t := syscall 85 0 0 0 0 t
+  let t := store64 (st+40) (if mode == 1 then 11 else 12) t
+  let t := store64 (st+64) 0 t
+  let t := store64 (st+120) 0 t
+  saveDraw t
+
+def saveRetainRequest (h nonce expected caller t : UInt64) : UInt64 :=
+  let broker := syscall 119 0 0 0 0 t
+  if caller != broker || nonce == 0 then error else
+  let t := copy expected (saveState+96) 32 broker
+  let r := Guest.LiveSDK.checkDelegation h caller t
+  if r != 64 || status r != 0 then error else
+  let r := metadata h r
+  if r != 96 || status r != 0 || load64 (wire+16) r != 192 || load64 (wire+32) r != 2 ||
+    (load64 (wire+48) r &&& 25) != 25 || !Guest.ProjectGraph.equal (wire+64) (saveState+96) 32 r then error else
+  let r := read h 0 192 r
+  if r != 256 || status r != 0 || result r != 192 then error else
+  let t := copy (wire+64) saveData 192 r
+  if !Guest.GameSaveFormat.valid saveData t then error else
+  let t := copy (saveData+16) (saveState+64) 32 t
+  let t := copy (saveData+48) (saveState+128) 32 t
+  let t := store64 (saveState+160) (load64 (saveData+80) t) t
+  let t := store64 (saveState+32) h t
+  saveOpen caller nonce 1 t
+
+def saveRecoveryRequest (nonce expectedGame caller t : UInt64) : UInt64 :=
+  let broker := syscall 119 0 0 0 0 t
+  if caller != broker || nonce == 0 || Guest.ProjectGraph.allZero expectedGame 32 broker then error else
+  let t := copy expectedGame (saveState+64) 32 broker
+  let r := management 202 64 (header 202 0 3 0 0 0 0 t)
+  if r != 96 || status r != 0 || load64 (wire+40) r != 1 ||
+    load64 (wire+16) r != 192 || load64 (wire+32) r != 2 then error else
+  let t := copy (wire+64) (saveState+96) 32 r
+  let t := store64 (saveState+176) (load64 (wire+56) t) t
+  saveOpen caller nonce 2 t
+
+def saveCancel (t : UInt64) : UInt64 :=
+  dismiss (zero saveData 24 (store64 (saveState+24) 3 t))
+def saveApprove (t : UInt64) : UInt64 :=
+  let caller := load64 saveState t
+  let broker := syscall 119 0 0 0 0 t
+  if caller != broker || syscall 34 caller 0 0 0 broker == error then saveCancel broker else
+  let gesture := syscall 99 0 0 0 0 broker
+  let t := store64 (saveState+48) gesture gesture
+  let r := if load64 (saveState+16) t == 2 then
+      let t := store64 wire caller t
+      let t := copy (saveState+64) (wire+8) 32 t
+      let t := copy (saveState+96) (wire+40) 32 t
+      let t := store64 (wire+72) gesture t
+      management 225 80 t
+    else
+      let launcher := syscall 97 1 0 0 0 t
+      let r := Guest.LiveSDK.share (load64 (saveState+32) launcher) launcher 25 launcher
+      if r != 64 || status r != 0 then error else
+      let t := store64 (saveState+40) (result r) r
+      let t := store64 wire (result r) t
+      let t := store64 (wire+8) (load64 (saveState+8) t) t
+      let t := store64 (wire+16) gesture t
+      management 224 24 t
+  let ok := (r == 64 || r == 96) && status r == 0
+  let t := if !ok then store64 (saveState+192) 1 r else
+      if load64 (saveState+16) r == 2 then store64 (saveState+184) (result r) r
+      else store64 (saveState+176) (load64 (wire+56) r) r
+  let delegated := load64 (saveState+40) t
+  let t := if load64 (saveState+16) t != 1 || delegated == 0 then t else
+    Guest.LiveSDK.revoke (load64 (saveState+32) t) delegated t
+  let t := store64 (saveState+40) 0 t
+  dismiss (zero saveData 24 (store64 (saveState+24) (if ok then 2 else 4) t))
+def savePoll (caller nonce t : UInt64) : UInt64 :=
+  let valid := caller == load64 saveState t && nonce == load64 (saveState+8) t
+  let t := zero wire 8 t
+  let t := store64 wire (if valid then load64 (saveState+192) t else 1) t
+  let t := store64 (wire+8) (if valid then load64 (saveState+24) t else 0) t
+  let t := store64 (wire+16) (if valid then load64 (saveState+184) t else 0) t
+  let t := store64 (wire+24) (if valid then load64 (saveState+176) t else 0) t
+  let t := store64 (wire+32) nonce t
+  64+store64 (wire+56) 1 t
+
 def pollApps (t : UInt64) : UInt64 :=
   let n := syscall 36 4 0x416000 1056 0 t
   if n < 96 || n > 1056 then t else
@@ -919,7 +1438,13 @@ def pollApps (t : UInt64) : UInt64 :=
     let root := load64 0x416028 n
     let nonce := load64 0x416030 n
     let abi := load64 0x416018 n
-    if op == 4 && n == 96 && abi == 2 then
+    if op == 13 && n == 96 && abi == 2 then
+      let r := savePoll caller nonce n
+      syscall 32 token wire r 0 r
+    else if op == 9 && n == 96 && abi == 2 then
+      let r := contentPoll caller nonce n
+      syscall 32 token wire r 0 r
+    else if op == 4 && n == 96 && abi == 2 then
       let valid := caller == load64 (st+192) n && nonce == load64 (st+200) n
       let t := zero wire 8 n
       let t := store64 wire (if valid then 0 else 1) t
@@ -930,9 +1455,14 @@ def pollApps (t : UInt64) : UInt64 :=
     else
       let r := if load64 (st+40) n != 0 || abi != 2 then error else
         if n == 128 && op == 2 then retentionRequest root 0x416060 caller n
-        else if n == 96 && op == 3 && load64 0x416058 n == 1 then pickerRequest caller nonce n
+        else if n == 96 && op == 3 && load64 0x416058 n == 1 then pickerRequest caller nonce 0 n
+        else if n == 96 && op == 14 && load64 0x416058 n == 1 && (root == 1 || root == 25) then pickerRequest caller nonce root n
         else if n == 96 && op == 5 && load64 0x416058 n == 1 then vaultStatusRequest caller n
-        else if n == 96 && op == 6 && load64 0x416058 n == 1 then forgeInstallRequest root n else error
+        else if n == 96 && op == 6 && load64 0x416058 n == 1 then forgeInstallRequest root n
+        else if n == 128 && op == 8 && load64 0x416058 n == 1 then contentRetainRequest root nonce 0x416060 caller n
+        else if n == 96 && op == 10 && load64 0x416058 n == 1 then contentRecoveryRequest caller nonce n
+        else if n == 128 && op == 11 && load64 0x416058 n == 1 then saveRetainRequest root nonce 0x416060 caller n
+        else if n == 128 && op == 12 && load64 0x416058 n == 1 then saveRecoveryRequest nonce 0x416060 caller n else error
       let t := zero wire 8 r
       let t := store64 wire (if r == error then 1 else 0) t
       let t := store64 (wire+8) nonce t
@@ -1108,10 +1638,14 @@ def route (ev t : UInt64) : UInt64 :=
     if kind == 1 then lifecycleRoute code value t else t
   else if load64 (st+40) t != 0 then
     if kind == 1 && code == 28 && value == 1 && load64 (st+120) t == 1 then
-      if load64 (st+40) t == 2 then retainApproved t
+      if load64 (st+40) t == 11 || load64 (st+40) t == 12 then saveApprove t
+      else if load64 (st+40) t == 9 || load64 (st+40) t == 10 then contentApprove t
+      else if load64 (st+40) t == 2 then retainApproved t
       else if load64 (st+40) t == 3 then pickerApprove t else approve t
     else if kind == 1 && code == 1 && value == 1 then
-      if load64 (st+40) t == 3 then pickerCancel t else dismiss t
+      if load64 (st+40) t == 11 || load64 (st+40) t == 12 then saveCancel t
+      else if load64 (st+40) t == 9 || load64 (st+40) t == 10 then contentCancel t
+      else if load64 (st+40) t == 3 then pickerCancel t else dismiss t
     else if kind == 1 && value == 1 && load64 (st+40) t == 3 && (code == 15 || code == 105 || code == 106 || code == 103 || code == 108) then
       pickerSelect (if code == 105 || code == 103 then 1 else 0) t
     else t
@@ -1176,7 +1710,9 @@ partial def loop (t : UInt64) : UInt64 :=
   loop (Guest.syscall 9 0 0 0 0 t)
 
 def main (initial : UInt64) : UInt64 :=
-  let t := zero st 64 initial
+  let t := zero saveState 64 (zero saveData 24 initial)
+  let t := zero contentState 64 (zero contentMetadata 192 t)
+  let t := zero st 64 t
   let t := store64 (st+16) 320 t
   let t := store64 (st+24) 200 t
   let t := store64 (st+360) 400 t

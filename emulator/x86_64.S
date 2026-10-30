@@ -4,7 +4,7 @@
  */
 .intel_syntax noprefix
 .equ RAM_BASE, 0x80000000
-.equ RAM_SIZE, 0x8000000
+.equ RAM_SIZE, 0xa000000
 .equ SSTATUS_MASK, 0x80000003000de133
 .equ CSR_SSTATUS, 0x100*8
 .equ CSR_SIE, 0x104*8
@@ -32,6 +32,7 @@ _start:
     jb usage
     mov qword ptr [rip+server_fd], -1
     mov qword ptr [rip+network_fd], -1
+    mov qword ptr [rip+pcm_fd], -1
     mov qword ptr [rip+vault_fd], -1
     mov qword ptr [rip+display_fd], -1
     mov qword ptr [rip+input_fd], -1
@@ -72,6 +73,11 @@ parse_arguments:
     test eax, eax
     jnz argument_server
     mov rdi, [r9+rbx*8+8]
+    lea rsi, [rip+pcm_arg]
+    call argument_equal
+    test eax, eax
+    jnz argument_pcm
+    mov rdi, [r9+rbx*8+8]
     lea rsi, [rip+network_arg]
     call argument_equal
     test eax, eax
@@ -111,6 +117,29 @@ argument_network:
 2:  cmp eax, 3
     jb usage
     mov [rip+network_fd], rax
+    inc rbx
+    jmp parse_arguments
+argument_pcm:
+    inc rbx
+    cmp rbx, r8
+    jae usage
+    mov rsi, [r9+rbx*8+8]
+    xor eax, eax
+1:  movzx edx, byte ptr [rsi]
+    test dl, dl
+    jz 2f
+    sub edx, 48
+    cmp edx, 9
+    ja usage
+    imul eax, eax, 10
+    add eax, edx
+    cmp eax, 1023
+    ja usage
+    inc rsi
+    jmp 1b
+2:  cmp eax, 3
+    jb usage
+    mov [rip+pcm_fd], rax
     inc rbx
     jmp parse_arguments
 argument_readonly:
@@ -1700,6 +1729,8 @@ virtio_read:
     mov r8d, eax
     shr r8d, 12
     and eax, 4095
+    cmp r8d, 7
+    je pcm_read
     cmp r8d, 5
     je network_read
     cmp r8d, 2
@@ -1829,6 +1860,8 @@ virtio_write:
     mov r8d, eax
     shr r8d, 12
     and eax, 4095
+    cmp r8d, 7
+    je pcm_write
     cmp r8d, 5
     je network_write
     cmp r8d, 2
@@ -2236,6 +2269,7 @@ virtio_block_fatal:
 
 #include "graphics_x86_64.inc"
 #include "network_x86_64.inc"
+#include "pcm_x86_64.inc"
 
 argument_equal:
     mov al, [rdi]
@@ -2325,7 +2359,7 @@ hex_loop:
 .section .rodata
 usage_message: .ascii "usage: ltemu-x86_64 guest.bin [--interactive] [--vault backing.img] [--vault-readonly] [--display-out frame.bgrx] [--input-events events.evdev]\n"
 usage_end:
-image_message: .ascii "ltemu-x86_64: cannot load nonempty guest image (maximum 128 MiB)\n"
+image_message: .ascii "ltemu-x86_64: cannot load nonempty guest image (maximum 160 MiB)\n"
 image_end:
 budget_message: .ascii "ltemu-x86_64: instruction budget exhausted; pc=0x"
 budget_end:

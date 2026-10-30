@@ -1,0 +1,465 @@
+{
+  "schema": 1,
+  "campaign": 5,
+  "branch": "codex/native-library",
+  "reviewed_ancestor": "cb1af4af9ecc5b890b4f4b61f56831e7ae765401",
+  "status": "substantial connected consumer increment; acceptance remains partial",
+  "source_image_commit": "e453cc7",
+  "host_pcm_capture_commit": "14f9e91",
+  "common_image": {
+    "sha256": "c9309452ea552b204ce85b0440525b2222770a651319dcf96cd7dee48451b2d4",
+    "bytes": 6291456,
+    "artifact": "build/campaign005/final-12/guest.bin",
+    "reproduction": "./lt build --clean",
+    "clean_matches_incremental": true,
+    "ram_bytes": 167772160,
+    "process_slots": 12,
+    "ordinary_slots": 5
+  },
+  "packages": {
+    "library-registry": {
+      "version": "0.5.0",
+      "release_id": "6297b21e2f039862cea14dc3d96ca78778303a767d31179cf4efdb2c0c3851d8",
+      "executable_sha256": "0b284a806d4b41893d7cad9dd8c35a80e1f8db32e9d73171775539d09718e2c3",
+      "rights": 2175,
+      "size": 99120,
+      "parent": "0000000000000000000000000000000000000000000000000000000000000000",
+      "publisher_key_id": "fadcee1d85f60fdad9140951bf001b0aa52b08cd077231aeb70ff8bf0596e19b"
+    },
+    "native-player": {
+      "version": "0.5.4",
+      "release_id": "efa8056ec4741b55326b30bc99fb5aae1770b5cb0983a7dc7e492d7c86071ae2",
+      "executable_sha256": "0da8c4f04d0767b06bb1ddecca2fed694bda5b3ccd6077feacb5a49f7dc365c4",
+      "rights": 4865,
+      "size": 43896,
+      "parent": "a6b702b7b78fc16f4364815cc50b1cdb3a7a0dbebf7146ca50e65ce858d9d580",
+      "publisher_key_id": "fadcee1d85f60fdad9140951bf001b0aa52b08cd077231aeb70ff8bf0596e19b"
+    },
+    "library-peer": {
+      "version": "0.5.2",
+      "release_id": "e6dd508b43de5808468ba8b60e036625312b037dee343b4d00b1fb1f158bbce5",
+      "executable_sha256": "0942b7ece8bd9d014365b79255fd71e73602042524522109317315ddbc5593d7",
+      "rights": 1025,
+      "size": 47820,
+      "parent": "29b71a1009be5ea743a9bb7a4f26eb393e95ba6fe641ed535f318bc7b91d4ef7",
+      "publisher_key_id": "fadcee1d85f60fdad9140951bf001b0aa52b08cd077231aeb70ff8bf0596e19b"
+    },
+    "library-native": {
+      "version": "0.5.5",
+      "release_id": "9c82c801d16d62cb5a002a29b6785097e3ee268e342984531c02ee53e54370ad",
+      "executable_sha256": "3ddcadf723d291febe3cba6ff049f9675ce0d2e9d45f4f2cbbbaf92f3d1b4d78",
+      "rights": 1919,
+      "size": 251916,
+      "parent": "86a2f4d830dedcd1126c0e7afeac44e9d8c0cbc0caca4f59ea4c2f0595d1e02f",
+      "publisher_key_id": "fadcee1d85f60fdad9140951bf001b0aa52b08cd077231aeb70ff8bf0596e19b"
+    },
+    "library-fetch": {
+      "version": "0.5.3",
+      "release_id": "38b372cd782a95138381f7062ad82e26c9472b4d4e33f4a9c1abaae3df27b5cb",
+      "executable_sha256": "293ad06764c3b1d5c64678fc24f3b79399182e8d059bfaf36411d615fd12d012",
+      "rights": 1151,
+      "size": 59808,
+      "parent": "05cdf938508c44ce53f3d10a1bae1edddcc72079cb1127439aa9101f1cc9ddfa",
+      "publisher_key_id": "fadcee1d85f60fdad9140951bf001b0aa52b08cd077231aeb70ff8bf0596e19b"
+    }
+  },
+  "game": {
+    "logical_identity": "c77a40fc178d8ec017c8d31b8c86e8967540fcc72eebd4050da629602edc99ff",
+    "pack_identity": "77ce47e71af7c4d7a3b915b11cdba694554f93e2039403bbe7195aa97a44c8b1",
+    "releases": [
+      "3a56b13d0e211adf25e66d05c09dedc48506c84cb4fe328af8295b3460be7779",
+      "4bc96b74880bfaf03e7feeab2b535b1dd0fd268c50509217f46cdf35bca13489"
+    ],
+    "rights": 795,
+    "save_schema": 1,
+    "save_bytes": 192,
+    "current_version": "1.4.0",
+    "current_native_parent": "3a56b13d0e211adf25e66d05c09dedc48506c84cb4fe328af8295b3460be7779",
+    "historical_generation2_release": "6ef9906f4d0871b59cfde958846fd6c67ebf9838ec5fd57b19a5fc0c673657b0",
+    "upgrade_boundary": "1.4 is a real 1.2-parent branch. An active 1.3 user must explicitly roll back to retained 1.2 first; no direct 1.3-to-1.4 update is asserted."
+  },
+  "media": {
+    "recipe": "./lt content generate-original-audio --output build/original-audio",
+    "executed_stereo_bytes": 1152044,
+    "executed_chunks": 282,
+    "manifest_sha256": "073980a32193d7edd1fee1a32a4a2bc4dcea02b7de7f8af3fb51266fa6da8eab",
+    "payload_sha256": "f94e8e379da64b756d7b8341267cf4ddc9ec92c94b05c8b8c3228d1be2ff5580",
+    "decoded_pcm_bytes": 1152000,
+    "decoded_pcm_sha256": "fb0af16f34ddbee9935e45f06f2c73549f0b50236315378f97bd8c38dce9c929",
+    "format": "RIFF/WAVE PCM16LE 48000Hz mono/stereo; decoded output stereo",
+    "original_thirty_second_stereo_recipe_bytes": 5760044,
+    "thirty_second_full_network_journey_executed": false
+  },
+  "versions": {
+    "kernel_abi": 2,
+    "network_protocol": 2,
+    "host_connection_adapter": 2,
+    "pcm_profile": 2,
+    "stream_device_profile": 2,
+    "platform_device_header": "LTDEV2/audio2/network2 at0x200420",
+    "built_in_service_descriptor": 2,
+    "objects_service_only_profile": 3,
+    "ordinary_signed_native_profile": 2,
+    "content_manifest": 1,
+    "consumer_release": 1,
+    "registry_snapshot": 2,
+    "content_jobs": 1,
+    "objects_import_jobs": 1,
+    "content_vault_readable": [
+      3,
+      4,
+      5
+    ],
+    "partial_checkpoint_write": 5,
+    "audio_output_right": 4096,
+    "known_rights_mask": 8191,
+    "privacy_modes": "enum1,2,3,4; only3 implemented",
+    "narrow_project_data_picker": "Compositor ABI2 portal14/schema1 masks1 or25; legacy portal3 unchanged",
+    "objects_reference_release": "47/schema1; caller-scoped committed reference only"
+  },
+  "bounded_profile": {
+    "content_service_private_bytes": 8388608,
+    "chunk_bytes": 4096,
+    "payload_capacity_bytes": 6029312,
+    "root_limit": 4,
+    "content_jobs": 4,
+    "content_jobs_per_caller": 2,
+    "range_read_max_bytes": 512,
+    "objects_import_contexts": 4,
+    "import_sha_bytes_per_quantum": 512,
+    "audio_descriptor_max_bytes": 1024,
+    "library_body_bytes": 251916,
+    "ordinary_code_limit_bytes": 262144,
+    "objects_body_bytes": 301196,
+    "objects_code_limit_bytes": 393216,
+    "launcher_body_bytes": 164248,
+    "monitored_collections": 1,
+    "personal_selected_content_slots": 1,
+    "personal_selected_save_slots": 1,
+    "server_selected_archive_slots": 4
+  },
+  "execution_boundary": {
+    "lean_guests": "authoritative catalog/admission, policy, peer crypto/protocols, jobs, validation, chunk/index/store, encrypted retention, native UI, WAV parser/player/channel conversion, game and saves",
+    "assembly": "architectural primitives plus independent x86-64/ARM64 interpreters and matching devices",
+    "disclosed_host": "compiler/signer/bootstrap, explicit key/backing/role setup, opaque network streams and selected backing I/O, pixels/input, entropy, decoded raw PCM sink; no host WAV decoder/catalog/scheduler"
+  },
+  "remaining_acceptance": [
+    "One selected personal media/metadata checkpoint and a separate selected save; one monitored collection/current policy. No general multi-root retained inventory, independent multi-collection watchlists or durable watchlist/policy history.",
+    "Native Library playback requires complete content; validated partial reads support recovery, not a partial-stream player flow.",
+    "Fixed displayed native policy limits; federation/key provisioning still uses explicit setup. General export-destination portal and general native future-seeding controls remain incomplete.",
+    "The bounded volatile chunk/index store has no arbitrary-scale nonresident disk-index paging.",
+    "Headless restart restores selected completed archives and serving policies; in-progress acquisition intent/checkpoints and unattended server-job restart under retained operator policy are not established.",
+    "Current clean-image acquisition/failover/retention/offline and Game journeys passed with Library0.5.4. Library0.5.5 has separate actual native consent and focused authority checks. Genuine later publication/mono-stereo choice and independent retained seeds retain their earlier named image records.",
+    "Physical speaker hearing/latency/sustained real-time underrun limits, physical vault power-loss/freshness, native ARM64 hardware and independent operators are unvalidated.",
+    "Interactive onion/mix routing, payment settlement, broad REL/Luanti/Lugaru, Feed/Messenger, LemmaCoin/Wallet, self-hosting and complete desktop/accessibility remain MVP obligations."
+  ],
+  "next_dependency": "A multi-root selected personal retention inventory with native selection and recoverable watch intent, keeping acquisition approval fresh and content chunks bounded.",
+  "evidence": [
+    {
+      "path": "campaign-005-checkpoint-native.json",
+      "sha256": "cc31a88596b9c0799605e9a73b654d62fab0eb327b449aea1d852b84df8cfdc4",
+      "image": "99c6277a2a5c33a64188b3d626fdd7dc5c2769619001ce35062ed67a9fd0aa33",
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-commit-fault.json",
+      "sha256": "481dfbf4019f457eddb27a871e2aacb49d39bcafcf4202fe3a163b78186be95b",
+      "image": "22f9f9bde6c210ffe0f0ec52d7b8f5d697bed11d61fda7edda5f7c319079c70f",
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-connected-clean12.json",
+      "sha256": "ca2ecbb46f55161f287ae6002684a3e4d322b4d0905d6fa523f8c5c1ef0c07da",
+      "image": "c9309452ea552b204ce85b0440525b2222770a651319dcf96cd7dee48451b2d4",
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-connected-clean9.json",
+      "sha256": "9f3b717ac064eeee047687f3bbfc902ae8bef673cd3b299d6f5e7e66278b61af",
+      "image": "26df02df50e24d2be2bfdb489cd6b6973e0f58f38faa92535de3fdcb8211ed18",
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-connected-final7.json",
+      "sha256": "15d6aaa75c506f54ad30f60c06d28a422ff67e979686b4e19fc85bfe60059026",
+      "image": "22f9f9bde6c210ffe0f0ec52d7b8f5d697bed11d61fda7edda5f7c319079c70f",
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-content-epochs.json",
+      "sha256": "a6e4380bd2d054a7c55ea86c6b7cfb328ccdf099f09c6bfc80f6f8427198bba6",
+      "image": null,
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-game-connected-final12.json",
+      "sha256": "fbfe5f7497e8a1e3d280c1cad71a8efa1bf48d7f164a46e45b7ed8cae88f9f19",
+      "image": "c9309452ea552b204ce85b0440525b2222770a651319dcf96cd7dee48451b2d4",
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-game-connected-final9.json",
+      "sha256": "60c5ff779bee912100b9776062d41fbb968b4bc87045ae64fa968e470216a136",
+      "image": "26df02df50e24d2be2bfdb489cd6b6973e0f58f38faa92535de3fdcb8211ed18",
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-game-consumer.json",
+      "sha256": "055514f385f7014ca857cb77c809cc6af07ebaf6d778aac011aa0b6a18be6d05",
+      "image": null,
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-game-core.json",
+      "sha256": "6306aa6d7be5109ac43a244a98cbea742996b0e43b5056ff316279008ade3370",
+      "image": "d3e706f06da6db315b5da809a99f9b95f664c4f012de6c3bba875223c396cc62",
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-game-generations.json",
+      "sha256": "606d5a12174a7dc8b850705dc8d109f934b266b442d4984a6a7235fd16bed9da",
+      "image": "e3767c2d12d335649bf9acf3e731e23abb24e453c1a03b85a5d8580dab02769a",
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-game-graph-fetch.json",
+      "sha256": "cc3b6f1a5137c03ce25b321b6fb06f58a4c2f5d8a8afa670f495244331730fa5",
+      "image": "d3e706f06da6db315b5da809a99f9b95f664c4f012de6c3bba875223c396cc62",
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-game-graph-native-final.json",
+      "sha256": "bd9fb0c01dae8a6ca0a1a1e9ebd834f082d0d7ce36016b3cc847cdee3798c543",
+      "image": null,
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-game-graph-native-prototype.json",
+      "sha256": "16fac699ba77986df589a9ff85675d81e98e4892a2ae6d41a33469fd26b110e2",
+      "image": null,
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-game-graph-native.json",
+      "sha256": "2432f95dc974abf7b7f0da5e207d1b44fe16f8838392e760594455a7fbbb5629",
+      "image": null,
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-game-mod-final10.json",
+      "sha256": "66b63182da1479f0a0ce95422ebcf9492e85caee66a9845c1d34c8b7dfca4aca",
+      "image": "22ed2b68787a3b484955ab4aa9df6de79730edb2f92da6e0e156f74cb6f9679b",
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-game-save-publication.json",
+      "sha256": "bcfbb2c722b35d75c1647b275242cb2bdaaad070d4f1b2a2fe46887a14ebb255",
+      "image": "22ed2b68787a3b484955ab4aa9df6de79730edb2f92da6e0e156f74cb6f9679b",
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-game-save-references.json",
+      "sha256": "17eba31d7715574e2d5af219e8d27e851c34bbe91accfa07b1f607d5ea02c6cb",
+      "image": "b6da4a9d88f766e5edd2a59007ffe25ebd2b1b6c61e016673a9186b79fbf0175",
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-import-jobs.json",
+      "sha256": "78e4ea0aca40bdb35678b897954c267008028c108e0ce86993314795a2f4f128",
+      "image": "22f9f9bde6c210ffe0f0ec52d7b8f5d697bed11d61fda7edda5f7c319079c70f",
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-import-regressions.json",
+      "sha256": "53446b7accfeabc315ff803de868fdca584cfd7583b4cbf9c863a1667cff45ae",
+      "image": "35b50f3027a84f110b64baf99902b327cb7cd238fa348c616eb491978c8a03e6",
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-launcher-recovery-failure-refs.json",
+      "sha256": "06290ea8be322e4abd49c56ea57264a77395c56000f86765a81e014d2d422d7f",
+      "image": "c9309452ea552b204ce85b0440525b2222770a651319dcf96cd7dee48451b2d4",
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-library-binding-scope.json",
+      "sha256": "04c7e5a438ac51469e427dd89566387b090ff2352bef6292e210ad8b00da1ed4",
+      "image": "c9309452ea552b204ce85b0440525b2222770a651319dcf96cd7dee48451b2d4",
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-library-collection-consent.json",
+      "sha256": "ecdb7a46eee2623925c4f280f8cbfd5e5a3a252207dc7b9d664df4eac9762522",
+      "image": "c9309452ea552b204ce85b0440525b2222770a651319dcf96cd7dee48451b2d4",
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-library-collection-policy-native.json",
+      "sha256": "79718b7e38eb197955386d101c3aefe88f0d23ecebafde8627c129e352e82b8f",
+      "image": "c9309452ea552b204ce85b0440525b2222770a651319dcf96cd7dee48451b2d4",
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-library-no-vault-native.json",
+      "sha256": "7b94eb3b2a8f888603576e078f59b157dcb65ea558134e6844298654427e8815",
+      "image": "22ed2b68787a3b484955ab4aa9df6de79730edb2f92da6e0e156f74cb6f9679b",
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-library-save-failure-refs.json",
+      "sha256": "ea7fe3691964f9facd272ffd87813211a7fb1a4649f807164ed3a9f6366065d0",
+      "image": "c9309452ea552b204ce85b0440525b2222770a651319dcf96cd7dee48451b2d4",
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-media-game.json",
+      "sha256": "3ba392cbeb992ab57e9a2b54fe3cab7557c26970b271c0761a7d0fb9cec2fcd2",
+      "image": "e3767c2d12d335649bf9acf3e731e23abb24e453c1a03b85a5d8580dab02769a",
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-native-game-library.json",
+      "sha256": "ff6d438ca502914a6a0a8a72709602de7e7bbc967dba1c960aee66c7711bd67e",
+      "image": "d3e706f06da6db315b5da809a99f9b95f664c4f012de6c3bba875223c396cc62",
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-network-epochs.json",
+      "sha256": "3ed70341348e06183aa8a4eed57b3d3ea9ba0f2fcba1163bafccc408a113a230",
+      "image": "c620a5610dbcad3dc2ae13f231eb8bb0fb00ca2082834b96eb17b8ddeb45fb6d",
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-no-vault-final10.json",
+      "sha256": "af8e9aaa190c971d27d3da4dd6c8fc227377e62b72306a6b966510c04e6c01d4",
+      "image": "22ed2b68787a3b484955ab4aa9df6de79730edb2f92da6e0e156f74cb6f9679b",
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-no-vault.json",
+      "sha256": "f103e87406b5a616ef8033695dad578f5d4fe9b521e34b45261d6f0246da3e74",
+      "image": "643b801e42091c99f5d20e3ff40f5ab293840c6c5377a260491201b2b71c4fe1",
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-object-reference-release.json",
+      "sha256": "719ea1cb88250cff843764d99cb9bb58da6540742005c62e2f2c8e4b1c52260c",
+      "image": "b6da4a9d88f766e5edd2a59007ffe25ebd2b1b6c61e016673a9186b79fbf0175",
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-offline-final.json",
+      "sha256": "9d5cf803d53f4979a316be7e4b9da7566f660fc3f759fff257ec518305d8b3b8",
+      "image": "22f9f9bde6c210ffe0f0ec52d7b8f5d697bed11d61fda7edda5f7c319079c70f",
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-pcm-adapter.json",
+      "sha256": "93711a2f2d3f56089368b63dce58b4a2f77c8e378ee9b0d332bf30a97f4d6973",
+      "image": null,
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-pcm-stream2.json",
+      "sha256": "44c8f1611b031bfe136c2d29fb59cd440656ff86a0a7a3b39b6dcd7ac1ab98cb",
+      "image": null,
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-peer-authority-recovery.json",
+      "sha256": "f2a8e86a25af4d04f8c891a71f25f10e7bf73d153dff1dc564ddfc784befd399",
+      "image": "e3767c2d12d335649bf9acf3e731e23abb24e453c1a03b85a5d8580dab02769a",
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-picker-scope.json",
+      "sha256": "fbdc607e8ad04bd5de15f348431fe1a904a5b86c41a3b3766288669585fd60cb",
+      "image": "22ed2b68787a3b484955ab4aa9df6de79730edb2f92da6e0e156f74cb6f9679b",
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-platform-final.json",
+      "sha256": "7157969e90dce8575d80d0c6b34211282327cbba61eb4f31ab881c0d1f35b9e7",
+      "image": null,
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-platform-final10.json",
+      "sha256": "4e07649f236357b8fd82b6298714e414d47de8b2d1f2767f0b6aeb66a0594453",
+      "image": "22ed2b68787a3b484955ab4aa9df6de79730edb2f92da6e0e156f74cb6f9679b",
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-platform-final12.json",
+      "sha256": "6c2225f90dd575f502953b50300908d21ef89f306a4afcdd7d58c0874be6ff44",
+      "image": "c9309452ea552b204ce85b0440525b2222770a651319dcf96cd7dee48451b2d4",
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-platform.json",
+      "sha256": "c4bb182aabd4bdda7ad1878dcf3f6d84fed6630932aea8ce80ebbbb1d7635c2b",
+      "image": null,
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-player.json",
+      "sha256": "e322c3b0537a799e901ba7b62c80767f038baffd76dff085df34c79920784a45",
+      "image": null,
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    },
+    {
+      "path": "campaign-005-replication-monitor.json",
+      "sha256": "56e271ef255d3d70ab8d56cdd1e4ba2642a54844d86b0a8cdd6fcd5a1b6232aa",
+      "image": null,
+      "scope": "Read the exact record: distinct component and connected executions retain their actual image, authority and measurement limits."
+    }
+  ],
+  "notes": [
+    "No whole MVP/release gate completion is claimed.",
+    "Every evidence file retains its actual image and scope; earlier C/D3/final7/final9/final10/final11 measurements are not silently attributed to final12.",
+    "The full final12 media and Game integrations execute frozen Library0.5.4. New Library0.5.5 preserves those packages and adds separately checked consent, immutable-row and helper-binding corrections.",
+    "Full12 Game integration includes downloaded mod, approved save recovery, actual new release, forty native captures and forty physical recoveries, update and explicit rollback.",
+    "Private keys and selected backing payloads are ignored runtime artifacts, not committed."
+  ],
+  "source_proof_scope": {
+    "modules": [
+      "Guest/ContentFormat.lean",
+      "Guest/CrateModel.lean"
+    ],
+    "content_lemmas": [
+      "incomplete_is_private",
+      "revoked_never_publishes"
+    ],
+    "consumed_transition": "Guest.ContentStore.finalQuantum calls ContentFormat.publicationAllowed",
+    "assumptions": [
+      "The imperative checks actually supply the stated complete/authority/liveness/quota Booleans.",
+      "Kernel identities, memory isolation, hash/crypto implementation, device behavior and compiler/binary correspondence remain outside these pure lemmas."
+    ],
+    "no_admitted_goals_in_changed_pure_modules": true
+  },
+  "preceding_pcm_stream_image": "26df02df50e24d2be2bfdb489cd6b6973e0f58f38faa92535de3fdcb8211ed18",
+  "measured_current_offline_submission_seconds": 6.321669779950753,
+  "current_platform_evidence": "campaign-005-platform-final12.json",
+  "current_game_mod_evidence": "campaign-005-game-connected-final12.json",
+  "game_generation_evidence": "campaign-005-game-connected-final12.json",
+  "preceding_complete_media_evidence": "campaign-005-connected-clean9.json",
+  "reference_cleanup_evidence": [
+    "campaign-005-object-reference-release.json",
+    "campaign-005-library-save-failure-refs.json",
+    "campaign-005-game-save-references.json",
+    "campaign-005-game-connected-final12.json"
+  ],
+  "source_library_commit": "5506c34",
+  "source_game_commit": "192960f",
+  "current_complete_media_evidence": "campaign-005-connected-clean12.json",
+  "current_complete_media_library_release": "86a2f4d830dedcd1126c0e7afeac44e9d8c0cbc0caca4f59ea4c2f0595d1e02f",
+  "current_connected_game_library_release": "86a2f4d830dedcd1126c0e7afeac44e9d8c0cbc0caca4f59ea4c2f0595d1e02f",
+  "latest_library_authority_evidence": [
+    "campaign-005-library-collection-consent.json",
+    "campaign-005-library-binding-scope.json",
+    "campaign-005-library-collection-policy-native.json"
+  ],
+  "same_current_image_later_publication_and_mono_stereo_journey_executed": false,
+  "later_publication_and_independent_durable_seed_evidence": "campaign-005-replication-monitor.json",
+  "latest_library_boundary_test_commit": "3553a8d"
+}

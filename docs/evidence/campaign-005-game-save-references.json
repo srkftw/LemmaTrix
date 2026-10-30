@@ -1,0 +1,320 @@
+{
+  "schema": 1,
+  "result": "passed",
+  "image_sha256": "b6da4a9d88f766e5edd2a59007ffe25ebd2b1b6c61e016673a9186b79fbf0175",
+  "game_release": "4bc96b74880bfaf03e7feeab2b535b1dd0fd268c50509217f46cdf35bca13489",
+  "native_parent": "3a56b13d0e211adf25e66d05c09dedc48506c84cb4fe328af8295b3460be7779",
+  "game_instance": 13556240928888324359,
+  "snapshot_count": 40,
+  "unchanged_snapshot_reuses": 40,
+  "preserved_reader_sha256": "ad129f736a9b9fc90068f491a36bcbe1f55f0c8441237307fe7f5e8613543bf7",
+  "preserved_reader_bytes": 192,
+  "released_reader_denial": "Objects status3",
+  "initial_caller_stats": [
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0
+  ],
+  "final_caller_stats": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "snapshots": [
+    {
+      "index": 0,
+      "moves": 0,
+      "save_sha256": "c0a7932369c0ec4881982e33a181f1f906c959df057f2b42ffd758b6179cd2f4",
+      "bytes": 192,
+      "old_reader_still_exact": true
+    },
+    {
+      "index": 1,
+      "moves": 1,
+      "save_sha256": "7dc0b513f1ec05ba33ab4c0ce9888680d7bc74c7f8690e1ce998fecf9b4400ce",
+      "bytes": 192,
+      "old_reader_still_exact": true
+    },
+    {
+      "index": 2,
+      "moves": 0,
+      "save_sha256": "c0a7932369c0ec4881982e33a181f1f906c959df057f2b42ffd758b6179cd2f4",
+      "bytes": 192,
+      "old_reader_still_exact": true
+    },
+    {
+      "index": 3,
+      "moves": 1,
+      "save_sha256": "7dc0b513f1ec05ba33ab4c0ce9888680d7bc74c7f8690e1ce998fecf9b4400ce",
+      "bytes": 192,
+      "old_reader_still_exact": true
+    },
+    {
+      "index": 4,
+      "moves": 0,
+      "save_sha256": "c0a7932369c0ec4881982e33a181f1f906c959df057f2b42ffd758b6179cd2f4",
+      "bytes": 192,
+      "old_reader_still_exact": true
+    },
+    {
+      "index": 5,
+      "moves": 1,
+      "save_sha256": "7dc0b513f1ec05ba33ab4c0ce9888680d7bc74c7f8690e1ce998fecf9b4400ce",
+      "bytes": 192,
+      "old_reader_still_exact": true
+    },
+    {
+      "index": 6,
+      "moves": 0,
+      "save_sha256": "c0a7932369c0ec4881982e33a181f1f906c959df057f2b42ffd758b6179cd2f4",
+      "bytes": 192,
+      "old_reader_still_exact": true
+    },
+    {
+      "index": 7,
+      "moves": 1,
+      "save_sha256": "7dc0b513f1ec05ba33ab4c0ce9888680d7bc74c7f8690e1ce998fecf9b4400ce",
+      "bytes": 192,
+      "old_reader_still_exact": true
+    },
+    {
+      "index": 8,
+      "moves": 0,
+      "save_sha256": "c0a7932369c0ec4881982e33a181f1f906c959df057f2b42ffd758b6179cd2f4",
+      "bytes": 192,
+      "old_reader_still_exact": true
+    },
+    {
+      "index": 9,
+      "moves": 1,
+      "save_sha256": "7dc0b513f1ec05ba33ab4c0ce9888680d7bc74c7f8690e1ce998fecf9b4400ce",
+      "bytes": 192,
+      "old_reader_still_exact": true
+    },
+    {
+      "index": 10,
+      "moves": 0,
+      "save_sha256": "c0a7932369c0ec4881982e33a181f1f906c959df057f2b42ffd758b6179cd2f4",
+      "bytes": 192,
+      "old_reader_still_exact": true
+    },
+    {
+      "index": 11,
+      "moves": 1,
+      "save_sha256": "7dc0b513f1ec05ba33ab4c0ce9888680d7bc74c7f8690e1ce998fecf9b4400ce",
+      "bytes": 192,
+      "old_reader_still_exact": true
+    },
+    {
+      "index": 12,
+      "moves": 0,
+      "save_sha256": "c0a7932369c0ec4881982e33a181f1f906c959df057f2b42ffd758b6179cd2f4",
+      "bytes": 192,
+      "old_reader_still_exact": true
+    },
+    {
+      "index": 13,
+      "moves": 1,
+      "save_sha256": "7dc0b513f1ec05ba33ab4c0ce9888680d7bc74c7f8690e1ce998fecf9b4400ce",
+      "bytes": 192,
+      "old_reader_still_exact": true
+    },
+    {
+      "index": 14,
+      "moves": 0,
+      "save_sha256": "c0a7932369c0ec4881982e33a181f1f906c959df057f2b42ffd758b6179cd2f4",
+      "bytes": 192,
+      "old_reader_still_exact": true
+    },
+    {
+      "index": 15,
+      "moves": 1,
+      "save_sha256": "7dc0b513f1ec05ba33ab4c0ce9888680d7bc74c7f8690e1ce998fecf9b4400ce",
+      "bytes": 192,
+      "old_reader_still_exact": true
+    },
+    {
+      "index": 16,
+      "moves": 0,
+      "save_sha256": "c0a7932369c0ec4881982e33a181f1f906c959df057f2b42ffd758b6179cd2f4",
+      "bytes": 192,
+      "old_reader_still_exact": true
+    },
+    {
+      "index": 17,
+      "moves": 1,
+      "save_sha256": "7dc0b513f1ec05ba33ab4c0ce9888680d7bc74c7f8690e1ce998fecf9b4400ce",
+      "bytes": 192,
+      "old_reader_still_exact": true
+    },
+    {
+      "index": 18,
+      "moves": 0,
+      "save_sha256": "c0a7932369c0ec4881982e33a181f1f906c959df057f2b42ffd758b6179cd2f4",
+      "bytes": 192,
+      "old_reader_still_exact": true
+    },
+    {
+      "index": 19,
+      "moves": 1,
+      "save_sha256": "7dc0b513f1ec05ba33ab4c0ce9888680d7bc74c7f8690e1ce998fecf9b4400ce",
+      "bytes": 192,
+      "old_reader_still_exact": true
+    },
+    {
+      "index": 20,
+      "moves": 0,
+      "save_sha256": "c0a7932369c0ec4881982e33a181f1f906c959df057f2b42ffd758b6179cd2f4",
+      "bytes": 192,
+      "old_reader_still_exact": true
+    },
+    {
+      "index": 21,
+      "moves": 1,
+      "save_sha256": "7dc0b513f1ec05ba33ab4c0ce9888680d7bc74c7f8690e1ce998fecf9b4400ce",
+      "bytes": 192,
+      "old_reader_still_exact": true
+    },
+    {
+      "index": 22,
+      "moves": 0,
+      "save_sha256": "c0a7932369c0ec4881982e33a181f1f906c959df057f2b42ffd758b6179cd2f4",
+      "bytes": 192,
+      "old_reader_still_exact": true
+    },
+    {
+      "index": 23,
+      "moves": 1,
+      "save_sha256": "7dc0b513f1ec05ba33ab4c0ce9888680d7bc74c7f8690e1ce998fecf9b4400ce",
+      "bytes": 192,
+      "old_reader_still_exact": true
+    },
+    {
+      "index": 24,
+      "moves": 0,
+      "save_sha256": "c0a7932369c0ec4881982e33a181f1f906c959df057f2b42ffd758b6179cd2f4",
+      "bytes": 192,
+      "old_reader_still_exact": true
+    },
+    {
+      "index": 25,
+      "moves": 1,
+      "save_sha256": "7dc0b513f1ec05ba33ab4c0ce9888680d7bc74c7f8690e1ce998fecf9b4400ce",
+      "bytes": 192,
+      "old_reader_still_exact": true
+    },
+    {
+      "index": 26,
+      "moves": 0,
+      "save_sha256": "c0a7932369c0ec4881982e33a181f1f906c959df057f2b42ffd758b6179cd2f4",
+      "bytes": 192,
+      "old_reader_still_exact": true
+    },
+    {
+      "index": 27,
+      "moves": 1,
+      "save_sha256": "7dc0b513f1ec05ba33ab4c0ce9888680d7bc74c7f8690e1ce998fecf9b4400ce",
+      "bytes": 192,
+      "old_reader_still_exact": true
+    },
+    {
+      "index": 28,
+      "moves": 0,
+      "save_sha256": "c0a7932369c0ec4881982e33a181f1f906c959df057f2b42ffd758b6179cd2f4",
+      "bytes": 192,
+      "old_reader_still_exact": true
+    },
+    {
+      "index": 29,
+      "moves": 1,
+      "save_sha256": "7dc0b513f1ec05ba33ab4c0ce9888680d7bc74c7f8690e1ce998fecf9b4400ce",
+      "bytes": 192,
+      "old_reader_still_exact": true
+    },
+    {
+      "index": 30,
+      "moves": 0,
+      "save_sha256": "c0a7932369c0ec4881982e33a181f1f906c959df057f2b42ffd758b6179cd2f4",
+      "bytes": 192,
+      "old_reader_still_exact": true
+    },
+    {
+      "index": 31,
+      "moves": 1,
+      "save_sha256": "7dc0b513f1ec05ba33ab4c0ce9888680d7bc74c7f8690e1ce998fecf9b4400ce",
+      "bytes": 192,
+      "old_reader_still_exact": true
+    },
+    {
+      "index": 32,
+      "moves": 0,
+      "save_sha256": "c0a7932369c0ec4881982e33a181f1f906c959df057f2b42ffd758b6179cd2f4",
+      "bytes": 192,
+      "old_reader_still_exact": true
+    },
+    {
+      "index": 33,
+      "moves": 1,
+      "save_sha256": "7dc0b513f1ec05ba33ab4c0ce9888680d7bc74c7f8690e1ce998fecf9b4400ce",
+      "bytes": 192,
+      "old_reader_still_exact": true
+    },
+    {
+      "index": 34,
+      "moves": 0,
+      "save_sha256": "c0a7932369c0ec4881982e33a181f1f906c959df057f2b42ffd758b6179cd2f4",
+      "bytes": 192,
+      "old_reader_still_exact": true
+    },
+    {
+      "index": 35,
+      "moves": 1,
+      "save_sha256": "7dc0b513f1ec05ba33ab4c0ce9888680d7bc74c7f8690e1ce998fecf9b4400ce",
+      "bytes": 192,
+      "old_reader_still_exact": true
+    },
+    {
+      "index": 36,
+      "moves": 0,
+      "save_sha256": "c0a7932369c0ec4881982e33a181f1f906c959df057f2b42ffd758b6179cd2f4",
+      "bytes": 192,
+      "old_reader_still_exact": true
+    },
+    {
+      "index": 37,
+      "moves": 1,
+      "save_sha256": "7dc0b513f1ec05ba33ab4c0ce9888680d7bc74c7f8690e1ce998fecf9b4400ce",
+      "bytes": 192,
+      "old_reader_still_exact": true
+    },
+    {
+      "index": 38,
+      "moves": 0,
+      "save_sha256": "c0a7932369c0ec4881982e33a181f1f906c959df057f2b42ffd758b6179cd2f4",
+      "bytes": 192,
+      "old_reader_still_exact": true
+    },
+    {
+      "index": 39,
+      "moves": 1,
+      "save_sha256": "7dc0b513f1ec05ba33ab4c0ce9888680d7bc74c7f8690e1ce998fecf9b4400ce",
+      "bytes": 192,
+      "old_reader_still_exact": true
+    }
+  ],
+  "current_snapshot_sha256": "7dc0b513f1ec05ba33ab4c0ce9888680d7bc74c7f8690e1ce998fecf9b4400ce",
+  "actual_native_input": true,
+  "private_memory_access": false,
+  "retention": false,
+  "scope": "native Game cached owner reference and scoped immutable readers; Library K/N quota flow has separate evidence"
+}

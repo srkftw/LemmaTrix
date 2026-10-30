@@ -15,6 +15,18 @@ def capAt (i : UInt64) : UInt64 := 0x602000+i*64
 -- Nonzero only while Objects validates one private import transaction. No IPC
 -- or yield occurs while this scope is set; staged nodes never resolve publicly.
 def importScope : UInt64 := state+8
+-- Set only for one non-yielding asynchronous validation step, cleared before IPC.
+def importContext : UInt64 := state+16
+def cachedVisible (caller i t : UInt64) : Bool :=
+  let ctx := load64 importContext t
+  if ctx == 0 || load64 (ctx+16) t != caller || load64 (ctx+8) t != load64 importScope t then false else
+  let h := load64 (ctx+256+i*16) t
+  let generation := load64 (ctx+264+i*16) t
+  let c := capAt (h &&& 255)
+  h != 0 && h >>> 32 == load64 state t && load64 c t == ((h >>> 8) &&& 0xffffff) &&
+    load64 (c+40) t == 1 && load64 (c+8) t == caller && load64 (c+16) t == i &&
+    load64 (c+24) t == generation && (load64 (c+32) t &&& 1) != 0 &&
+    load64 (recordAt i+16) t == generation && load64 (recordAt i) t == 2
 def present (r t : UInt64) : Bool :=
   load64 r t == 2 || (load64 r t == 4 && load64 importScope t != 0 && load64 (r+64) t == load64 importScope t)
 def nodeSchema (r t : UInt64) : UInt64 := if load64 (r+232) t == 2 then 2 else 1
@@ -45,7 +57,8 @@ partial def findCommittedNode (id kind i t : UInt64) : UInt64 :=
   if i == 64 then error else
     let r := recordAt i
     if load64 r t == 2 && load64 (r+224) t == 1 &&
-      (kind == 0 || load64 (r+40) t == kind) && equal id (r+160) 32 t then i else findCommittedNode id kind (i+1) t
+      (kind == 0 || load64 (r+40) t == kind) && equal id (r+160) 32 t &&
+      (load64 importContext t == 0 || cachedVisible (load64 (load64 importContext t+16) t) i t) then i else findCommittedNode id kind (i+1) t
 partial def findStagedNode (id kind i t : UInt64) : UInt64 :=
   if i == 64 || load64 importScope t == 0 then error else
     let r := recordAt i
@@ -55,6 +68,7 @@ def findNode (id kind i t : UInt64) : UInt64 :=
   let staged := findStagedNode id kind i t
   if staged == error then findCommittedNode id kind i t else staged
 partial def visible (caller i slot t : UInt64) : Bool :=
+  if load64 importContext t != 0 && load64 (recordAt i) t == 2 then cachedVisible caller i t else
   if load64 (recordAt i) t == 4 && load64 (recordAt i+8) t == caller && present (recordAt i) t then true else
   if slot == 256 then false else
     let c := capAt slot
@@ -314,6 +328,25 @@ def publicationMatches (source h t : UInt64) : UInt64 :=
       let t := copy (logicalIdAt (recordAt origin) t) (scratch+17) 32 t
       let t := copy (h+96) (scratch+49) 32 t
       hashMatches scratch 81 (h+128) t
+
+def releaseRelations (r t : UInt64) : UInt64 :=
+  let h := r+864
+  let build := findNode (r+304) 12 0 t
+  let ei := findNode (r+560) 14 0 t
+  if build == error || ei == error then error else
+  let b := recordAt build
+  let e := recordAt ei
+  if load64 (b+272) t != 2 || load64 (e+272) t != 1 ||
+    !releaseEdge b 0 14 0x65636e6564697665 8 t || !releaseEdge b 1 11 0x656372756f73 6 t ||
+    !releaseEdge e 0 11 0x656372756f73 6 t || !validBuildDetail b t || !validBuildDetail e t then error else
+  let bd := b+544
+  let ed := e+416
+  if !equal (b+304) (r+560) 32 t || !equal (b+432) (r+688) 32 t ||
+    !equal (e+304) (r+688) 32 t || load64 (b+280) t != load64 (e+280) t ||
+    !equal bd ed (load64 (b+280) t) t || load64 (bd+40) t != load64 (h+400) t ||
+    !equal (bd+48) (r+688) 32 t || !equal (bd+80) (h+192) 32 t then error else
+  let source := findNode (r+688) 11 0 t
+  if source == error then error else publicationMatches source h t
 
 def checkRelease (r t : UInt64) : UInt64 :=
   if load64 (r+272) t != 4 ||

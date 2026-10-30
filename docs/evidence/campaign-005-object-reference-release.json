@@ -1,0 +1,130 @@
+{
+  "schema": 1,
+  "result": "passed",
+  "scope": "Objects public operation47/schema1 caller-scoped committed-reference release, bounded reclamation and dead-reader GC; QEMU focused test",
+  "source_test": "tests/object_reference_release.py",
+  "source_probe": "tests/fixtures/ObjectReferenceProbe.lean",
+  "run_command": "python3 tests/object_reference_release.py --image build/campaign005/final-11/guest.bin --binary build/campaign005/object-reference-probe.bin --output build/campaign005/ref11",
+  "raw_result": "build/campaign005/ref11/result.json",
+  "raw_result_sha256": "fbc6ea5190a837ebeb135ced05be4708ee336dd683163152cd7fa07d3e7f6fe7",
+  "backend": "qemu",
+  "image_sha256": "b6da4a9d88f766e5edd2a59007ffe25ebd2b1b6c61e016673a9186b79fbf0175",
+  "probe_sha256": "807b45552d6911e36af8a4c6bf89ae1f34b88c53e71287f7ae63f412aadf1872",
+  "packages": {
+    "object-ref-a": {
+      "instance": 12021240581033296135,
+      "rights": 1,
+      "release_id": "ca51e21a3c29bccef46800390a4ad5137f0608e913efa4e3f48067b7fd01e1d1",
+      "package_sha256": "58b98bc6d50c5a72bd774eba399c1798edb42ac655545abbf82c8cbec152bb91"
+    },
+    "object-ref-b": {
+      "instance": 12021240581033296136,
+      "rights": 1,
+      "release_id": "4d4bda9168bb9e01a8ec96afc44d1c4d26d68bd11afee2e3a833350480aa6430",
+      "package_sha256": "afaa231696895e68e9556c50920d23448ac4713585d2e69e431712377f2f9e51"
+    }
+  },
+  "command": [
+    "/home/sreekumaar/Desktop/LemmaTrix/lt",
+    "run",
+    "--backend",
+    "qemu",
+    "--image",
+    "build/campaign005/final-11/guest.bin",
+    "--socket",
+    "/home/sreekumaar/Desktop/LemmaTrix/build/campaign005/ref11/portal.sock"
+  ],
+  "checks": [
+    {
+      "check": "read-only scoped readers work; wrong caller, destructive drop, reserved argument and schema2 are denied",
+      "result": "passed",
+      "actual_rights": 1,
+      "creator_handle": 12021240585328263424,
+      "reader_handles": [
+        12021240585328263425,
+        12021240585328263426
+      ],
+      "creator_object_id": 12021240585328263232,
+      "live_creator_stats": [
+        1,
+        384,
+        1
+      ],
+      "payload_sha256": "1cef1025d71aa9e6562cef2a13cdd0868f7f70011a61ddbdf3bc43b78d6d120f"
+    },
+    {
+      "check": "creator and individual reader releases preserve surviving exact bytes; last reader reclaims record and bytes with generation-safe slot reuse",
+      "result": "passed",
+      "creator_stale_read": "Objects status3",
+      "after_last_release": [
+        0,
+        0,
+        0
+      ],
+      "reused_record_slot": 0,
+      "old_object_id": 12021240585328263232,
+      "fresh_object_id": 12021240585328263296,
+      "fresh_handle": 12021240585328263680
+    },
+    {
+      "check": "releasing all Object capabilities to pinned nodes preserves complete named Project closure and fresh authorized scoped resolves",
+      "result": "passed",
+      "head": "f944c34de2847bc2e796d11dbf0742ebd32feb7651432a2991551f163358e110",
+      "blob_id": "c8093b9ea9a256c9458a86e92508267a8e075dc4097d4cc95cc5e744ceb402ef",
+      "root_handle": 12021240585328263424,
+      "pinned_creator_stats": [
+        2,
+        231,
+        2
+      ],
+      "after_cap_releases": [
+        2,
+        231,
+        0
+      ],
+      "source_sha256": "f2de9376aaca4741e6434334103e93f203dda4866db9b29813988d2a27ba445a"
+    },
+    {
+      "check": "uncommitted stage cannot use committed-reference release; explicit abort reclaims it",
+      "result": "passed",
+      "stage_denial": "Objects status2",
+      "after_abort_stats": [
+        2,
+        231,
+        0
+      ]
+    },
+    {
+      "check": "dead reader scope is cleaned before creator release; later last-reader death is collected while original creator remains live",
+      "result": "passed",
+      "dead_before_release_read_handle": 12021240585328264193,
+      "dead_after_release_read_handle": 12021240585328264449,
+      "after_dead_collection": [
+        2,
+        231,
+        0
+      ],
+      "original_creator": "live Launcher",
+      "pinned_project_bytes_preserved": true
+    }
+  ],
+  "limitations": [
+    "focused Objects47/schema1 public SDK authority and reclamation checks; no repeated native save UI or vault-retention proof claimed",
+    "two ordinary signed test callers are explicitly installed through normal operator bootstrap; their kernel-supplied rights remain1"
+  ],
+  "process_result": "test process returned0 after normal guest command70; no guest left running",
+  "statistics_fields": [
+    "records owned by original creator",
+    "reserved bytes owned by original creator",
+    "live Object capabilities owned by original creator"
+  ],
+  "protocol": "Objects47, exact64-byte request, schema1, reserved arguments0; caller owns committed capability; no revoke16 required",
+  "observed_denials": {
+    "wrong_caller_release": 3,
+    "stale_release_or_read": 3,
+    "read_only_destructive_drop8": 1,
+    "reserved_argument_or_schema2": 2,
+    "uncommitted_stage47": 2
+  },
+  "scope_boundary": "A reference release invalidates only that caller-owned capability. Surviving readers or named Project closure pins preserve the record; final unpinned reference removal frees its capacity. This test does not invoke Library save/recovery UI."
+}

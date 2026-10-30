@@ -1,4 +1,5 @@
 import Guest.LiveSDK
+import Guest.WaitSDK
 namespace Guest.ProjectSDK
 open Guest.LiveSDK
 -- A stable ID is32 bytes of content identity. Operational handles remain caller-
@@ -43,13 +44,40 @@ def importAppend (transaction ordinal offset bytes count t : UInt64) : UInt64 :=
   if count > 512 then error else
     let t := header 37 transaction ordinal offset 0 0 0 t
     call (64+count) (copy bytes (wire+64) count t)
-def importCommit (transaction t : UInt64) : UInt64 := call 64 (header 38 transaction 0 0 0 0 0 t)
+def importSubmit (transaction operation t : UInt64) : UInt64 := call 64 (header 44 transaction operation 0 0 0 0 t)
+def importInspect (transaction t : UInt64) : UInt64 := call 64 (header 45 transaction 0 0 0 0 0 t)
+def importInspectDetail (transaction t : UInt64) : UInt64 := call 64 (header 45 transaction 1 0 0 0 0 t)
+def importControl (transaction action t : UInt64) : UInt64 := call 64 (header 46 transaction action 0 0 0 0 t)
+-- Compatibility wrapper waits in the calling process; Objects remains available
+-- to other callers. New interactive consumers use submit/inspect in their loop.
+partial def importAwait (transaction t : UInt64) : UInt64 :=
+  let r := importInspect transaction t
+  if r < 64 || r == error || status r != 0 then error else
+  let state := load64 (wire+16) r
+  if state == 4 then
+    let count := (r-64)/8
+    if count == 0 || count > 6 then error else
+    let t := copy (wire+64) digest (count*8) r
+    let t := importControl transaction 4 t
+    let t := header 0 count 0 0 0 0 0 t
+    64+count*8+copy digest (wire+64) (count*8) t
+  else if state >= 5 then
+    let code := load64 (wire+40) r
+    let t := importControl transaction 4 r
+    64+header (if code == 0 then 2 else code) 0 0 0 0 0 0 t
+  else importAwait transaction (Guest.WaitSDK.deadline (Guest.WaitSDK.now r+1) r)
+def importCommit (transaction t : UInt64) : UInt64 :=
+  let r := importSubmit transaction transaction t
+  if r == 64 && status r == 7 then call 64 (header 38 transaction 0 0 0 0 0 r) else
+  if r == error || (r >= 64 && status r == 0) then importAwait transaction r else r
 -- Complete staged bytes only: rehashes payload and canonical node ID; no caps,
 -- graph publication or dependency-validation claim. Header includes total bytes,
 -- offset, kind, schema and ordinal; verified payload starts at wire+64.
 def importVerifiedRead (transaction ordinal offset count t : UInt64) : UInt64 :=
   call 64 (header 43 transaction ordinal offset count 0 0 t)
-def importAbort (transaction t : UInt64) : UInt64 := call 64 (header 39 transaction 0 0 0 0 0 t)
+def importAbort (transaction t : UInt64) : UInt64 :=
+  let r := importControl transaction 3 t
+  if r == 64 && (status r == 7 || status r == 3) then call 64 (header 39 transaction 0 0 0 0 0 r) else r
 def importStatus (transaction t : UInt64) : UInt64 := call 64 (header 40 transaction 0 0 0 0 0 t)
 -- Explicit source-only archival checkpoint; response256 includes origin/head
 -- commitments, created/reclaimed record counts and schema2 archive status.

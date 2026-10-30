@@ -1,0 +1,67 @@
+{
+  "schema": 1,
+  "result": "passed",
+  "publisher_image_sha256": "22ed2b68787a3b484955ab4aa9df6de79730edb2f92da6e0e156f74cb6f9679b",
+  "previous_publication_sha256": "5af4c70822fd150660f4697887f3acc6fe29b72d0329e2500e4836dc6d5fcafa",
+  "previous_archive_sha256": "30cb6207fb2eb6c7ecc721a757d9166b411778041dbc2fc13e1c65a85ceb722f",
+  "previous_release": "3a56b13d0e211adf25e66d05c09dedc48506c84cb4fe328af8295b3460be7779",
+  "new_publication": {
+    "generation": 2,
+    "edition_version": 5,
+    "build_reused": false,
+    "root": 4784434572349669633,
+    "head": "9fc93e98eaa7cb254b6141aff13f18075d9ca4ba7e051c799a8386a52201d18a",
+    "source_root": "ca698781b9f47dcbb17b833e9514d5755783653b7cfe450622a01b5a1afe8636",
+    "source_logical_project_id": "20d969562e593a7ff70b716d2b627d286f9a40b549b7e177b12a81103af51513",
+    "logical_project_id": "20d969562e593a7ff70b716d2b627d286f9a40b549b7e177b12a81103af51513",
+    "publication_id": "c12e9013c0e00e4aac24fa4c39d186d16a591f2a55a6ee3bf7c6598f36b8b3c9",
+    "release_id": "4bc96b74880bfaf03e7feeab2b535b1dd0fd268c50509217f46cdf35bca13489",
+    "edition": "7074d8c6c35a3539f5c466b8ecaa56bf6605d7c3c697294c39c418ca65964952",
+    "package": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign005/game-save-editions/game2/crate-workshop.ltrel",
+    "binary_sha256": "16efb4a1cfc33ab76f0393237900567e4f312cd25dcfaeb011cfbb3a80bbe067",
+    "consumer_sha256": "2be8263d3633e3163c4eb960ac94c1cb44dbb86d210cf1523487673c1f6fc0c3",
+    "source_files": [
+      {
+        "path": "CrateGame.lean",
+        "sha256": "7c68f68713f08b871c7574a14f23cf16de6c4c5085c5c1dad751fa22bbfcb3b2",
+        "size": 22790
+      },
+      {
+        "path": "CrateModel.lean",
+        "sha256": "dfbf9316e74c9c56e1305df8e212f25cec68ee08cdd4a4f5c67b03fb644390b9",
+        "size": 2668
+      },
+      {
+        "path": "Main.lean",
+        "sha256": "83cbcfd67ac3fc285da937a117a40267621088dba63d7ca247b782e8991c09f2",
+        "size": 116
+      },
+      {
+        "path": "assets/near-goal.ltlevels",
+        "sha256": "9434db0ee959d7c76cc915cd3e409d425315830bbd3057be046025d8d74664f8",
+        "size": 256
+      },
+      {
+        "path": "assets/original.ltlevels",
+        "sha256": "77ce47e71af7c4d7a3b915b11cdba694554f93e2039403bbe7195aa97a44c8b1",
+        "size": 256
+      }
+    ],
+    "build_result": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign005/game-save-editions/game2/build-result.json",
+    "installed": false,
+    "retained": false
+  },
+  "new_native_parent": "3a56b13d0e211adf25e66d05c09dedc48506c84cb4fe328af8295b3460be7779",
+  "native_version": "1.4.0",
+  "previous_artifact_preserved": true,
+  "new_actual_builds": 1,
+  "new_closure": {
+    "nodes": 21,
+    "payload_bytes": 154557,
+    "head": "9fc93e98eaa7cb254b6141aff13f18075d9ca4ba7e051c799a8386a52201d18a",
+    "archive_sha256": "7533fa1fdef647748784a288bc96332470feccddaec18a24694f7f5fc93e251a"
+  },
+  "source_to_binary": "unverified",
+  "executed": false,
+  "retained": false
+}

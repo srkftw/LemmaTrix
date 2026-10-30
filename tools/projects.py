@@ -52,7 +52,25 @@ def import_records(client,selected,records):
    metadata=bytes.fromhex(record['id'])+bytes.fromhex(record.get('parent','00'*32))+hashlib.sha256(payload).digest()
    client.objects(36,transaction,ordinal,record['kind'],len(payload),record.get('schema',1),data=metadata)
    for offset in range(0,len(payload),512):client.objects(37,transaction,ordinal,offset,data=payload[offset:offset+512])
-  fields,data=client.objects(38,transaction)
+  try:
+   client.objects(44,transaction,transaction)
+  except ValueError as error:
+   if str(error)!='Objects status7':raise
+   fields,data=client.objects(38,transaction)
+  else:
+   deadline=time.monotonic()+900
+   while True:
+    job,data=client.objects(45,transaction)
+    if job[2]==4:
+     fields=(0,len(data)//8);client.objects(46,transaction,4);break
+    if job[2]>=5:
+     client.objects(46,transaction,4)
+     # Keep the existing opaque import adapter's invalid-record error.
+     # The native job inspection retains the more precise integrity reason5.
+     reason=job[5] or 2
+     raise ValueError('Objects status'+str(2 if reason==5 else reason))
+    if time.monotonic()>=deadline:raise TimeoutError('async import '+str(transaction)+' remains queryable; deadline is not rollback')
+    time.sleep(.01)
   if fields[1]!=len(selected) or len(data)!=8*len(selected):raise ValueError('native importer returned incomplete root set')
   return [dict(root,cap=cap) for root,cap in zip(selected,struct.unpack('<'+'Q'*len(selected),data))]
  except BaseException:

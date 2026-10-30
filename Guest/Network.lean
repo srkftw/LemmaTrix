@@ -1,6 +1,7 @@
 import Guest.NetworkSDK
 import Guest.Noise
 import Guest.PeerDescription
+import Guest.Transport
 namespace Guest.Network
 open Guest.LiveSDK
 -- Service6 owns this memory. No compiler/publisher key or graph root lives here.
@@ -14,6 +15,54 @@ def jobAt (i : UInt64) : UInt64 := 0x609000+i*1024
 def inbox (i : UInt64) : UInt64 := 0x60b000+i*1024
 def failure (code t : UInt64) : UInt64 := 64+store64 wire code (zero wire 8 t)
 def now (t : UInt64) : UInt64 := load64 st t
+-- A serialized broker quantum loads one bank; no IPC/yield occurs until it is
+-- saved. Every secret, grant, job, partial frame and signed pin is bank-private.
+def contexts : UInt64 := 0x650000
+def control : UInt64 := 0x64f000
+def activeSlot (t : UInt64) : UInt64 := load64 control t
+def bank (i : UInt64) : UInt64 := contexts+i*65536
+-- Local handles bind the broker incarnation, context, type and counter. Broker
+-- restart must not make a stale numeric grant/job name newly minted authority.
+-- Kernel op56 forbids wrapping the low24 generation. The high30 token field
+-- folds the randomized boot epoch with that incarnation; full caller identity
+-- separately binds ownership. This finite token is not rollback freshness.
+def localId (kind counter t : UInt64) : UInt64 :=
+  (load64 (control+8) t <<< 34) ||| (activeSlot t <<< 32) ||| (kind <<< 31) ||| counter
+def saveContext (i t : UInt64) : UInt64 :=
+  let b := bank i
+  let t := copy 0x600000 b 416 t
+  let t := copy st (b+512) 136 t
+  let t := copy tx (b+1024) 1024 t
+  let t := copy rx (b+2048) 1024 t
+  let t := copy plain (b+3072) 1024 t
+  let t := copy pins (b+4096) 128 t
+  let t := copy 0x608000 (b+4352) 1024 t
+  let t := copy 0x609000 (b+6144) 8192 t
+  let t := copy 0x60b000 (b+14336) 4096 t
+  copy Guest.PeerDescription.publicKey (b+19456) 1792 t
+def loadContext (i t : UInt64) : UInt64 :=
+  let b := bank i
+  let t := copy b 0x600000 416 t
+  let t := copy (b+512) st 136 t
+  let t := copy (b+1024) tx 1024 t
+  let t := copy (b+2048) rx 1024 t
+  let t := copy (b+3072) plain 1024 t
+  let t := copy (b+4096) pins 128 t
+  let t := copy (b+4352) 0x608000 1024 t
+  let t := copy (b+6144) 0x609000 8192 t
+  let t := copy (b+14336) 0x60b000 4096 t
+  let t := copy (b+19456) Guest.PeerDescription.publicKey 1792 t
+  let t := store64 control i t
+  Guest.Transport.choose i t
+def networkStatus (t : UInt64) : UInt64 :=
+  if Guest.Transport.enabled t then Guest.Transport.status t else syscall 101 0 0 0 0 t
+def networkRead (p n t : UInt64) : UInt64 :=
+  if Guest.Transport.enabled t then Guest.Transport.read p n t else syscall 102 0 p n 0 t
+def networkWrite (p n t : UInt64) : UInt64 :=
+  if Guest.Transport.enabled t then Guest.Transport.write p n t else syscall 103 0 p n 0 t
+def networkReset (t : UInt64) : UInt64 :=
+  if Guest.Transport.enabled t then Guest.Transport.close (activeSlot t) t else syscall 105 0 0 0 0 t
+def protocol2 (t : UInt64) : Bool := load64 (st+128) t == 2
 def session (t : UInt64) : UInt64 := load64 (Guest.Noise.state+8) t
 -- Grant layout: active,handle,owner,direction,budget,used,rate,expiry,
 -- rateTick,rateUsed,operation; peer/service/root hashes at96/128/160.
@@ -79,7 +128,7 @@ partial def cancelRevoked (i t : UInt64) : UInt64 :=
     let active := load64 j t == 1 || load64 j t == 2
     let g := if active then findGrant (load64 (j+24) t) (load64 (j+16) t) 0 t else 0
     let t := if active && g == error then
-      if load64 j g == 2 then disconnect 15 (syscall 105 0 0 0 0 g) else store64 j 5 g
+      if load64 j g == 2 then disconnect 15 (networkReset g) else store64 j 5 g
       else g
     cancelRevoked (i+1) t
 partial def visibleGrant (id i t : UInt64) : Bool :=
@@ -116,18 +165,22 @@ def charge (g bytes t : UInt64) : UInt64 :=
   let t := store64 (g+40) (load64 (g+40) t+bytes) t
   let t := store64 (g+64) (now t) t
   store64 (g+72) (rateUsed+bytes) t
-partial def incomingGrant (root operation bytes i t : UInt64) : UInt64 :=
+partial def incomingGrant (root operation stream bytes i t : UInt64) : UInt64 :=
   if i == 4 then error else
     let g := grantAt i
-    if (load64 (g+24) t &&& 2) != 0 && load64 (g+80) t == operation && equal root (g+160) 32 t && chargeable g bytes t then i
-    else incomingGrant root operation bytes (i+1) t
+    if (load64 (g+24) t &&& 2) != 0 && load64 (g+80) t == operation && load64 (g+88) t == stream && equal root (g+160) 32 t && chargeable g bytes t then i
+    else incomingGrant root operation stream bytes (i+1) t
 
 def acceptRecord (n t : UInt64) : UInt64 :=
   let r := Guest.Noise.openRecord (rx+2) n plain t
   if r == error then disconnect 12 r else
-    if n < 64 || load64 (plain+40) r != n-64 then disconnect 2 r else
-      let length := n-64
-      let selected := incomingGrant plain (load64 (plain+32) r) length 0 r
+    let overhead := if protocol2 r then 80 else 64
+    if n < overhead || load64 (plain+40) r != n-overhead then disconnect 2 r else
+      let length := n-overhead
+      let stream := if protocol2 r then load64 (plain+48) r else 0
+      let request := if protocol2 r then load64 (plain+56) r else 0
+      if protocol2 r && (stream == 0 || request == 0) then disconnect 2 r else
+      let selected := incomingGrant plain (load64 (plain+32) r) stream length 0 r
       let vacant := freeInbox 0 selected
       if selected == error || vacant == error then store64 (st+80) 1 vacant else
         let g := grantAt selected
@@ -137,7 +190,8 @@ def acceptRecord (n t : UInt64) : UInt64 :=
         let t := store64 (st+120) sequence t
         let t := store64 (p+1008) sequence t
         let t := store64 (p+8) length t
-        let t := copy (plain+48) (p+16) length t
+        let t := store64 (p+16) request t
+        let t := copy (plain+(if protocol2 t then 64 else 48)) (p+32) length t
         charge g length t
 
 def acceptFrame (n t : UInt64) : UInt64 :=
@@ -162,7 +216,7 @@ def readFrame (t : UInt64) : UInt64 :=
   let length := load64 (st+56) t
   let want := if pos < 2 then 2-pos else length+2-pos
   if want == 0 || want > 786 then disconnect 2 t else
-    let r := syscall 102 0 (rx+pos) want 0 t
+    let r := networkRead (rx+pos) want t
     if r == error then disconnect 10 r else
     if r == 0 then r else
       let pos := pos+r
@@ -180,7 +234,7 @@ def writeFrame (t : UInt64) : UInt64 :=
   let pos := load64 (st+32) t
   let length := load64 (st+40) t
   if pos >= length then t else
-    let r := syscall 103 0 (tx+pos) (length-pos) 0 t
+    let r := networkWrite (tx+pos) (length-pos) t
     if r == error then disconnect 10 r else
       let pos := pos+r
       let t := store64 (st+32) pos r
@@ -203,11 +257,14 @@ def queueFrame (t : UInt64) : UInt64 :=
       let t := copy (g+160) plain 32 found
       let t := store64 (plain+32) (load64 (g+80) t) t
       let t := store64 (plain+40) n t
-      let t := copy (j+64) (plain+48) n t
-      let r := Guest.Noise.sealRecord plain (n+48) (tx+2) t
+      let t := if protocol2 t then store64 (plain+48) (load64 (g+88) t) t else t
+      let t := if protocol2 t then store64 (plain+56) (load64 (j+40) t) t else t
+      let header := if protocol2 t then 64 else 48
+      let t := copy (j+64) (plain+header) n t
+      let r := Guest.Noise.sealRecord plain (n+header) (tx+2) t
       if r == error then disconnect 12 r else
-        let t := Guest.VaultCrypto.putLE tx (n+64) 2 r
-        let t := store64 (st+40) (n+66) t
+        let t := Guest.VaultCrypto.putLE tx (n+header+16) 2 r
+        let t := store64 (st+40) (n+header+18) t
         let t := store64 (st+64) (selected+1) t
         store64 j 2 t
 
@@ -220,17 +277,21 @@ partial def expireGrants (i t : UInt64) : UInt64 :=
     expireGrants (i+1) t
 
 def pump (initial : UInt64) : UInt64 :=
-  let t := store64 st (now initial+1) initial
+  let t := store64 st (syscall 110 0 0 0 0 initial) initial
   let t := expireGrants 0 t
   let t := cancelRevoked 0 t
   let t := reclaimInbox 0 t
-  let device := syscall 101 0 0 0 0 t
-  if device == error || (device &&& 3) != 3 then disconnect 10 device else
+  let device := networkStatus t
+  if device == error || (device &&& 3) != 3 then
+    if session device == 0 && load64 (st+80) device == 10 then device else disconnect 10 device
+  else
     let epoch := device >>> 32
     let t := if epoch != load64 (st+24) device then store64 (st+24) epoch (disconnect 10 device) else device
     if load64 (st+8) t == 0 || now t < load64 (st+88) t then t else
       let t := if session t == 0 then fresh t else t
-      if (session t != 3 && now t >= load64 (st+96) t) || (session t == 3 && now t >= load64 (st+104) t) then disconnect 13 t else
+      -- Expiry terminates this transport epoch before fresh authentication. An
+      -- asynchronous peer may still have ciphertext queued under the old key.
+      if (session t != 3 && now t >= load64 (st+96) t) || (session t == 3 && now t >= load64 (st+104) t) then disconnect 13 (networkReset t) else
         let t := if load64 (st+40) t == 0 && session t == 3 then queueFrame t else t
         let t := writeFrame t
         if freeInbox 0 t == error then t else readFrame t
@@ -254,24 +315,34 @@ def configure (role length t : UInt64) : UInt64 :=
     let t := store64 (st+8) role t
     failure 0 t
 
+partial def ambiguousReceive (root operation stream i t : UInt64) : Bool :=
+  if i == 4 then false else
+    let g := grantAt i
+    (load64 g t == 1 && (load64 (g+24) t &&& 2) != 0 && now t < load64 (g+56) t &&
+      load64 (g+80) t == operation && load64 (g+88) t == stream && equal root (g+160) 32 t) ||
+      ambiguousReceive root operation stream (i+1) t
+
 def grant (caller length t : UInt64) : UInt64 :=
-  if length != 168 then failure 2 t else
+  if length != (if protocol2 t then 176 else 168) then failure 2 t else
   let direction := load64 (command+16) t
   let mode := load64 (command+24) t
   let budget := load64 (command+32) t
   let rate := load64 (command+40) t
   let lifetime := load64 (command+48) t
   let operation := load64 (command+160) t
+  let stream := if protocol2 t then load64 (command+168) t else 0
   let peer := pins+(if load64 (st+8) t == 1 then 32 else 0)
   if !Guest.NetworkSDK.modeAvailable mode then failure 7 t else
   if !Guest.PeerDescription.permits operation t then failure 1 t else
-  if length != 168 || direction == 0 || direction > 3 || budget == 0 || budget > 16777216 || rate == 0 || rate > 65536 || lifetime == 0 || lifetime > 100000 || operation == 0 || operation > 16 ||
+  if (protocol2 t && stream == 0) || direction == 0 || direction > 3 || budget == 0 || budget > 16777216 || rate == 0 || rate > 65536 || lifetime == 0 || lifetime > 100000 || operation == 0 || operation > 16 ||
     load64 (st+8) t == 0 || !equal (command+64) peer 32 t || !equal (command+96) (pins+64) 32 t then failure 2 t else
+    if (direction &&& 2) != 0 && ambiguousReceive (command+128) operation stream 0 t then failure 4 t else
     let selected := freeGrant 0 t
-    if selected == error || load64 (st+16) t >= 0xffffffff then failure 4 selected else
+    if selected == error || load64 (st+16) t >= 0x7fffffff || load64 (control+8) t > 0x3fffffff then failure 4 selected else
       let g := grantAt selected
-      let id := load64 (st+16) selected+1
-      let t := store64 (st+16) id selected
+      let counter := (load64 (st+16) selected &&& 0xffffffff)+1
+      let id := localId 0 counter selected
+      let t := store64 (st+16) counter selected
       let t := zero g 32 t
       let t := store64 g 1 t
       let t := store64 (g+8) id t
@@ -281,6 +352,7 @@ def grant (caller length t : UInt64) : UInt64 :=
       let t := store64 (g+48) rate t
       let t := store64 (g+56) (now t+lifetime) t
       let t := store64 (g+80) operation t
+      let t := store64 (g+88) stream t
       let t := copy (command+64) (g+96) 96 t
       let t := zero wire 8 t
       64+store64 (wire+8) id t
@@ -290,25 +362,28 @@ def sendMessage (caller handle operation n t : UInt64) : UInt64 :=
   if selected == error then failure 3 selected else
     let g := grantAt selected
     if (load64 (g+24) selected &&& 1) == 0 || load64 (g+80) selected != operation then failure 1 selected else
+    if (protocol2 selected && (n > 704 || load64 (command+24) selected == 0)) then failure 2 selected else
     if activeForGrant handle 0 selected || !chargeable g n selected then failure 4 selected else
       let vacant := freeJob 0 selected
-      if vacant == error || load64 (st+112) vacant >= 0xffffffff then failure 4 vacant else
+      if vacant == error || load64 (st+112) vacant >= 0x7fffffff || load64 (control+8) vacant > 0x3fffffff then failure 4 vacant else
         let j := jobAt vacant
-        let id := load64 (st+112) vacant+1
-        let t := store64 (st+112) id vacant
+        let counter := (load64 (st+112) vacant &&& 0xffffffff)+1
+        let id := localId 1 counter vacant
+        let t := store64 (st+112) counter vacant
         let t := zero j 128 t
         let t := store64 j 1 t
         let t := store64 (j+8) id t
         let t := store64 (j+16) caller t
         let t := store64 (j+24) handle t
         let t := store64 (j+32) n t
+        let t := store64 (j+40) (load64 (command+24) t) t
         let t := copy (command+64) (j+64) n t
         jobResponse j (charge g n t)
 
 def cancelJob (j t : UInt64) : UInt64 :=
   if load64 j t >= 3 then failure 6 t else
   if load64 j t == 2 then
-    let t := syscall 105 0 0 0 0 t
+    let t := networkReset t
     failure 0 (store64 j 4 (disconnect 14 t))
   else failure 0 (store64 j 4 t)
 
@@ -324,23 +399,38 @@ def receiveMessage (caller handle t : UInt64) : UInt64 :=
         let t := zero wire 8 selected
         let t := store64 (wire+8) handle t
         let t := store64 (wire+16) n t
-        let t := copy (p+16) (wire+64) n t
+        let t := store64 (wire+24) (load64 (p+16) t) t
+        let t := copy (p+32) (wire+64) n t
         64+n+zero p 128 t
 
-def dispatch (caller rights length t : UInt64) : UInt64 :=
+def dispatchSelected (caller rights length t : UInt64) : UInt64 :=
   let op := load64 command t
   let handle := load64 (command+8) t
   let admin := (rights &&& 0x100000000) != 0
   if length < 64 || load64 (command+56) t != 1 then failure 2 t else
-  if op == 11 && admin then
-    let t := store64 (st+8) 0 (disconnect 16 (syscall 105 0 0 0 0 t))
+  if op == 13 && (admin || (rights &&& 1024) != 0) && length == 64 then
+    if !Guest.PeerDescription.verified t || load64 (st+8) t == 0 then failure 1 t else
+      let r := Guest.Transport.connect (activeSlot t) (load64 (st+8) t) (Guest.PeerDescription.description+168) (load64 (Guest.PeerDescription.description+160) t) t
+      if r == error then failure 6 r else failure 0 r
+  else if op == 14 && (admin || caller == syscall 119 0 0 0 0 t) && length == 64 then
+    let r := networkReset t
+    failure 0 (store64 (st+8) 0 (disconnect 16 r))
+  else if op == 11 && admin then
+    let t := store64 (st+8) 0 (disconnect 16 (networkReset t))
     Guest.PeerDescription.stage length t
   else
   if op == 12 && admin then Guest.PeerDescription.confirm length t else
   if op == 1 && admin then configure (load64 (command+16) t) length t else
-  if op == 9 && admin then failure 0 (disconnect 0 (syscall 105 0 0 0 0 t)) else
+  if op == 9 && admin then failure 0 (disconnect 0 (networkReset t)) else
   if (rights &&& 1024) == 0 && !admin then failure 1 t else
-  if op == 10 && length == 64 then
+  if op == 15 && length == 64 then
+    if !Guest.PeerDescription.verified t then failure 3 t else
+      let t := zero wire 8 t
+      let t := store64 (wire+8) (activeSlot t) t
+      let t := store64 (wire+16) 512 t
+      let t := store64 (wire+24) 1 t
+      576+copy Guest.PeerDescription.description (wire+64) 512 t
+  else if op == 10 && length == 64 then
     let r := syscall 104 0 (wire+64) 32 0 t
     if r != 32 then failure 11 r else 96+zero wire 8 r
   else if op == 2 then grant caller length t else
@@ -350,7 +440,7 @@ def dispatch (caller rights length t : UInt64) : UInt64 :=
     let t := zero wire 8 t
     let t := store64 (wire+8) (session t) t
     let t := store64 (wire+16) (load64 (st+8) t) t
-    let t := store64 (wire+24) (syscall 101 0 0 0 0 t) t
+    let t := store64 (wire+24) (networkStatus t) t
     let t := store64 (wire+32) (now t) t
     let t := store64 (wire+56) (if Guest.PeerDescription.verified t then 1 else 0) t
     let t := store64 (wire+48) (inboxCount 0 0 t) t
@@ -365,8 +455,34 @@ def dispatch (caller rights length t : UInt64) : UInt64 :=
       if op == 4 then jobResponse (jobAt selected) selected else cancelJob (jobAt selected) selected
   else failure 2 t
 
+-- V2 selects a context in the high byte of version (2 | slot<<8). The
+-- request operation/handles remain unchanged; legacy version1 selects slot0.
+def dispatch (caller rights length t : UInt64) : UInt64 :=
+  let version := load64 (command+56) t
+  let slot : UInt64 := if version == 1 then 0 else version >>> 8
+  if length < 64 || (version != 1 && ((version &&& 255) != 2 || slot >= 4)) then failure 2 t else
+  if version == 1 && Guest.Transport.enabled t then failure 2 t else
+  let t := if version != 1 then store64 Guest.Transport.st 1 t else t
+  let t := loadContext slot t
+  let t := store64 (command+56) 1 t
+  let t := if load64 command t == 1 then store64 (st+128) (if version == 1 then 1 else 2) t else t
+  let result := dispatchSelected caller rights length t
+  let length := result
+  let t := saveContext slot result
+  length+t
+
+partial def pumpContexts (i t : UInt64) : UInt64 :=
+  if i == 4 then t else
+    if load64 (bank i+520) t == 0 then pumpContexts (i+1) t else
+    let t := loadContext i t
+    let t := pump t
+    pumpContexts (i+1) (saveContext i t)
+
 partial def serve (endpoint t : UInt64) : UInt64 :=
-  let t := pump t
+  let t := Guest.Transport.pump t
+  let t := if Guest.Transport.enabled t then pumpContexts 0 t else
+    let t := loadContext 0 t
+    saveContext 0 (pump t)
   let n := syscall 36 endpoint incoming 1024 0 t
   if n == 0 || n == error then serve endpoint (syscall 109 0 0 0 0 n) else
     let caller := load64 incoming n
@@ -380,6 +496,14 @@ partial def serve (endpoint t : UInt64) : UInt64 :=
 
 def main (initial : UInt64) : UInt64 :=
   let t := zero 0x600000 16384 initial
-  let t := zero Guest.PeerDescription.publicKey 200 t
-  serve (self t) t
+  let t := zero Guest.PeerDescription.publicKey 224 t
+  let t := zero Guest.Transport.st 512 t
+  let t := zero 0x641000 1024 t
+  let t := zero control 8 t
+  let t := zero contexts 32768 t
+  let brokerInstance := self t
+  let incarnation := (brokerInstance >>> 8) &&& 0xffffff
+  let epoch := ((brokerInstance >>> 32)+incarnation) &&& 0x3fffffff
+  let t := store64 (control+8) epoch t
+  serve brokerInstance t
 end Guest.Network

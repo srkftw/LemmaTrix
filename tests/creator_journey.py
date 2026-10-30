@@ -50,10 +50,11 @@ class Journey:
  def __init__(self,args):
   self.args=args;self.out=args.output;self.out.mkdir(parents=True,exist_ok=True);self.report=[];self.proc=None;self.ui=None
   self.socket=self.out/'portal.sock';self.graphics=self.out/'display.qmp';self.log=None
-  self.image=hashlib.sha256((ROOT/'build/live/guest.bin').read_bytes()).hexdigest()
+  self.image_path=Path(getattr(args,'image',None) or ROOT/'build/live/guest.bin').resolve()
+  self.image=hashlib.sha256(self.image_path.read_bytes()).hexdigest()
  def passed(self,label,**data):
   self.report.append(dict(check=label,result='pass',**data));print('PASS',label,flush=True)
-  (self.out/'journey.json').write_text(json.dumps(dict(image=self.image,backend='qemu',checks=self.report),indent=2)+'\n')
+  (self.out/'journey.json').write_text(json.dumps(dict(image=self.image,backend=getattr(self.args,'backend','qemu'),checks=self.report),indent=2)+'\n')
  @contextlib.contextmanager
  def client(self):
   c=live.Client(self.socket,timeout=240)
@@ -62,7 +63,7 @@ class Journey:
  def boot(self,vault=True):
   self.socket.unlink(missing_ok=True);self.graphics.unlink(missing_ok=True)
   self.log=(self.out/('transport-'+str(len(self.report))+'.log')).open('wb')
-  cmd=[sys.executable,ROOT/'lt','run','--socket',self.socket,'--graphics',self.graphics]
+  cmd=[sys.executable,ROOT/'lt','run','--image',self.image_path,'--socket',self.socket,'--graphics',self.graphics]
   if vault:cmd+=['--vault',self.args.vault]
   self.proc=subprocess.Popen(list(map(str,cmd)),cwd=ROOT,stdout=self.log,stderr=self.log,start_new_session=True)
   end=time.monotonic()+90

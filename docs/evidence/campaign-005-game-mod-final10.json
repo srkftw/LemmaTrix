@@ -1,0 +1,104 @@
+{
+  "image_sha256": "22ed2b68787a3b484955ab4aa9df6de79730edb2f92da6e0e156f74cb6f9679b",
+  "checks": [
+    {
+      "check": "fresh recipient enrolls registry and seed, Adds signed metadata, binds O and has no Game root before I",
+      "result": "passed",
+      "recipient": "p1",
+      "library": 1878052154724319497,
+      "fetch": 1878052154724319496,
+      "recipient_game_roots_before_I": 0,
+      "fresh_network_authority": true
+    },
+    {
+      "check": "native O/I remotely acquires selected canonical Game and physical Enter approves its exact executable",
+      "result": "passed",
+      "recipient": "p1",
+      "head": "4c8ed47412020b886df5d8abc373dcc66fc4f7532382c78c8ab52d21d015c3bd",
+      "nodes": 19,
+      "payload_bytes": 129807,
+      "game_release": "3a56b13d0e211adf25e66d05c09dedc48506c84cb4fe328af8295b3460be7779",
+      "game_instance": 1878052154724319498,
+      "game_not_running_before_approval": true,
+      "recipient_host_game_import": false
+    },
+    {
+      "check": "native K/B/Enter retains only the selected typed192-byte save",
+      "result": "passed",
+      "recipient": "p1",
+      "producer": 1,
+      "save_sha256": "199fe54e37946001f2a728dd841a2476d1e58506a39231c976cc57b5052043fe",
+      "state": {
+        "generation": 1,
+        "level": 0,
+        "moves": 2,
+        "completed": 1,
+        "won": 1,
+        "undo": 2,
+        "game": "c77a40fc178d8ec017c8d31b8c86e8967540fcc72eebd4050da629602edc99ff",
+        "pack": "77ce47e71af7c4d7a3b915b11cdba694554f93e2039403bbe7195aa97a44c8b1",
+        "boxes": 536870912,
+        "player": 28,
+        "save": 1878052159019286790,
+        "notice": 23
+      }
+    },
+    {
+      "check": "native M selects a downloaded Source mod, changes gameplay and refuses incompatible save without deleting it",
+      "result": "passed",
+      "mod_sha256": "9434db0ee959d7c76cc915cd3e409d425315830bbd3057be046025d8d74664f8",
+      "mod_moves": 1,
+      "restored_original_moves": 2
+    }
+  ],
+  "packages": [
+    {
+      "guest": "p1",
+      "release": "38b372cd782a95138381f7062ad82e26c9472b4d4e33f4a9c1abaae3df27b5cb",
+      "executable_sha256": "293ad06764c3b1d5c64678fc24f3b79399182e8d059bfaf36411d615fd12d012",
+      "rights": 1151
+    },
+    {
+      "guest": "p1",
+      "release": "503888769aae9aeff49a2ae06d9ab4285754106ed512f2ca0ee1637f04357f58",
+      "executable_sha256": "1920da80afd0a1293221ee8ea81d5fbf2698380134233e1d2814b49d5735f8b8",
+      "rights": 1919
+    }
+  ],
+  "recipient_host_game_import": false,
+  "game_releases": [
+    "3a56b13d0e211adf25e66d05c09dedc48506c84cb4fe328af8295b3460be7779",
+    "6ef9906f4d0871b59cfde958846fd6c67ebf9838ec5fd57b19a5fc0c673657b0"
+  ],
+  "limitations": [
+    "explicit volatile public provider; no independently operated or durable Game provider claim",
+    "explicit development encrypted backing; no physical durability or rollback-freshness claim",
+    "focused current-image Game flow; connected media/audio has its own evidence"
+  ],
+  "provider": {
+    "result": "ready",
+    "image_sha256": "22ed2b68787a3b484955ab4aa9df6de79730edb2f92da6e0e156f74cb6f9679b",
+    "packages": {
+      "library-registry": {
+        "instance": 3887651156201046279,
+        "release": "6297b21e2f039862cea14dc3d96ca78778303a767d31179cf4efdb2c0c3851d8",
+        "executable_sha256": "0b284a806d4b41893d7cad9dd8c35a80e1f8db32e9d73171775539d09718e2c3"
+      },
+      "library-peer": {
+        "instance": 3887651156201046280,
+        "release": "e6dd508b43de5808468ba8b60e036625312b037dee343b4d00b1fb1f158bbce5",
+        "executable_sha256": "0942b7ece8bd9d014365b79255fd71e73602042524522109317315ddbc5593d7"
+      }
+    },
+    "game_release": "3a56b13d0e211adf25e66d05c09dedc48506c84cb4fe328af8295b3460be7779",
+    "head": "4c8ed47412020b886df5d8abc373dcc66fc4f7532382c78c8ab52d21d015c3bd",
+    "nodes": 19,
+    "payload_bytes": 129807,
+    "process_id": 2929343,
+    "public_project_volatile": true,
+    "recipient_payload_provisioned": false
+  },
+  "result": "passed",
+  "targeted_mod_only": true,
+  "provider_and_recipient_image_match": true
+}

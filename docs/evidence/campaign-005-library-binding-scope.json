@@ -1,0 +1,99 @@
+{
+  "schema": 1,
+  "result": "passed",
+  "backend": "qemu",
+  "image_sha256": "c9309452ea552b204ce85b0440525b2222770a651319dcf96cd7dee48451b2d4",
+  "library_source_sha256": "349823bc55e682b412c7c86c590078d1d3bf2df99ebd81d9334db1c35d57f06c",
+  "probe_sha256": "6980a6f2babb9ab25a33743b3801d45515472504582c8aa8140b70381984adf2",
+  "probe_release": "765fba64d4254c3d216fdd41a6afb1e552081ba5f200788b12852fc53a1aa1d2",
+  "packages": [
+    {
+      "release": "6297b21e2f039862cea14dc3d96ca78778303a767d31179cf4efdb2c0c3851d8",
+      "project": "1b67c778aa6ad54a28a7b6613bad705cf453f539e329e11100cc5eaad3f89d94",
+      "instance": 1105686751365562631,
+      "rights": 2175
+    },
+    {
+      "release": "765fba64d4254c3d216fdd41a6afb1e552081ba5f200788b12852fc53a1aa1d2",
+      "project": "6b32fdecf7fe4f06f829b42264ddcb795746478d97d08924e2dc6ee2d986f3cd",
+      "instance": 1105686751365562632,
+      "rights": 1919
+    },
+    {
+      "release": "38b372cd782a95138381f7062ad82e26c9472b4d4e33f4a9c1abaae3df27b5cb",
+      "project": "774c17f57643702a77efd1635be542fd25ac5f9b977d811d07d25865daab5fe4",
+      "instance": 1105686751365562633,
+      "rights": 1151
+    }
+  ],
+  "checks": [
+    {
+      "check": "actual Library rejects two properly signed/admitted same-edition substitutions before mutating selected metadata and private save references",
+      "result": "passed",
+      "original_consumer_sha256": "9eefd1dee20fbe2e19c7b7634c49baefa8b3dad05aca2305517adcb42f43217d",
+      "edition_id": "51c458d44566f7c322345f76de34316b86e083c7edf46984c0b0d3b29e5d2292",
+      "original_admission_sequence": 1,
+      "private_metadata_handle": 1105686755660530446,
+      "private_save_handle": 1105686755660530191,
+      "save_bytes": 192,
+      "rejections": [
+        {
+          "variant": "different Game executable",
+          "classification": 5,
+          "sequence": 2,
+          "consumer_sha256": "97a252bc2a9cb6db5c2efe1a01d8a987e76a2f4d86763b420a7a5d9b0760a7ed",
+          "notice": 29,
+          "row_unchanged": true,
+          "selected_save_sha256": "199fe54e37946001f2a728dd841a2476d1e58506a39231c976cc57b5052043fe"
+        },
+        {
+          "variant": "different publication and media facet",
+          "classification": 4,
+          "sequence": 3,
+          "consumer_sha256": "e2b03fb7ce65b99ac282c0999861f8981df02b371cd78cda60f0251c11f12c52",
+          "notice": 29,
+          "row_unchanged": true,
+          "selected_save_sha256": "199fe54e37946001f2a728dd841a2476d1e58506a39231c976cc57b5052043fe"
+        }
+      ]
+    },
+    {
+      "check": "a fresher valid federation descriptor for byte-identical signed consumer refreshes without changing private references",
+      "result": "passed",
+      "sequence_before": 1,
+      "sequence_after": 4,
+      "consumer_sha256": "9eefd1dee20fbe2e19c7b7634c49baefa8b3dad05aca2305517adcb42f43217d",
+      "private_prefix_unchanged": true,
+      "save_sha256": "199fe54e37946001f2a728dd841a2476d1e58506a39231c976cc57b5052043fe"
+    },
+    {
+      "check": "actual bindProcess refuses O while an operation is active and permits explicit idle rebinding between two real helper incarnations",
+      "result": "passed",
+      "first_helper": 1105686751365562633,
+      "original_helper": 1105686751365562634,
+      "operation": 770001,
+      "busy_notice": 18,
+      "binding_while_active": 1105686751365562634,
+      "binding_when_idle": 1105686751365562633,
+      "no_operation_id_change": true
+    }
+  ],
+  "command": [
+    "/home/sreekumaar/Desktop/LemmaTrix/lt",
+    "run",
+    "--backend",
+    "qemu",
+    "--image",
+    "build/campaign005/final-12/guest.bin",
+    "--socket",
+    "/home/sreekumaar/Desktop/LemmaTrix/build/campaign005/library-binding-final12-3/portal.sock"
+  ],
+  "normal_shutdown": true,
+  "scope": "ordinary native Lean fixture invokes actual Library.acceptMetadata/add/bindProcess; real native Registry checks canonical Game and signed consumer facets; all fixture state is its own private row/Objects",
+  "limitations": [
+    "focused actual-function regression, not graphical catalog/install/save retention or live remote Fetch acquisition evidence",
+    "two actual approved helper incarnations are live, but the fixture initializes its own bounded active-operation identity to isolate rebinding; it does not claim a simultaneous network transfer",
+    "selected192-byte save fixture exactly matches the separately executed original two-push save; this check does not execute Game input or recover a vault",
+    "same QEMU reference image only; no changed kernel/device/physical storage claim"
+  ]
+}

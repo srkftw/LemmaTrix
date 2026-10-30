@@ -1,0 +1,336 @@
+{
+  "schema": 1,
+  "result": "passed",
+  "scope": "actual Library input/approval/monitor/retire functions with native signed Registry records and a real paused Content job owned by the ordinary fixture",
+  "source_test": "tests/library_collection_consent.py",
+  "source_fixture": "tests/fixtures/LibraryCollectionConsentProbe.lean",
+  "consumed_functions": [
+    "Guest.Library.input",
+    "Guest.Library.approvePolicy",
+    "Guest.Library.subscribe",
+    "Guest.Library.queue",
+    "Guest.Library.monitorDecision",
+    "Guest.Library.retirePolicy",
+    "Guest.Library.pause"
+  ],
+  "run_command": "./lt app --profile 2 --module tests.fixtures.LibraryCollectionConsentProbe --entry Guest.LibraryCollectionConsentProbe.main --name library-collection-consent-probe && python3 tests/library_collection_consent.py --image build/campaign005/final-12/guest.bin --binary build/live/apps/library-collection-consent-probe.bin --registry build/campaign005/final-12/packages/library-registry.ltrel --output build/campaign005/consent12",
+  "raw_result": "build/campaign005/consent12/result.json",
+  "raw_result_sha256": "aab0e67fd1c89aafc5a6e6d49098857835ce5ada3ec7e6afe8f47421ac378b1f",
+  "backend": "qemu",
+  "image_sha256": "c9309452ea552b204ce85b0440525b2222770a651319dcf96cd7dee48451b2d4",
+  "library_source_sha256": "349823bc55e682b412c7c86c590078d1d3bf2df99ebd81d9334db1c35d57f06c",
+  "probe_sha256": "6add370c82787fd879507c796d56d12bd1165074ffc30167bf6328e79e83885d",
+  "probe_release": "f500516dc5b7b6533ee57b43918c38a256d2be61d79458a5e7ed41db6c0ac244",
+  "registry_release": "6297b21e2f039862cea14dc3d96ca78778303a767d31179cf4efdb2c0c3851d8",
+  "collections": [
+    "6e77c1201b6af255a017acfc169cf6f25f9253b66f67a2b5231846045983bc4d",
+    "09f3546b7954f893627d1185b5959024950050cff6958d896791a2d6486b80f7"
+  ],
+  "consumer_records": [
+    "50925207a74d806df634e3612ef9945b01a033886e28f56dd7159700dff4b105",
+    "792ee1bc5e9a348c0148898ff41c28b8132ff3be14b07ab351fc8859d2bcb998",
+    "fa15a98f78acf8b70d98b2df4330ed973c1cbdf7ab07ac1be1c5f8d85ffcd457"
+  ],
+  "command": [
+    "/home/sreekumaar/Desktop/LemmaTrix/lt",
+    "run",
+    "--backend",
+    "qemu",
+    "--image",
+    "build/campaign005/final-12/guest.bin",
+    "--socket",
+    "/home/sreekumaar/Desktop/LemmaTrix/build/campaign005/consent12/portal.sock"
+  ],
+  "limitations": [
+    "test events invoke actual input handler from an ordinary Lean fixture; not physical graphical G/S/D evidence",
+    "fixture initializes only its own metadata rows through public SDK-created immutable Objects; no host guest-memory mutation",
+    "no network transfer, personal backing, Game, playback or complete campaign acceptance claimed"
+  ],
+  "combined_native_library_build": {
+    "body_bytes": 251916,
+    "body_sha256": "3ddcadf723d291febe3cba6ff049f9675ce0d2e9d45f4f2cbbbaf92f3d1b4d78",
+    "profile": 2,
+    "code_ceiling": 262144,
+    "margin_bytes": 10228,
+    "definitions": 197,
+    "scope": "combined frozen S/D policy, immutable consumer replacement and active Fetch binding guards; other guard regression evidence is separate"
+  },
+  "checks": [
+    {
+      "check": "same-collection S preserves approved A; S to B retires paused/queued A, preserves frozen identities and enables monitoring only",
+      "result": "passed",
+      "before": {
+        "selected": 0,
+        "monitoring": 1,
+        "automatic": 1,
+        "generation": 1,
+        "sources": 6,
+        "charged": 472,
+        "approval_row": 1,
+        "collection": "6e77c1201b6af255a017acfc169cf6f25f9253b66f67a2b5231846045983bc4d",
+        "approval_open": 0,
+        "jobs": [
+          {
+            "phase": 11,
+            "row": 0,
+            "provider": 1,
+            "content_grant": 12518317993970630913,
+            "validation_job": 12518317993970631233,
+            "consent_generation": 1,
+            "byte_ceiling": 6029312,
+            "operation_id": 70001,
+            "mode": 3,
+            "source_mask": 6
+          },
+          {
+            "phase": 1,
+            "row": 1,
+            "provider": 1,
+            "content_grant": 0,
+            "validation_job": 0,
+            "consent_generation": 1,
+            "byte_ceiling": 6029312,
+            "operation_id": 70002,
+            "mode": 3,
+            "source_mask": 6
+          }
+        ]
+      },
+      "after": {
+        "selected": 2,
+        "monitoring": 1,
+        "automatic": 0,
+        "generation": 2,
+        "sources": 0,
+        "charged": 0,
+        "approval_row": 0,
+        "collection": "09f3546b7954f893627d1185b5959024950050cff6958d896791a2d6486b80f7",
+        "approval_open": 0,
+        "jobs": [
+          {
+            "phase": 14,
+            "row": 0,
+            "provider": 1,
+            "content_grant": 12518317993970630913,
+            "validation_job": 0,
+            "consent_generation": 1,
+            "byte_ceiling": 6029312,
+            "operation_id": 70001,
+            "mode": 3,
+            "source_mask": 6
+          },
+          {
+            "phase": 14,
+            "row": 1,
+            "provider": 1,
+            "content_grant": 0,
+            "validation_job": 0,
+            "consent_generation": 1,
+            "byte_ceiling": 6029312,
+            "operation_id": 70002,
+            "mode": 3,
+            "source_mask": 6
+          }
+        ]
+      },
+      "unchanged_frozen_binding_sha256": [
+        "7dd525e9c63f8224244bbfe034adb70dd1d35c6778946d45f4c77fe971cf4e3e",
+        "1f46d0893b79b939f899e79726852cf45fc835c2f1a674df1b460fb537472dbc"
+      ],
+      "old_content_job_status": 3,
+      "old_acquisition_begin_status": 1,
+      "monitor_attempts_without_acquisition": 3
+    },
+    {
+      "check": "D binds B approval before Enter despite attempted selection change; returning A cannot revive consent and requires fresh G",
+      "result": "passed",
+      "D_pending": {
+        "selected": 2,
+        "monitoring": 1,
+        "automatic": 0,
+        "generation": 2,
+        "sources": 0,
+        "charged": 0,
+        "approval_row": 3,
+        "collection": "09f3546b7954f893627d1185b5959024950050cff6958d896791a2d6486b80f7",
+        "approval_open": 1,
+        "jobs": [
+          {
+            "phase": 14,
+            "row": 0,
+            "provider": 1,
+            "content_grant": 12518317993970630913,
+            "validation_job": 0,
+            "consent_generation": 1,
+            "byte_ceiling": 6029312,
+            "operation_id": 70001,
+            "mode": 3,
+            "source_mask": 6
+          },
+          {
+            "phase": 14,
+            "row": 1,
+            "provider": 1,
+            "content_grant": 0,
+            "validation_job": 0,
+            "consent_generation": 1,
+            "byte_ceiling": 6029312,
+            "operation_id": 70002,
+            "mode": 3,
+            "source_mask": 6
+          }
+        ]
+      },
+      "D_input_blocked": {
+        "selected": 2,
+        "monitoring": 1,
+        "automatic": 0,
+        "generation": 2,
+        "sources": 0,
+        "charged": 0,
+        "approval_row": 3,
+        "collection": "09f3546b7954f893627d1185b5959024950050cff6958d896791a2d6486b80f7",
+        "approval_open": 1,
+        "jobs": [
+          {
+            "phase": 14,
+            "row": 0,
+            "provider": 1,
+            "content_grant": 12518317993970630913,
+            "validation_job": 0,
+            "consent_generation": 1,
+            "byte_ceiling": 6029312,
+            "operation_id": 70001,
+            "mode": 3,
+            "source_mask": 6
+          },
+          {
+            "phase": 14,
+            "row": 1,
+            "provider": 1,
+            "content_grant": 0,
+            "validation_job": 0,
+            "consent_generation": 1,
+            "byte_ceiling": 6029312,
+            "operation_id": 70002,
+            "mode": 3,
+            "source_mask": 6
+          }
+        ]
+      },
+      "D_approved_B": {
+        "selected": 2,
+        "monitoring": 1,
+        "automatic": 1,
+        "generation": 3,
+        "sources": 6,
+        "charged": 236,
+        "approval_row": 3,
+        "collection": "09f3546b7954f893627d1185b5959024950050cff6958d896791a2d6486b80f7",
+        "approval_open": 0,
+        "jobs": [
+          {
+            "phase": 1,
+            "row": 2,
+            "provider": 1,
+            "content_grant": 0,
+            "validation_job": 0,
+            "consent_generation": 3,
+            "byte_ceiling": 6029312,
+            "operation_id": 70003,
+            "mode": 3,
+            "source_mask": 6
+          },
+          {
+            "phase": 14,
+            "row": 1,
+            "provider": 1,
+            "content_grant": 0,
+            "validation_job": 0,
+            "consent_generation": 1,
+            "byte_ceiling": 6029312,
+            "operation_id": 70002,
+            "mode": 3,
+            "source_mask": 6
+          }
+        ]
+      },
+      "returned_A_monitor_only": {
+        "selected": 0,
+        "monitoring": 1,
+        "automatic": 0,
+        "generation": 4,
+        "sources": 0,
+        "charged": 0,
+        "approval_row": 0,
+        "collection": "6e77c1201b6af255a017acfc169cf6f25f9253b66f67a2b5231846045983bc4d",
+        "approval_open": 0,
+        "jobs": [
+          {
+            "phase": 14,
+            "row": 2,
+            "provider": 1,
+            "content_grant": 0,
+            "validation_job": 0,
+            "consent_generation": 3,
+            "byte_ceiling": 6029312,
+            "operation_id": 70003,
+            "mode": 3,
+            "source_mask": 6
+          },
+          {
+            "phase": 14,
+            "row": 1,
+            "provider": 1,
+            "content_grant": 0,
+            "validation_job": 0,
+            "consent_generation": 1,
+            "byte_ceiling": 6029312,
+            "operation_id": 70002,
+            "mode": 3,
+            "source_mask": 6
+          }
+        ]
+      },
+      "fresh_G_approved_A": {
+        "selected": 0,
+        "monitoring": 1,
+        "automatic": 1,
+        "generation": 5,
+        "sources": 6,
+        "charged": 236,
+        "approval_row": 1,
+        "collection": "6e77c1201b6af255a017acfc169cf6f25f9253b66f67a2b5231846045983bc4d",
+        "approval_open": 0,
+        "jobs": [
+          {
+            "phase": 1,
+            "row": 0,
+            "provider": 1,
+            "content_grant": 0,
+            "validation_job": 0,
+            "consent_generation": 5,
+            "byte_ceiling": 6029312,
+            "operation_id": 70004,
+            "mode": 3,
+            "source_mask": 6
+          },
+          {
+            "phase": 14,
+            "row": 1,
+            "provider": 1,
+            "content_grant": 0,
+            "validation_job": 0,
+            "consent_generation": 1,
+            "byte_ceiling": 6029312,
+            "operation_id": 70002,
+            "mode": 3,
+            "source_mask": 6
+          }
+        ]
+      }
+    }
+  ],
+  "process_result": "test process and normal guest shutdown completed0; no owned guest remains",
+  "acceptance_boundary": "real local policy and Content authority regression, not a new physical GUI/network media journey or general multi-collection watch-history implementation"
+}

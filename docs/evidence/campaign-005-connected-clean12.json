@@ -1,0 +1,207 @@
+{
+  "image": "c9309452ea552b204ce85b0440525b2222770a651319dcf96cd7dee48451b2d4",
+  "packages": {
+    "library-registry": "6297b21e2f039862cea14dc3d96ca78778303a767d31179cf4efdb2c0c3851d8",
+    "library-peer": "e6dd508b43de5808468ba8b60e036625312b037dee343b4d00b1fb1f158bbce5",
+    "library-native": "86a2f4d830dedcd1126c0e7afeac44e9d8c0cbc0caca4f59ea4c2f0595d1e02f",
+    "native-player": "efa8056ec4741b55326b30bc99fb5aae1770b5cb0983a7dc7e492d7c86071ae2",
+    "game": "4bc96b74880bfaf03e7feeab2b535b1dd0fd268c50509217f46cdf35bca13489"
+  },
+  "checks": [
+    {
+      "check": "native provider selection keeps a registry and two distinct seed endpoints authenticated",
+      "result": "passed",
+      "connections": [
+        {
+          "protocol_version": 2,
+          "connection_slot": 0,
+          "profile": "Noise_NNpsk0_25519_ChaChaPoly_SHA256",
+          "session_phase": 3,
+          "endpoint_authenticated": true,
+          "configured_role": "client",
+          "device_status": 8589934595,
+          "broker_ticks": 58052,
+          "last_error": 10,
+          "inbox_records": 0,
+          "public_service_description_verified": true,
+          "traffic_privacy": "direct endpoints visible; no anonymity",
+          "modes_available": [
+            "encrypted_bulk"
+          ]
+        },
+        {
+          "protocol_version": 2,
+          "connection_slot": 1,
+          "profile": "Noise_NNpsk0_25519_ChaChaPoly_SHA256",
+          "session_phase": 3,
+          "endpoint_authenticated": true,
+          "configured_role": "client",
+          "device_status": 8589934595,
+          "broker_ticks": 58054,
+          "last_error": 10,
+          "inbox_records": 0,
+          "public_service_description_verified": true,
+          "traffic_privacy": "direct endpoints visible; no anonymity",
+          "modes_available": [
+            "encrypted_bulk"
+          ]
+        },
+        {
+          "protocol_version": 2,
+          "connection_slot": 2,
+          "profile": "Noise_NNpsk0_25519_ChaChaPoly_SHA256",
+          "session_phase": 3,
+          "endpoint_authenticated": true,
+          "configured_role": "client",
+          "device_status": 8589934595,
+          "broker_ticks": 58057,
+          "last_error": 10,
+          "inbox_records": 0,
+          "public_service_description_verified": true,
+          "traffic_privacy": "direct endpoints visible; no anonymity",
+          "modes_available": [
+            "encrypted_bulk"
+          ]
+        }
+      ],
+      "server_ids": [
+        "4b00dd15f1248c1c0f265b3bb76361fcc7bc0ff61bc53246622af817ed8ff1fb",
+        "1b9226f1e01de1a4d289ea329d5a6d512bd00d8191bbc88baaedcc089cf18cd6",
+        "092299fefa45a4be5ef985b2d09ec4c1283436ba3ea93c328e0406810bd22bc3"
+      ]
+    },
+    {
+      "check": "native Add stores the signed metadata reference without payload, retention or acquisition consent",
+      "result": "passed",
+      "metadata_reference": 13643997848163844352,
+      "manifest_sha256": "073980a32193d7edd1fee1a32a4a2bc4dcea02b7de7f8af3fb51266fa6da8eab",
+      "personal_content_pages": 0
+    },
+    {
+      "check": "native pause and trusted R retain only checked partial chunks plus selected metadata",
+      "result": "passed",
+      "verified_bytes": 12288,
+      "total_bytes": 1152044,
+      "generation": 1,
+      "complete": false
+    },
+    {
+      "check": "game input and unrelated Objects complete during actual alternate-provider integrity validation",
+      "result": "passed",
+      "work": "content integrity validation",
+      "before": {
+        "status": 0,
+        "operation": 3425617304849817409,
+        "state": 2,
+        "progress": 29,
+        "total": 4096,
+        "error": 0,
+        "kind": 2,
+        "schema": 1,
+        "progress_unit": "manifest index entries",
+        "total_unit": "stored chunk bytes; not cursor bound"
+      },
+      "after": {
+        "status": 0,
+        "operation": 3425617304849817409,
+        "state": 2,
+        "progress": 56,
+        "total": 4096,
+        "error": 0,
+        "kind": 2,
+        "schema": 1,
+        "progress_unit": "manifest index entries",
+        "total_unit": "stored chunk bytes; not cursor bound"
+      },
+      "same_operation": true,
+      "active_after": true,
+      "game": {
+        "generation": 2,
+        "level": 0,
+        "moves": 1,
+        "completed": 0,
+        "won": 0,
+        "undo": 1,
+        "game": "c77a40fc178d8ec017c8d31b8c86e8967540fcc72eebd4050da629602edc99ff",
+        "pack": "77ce47e71af7c4d7a3b915b11cdba694554f93e2039403bbe7195aa97a44c8b1",
+        "boxes": 268435456,
+        "player": 27,
+        "save": 0,
+        "notice": 15
+      },
+      "objects_sha256": "78c6ae0ce90d4da1c6ddf09b53333e11929b3fe240314964c442c4085c5d6892",
+      "seconds": 0.2401781459338963,
+      "overlap_passed": true
+    },
+    {
+      "check": "fresh native consent resumes retained verified chunks from seed2 after seed1 shutdown",
+      "result": "passed",
+      "verified_reused": 12288,
+      "remaining_bytes": 1139756,
+      "provider": 2,
+      "payload_sha256": "f94e8e379da64b756d7b8341267cf4ddc9ec92c94b05c8b8c3228d1be2ff5580",
+      "old_authority_restored": false
+    },
+    {
+      "check": "game input and unrelated Objects complete during actual selected encrypted persistence",
+      "result": "passed",
+      "work": "encrypted selected content persistence",
+      "before": {
+        "status": 0,
+        "operation": 8,
+        "state": 1,
+        "progress": 24576,
+        "total": 1152044,
+        "generation": 2,
+        "error": 0,
+        "schema": 1
+      },
+      "after": {
+        "status": 0,
+        "operation": 8,
+        "state": 1,
+        "progress": 32768,
+        "total": 1152044,
+        "generation": 2,
+        "error": 0,
+        "schema": 1
+      },
+      "same_operation": true,
+      "active_after": true,
+      "game": {
+        "generation": 2,
+        "level": 0,
+        "moves": 2,
+        "completed": 1,
+        "won": 1,
+        "undo": 2,
+        "game": "c77a40fc178d8ec017c8d31b8c86e8967540fcc72eebd4050da629602edc99ff",
+        "pack": "77ce47e71af7c4d7a3b915b11cdba694554f93e2039403bbe7195aa97a44c8b1",
+        "boxes": 536870912,
+        "player": 28,
+        "save": 0,
+        "notice": 15
+      },
+      "objects_sha256": "7b14a5931e617322eed163c0c3be7a80d5035418ca4ae5523c329d110892dece",
+      "seconds": 0.21517782984301448,
+      "overlap_passed": true
+    },
+    {
+      "check": "fresh U/Enter recovers co-committed selected collection and content; offline native player emits exact PCM",
+      "result": "passed",
+      "network_providers_running": false,
+      "recipient_network_configured": false,
+      "pcm_bytes": 1152000,
+      "pcm_sha256": "fb0af16f34ddbee9935e45f06f2c73549f0b50236315378f97bd8c38dce9c929",
+      "speaker_output": false
+    }
+  ],
+  "limitations": [
+    "explicit development backing file; no physical-vault durability claim",
+    "these seed guests are volatile; durable independent seeds are separately verified",
+    "captured decoded samples; speaker output not exercised"
+  ],
+  "result": "passed",
+  "media_bytes": 1152044,
+  "media_chunks": 282
+}

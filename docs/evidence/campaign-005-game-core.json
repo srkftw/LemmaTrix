@@ -1,0 +1,103 @@
+{
+  "image": "d3e706f06da6db315b5da809a99f9b95f664c4f012de6c3bba875223c396cc62",
+  "backend": "qemu",
+  "checks": [
+    {
+      "check": "original native level solved with actual keyboard and rendered win",
+      "result": "pass",
+      "release": "3a56b13d0e211adf25e66d05c09dedc48506c84cb4fe328af8295b3460be7779",
+      "state": {
+        "generation": 1,
+        "level": 0,
+        "moves": 2,
+        "completed": 1,
+        "won": 1,
+        "undo": 2,
+        "game": "c77a40fc178d8ec017c8d31b8c86e8967540fcc72eebd4050da629602edc99ff",
+        "pack": "77ce47e71af7c4d7a3b915b11cdba694554f93e2039403bbe7195aa97a44c8b1",
+        "boxes": 536870912,
+        "player": 28,
+        "save": 0,
+        "notice": 15
+      },
+      "frame": "7c0fc2b15d7bc97b6531c080e368e8a91a5669e33721e4954bb07b39e6e37616"
+    },
+    {
+      "check": "multiple original levels, undo, reset and level selection",
+      "result": "pass",
+      "state": {
+        "generation": 1,
+        "level": 2,
+        "moves": 6,
+        "completed": 5,
+        "won": 1,
+        "undo": 6,
+        "game": "c77a40fc178d8ec017c8d31b8c86e8967540fcc72eebd4050da629602edc99ff",
+        "pack": "77ce47e71af7c4d7a3b915b11cdba694554f93e2039403bbe7195aa97a44c8b1",
+        "boxes": 1310720,
+        "player": 28,
+        "save": 0,
+        "notice": 15
+      },
+      "frame": "76e1abae9fd21e23cdd1b01ca1a4e7bbf66de947f6c799a88e48c6ea3a27b6ba"
+    },
+    {
+      "check": "scoped level-pack changes real gameplay from two pushes to one",
+      "result": "pass",
+      "state": {
+        "generation": 1,
+        "level": 0,
+        "moves": 1,
+        "completed": 1,
+        "won": 1,
+        "undo": 1,
+        "game": "c77a40fc178d8ec017c8d31b8c86e8967540fcc72eebd4050da629602edc99ff",
+        "pack": "9434db0ee959d7c76cc915cd3e409d425315830bbd3057be046025d8d74664f8",
+        "boxes": 268435456,
+        "player": 27,
+        "save": 0,
+        "notice": 15
+      },
+      "frame": "e0517c12292d0d9ca5f0d5b1f032785639d7261a634e04e7c443eb02363e4f65"
+    },
+    {
+      "check": "typed bounded saves reject malformed versions, positions, counts and pack identity",
+      "result": "pass",
+      "save_sha256": "71cad09e7727ba27c8d9b7d2bc10bfb85d47a483e643894a6296ac1563aedf7c",
+      "save_bytes": 192,
+      "retained": false
+    },
+    {
+      "check": "real second game generation and explicit native rollback preserve compatible progress",
+      "result": "pass",
+      "release2": "6ef9906f4d0871b59cfde958846fd6c67ebf9838ec5fd57b19a5fc0c673657b0",
+      "parent": "3a56b13d0e211adf25e66d05c09dedc48506c84cb4fe328af8295b3460be7779",
+      "v2_state": {
+        "generation": 2,
+        "level": 0,
+        "moves": 1,
+        "completed": 1,
+        "won": 1,
+        "undo": 0,
+        "game": "c77a40fc178d8ec017c8d31b8c86e8967540fcc72eebd4050da629602edc99ff",
+        "pack": "9434db0ee959d7c76cc915cd3e409d425315830bbd3057be046025d8d74664f8",
+        "boxes": 268435456,
+        "player": 27,
+        "save": 0,
+        "notice": 21
+      },
+      "rolled_back": "3a56b13d0e211adf25e66d05c09dedc48506c84cb4fe328af8295b3460be7779",
+      "v2_save_sha256": "536562055a16bbce57634cb64c45b27ace62fb13961ba9a37eb9614580df950c"
+    },
+    {
+      "check": "explicit selected save retained through existing encrypted Objects-vault",
+      "result": "pass",
+      "sha256": "536562055a16bbce57634cb64c45b27ace62fb13961ba9a37eb9614580df950c"
+    },
+    {
+      "check": "restart recovers exact approved save with fresh authority and compatible rollback game",
+      "result": "pass",
+      "frame": "10ed9ae8007f88ad5f652dfffddf742e922bf77a7fefe5b4a67da7292da9cf92"
+    }
+  ]
+}

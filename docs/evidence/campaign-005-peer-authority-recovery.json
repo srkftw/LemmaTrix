@@ -1,0 +1,24 @@
+{
+  "registry_package": "dbb5a315c0f200ec867eb736b4368819654af2d4d02df829004a5921f695c6dc",
+  "peer_package": "c53df356dcf137081783d3758c8e8252cce08a215b3af4516403b5218c997bf8",
+  "consumer_sha256": "27e21bf18e49fd923213da456203a1c127f902e670a446dff6df6b71e766180d",
+  "metadata_bytes": 1536,
+  "metadata_sha256": "0ae2d1669a72fd5519e5442e36a555e9ce3846775d94c8a8d806a3cb63862975",
+  "metadata_only": true,
+  "payload_transferred": false,
+  "stale_snapshot": "denied before and after epoch change",
+  "wrong_role_range": "denied",
+  "operator_policy": "configured offline, renewed after authenticated malformed-size loss in same epoch and after reauthentication, explicitly revoked",
+  "source": "actual native Registry consumer admission and signed publisher record",
+  "backends": [
+    "QEMU RV64",
+    "native x86-64 assembly"
+  ],
+  "schema": 1,
+  "result": "passed",
+  "image_sha256": "e3767c2d12d335649bf9acf3e731e23abb24e453c1a03b85a5d8580dab02769a",
+  "peer_binary_sha256": "0942b7ece8bd9d014365b79255fd71e73602042524522109317315ddbc5593d7",
+  "authenticated_malformed_request_bytes": 65,
+  "explicit_connection_reset_during_malformed_request_case": false,
+  "authority_cleanup": "lost cancels the pending job and revokes its old broker grant before forgetting local references; remaining policy budget and absolute lifetime are preserved"
+}

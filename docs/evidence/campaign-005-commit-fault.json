@@ -1,0 +1,62 @@
+{
+  "result": "passed",
+  "image": "22f9f9bde6c210ffe0f0ec52d7b8f5d697bed11d61fda7edda5f7c319079c70f",
+  "retained": {
+    "operation": 1793345801013758178,
+    "state": 4,
+    "bytes": 96044,
+    "verified_bytes": 96044,
+    "generation": 1,
+    "format": 3,
+    "encrypted": true,
+    "checks": [
+      "native complete-root scoped retention",
+      "encrypted authenticated inventory",
+      "legacy vault status remains readable"
+    ],
+    "schema": 1,
+    "phase": "retain",
+    "chunks": 24,
+    "manifest_sha256": "3d6ebb3fed684b25305594e82ec36bd893b04183592a6f4d9aea3cb7ef6e0ff2",
+    "original_sha256": "7cb73540da71b77273956509c5e96c40de8f2404968cb2a9f7477383ea738ee5",
+    "elapsed_seconds": 14.923706660047174,
+    "boundary": "native ContentJobs + encrypted ContentVault-v3; explicit selected backing/key"
+  },
+  "fault": {
+    "schema": 1,
+    "fault": "SIGKILL after completed encrypted chunk write before root publication",
+    "previous_generation": 1,
+    "candidate_generation": 2,
+    "reported_written_bytes": 4096,
+    "candidate_total_bytes": 144044,
+    "written_encrypted_chunk_sha256": "62e964201de64f8f0855e47fa3d986545b482ff00dd8e66b3680ad202c8e7155",
+    "root_sectors_unchanged_before_crash": true,
+    "previous_manifest_sha256": "3d6ebb3fed684b25305594e82ec36bd893b04183592a6f4d9aea3cb7ef6e0ff2",
+    "recovery_check_required": "restart same explicit backing; content_vault.py --phase recover"
+  },
+  "recovery": {
+    "operation": 1793345835473109575,
+    "state": 4,
+    "bytes": 96044,
+    "generation": 1,
+    "handle": 5754024762271603458,
+    "recipient": 5754024757976629505,
+    "metadata_handle": 0,
+    "restored_transport_or_execution_authority": false,
+    "checks": [
+      "fresh recipient read grant",
+      "actual recovered range bytes match original SHA256",
+      "recovered authenticated proof paths match",
+      "no restored acquisition authority"
+    ],
+    "actual_recovered_sha256": "7cb73540da71b77273956509c5e96c40de8f2404968cb2a9f7477383ea738ee5",
+    "schema": 1,
+    "phase": "recover",
+    "chunks": 24,
+    "manifest_sha256": "3d6ebb3fed684b25305594e82ec36bd893b04183592a6f4d9aea3cb7ef6e0ff2",
+    "original_sha256": "7cb73540da71b77273956509c5e96c40de8f2404968cb2a9f7477383ea738ee5",
+    "elapsed_seconds": 8.527557027991861,
+    "boundary": "native ContentJobs + encrypted ContentVault-v3; explicit selected backing/key"
+  },
+  "scope": "selected native SDK/v3 old-format compatibility; not graphical consent or physical power loss"
+}

@@ -1,0 +1,46 @@
+{
+  "schema": 1,
+  "result": "passed",
+  "image_sha256": "d3e706f06da6db315b5da809a99f9b95f664c4f012de6c3bba875223c396cc62",
+  "provider_release": "6158ab0c162afefb29ffe7dec5bda5b5849bea3fc273cb1a14f303a859712d94",
+  "provider_binary_sha256": "9ad94f72bc4a86c3db80f88b4e5ee9baba41efa22e3a2b1563b2c4186e8e60ce",
+  "fetch_release": "365cb77194c9cad05c21c7a2488eba83253fae0df2b8ba4531da02f4ee970b0c",
+  "fetch_binary_sha256": "942f7b6c750c8af980a74db59af9a3b24abc8f4b08423699c8ccce1645c4e3ef",
+  "project_head": "c3d962668ed87f5298d3d8cb1aea0a7d1aff9e2dcb6f98caf0797b91bf26d862",
+  "nodes": 15,
+  "payload_bytes": 105789,
+  "actual_node_payload_sha256": {
+    "04bb43bda7a12d2534a5bd655b66a0028d81ece1445a0e123d3db00cf14d0cc5": "931e8fa5333d1dbc599b1d0c7902b1d821d858520611c8b34d2201fad7db5e0a",
+    "af65571a8f5497ddb4e3a1ced7662eab0aabc0fd5153302b0996860dbdd598b5": "dfbf9316e74c9c56e1305df8e212f25cec68ee08cdd4a4f5c67b03fb644390b9",
+    "2457d727cdf2d5a94d67dd01d8ba2e01e5ade1dec99003db69a8aaffd51f466d": "118d85e1e61cccd83d838cb04d28d0abdca721b05fda50e0b8c5a3588458b116",
+    "cd417045f1a52f4663a69669282b1394434de561f89a2d07d22ad492539b471e": "9434db0ee959d7c76cc915cd3e409d425315830bbd3057be046025d8d74664f8",
+    "7b7fd16bf96a4d1be7f2a37c15f69362fc7df2443678481430200b912564d44a": "77ce47e71af7c4d7a3b915b11cdba694554f93e2039403bbe7195aa97a44c8b1",
+    "20d969562e593a7ff70b716d2b627d286f9a40b549b7e177b12a81103af51513": "8171d2047520dcf43bdb944a93e9e1ed84d55e5aa48e560b18a1b6df3886f71f",
+    "196c6c71e3d83e1c48e1fe0295fb030ac17a0a381a87d7af33f895cc565e3da7": "bb8fc6a65852a872b2d7ed96d0d58171c54d4e237623ad5e9c4cfcc9df4c43c7",
+    "faf990de39f24d9257c97799c8f7a55d21a8cf07c6460747bba1c57fea6a0c6a": "eb38217f2a3e3a31abebe0cfcb87cd319e35bc9ef5ad9b2542e32ca887b862f9",
+    "615110fe47e6ee770d0b64765515e8745470796ab5bb107287356ffcfd5f83e9": "edfd56b0abb8d7fde903fea4c7a28b20c92a798ff6b53bda1c56fbde15606bfb",
+    "3d25f077a93414399a3b9e0e7ebe2bce0f536f3f42086145c4ba4675696cc97e": "ea05ca81e7d52f0fa9730df3f48c7d619a9611581ffc64b19b4ecf9cbc6bb77a",
+    "9663e21672b17c9fef2ab3158de057293b80bb5c78a2cf1d7e02104011a36c19": "ddf80d809ef96cd16cd0f4666b9f476778cb786e47ac5f493d021e5790a78dc5",
+    "334055f7db5fcfd83854ed7f3e985a832f773001355954d8782d904d65c7a5e2": "760f971f9c2def32f8054d393c314806a99af887e10cdaf59d3f3ad79055bbb8",
+    "fa74f92fdc8ac6c0aec6bb5d83fe570dc2faaa754cbbc16193ed8c2974be3e31": "fe09d0d9620e8b0536b1702ee74ba1a6e905e194eaefd6c0454ca4888a8dd58a",
+    "9242a5bd196803f74a773bd0bc9a5c33a6704a9ca501804f29a9e7a6ee5c556b": "922403a3cbe433a0b758fa3281fc8a1bf575f9297fe5314d912ffb4721e193ed",
+    "c3d962668ed87f5298d3d8cb1aea0a7d1aff9e2dcb6f98caf0797b91bf26d862": "33b24075cb45de43dd583d105ab5aca9897e7dcbd92ad56d6f17743ece1c8573"
+  },
+  "elapsed_seconds": 85.30145820090547,
+  "recipient_host_payload_import": false,
+  "local_execution_approval": false,
+  "checks": [
+    "separate provider native admission classified actualGame5",
+    "recipient receives signedmetadata only; no hostGamegraph import",
+    "all15 actual nodepayloads,parent,schema,kind,immutablehead match",
+    "queryable idempotent terminal root25 to selected Library incarnation",
+    "wrongcaller cannot retrieve jobresult",
+    "prior canceled and malformedadmission operations aborted without publication"
+  ],
+  "note": "preserved sameguest fixture after corrected initial rangecount comparison; provider and fetcher replacements explicitly approved native packages",
+  "observed_progress_summary": {
+    "samples": 214,
+    "first": 0,
+    "last": 105789
+  }
+}

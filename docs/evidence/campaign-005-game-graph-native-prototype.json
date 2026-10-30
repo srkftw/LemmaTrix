@@ -1,0 +1,54 @@
+{
+  "result": "passed",
+  "checks": [
+    {
+      "check": "fresh native Library selects enrolled registry/seed and binds independent fetcher through O",
+      "result": "passed",
+      "library_release": "3a440ae9d37a4f4a99cb0f6fe5634d55bcda12edfc6568c0941aa446afff2dbb",
+      "fetch_release": "aca05e94088974f6e992661b1cbdc2269a9dfc430f1f02eedc614758c6cbc124",
+      "provider_head": "c3d962668ed87f5298d3d8cb1aea0a7d1aff9e2dcb6f98caf0797b91bf26d862",
+      "recipient_game_roots_before_I": 0
+    },
+    {
+      "check": "native I downloads actual Game Project and reaches trusted capability approval without recipient payload preload",
+      "result": "passed",
+      "head": "c3d962668ed87f5298d3d8cb1aea0a7d1aff9e2dcb6f98caf0797b91bf26d862",
+      "game_not_running_before_approval": true
+    },
+    {
+      "check": "physical Enter installs exact downloaded release and DD solves original native puzzle",
+      "result": "passed",
+      "game_release": "a8844b561b9ee4b5469dbac14e6666f4b95ebf356f5a9f8b51eb4841e84e30cc",
+      "game_state": {
+        "generation": 1,
+        "level": 0,
+        "moves": 2,
+        "completed": 1,
+        "won": 1,
+        "undo": 2,
+        "game": "c77a40fc178d8ec017c8d31b8c86e8967540fcc72eebd4050da629602edc99ff",
+        "pack": "77ce47e71af7c4d7a3b915b11cdba694554f93e2039403bbe7195aa97a44c8b1",
+        "boxes": 536870912,
+        "player": 28,
+        "save": 0,
+        "notice": 15
+      },
+      "game_rights": 795,
+      "recipient_host_game_import": false
+    }
+  ],
+  "recipient_image": "e3767c2d12d335649bf9acf3e731e23abb24e453c1a03b85a5d8580dab02769a",
+  "provider_image": "d3e706f06da6db315b5da809a99f9b95f664c4f012de6c3bba875223c396cc62",
+  "library_release": "3a440ae9d37a4f4a99cb0f6fe5634d55bcda12edfc6568c0941aa446afff2dbb",
+  "fetch_release": "aca05e94088974f6e992661b1cbdc2269a9dfc430f1f02eedc614758c6cbc124",
+  "fetch_binary_sha256": "c45b90b7da58f7579e54d6970ccdbae48bb619150c0e4a2bd2209a31da5bcf6e",
+  "game_release": "a8844b561b9ee4b5469dbac14e6666f4b95ebf356f5a9f8b51eb4841e84e30cc",
+  "project_head": "c3d962668ed87f5298d3d8cb1aea0a7d1aff9e2dcb6f98caf0797b91bf26d862",
+  "recipient_host_game_import": false,
+  "limitations": [
+    "provider reused its explicitly owned prior D3 image; recipient uses corrected247 image",
+    "focused O/I/Enter/DD test; save migration and media are separate executed journeys"
+  ],
+  "schema": 1,
+  "fixture_scope": "Historical Game edition a884; subsequent current secure Game3a56 check is recorded separately."
+}

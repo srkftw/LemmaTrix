@@ -1,0 +1,175 @@
+{
+  "schema": 1,
+  "result": "passed",
+  "scope": "actual native Library metadata Add and monitoring-only Subscribe followed by normal no-vault restart; focused QEMU boundary check",
+  "image_sha256": "22ed2b68787a3b484955ab4aa9df6de79730edb2f92da6e0e156f74cb6f9679b",
+  "run_command": "python3 tests/library_no_vault_native.py --image build/campaign005/final-10/guest.bin --packages build/campaign005/final-10/packages --output build/campaign005/nv10",
+  "source_test": "tests/library_no_vault_native.py",
+  "raw_result": "build/campaign005/nv10/result.json",
+  "raw_result_sha256": "f4d7e7920cfe2c601da7aa3add21e4f7e713b4542178550463e9ddd380eb75ac",
+  "packages": {
+    "library-registry": {
+      "release_id": "6297b21e2f039862cea14dc3d96ca78778303a767d31179cf4efdb2c0c3851d8",
+      "package_sha256": "9a71047c890dfdbbb706ec83d3a0fd5aeadf11743b1b575aff6b99265c60e9aa",
+      "rights": 2175
+    },
+    "library-peer": {
+      "release_id": "e6dd508b43de5808468ba8b60e036625312b037dee343b4d00b1fb1f158bbce5",
+      "package_sha256": "d218d02b97967b3751f69969e126f4a9b66509886b3571d33d2e3adfa506193f",
+      "rights": 1025
+    },
+    "library-native": {
+      "release_id": "503888769aae9aeff49a2ae06d9ab4285754106ed512f2ca0ee1637f04357f58",
+      "package_sha256": "fdafe60258619556ec66e30162a1b27573f2fd11dad27b2b8fb86830e50ba4c4",
+      "rights": 1919
+    }
+  },
+  "publisher_bootstrap": {
+    "consumer_record_sha256": "b63622abf0a2b3930e076a597292186e6c7a906feaaf91a10dbb37fb335671a3",
+    "manifest_sha256": "adb8b4cd76ebc9976efa96d1a34a7575059481e9af3a2f92fa2e3948b9943358",
+    "native_admission_classification": 4,
+    "registry_payload_pages": 0,
+    "content_generation": "original Open Courtyard composition, one-second stereo manifest; host generation/signing bootstrap only; no media file or Content payload imported into any guest"
+  },
+  "native_actions": [
+    "F12/Enter signed Library approval",
+    "F2/1/Enter registry selection",
+    "F1/Q catalog query",
+    "A metadata Add",
+    "S monitoring-only Subscribe"
+  ],
+  "before_restart": {
+    "catalog_rows": 1,
+    "monitoring": 1,
+    "automatic_acquisition": 0,
+    "charged_bytes": 0,
+    "policy_generation": 0,
+    "selected_collection": "7d870f5578f3a0037f56133a9b2642c5640c6e99f6c8d92af0e447f3f54d8ce1",
+    "jobs": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "resident_content_pages": 0,
+    "metadata_reference": 8244649084309209344,
+    "registry_authenticated": true,
+    "exact_768_byte_signed_consumer_record_matched": true
+  },
+  "fresh_same_image": {
+    "catalog_rows": 0,
+    "monitoring": 0,
+    "automatic_acquisition": 0,
+    "charged_bytes": 0,
+    "policy_generation": 0,
+    "selected_collection": "0000000000000000000000000000000000000000000000000000000000000000",
+    "jobs": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "resident_content_pages": 0,
+    "network_configured_role": "unconfigured",
+    "network_authenticated": false,
+    "public_service_description_verified": false,
+    "old_catalog_row_query_status": 2
+  },
+  "stale_object_boundary": {
+    "old_handles": {
+      "library_metadata": 8244649084309209344,
+      "previously_readable_private_object": 8244649084309209345
+    },
+    "fresh_object": 16211825199484502272,
+    "before_fresh_allocation": {
+      "library_metadata": "Objects status3",
+      "private_object": "Objects status3"
+    },
+    "after_fresh_allocation": {
+      "library_metadata": "Objects status3",
+      "private_object": "Objects status3"
+    },
+    "previously_readable_private_object": "exact bytes read successfully before restart; old token denied before and after fresh allocation; new token read succeeds",
+    "library_metadata_scope": "Library owns Add metadata handle. Launcher was already denied before restart; this denial alone is not claimed as proof of lost Library authority."
+  },
+  "normal_shutdown": {
+    "registry": {
+      "command": [
+        "/home/sreekumaar/Desktop/LemmaTrix/lt",
+        "run",
+        "--backend",
+        "qemu",
+        "--image",
+        "build/campaign005/final-10/guest.bin",
+        "--socket",
+        "/home/sreekumaar/Desktop/LemmaTrix/build/campaign005/nv10/registry/portal.sock",
+        "--network-mux"
+      ],
+      "returncode": 0,
+      "command70": true
+    },
+    "personal": {
+      "command": [
+        "/home/sreekumaar/Desktop/LemmaTrix/lt",
+        "run",
+        "--backend",
+        "qemu",
+        "--image",
+        "build/campaign005/final-10/guest.bin",
+        "--socket",
+        "/home/sreekumaar/Desktop/LemmaTrix/build/campaign005/nv10/personal/portal.sock",
+        "--network-mux",
+        "--graphics",
+        "/home/sreekumaar/Desktop/LemmaTrix/build/campaign005/nv10/personal/display.qmp"
+      ],
+      "returncode": 0,
+      "command70": true
+    },
+    "fresh": {
+      "command": [
+        "/home/sreekumaar/Desktop/LemmaTrix/lt",
+        "run",
+        "--backend",
+        "qemu",
+        "--image",
+        "build/campaign005/final-10/guest.bin",
+        "--socket",
+        "/home/sreekumaar/Desktop/LemmaTrix/build/campaign005/nv10/fresh/portal.sock",
+        "--network-mux",
+        "--graphics",
+        "/home/sreekumaar/Desktop/LemmaTrix/build/campaign005/nv10/fresh/display.qmp"
+      ],
+      "returncode": 0,
+      "command70": true
+    }
+  },
+  "framebuffer_captures": {
+    "added_subscribed": {
+      "path": "build/campaign005/nv10/personal/added-subscribed.ppm",
+      "frame_sha256": "624500d7c077a26d2090242e168e6c64c8770db1b4de28c0b17e3c6f96dc2dbb",
+      "ppm_sha256": "3058d535983a8172bad10659ae39c473f0d2919429ed7d0a4246ae38bbc39c4f"
+    },
+    "fresh_empty": {
+      "path": "build/campaign005/nv10/fresh/empty-library.ppm",
+      "frame_sha256": "f84da33faf9c71b42bb55ce76710e64e8f08001493b2bcfced87281cbb65a949",
+      "ppm_sha256": "05d07d8e6edb936f679acca0323207767ec2e46f403861a51acd627a3da27ecd"
+    }
+  },
+  "no_vault_or_server_store": true,
+  "payload_provider_instances": 0,
+  "maximum_simultaneous_guests": 2,
+  "checks": [
+    "native enrollment selection and metadata-only query against separate signed Registry",
+    "physical A creates a nonzero private metadata reference whose signed consumer bytes match the served record",
+    "physical S changes selected collection and monitoring only; acquisition policy, jobs, bytes and Content pages stay zero",
+    "normal command70 shutdown exits0 for registry and both sequential personal guests",
+    "fresh identical image and Library release have no catalog, monitoring, selected collection, automatic acquisition, jobs or enrollment",
+    "fresh Objects store is empty before package installation; previously readable private token remains denied after new usable allocation"
+  ],
+  "limitations": [
+    "metadata-only focused no-vault check; no payload, playback, saves, retention or automatic acquisition approval",
+    "Library metadata references are caller-scoped: their Launcher denial was already expected before restart; the separate private Object proves a previously readable token becomes stale",
+    "normal process restart and volatile state behavior; no physical memory-remanence claim",
+    "publisher keys, explicit ephemeral enrollment credentials, UART logs and framebuffer captures are named test artifacts; none are silently restored as guest authority"
+  ]
+}

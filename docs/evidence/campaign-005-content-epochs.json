@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "issue": "Encoding full service identity with a32-bit leftshift discarded randomized boot-highbits and reused numeric Content tokens after fresh allocations",
+  "reproduced_before_fix": {
+    "result": "reproduced-stale-numeric-alias",
+    "image_sha256": "e3767c2d12d335649bf9acf3e731e23abb24e453c1a03b85a5d8580dab02769a",
+    "operations": [
+      {
+        "caller": 7622602979350151425,
+        "handle": 1120986464513,
+        "job": 1120986464833,
+        "manifest_sha256": "3736c6ead4def52e1987e32bfb214493476016266666b3549878196018a6ae9d"
+      },
+      {
+        "caller": 3081530720099762433,
+        "handle": 1120986464513,
+        "job": 1120986464833,
+        "manifest_sha256": "8cfe21534fa18b44cfa1bc3fdca62aa2dcb4352c14b4dadd0b67ddb8b36b4199",
+        "old_handle_resolved_to_manifest_sha256": "8cfe21534fa18b44cfa1bc3fdca62aa2dcb4352c14b4dadd0b67ddb8b36b4199",
+        "old_job_resolved_to_new_job": 1120986464833
+      }
+    ],
+    "scope": "focused publicSDK twofreshguest proof before epochfold fix; no old payload persisted"
+  },
+  "corrected_after_fix": {
+    "schema": 1,
+    "result": "passed",
+    "image_sha256": "643b801e42091c99f5d20e3ff40f5ab293840c6c5377a260491201b2b71c4fe1",
+    "two_fresh_guests": [
+      {
+        "caller": 2519608084200947969,
+        "handle": 2519608088495915265,
+        "job": 2519608088495915585,
+        "manifest_sha256": "3736c6ead4def52e1987e32bfb214493476016266666b3549878196018a6ae9d"
+      },
+      {
+        "caller": 5632001850879246593,
+        "handle": 5632001855174213889,
+        "job": 5632001855174214209,
+        "manifest_sha256": "8cfe21534fa18b44cfa1bc3fdca62aa2dcb4352c14b4dadd0b67ddb8b36b4199"
+      }
+    ],
+    "checks": [
+      "old root and job denied before fresh allocation",
+      "distinct boot caller/root/job tokens",
+      "old root and job remain denied after fresh different-manifest allocations",
+      "fresh selected grants and jobs remain usable"
+    ]
+  },
+  "mechanism": "Fold randomized kernel boot epoch and service incarnation into a32-bit epoch before adding bounded24-bit generation and8-bit slot; full caller incarnation and root allocation generation remain independently checked",
+  "limitations": "Finite randomized boot epoch; no backing rollback freshness or physical data-remanence claim"
+}

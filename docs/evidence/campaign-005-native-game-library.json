@@ -1,0 +1,91 @@
+{
+  "image": "d3e706f06da6db315b5da809a99f9b95f664c4f012de6c3bba875223c396cc62",
+  "checks": [
+    {
+      "check": "separate guest Registry admits actual canonical game release",
+      "result": "passed",
+      "release": "3a56b13d0e211adf25e66d05c09dedc48506c84cb4fe328af8295b3460be7779",
+      "head": "4c8ed47412020b886df5d8abc373dcc66fc4f7532382c78c8ab52d21d015c3bd",
+      "classification": 5
+    },
+    {
+      "check": "Library I/J/K/B and physical Enter retain only selected typed game save",
+      "result": "passed",
+      "state": {
+        "generation": 1,
+        "level": 0,
+        "moves": 2,
+        "completed": 1,
+        "won": 1,
+        "undo": 2,
+        "game": "c77a40fc178d8ec017c8d31b8c86e8967540fcc72eebd4050da629602edc99ff",
+        "pack": "77ce47e71af7c4d7a3b915b11cdba694554f93e2039403bbe7195aa97a44c8b1",
+        "boxes": 536870912,
+        "player": 28,
+        "save": 12851479917086376197,
+        "notice": 23
+      },
+      "save_sha256": "199fe54e37946001f2a728dd841a2476d1e58506a39231c976cc57b5052043fe",
+      "save_bytes": 192,
+      "cancel_left_ephemeral": true,
+      "save_handle_before_restart": 12851479917086376198,
+      "interrupted_harness_resumed": true
+    },
+    {
+      "check": "fresh Library N/Enter/L and fresh execution approval recover exact compatible progress",
+      "result": "passed",
+      "state": {
+        "generation": 1,
+        "level": 0,
+        "moves": 2,
+        "completed": 1,
+        "won": 1,
+        "undo": 0,
+        "game": "c77a40fc178d8ec017c8d31b8c86e8967540fcc72eebd4050da629602edc99ff",
+        "pack": "77ce47e71af7c4d7a3b915b11cdba694554f93e2039403bbe7195aa97a44c8b1",
+        "boxes": 536870912,
+        "player": 28,
+        "save": 0,
+        "notice": 21
+      },
+      "save_sha256": "199fe54e37946001f2a728dd841a2476d1e58506a39231c976cc57b5052043fe",
+      "stale_capabilities_reused": false,
+      "network_session_reauthenticated": true,
+      "resumed_after_controller_lock_error": true
+    },
+    {
+      "check": "native Library M selected Source mod changes gameplay and incompatible saved pack remains recoverable",
+      "result": "passed",
+      "mod_sha256": "9434db0ee959d7c76cc915cd3e409d425315830bbd3057be046025d8d74664f8",
+      "modified_win_moves": 1,
+      "prior_save_recovered_moves": 2,
+      "arbitrary_execution_authority": false
+    }
+  ],
+  "limitations": [
+    "public release graph explicitly imported through Objects; no remote game graph acquisition claim",
+    "speaker playback and media retention not exercised by this focused test"
+  ],
+  "recipient_image": "e3767c2d12d335649bf9acf3e731e23abb24e453c1a03b85a5d8580dab02769a",
+  "recipient_packages": [
+    {
+      "project": "library-native",
+      "version": "0.5.1",
+      "release_id": "3a440ae9d37a4f4a99cb0f6fe5634d55bcda12edfc6568c0941aa446afff2dbb",
+      "publisher_key_id": "fadcee1d85f60fdad9140951bf001b0aa52b08cd077231aeb70ff8bf0596e19b",
+      "project_id": "fb2e55bdee6bb45bca42763751fbfe0c5f34abfe1407848584a505f6ae1d706e",
+      "rights": 1919,
+      "executable_sha256": "8f86f80180fefe9428100371e36ccf5a76611ef08532bf2c0ff814efa8a5c600",
+      "source_root": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "manifest_root": "14e974a161d4da222ed31c3b3de63e5c6003d42e45ac55c26dbbbb76d3e10695",
+      "parent": "f6852f8ff59b30b428034f9a6fec138905f9abb5088d17759389b9b802dc2dbc",
+      "size": 260020,
+      "signature_verified": true,
+      "manifest_checked": false,
+      "identity_scheme": 0,
+      "logical_project_id": null,
+      "guest_signature_verified": true,
+      "verification_authority": "current guest project trust and exact staged header"
+    }
+  ]
+}

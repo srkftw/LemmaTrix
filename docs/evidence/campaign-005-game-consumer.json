@@ -1,0 +1,286 @@
+{
+  "schema": 1,
+  "campaign": "005",
+  "scope": "native original game, canonical consumer admission and scoped save compatibility",
+  "status": "development evidence; native Library save approvals recorded separately after execution",
+  "backend": "QEMU RV64 guest on x86-64 host",
+  "publisher_key_id": "fadcee1d85f60fdad9140951bf001b0aa52b08cd077231aeb70ff8bf0596e19b",
+  "formats": {
+    "consumer_release": 1,
+    "admission": 1,
+    "registry_snapshot_write": 2,
+    "registry_snapshot_legacy_read": 1,
+    "game_level_pack": 1,
+    "game_save": 1,
+    "native_profile": 2,
+    "game_rights": 795
+  },
+  "game_publications": [
+    {
+      "generation": 1,
+      "head": "c3d962668ed87f5298d3d8cb1aea0a7d1aff9e2dcb6f98caf0797b91bf26d862",
+      "logical_project_id": "20d969562e593a7ff70b716d2b627d286f9a40b549b7e177b12a81103af51513",
+      "publication_id": "c12e9013c0e00e4aac24fa4c39d186d16a591f2a55a6ee3bf7c6598f36b8b3c9",
+      "release_id": "a8844b561b9ee4b5469dbac14e6666f4b95ebf356f5a9f8b51eb4841e84e30cc",
+      "edition": "edd3d47b75bda54cc19cd5fa40845171ffa55437bca8b4734b0323f577c2a606",
+      "binary_sha256": "a661e1a937d284be49ded64d16d0ea2bf20fb8868a3a11f990d295a868f67abd",
+      "consumer_sha256": "922403a3cbe433a0b758fa3281fc8a1bf575f9297fe5314d912ffb4721e193ed"
+    },
+    {
+      "generation": 2,
+      "head": "218730cfd1ba6fff27fd690b72b5bed4ad1302299bcb45a8c80b2cf1237b4090",
+      "logical_project_id": "20d969562e593a7ff70b716d2b627d286f9a40b549b7e177b12a81103af51513",
+      "publication_id": "c12e9013c0e00e4aac24fa4c39d186d16a591f2a55a6ee3bf7c6598f36b8b3c9",
+      "release_id": "08a729087c5dce0dd7c24f6c3f6df92780953a6f2c5a8983a22e89c605758008",
+      "edition": "8c6e379e25f5617cad9237eb45d1b2b9e6f8d3e9a588aab6fe74b50cc8408757",
+      "binary_sha256": "a52f48c0a0a3a746a5d9d59641dfd42adf97af2c0dcce4fec26788bcc33a7295",
+      "consumer_sha256": "fc43577ed7cbf15a59304860fccf326b50dd7600a838d962553c24806fb2f684"
+    }
+  ],
+  "resources": [
+    {
+      "path": "resources/crate-workshop/near-goal.ltlevels",
+      "bytes": 256,
+      "sha256": "9434db0ee959d7c76cc915cd3e409d425315830bbd3057be046025d8d74664f8"
+    },
+    {
+      "path": "resources/crate-workshop/original.ltlevels",
+      "bytes": 256,
+      "sha256": "77ce47e71af7c4d7a3b915b11cdba694554f93e2039403bbe7195aa97a44c8b1"
+    }
+  ],
+  "source_graphs": [
+    {
+      "generation": 1,
+      "records": 15,
+      "payload_bytes": 105789,
+      "head": "c3d962668ed87f5298d3d8cb1aea0a7d1aff9e2dcb6f98caf0797b91bf26d862"
+    },
+    {
+      "generation": 2,
+      "records": 17,
+      "payload_bytes": 106639,
+      "head": "218730cfd1ba6fff27fd690b72b5bed4ad1302299bcb45a8c80b2cf1237b4090"
+    }
+  ],
+  "limits": {
+    "levels": 8,
+    "supplied_original_levels": 4,
+    "level_pack_bytes": 448,
+    "save_bytes": 192,
+    "undo_successful_moves": 128,
+    "ordinary_objects_per_owner": 8,
+    "registry_records": 16,
+    "search_query_bytes": 64,
+    "registry_snapshot_bytes": 25088
+  },
+  "runs": [
+    {
+      "source_run": "consumer-catalog-2/journey.json",
+      "report_sha256": "346535f38267f75ae567daaaaf06e47c194710fc0d18489f7c8cd9f1d462223f",
+      "image_sha256": "f53882fa10c88128285fd89275049cf13f8a436c3f5517dccdf02263273de50d",
+      "checks": [
+        {
+          "check": "genuine signed media metadata and manifest admitted without payload acquisition",
+          "result": "pass"
+        },
+        {
+          "check": "guest rejects actual signed-title and resource substitutions",
+          "result": "pass"
+        },
+        {
+          "check": "actual isolated game builds produce canonical native plus consumer admission",
+          "result": "pass"
+        },
+        {
+          "check": "revocation denies consumer lookup under current signed knowledge",
+          "result": "pass"
+        },
+        {
+          "check": "registry own-store v2 recovery retains signed consumer bytes with no media payload",
+          "result": "pass"
+        }
+      ]
+    },
+    {
+      "source_run": "game-canonical-journey/journey.json",
+      "report_sha256": "40b1a3c6547a665c118feefa804b06e09530f6853fdd47afad5608b713d01fd2",
+      "image_sha256": "f53882fa10c88128285fd89275049cf13f8a436c3f5517dccdf02263273de50d",
+      "checks": [
+        {
+          "check": "original native level solved with actual keyboard and rendered win",
+          "result": "pass"
+        },
+        {
+          "check": "multiple original levels, undo, reset and level selection",
+          "result": "pass"
+        },
+        {
+          "check": "scoped level-pack changes real gameplay from two pushes to one",
+          "result": "pass"
+        },
+        {
+          "check": "typed bounded saves reject malformed versions, positions, counts and pack identity",
+          "result": "pass"
+        },
+        {
+          "check": "real second game generation and explicit native rollback preserve compatible progress",
+          "result": "pass"
+        },
+        {
+          "check": "explicit selected save retained through existing encrypted Objects-vault",
+          "result": "pass"
+        },
+        {
+          "check": "restart recovers exact approved save with fresh authority and compatible rollback game",
+          "result": "pass"
+        }
+      ]
+    },
+    {
+      "source_run": "game-source-mod/journey.json",
+      "report_sha256": "3c7164324d0130d3bf77617cdda852698c547a00e66022b69f3de7d7c03292e3",
+      "image_sha256": "60e4c1d48539c9d05838f0edea930aa06c464d50775dc10c7973eabdbf89d4d1",
+      "checks": [
+        {
+          "check": "explicit scoped signed graph Source changes actual native gameplay",
+          "result": "pass"
+        }
+      ]
+    },
+    {
+      "source_run": "registry-search-current/evidence.json",
+      "report_sha256": "1e8a645c0c8a42d07c68dc8cc04b995e3d81cf2b20f477a873d925a39020213f",
+      "image_sha256": "ec3013bc30898c625ccac0a7f778b8c9cbdb8fc0d8089f12dbdd4302404e786e",
+      "checks": [],
+      "observations": {
+        "case_insensitive": true,
+        "facet_filter": true,
+        "pagination": true,
+        "malformed_denied": true,
+        "signed_facet_substitution_denied": true,
+        "backing_copied": false,
+        "fast_current_known_only": true,
+        "known_revocation_denied": true
+      }
+    },
+    {
+      "source_run": "game-stable-graph/evidence.json",
+      "report_sha256": "e0a84d2328b13140922b08fe3945b842f3164675dae39b78abbc24e43d52d07f",
+      "image_sha256": "f53882fa10c88128285fd89275049cf13f8a436c3f5517dccdf02263273de50d",
+      "checks": []
+    }
+  ],
+  "boundaries": [
+    "No source-to-binary or compiler verification claim.",
+    "This original game does not fulfill broad REL Luanti/Lugaru obligations.",
+    "Development file-backed encrypted vault tested; no physical-vault power-loss or anti-rollback-freshness claim.",
+    "Game scoped protocols and existing native update/rollback were exercised; source graph network acquisition is a separate Library integration dependency.",
+    "No native ARM64 hardware or independent operator verification in these game runs."
+  ],
+  "secure_publications": [
+    {
+      "generation": 1,
+      "edition_version": 3,
+      "head": "4c8ed47412020b886df5d8abc373dcc66fc4f7532382c78c8ab52d21d015c3bd",
+      "logical_project_id": "20d969562e593a7ff70b716d2b627d286f9a40b549b7e177b12a81103af51513",
+      "publication_id": "c12e9013c0e00e4aac24fa4c39d186d16a591f2a55a6ee3bf7c6598f36b8b3c9",
+      "release_id": "3a56b13d0e211adf25e66d05c09dedc48506c84cb4fe328af8295b3460be7779",
+      "edition": "51c458d44566f7c322345f76de34316b86e083c7edf46984c0b0d3b29e5d2292",
+      "binary_sha256": "aa7565fd13a4201fd86f236f693ee84b4690694d29dc0c4a4dd05750a76e64b4",
+      "consumer_sha256": "9eefd1dee20fbe2e19c7b7634c49baefa8b3dad05aca2305517adcb42f43217d"
+    },
+    {
+      "generation": 2,
+      "edition_version": 4,
+      "head": "d57891bac13a4d1ead5ef9d8cb79b9768c24fddc6f30473f16f6d2ad7cbd70e6",
+      "logical_project_id": "20d969562e593a7ff70b716d2b627d286f9a40b549b7e177b12a81103af51513",
+      "publication_id": "c12e9013c0e00e4aac24fa4c39d186d16a591f2a55a6ee3bf7c6598f36b8b3c9",
+      "release_id": "6ef9906f4d0871b59cfde958846fd6c67ebf9838ec5fd57b19a5fc0c673657b0",
+      "edition": "dd872acbb173263cb4aa1f4832d4142c992a1c749e29cb211d86087b9b4aa5b7",
+      "binary_sha256": "e0fcbeab6f808692e223217259bf6710d8ff8dfcb4269a05143e943e6f478789",
+      "consumer_sha256": "7f14aca509cbae1777c92d0d1a8d414ca0cc5661a76cbdea78a7b3c83238166c"
+    }
+  ],
+  "secure_builds": {
+    "report_sha256": "a6184df8da126130c5cb3e71f3f1cf56f47f4e4fecd0834585ac9cb5109471a9",
+    "publisher_image_sha256": "5752c893b0c0614e95229fa413921c32b06273dca6e91645d1fdda794cd730fa",
+    "previous_release": "08a729087c5dce0dd7c24f6c3f6df92780953a6f2c5a8983a22e89c605758008",
+    "new_actual_isolated_builds": 2,
+    "closures": [
+      {
+        "generation": 1,
+        "records": 19,
+        "bytes": 129807,
+        "head": "fbbe56ac4e375362293eb5f078a49088b6df19bea4046cfaf7c4bc9ad466672d"
+      },
+      {
+        "generation": 2,
+        "records": 20,
+        "bytes": 130479,
+        "head": "00b666fff52fc0fb9b149516f81e26a3992a6ca707c83005f96c82d2fa74474b"
+      }
+    ],
+    "scope_boundary": "Game501/503 calls Objects.checkDelegation against exact IPC caller before any metadata/read",
+    "native_execution_on_final_image": "passed: campaign-005-game-core.json",
+    "metadata_revision_report_sha256": "924e41cdad589238e5c957046658498da616d9e74d6bec15f6a0b460ec43e603",
+    "metadata_revision_actual_new_builds": 0
+  },
+  "final_game_core": {
+    "report": "campaign-005-game-core.json",
+    "report_sha256": "6306aa6d7be5109ac43a244a98cbea742996b0e43b5056ff316279008ade3370",
+    "image_sha256": "d3e706f06da6db315b5da809a99f9b95f664c4f012de6c3bba875223c396cc62",
+    "tests": 7,
+    "command": [
+      "python3",
+      "tests/crate_game.py",
+      "--image",
+      "build/campaign005/final/guest.bin",
+      "--game",
+      "build/campaign005/game-secure-editions/game1/crate-workshop.ltrel",
+      "--game-v2",
+      "build/campaign005/game-secure-editions/game2/crate-workshop.ltrel",
+      "--public",
+      "build/campaign005/publisher.pub",
+      "--vault",
+      "build/campaign005/final/game-core.vault",
+      "--vault-key",
+      "build/campaign005/final/game-core.key",
+      "--issuer-boundary",
+      "--output",
+      "build/campaign005/final/game-core"
+    ],
+    "issuer_boundary": "The executed --issuer-boundary case passed the game-owned numeric snapshot handle without a caller-issued read scope;503 rejected it and preserved current progress."
+  },
+  "native_library_game": {
+    "report": "campaign-005-native-game-library.json",
+    "report_sha256": "ff6d438ca502914a6a0a8a72709602de7e7bbc967dba1c960aee66c7711bd67e",
+    "registry_image_sha256": "d3e706f06da6db315b5da809a99f9b95f664c4f012de6c3bba875223c396cc62",
+    "recipient_image_sha256": "e3767c2d12d335649bf9acf3e731e23abb24e453c1a03b85a5d8580dab02769a",
+    "library_release": "3a440ae9d37a4f4a99cb0f6fe5634d55bcda12edfc6568c0941aa446afff2dbb",
+    "game_release": "3a56b13d0e211adf25e66d05c09dedc48506c84cb4fe328af8295b3460be7779",
+    "save_sha256": "199fe54e37946001f2a728dd841a2476d1e58506a39231c976cc57b5052043fe",
+    "checks": [
+      "native I/J/K/B and physical approval retain selected typed save; cancellation left vault empty",
+      "fresh restart N/Enter/L recovers compatible save under fresh execution/read/network authority",
+      "native M Source mod changes actual puzzle and incompatible save leaves progress/prior save recoverable"
+    ],
+    "scope": "public game graph explicitly imported through Objects for this focused native save test; distinct remote graph acquisition has separate evidence",
+    "normal_command": [
+      "python3",
+      "tests/library_game_save.py",
+      "--image",
+      "build/campaign005/final-3/guest.bin",
+      "--packages",
+      "build/campaign005/final-3/packages",
+      "--archive",
+      "build/campaign005/game-secure-editions/game1-closure.json",
+      "--game",
+      "build/campaign005/game-secure-editions/game1/crate-workshop.ltrel",
+      "--mod",
+      "--keep-running",
+      "--output",
+      "build/native-game-library"
+    ]
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "schema": 1,
+  "result": "passed",
+  "scope": "Player0.5.4 focused precise WAV decoding, captured samples and native controls",
+  "executions": [
+    {
+      "source": "build/campaign005/final-5/player-qemu/journey.json",
+      "result": {
+        "image": "c620a5610dbcad3dc2ae13f231eb8bb0fb00ca2082834b96eb17b8ddeb45fb6d",
+        "backend": "qemu",
+        "checks": [
+          {
+            "check": "native stereo WAV decoding, unknown-chunk padding, split range reads and actual PCM output",
+            "result": "pass",
+            "release": "efa8056ec4741b55326b30bc99fb5aae1770b5cb0983a7dc7e492d7c86071ae2",
+            "payload_bytes": 192054,
+            "frames": 48000,
+            "sample_bytes": 192000,
+            "sample_sha256": "bc3895b7cc6263679d470a0e46e73dc82a3b4823088f7ef2a23b74242450f357",
+            "elapsed_seconds": 0.9226431180723011,
+            "speaker_output": false,
+            "network_attached": false
+          },
+          {
+            "check": "native mono to stereo sample conversion",
+            "result": "pass",
+            "source_sample_bytes": 96000,
+            "output_sample_bytes": 192000,
+            "sample_sha256": "fbd5ddbbb00f3e4b70c05a1d6aab3059fd3cb94b898376c67f687a3f99b448b2"
+          },
+          {
+            "check": "unsupported sample rate rejected by isolated native parser",
+            "result": "pass"
+          }
+        ]
+      }
+    },
+    {
+      "source": "build/campaign005/final-5/player-x86_64/journey.json",
+      "result": {
+        "image": "c620a5610dbcad3dc2ae13f231eb8bb0fb00ca2082834b96eb17b8ddeb45fb6d",
+        "backend": "x86_64",
+        "checks": [
+          {
+            "check": "native stereo WAV decoding, unknown-chunk padding, split range reads and actual PCM output",
+            "result": "pass",
+            "release": "efa8056ec4741b55326b30bc99fb5aae1770b5cb0983a7dc7e492d7c86071ae2",
+            "payload_bytes": 192054,
+            "frames": 48000,
+            "sample_bytes": 192000,
+            "sample_sha256": "bc3895b7cc6263679d470a0e46e73dc82a3b4823088f7ef2a23b74242450f357",
+            "elapsed_seconds": 10.532341836951673,
+            "speaker_output": false,
+            "network_attached": false
+          },
+          {
+            "check": "native mono to stereo sample conversion",
+            "result": "pass",
+            "source_sample_bytes": 96000,
+            "output_sample_bytes": 192000,
+            "sample_sha256": "fbd5ddbbb00f3e4b70c05a1d6aab3059fd3cb94b898376c67f687a3f99b448b2"
+          },
+          {
+            "check": "unsupported sample rate rejected by isolated native parser",
+            "result": "pass"
+          }
+        ]
+      }
+    },
+    {
+      "source": "build/campaign005/final-5/player-controls/journey.json",
+      "result": {
+        "image": "c620a5610dbcad3dc2ae13f231eb8bb0fb00ca2082834b96eb17b8ddeb45fb6d",
+        "backend": "qemu",
+        "checks": [
+          {
+            "check": "native stereo WAV decoding, unknown-chunk padding, split range reads and actual PCM output",
+            "result": "pass",
+            "release": "efa8056ec4741b55326b30bc99fb5aae1770b5cb0983a7dc7e492d7c86071ae2",
+            "payload_bytes": 192054,
+            "frames": 48000,
+            "sample_bytes": 192000,
+            "sample_sha256": "bc3895b7cc6263679d470a0e46e73dc82a3b4823088f7ef2a23b74242450f357",
+            "elapsed_seconds": 0.6544846268370748,
+            "speaker_output": false,
+            "network_attached": false
+          },
+          {
+            "check": "native seek bounds, pause/resume byte continuity and stop",
+            "result": "pass",
+            "paused_frame": 512,
+            "frames_after_resume": 48000,
+            "additional_pcm_bytes": 192000,
+            "stopped_output_epoch": 0
+          },
+          {
+            "check": "native mono to stereo sample conversion",
+            "result": "pass",
+            "source_sample_bytes": 96000,
+            "output_sample_bytes": 192000,
+            "sample_sha256": "fbd5ddbbb00f3e4b70c05a1d6aab3059fd3cb94b898376c67f687a3f99b448b2"
+          },
+          {
+            "check": "unsupported sample rate rejected by isolated native parser",
+            "result": "pass"
+          }
+        ]
+      }
+    }
+  ],
+  "limits": [
+    "actual speakers not exercised",
+    "assembly backend time is not native audio hardware or a wall-clock real-time guarantee",
+    "no sustained real-time or audible underrun-rate claim"
+  ]
+}

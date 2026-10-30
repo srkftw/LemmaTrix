@@ -1,6 +1,7 @@
 import Guest.LiveMemory
 import Guest.Devices
 import Guest.GraphicsDevice
+import Guest.AudioDevice
 namespace Guest.Live
 open Guest.LiveMemory
 @[never_extract, extern "lt_idle_pc"] opaque idlePC : UInt64 → UInt64
@@ -11,8 +12,16 @@ def queue (p : UInt64) : UInt64 := 0x80c00000+p*16384
 def rx : UInt64 := 0x80d00000
 def code (p : UInt64) : UInt64 := 0x81000000+p*524288
 def arena (p : UInt64) : UInt64 := 0x81800000+p*0x200000
+-- Built-in Objects profile3 uses the same private512KiB physical slot. Native
+-- signed application profile2 retains its256KiB ceiling and existing mapping.
+def codeLimit (p service : UInt64) : UInt64 := if p == 2 && service == 2 then 393216 else 262144
+def dataOffset (p : UInt64) : UInt64 := if p == 2 then 393216 else 262144
+def stackOffset (p : UInt64) : UInt64 := if p == 2 then 458752 else 327680
+def serviceSource (p : UInt64) : UInt64 := if p == 2 then 0x80480000 else 0x80300000+(p-1)*262144
+theorem ordinary_application_code_limit (p : UInt64) : codeLimit p 0 = 262144 := by
+  simp [codeLimit]
 def physical (p v : UInt64) : UInt64 :=
-  if v >= 0x600000 then arena p+v-0x600000 else code p+262144+v-0x410000
+  if v >= 0x600000 then arena p+v-0x600000 else code p+dataOffset p+v-0x410000
 def valid (ptr len bound : UInt64) : Bool := ptr >= 0x410000 && ptr <= 0x420000 && len <= bound && len <= 0x420000-ptr
 def validFor (p ptr len bound t : UInt64) : Bool :=
   valid ptr len bound || (Guest.load64 (proc p+96) t == 2 && ptr >= 0x600000 && ptr <= 0x800000 && len <= bound && len <= 0x800000-ptr)
@@ -50,12 +59,15 @@ def tables (p t : UInt64) : UInt64 :=
   let wideLeaf := 0x80130000+p*4096
   let t := zero wideLeaf 512 t
   let t := Guest.store64 (mid+8) (pte wideLeaf 1) t
-  let t := if wide then pages wideLeaf (code p) 64 219 t else pages leaf (code p) 16 219 t
-  let t := pages (leaf+128) (code p+262144) 16 215 t
-  let t := pages (leaf+384) (code p+327680) 4 215 t
+  let t := if wide then pages wideLeaf (code p) (codeLimit p (Guest.load64 (proc p+24) t)/4096) 219 t else pages leaf (code p) 16 219 t
+  let t := pages (leaf+128) (code p+dataOffset p) 16 215 t
+  let t := pages (leaf+384) (code p+stackOffset p) 4 215 t
   if p == 1 then privatePages (mid+24) 0x83000000 2 t
   else if p == 2 then privatePages (mid+24) 0x84000000 4 t
   else if p == 3 then privatePages (mid+24) 0x85000000 2 t
+  else if p == 5 then
+    let t := privatePages (mid+24) (arena p) 1 t
+    privatePages (mid+56) 0x89000000 4 t
   else if p >= 4 && Guest.load64 (proc p+96) t == 2 then privatePages (mid+24) (arena p) 1 t
   else t
 
@@ -71,11 +83,14 @@ def clearPrivate (p t : UInt64) : UInt64 :=
   if p == 1 then zero 0x83000000 524288 t
   else if p == 2 then zero 0x84000000 1048576 t
   else if p == 3 then zero 0x85000000 524288 t
+  else if p == 5 then zero 0x89000000 1048576 (zero (arena p) 262144 t)
   else if p >= 4 && Guest.load64 (proc p+96) t == 2 then zero (arena p) 262144 t
   else t
 
 def teardown (p why t : UInt64) : UInt64 :=
   let old := identity p t
+  let t := Guest.AudioDevice.died old t
+  let t := if Guest.load64 (state+216) t == old then Guest.store64 (state+216) 0 t else t
   let t := if Guest.load64 (state+128) t == old then Guest.store64 (state+128) 0 t else t
   let t := Guest.store64 (proc p) 5 t
   let t := Guest.store64 (proc p+72) why t
@@ -83,12 +98,15 @@ def teardown (p why t : UInt64) : UInt64 :=
   let t := zero (queue p) 2048 t
   let t := clearPrivate p t
   let t := if p >= 6 then zero (0x87200000+(p-5)*0x100000) 112640 t else t
-  let t := zero (code p+262144) 18432 t
+  let t := if p == 2 then zero (code p+stackOffset p) 2048 (zero (code p+dataOffset p) 8192 t)
+    else zero (code p+262144) 18432 t
   zero (frame p) 34 t
 
 def start (p source len rights entry service t : UInt64) : UInt64 :=
   let generation := Guest.load64 (proc p+8) t
-  if generation >= 0x00ffffffffffffff || (generation &&& 0xffffff) == 0xffffff || len == 0 || len > 262144 || (entry != 0x200000 && entry != 0x400000) || (entry == 0x400000 && len > 65536) then err else
+  if generation >= 0x00ffffffffffffff || (generation &&& 0xffffff) == 0xffffff ||
+    (p == 2 && service != 2) || len == 0 || len > codeLimit p service ||
+    (entry != 0x200000 && entry != 0x400000) || (entry == 0x400000 && len > 65536) then err else
     let t := zero (proc p) 64 t
     let t := zero (queue p) 2048 t
     let t := zero (code p) 65536 t
@@ -158,7 +176,7 @@ def allowedEndpoint (caller target h t : UInt64) : Bool :=
   else if target == 5 then (h == 5 || h == identity target t) && (caller == 1 || (Guest.load64 (proc caller+16) t &&& 256) != 0 || identity caller t == Guest.load64 (state+208) t)
   else if target == 6 then (h == 6 || h == identity target t) && (caller == 1 || (Guest.load64 (proc caller+16) t &&& 1024) != 0)
   else if target == 4 then (h == 4 || h == identity target t) && (Guest.load64 (proc caller+16) t &&& 256) != 0
-  else (caller == 1 || caller == 4 || (h == Guest.load64 (state+200) t && (Guest.load64 (proc caller+16) t &&& 1024) != 0)) && h == identity target t
+  else (caller == 1 || caller == 4 || identity caller t == Guest.load64 (state+216) t || (h == Guest.load64 (state+200) t && (Guest.load64 (proc caller+16) t &&& 1024) != 0)) && h == identity target t
 
 def callerRights (caller t : UInt64) : UInt64 :=
   Guest.load64 (proc caller+16) t ||| (if Guest.load64 (proc caller+24) t == 5 then 0x200000000 else if Guest.load64 (proc caller+24) t == 3 then 0x400000000 else 0)
@@ -189,10 +207,18 @@ def rpcBudget (caller target endpoint ptr len t : UInt64) : UInt64 :=
 def call (p endpoint ptr len capacity t : UInt64) : UInt64 :=
   let target := endpoint &&& 255
   if target == 0 || target >= 12 || target == p || !validFor p ptr len 1024 t || capacity > 1024 || !validFor p ptr capacity 1024 t then err else
-    if !live (identity target t) t || !allowedEndpoint p target endpoint t then err else
-      let t := if target == 1 && Guest.load64 (proc 1) t == 4 then
-        let t := Guest.store64 (frame 1+80) err t
-        Guest.store64 (proc 1) 1 t else t
+    let operation := if len >= 64 then Guest.load64 (physical p ptr) t else err
+    let contentCall := target == 5 && (endpoint == 5 || endpoint == identity 5 t) && operation >= 300 && operation <= 316 && (Guest.load64 (proc p+16) t &&& 127) != 0
+    -- Trusted compositor progress never calls back through a Launcher that
+    -- may itself be inspecting the Library. This single read-only operation
+    -- neither grants a vault mount nor changes the caller's domain rights.
+    let contentProgress := p == 4 && Guest.load64 (proc p+24) t == 4 && target == 3 &&
+      (endpoint == 3 || endpoint == identity 3 t) && len == 64 && operation == 247 &&
+      Guest.load64 (physical p ptr+16) t == 3 && Guest.load64 (physical p ptr+56) t == 1
+    if !live (identity target t) t || (!contentCall && !contentProgress && !allowedEndpoint p target endpoint t) then err else
+      let t := if Guest.load64 (proc target) t == 4 then
+        let t := Guest.store64 (frame target+80) 0 t
+        Guest.store64 (proc target) 1 t else t
       let q := queue target
       let count := Guest.load64 (q+16) t
       if count >= 8 || Guest.load64 (state+8) t == err then err else
@@ -336,11 +362,12 @@ def dispatch (p op h ptr n v t : UInt64) : UInt64 :=
       let size := Guest.load64 src t
       let rights := Guest.load64 (src+8) t
       let entry := Guest.load64 (src+16) t
-      if size == 0 || size > 262144 || (size &&& 3) != 0 || rights > 4095 || (entry != 0x200000 && entry != 0x400000) || (entry == 0x400000 && size > 65536) then err else
+      if size == 0 || size > 262144 || (size &&& 3) != 0 || rights > 8191 || (entry != 0x200000 && entry != 0x400000) || (entry == 0x400000 && size > 65536) then err else
         let t := zero (release h) 32 t
         let t := Guest.store64 (release h+8) size t
         let t := Guest.store64 (release h+16) rights t
         let t := Guest.store64 (release h+24) entry t
+        let t := copy (src+32) (release h+64) 32 t
         let profile := Guest.load64 (src+24) t
         let t := Guest.store64 (release h+40) (if profile == 2 then 2 else 1) t
         zero (releaseCode h) 32768 t
@@ -366,7 +393,8 @@ def dispatch (p op h ptr n v t : UInt64) : UInt64 :=
       let t := if slot == 6 then Devices.streamInit t else t
       if ptr == 0 then t else
         let descriptor := 0x80200000+slot*32
-        let result := start slot (0x80300000+(slot-1)*262144) (Guest.load64 descriptor t) (Guest.load64 (descriptor+8) t) 0x200000 slot t
+        if Guest.load64 (descriptor+16) t != 2 || Guest.load64 (descriptor+24) t != codeLimit slot slot then err else
+        let result := start slot (serviceSource slot) (Guest.load64 descriptor t) (Guest.load64 (descriptor+8) t) 0x200000 slot t
         if result == err then err else identity slot result
   else if op == 60 || op == 61 then
     if p != 3 || n == 0 || n > 4096 || n%512 != 0 || !valid ptr n 4096 then err else
@@ -460,7 +488,8 @@ def dispatch (p op h ptr n v t : UInt64) : UInt64 :=
           Guest.store64 (q+192) 1 t
         else
           let t := Guest.store64 (0x80d10000+(focus &&& 255)*1024+(tail%64)*8) h t
-          Guest.store64 (q+184) (tail+1) t
+          let t := Guest.store64 (q+184) (tail+1) t
+          if Guest.load64 q t == 4 then Guest.store64 q 1 (Guest.store64 (frame (focus &&& 255)+80) 0 t) else t
   else if op == 90 then
     if p < 5 || h != identity p t || (Guest.load64 (proc p+16) t &&& 512) == 0 then err else
       let q := proc p
@@ -507,6 +536,36 @@ def dispatch (p op h ptr n v t : UInt64) : UInt64 :=
       let result := Devices.streamInit t
       if result == err then err else Devices.streamStatus result
     else err
+  else if op == 116 then Guest.load64 (state+16) t
+  else if op == 117 then
+    let now := Guest.load64 (state+16) t
+    let q := proc p
+    if h <= now || Guest.load64 (queue p+16) t != 0 || Guest.load64 (q+176) t != Guest.load64 (q+184) t then 0 else
+    let t := Guest.store64 (q+48) 0 t
+    let t := Guest.store64 (q+56) 0 t
+    let t := Guest.store64 (q+120) (if h-now > 100 then now+100 else h) t
+    Guest.store64 q 4 t
+  else if op == 118 then
+    if p != 1 || (h != 0 && (!live h t || (h &&& 255) < 7)) then err else Guest.store64 (state+216) h t
+  else if op == 119 then
+    let broker := Guest.load64 (state+216) t
+    if broker != 0 && live broker t then broker else err
+  else if op == 125 then
+    if identity p t != Guest.load64 (state+216) t || !live h t || !validFor p ptr n 32 t || n != 32 then err else
+    let slot := Guest.load64 (proc (h &&& 255)+112) t
+    if slot == 0 || slot > 16 then err else 32+copy (release (slot-1)+64) (physical p ptr) 32 t
+  else if op == 124 then
+    if identity p t != Guest.load64 (state+216) t || !validFor p ptr n 384 t || n != 384 then err else 384+inspectProcesses 0 (physical p ptr) t
+  else if op == 120 then
+    if (Guest.load64 (proc p+16) t &&& 4096) == 0 then err else Guest.AudioDevice.acquire (identity p t) t
+  else if op == 121 then
+    if (Guest.load64 (proc p+16) t &&& 4096) == 0 || !validFor p ptr n 1024 t then err else
+    Guest.AudioDevice.write (identity p t) h (physical p ptr) n t
+  else if op == 122 then
+    if (Guest.load64 (proc p+16) t &&& 4096) == 0 then err else Guest.AudioDevice.close (identity p t) h t
+  else if op == 123 then
+    if (Guest.load64 (proc p+16) t &&& 4096) == 0 || !Guest.AudioDevice.valid (identity p t) h t then err else
+    (Guest.load64 (Guest.AudioDevice.state+24) t <<< 1) ||| (if Guest.AudioDevice.ready t then 1 else 0)
   else if op == 110 then
     if p == 6 then Guest.load64 (state+16) t else err
   else if op == 109 then
@@ -558,7 +617,8 @@ partial def bootServices (p t : UInt64) : UInt64 :=
   if p == 7 then t else
     let descriptor := 0x80200000+p*32
     let t := clearPrivate p t
-    let result := start p (0x80300000+(p-1)*262144) (Guest.load64 descriptor t) (Guest.load64 (descriptor+8) t) 0x200000 p t
+    let result := if Guest.load64 (descriptor+16) t != 2 || Guest.load64 (descriptor+24) t != codeLimit p p then err else
+      start p (serviceSource p) (Guest.load64 descriptor t) (Guest.load64 (descriptor+8) t) 0x200000 p t
     if result == err then Guest.finish 1 else bootServices (p+1) result
 
 def kernelMain (initial : UInt64) : UInt64 :=

@@ -1,0 +1,237 @@
+{
+  "image_sha256": "26df02df50e24d2be2bfdb489cd6b6973e0f58f38faa92535de3fdcb8211ed18",
+  "checks": [
+    {
+      "check": "fresh recipient enrolls registry and seed, Adds signed metadata, binds O and has no Game root before I",
+      "result": "passed",
+      "recipient": "p1",
+      "library": 13170060602325860617,
+      "fetch": 13170060602325860616,
+      "recipient_game_roots_before_I": 0,
+      "fresh_network_authority": true
+    },
+    {
+      "check": "native O/I remotely acquires selected canonical Game and physical Enter approves its exact executable",
+      "result": "passed",
+      "recipient": "p1",
+      "head": "4c8ed47412020b886df5d8abc373dcc66fc4f7532382c78c8ab52d21d015c3bd",
+      "nodes": 19,
+      "payload_bytes": 129807,
+      "game_release": "3a56b13d0e211adf25e66d05c09dedc48506c84cb4fe328af8295b3460be7779",
+      "game_instance": 13170060602325860618,
+      "game_not_running_before_approval": true,
+      "recipient_host_game_import": false
+    },
+    {
+      "check": "native K/B/Enter retains only the selected typed192-byte save",
+      "result": "passed",
+      "recipient": "p1",
+      "producer": 1,
+      "save_sha256": "199fe54e37946001f2a728dd841a2476d1e58506a39231c976cc57b5052043fe",
+      "state": {
+        "generation": 1,
+        "level": 0,
+        "moves": 2,
+        "completed": 1,
+        "won": 1,
+        "undo": 2,
+        "game": "c77a40fc178d8ec017c8d31b8c86e8967540fcc72eebd4050da629602edc99ff",
+        "pack": "77ce47e71af7c4d7a3b915b11cdba694554f93e2039403bbe7195aa97a44c8b1",
+        "boxes": 536870912,
+        "player": 28,
+        "save": 13170060606620827910,
+        "notice": 23
+      }
+    },
+    {
+      "check": "fresh recipient enrolls registry and seed, Adds signed metadata, binds O and has no Game root before I",
+      "result": "passed",
+      "recipient": "p2",
+      "library": 6969335288237654281,
+      "fetch": 6969335288237654280,
+      "recipient_game_roots_before_I": 0,
+      "fresh_network_authority": true
+    },
+    {
+      "check": "native O/I remotely acquires selected canonical Game and physical Enter approves its exact executable",
+      "result": "passed",
+      "recipient": "p2",
+      "head": "4c8ed47412020b886df5d8abc373dcc66fc4f7532382c78c8ab52d21d015c3bd",
+      "nodes": 19,
+      "payload_bytes": 129807,
+      "game_release": "3a56b13d0e211adf25e66d05c09dedc48506c84cb4fe328af8295b3460be7779",
+      "game_instance": 6969335288237654282,
+      "game_not_running_before_approval": true,
+      "recipient_host_game_import": false
+    },
+    {
+      "check": "fresh personal restart, fresh O/I execution approval and N/Enter/L recover prior approved progress",
+      "result": "passed",
+      "recipient": "p2",
+      "save_sha256": "199fe54e37946001f2a728dd841a2476d1e58506a39231c976cc57b5052043fe",
+      "state": {
+        "generation": 1,
+        "level": 0,
+        "moves": 2,
+        "completed": 1,
+        "won": 1,
+        "undo": 0,
+        "game": "c77a40fc178d8ec017c8d31b8c86e8967540fcc72eebd4050da629602edc99ff",
+        "pack": "77ce47e71af7c4d7a3b915b11cdba694554f93e2039403bbe7195aa97a44c8b1",
+        "boxes": 536870912,
+        "player": 28,
+        "save": 0,
+        "notice": 21
+      },
+      "fresh_save_scope": true
+    },
+    {
+      "check": "native O/I remotely acquires selected canonical Game and physical Enter approves its exact executable",
+      "result": "passed",
+      "recipient": "p2",
+      "head": "d57891bac13a4d1ead5ef9d8cb79b9768c24fddc6f30473f16f6d2ad7cbd70e6",
+      "nodes": 20,
+      "payload_bytes": 130479,
+      "game_release": "6ef9906f4d0871b59cfde958846fd6c67ebf9838ec5fd57b19a5fc0c673657b0",
+      "game_instance": 6969335288237654283,
+      "game_not_running_before_approval": true,
+      "recipient_host_game_import": false
+    },
+    {
+      "check": "actually newly admitted/downloaded generation2 loads compatible approved prior save",
+      "result": "passed",
+      "recipient": "p2",
+      "save_sha256": "199fe54e37946001f2a728dd841a2476d1e58506a39231c976cc57b5052043fe",
+      "state": {
+        "generation": 2,
+        "level": 0,
+        "moves": 2,
+        "completed": 1,
+        "won": 1,
+        "undo": 0,
+        "game": "c77a40fc178d8ec017c8d31b8c86e8967540fcc72eebd4050da629602edc99ff",
+        "pack": "77ce47e71af7c4d7a3b915b11cdba694554f93e2039403bbe7195aa97a44c8b1",
+        "boxes": 536870912,
+        "player": 28,
+        "save": 0,
+        "notice": 21
+      },
+      "fresh_save_scope": true
+    },
+    {
+      "check": "native K/B/Enter retains only the selected typed192-byte save",
+      "result": "passed",
+      "recipient": "p2",
+      "producer": 2,
+      "save_sha256": "ad129f736a9b9fc90068f491a36bcbe1f55f0c8441237307fe7f5e8613543bf7",
+      "state": {
+        "generation": 2,
+        "level": 0,
+        "moves": 2,
+        "completed": 1,
+        "won": 1,
+        "undo": 0,
+        "game": "c77a40fc178d8ec017c8d31b8c86e8967540fcc72eebd4050da629602edc99ff",
+        "pack": "77ce47e71af7c4d7a3b915b11cdba694554f93e2039403bbe7195aa97a44c8b1",
+        "boxes": 536870912,
+        "player": 28,
+        "save": 6969335292532621839,
+        "notice": 23
+      }
+    },
+    {
+      "check": "explicit trusted rollback and J/N/Enter/L load approved producer2 save in actual older Game",
+      "result": "passed",
+      "recipient": "p2",
+      "save_sha256": "ad129f736a9b9fc90068f491a36bcbe1f55f0c8441237307fe7f5e8613543bf7",
+      "state": {
+        "generation": 1,
+        "level": 0,
+        "moves": 2,
+        "completed": 1,
+        "won": 1,
+        "undo": 0,
+        "game": "c77a40fc178d8ec017c8d31b8c86e8967540fcc72eebd4050da629602edc99ff",
+        "pack": "77ce47e71af7c4d7a3b915b11cdba694554f93e2039403bbe7195aa97a44c8b1",
+        "boxes": 536870912,
+        "player": 28,
+        "save": 0,
+        "notice": 21
+      },
+      "fresh_save_scope": true
+    }
+  ],
+  "packages": [
+    {
+      "guest": "p1",
+      "release": "38b372cd782a95138381f7062ad82e26c9472b4d4e33f4a9c1abaae3df27b5cb",
+      "executable_sha256": "293ad06764c3b1d5c64678fc24f3b79399182e8d059bfaf36411d615fd12d012",
+      "rights": 1151
+    },
+    {
+      "guest": "p1",
+      "release": "5ed024795ca8a89d33d9268f415591f7189937bcb5757f85bbded0fbe5d8e1c7",
+      "executable_sha256": "26a3cb2ca443c6abbf5f4fd07829060f106c4be3a9389eb206050b5ed64c7e8e",
+      "rights": 1919
+    },
+    {
+      "guest": "p2",
+      "release": "38b372cd782a95138381f7062ad82e26c9472b4d4e33f4a9c1abaae3df27b5cb",
+      "executable_sha256": "293ad06764c3b1d5c64678fc24f3b79399182e8d059bfaf36411d615fd12d012",
+      "rights": 1151
+    },
+    {
+      "guest": "p2",
+      "release": "5ed024795ca8a89d33d9268f415591f7189937bcb5757f85bbded0fbe5d8e1c7",
+      "executable_sha256": "26a3cb2ca443c6abbf5f4fd07829060f106c4be3a9389eb206050b5ed64c7e8e",
+      "rights": 1919
+    }
+  ],
+  "recipient_host_game_import": false,
+  "game_releases": [
+    "3a56b13d0e211adf25e66d05c09dedc48506c84cb4fe328af8295b3460be7779",
+    "6ef9906f4d0871b59cfde958846fd6c67ebf9838ec5fd57b19a5fc0c673657b0"
+  ],
+  "limitations": [
+    "explicit volatile public provider; no independently operated or durable Game provider claim",
+    "explicit development encrypted backing; no physical durability or rollback-freshness claim",
+    "focused current-image Game flow; connected media/audio has its own evidence"
+  ],
+  "provider": {
+    "result": "ready",
+    "image_sha256": "26df02df50e24d2be2bfdb489cd6b6973e0f58f38faa92535de3fdcb8211ed18",
+    "packages": {
+      "library-registry": {
+        "instance": 27147019399201031,
+        "release": "6297b21e2f039862cea14dc3d96ca78778303a767d31179cf4efdb2c0c3851d8",
+        "executable_sha256": "0b284a806d4b41893d7cad9dd8c35a80e1f8db32e9d73171775539d09718e2c3"
+      },
+      "library-peer": {
+        "instance": 27147019399201032,
+        "release": "e6dd508b43de5808468ba8b60e036625312b037dee343b4d00b1fb1f158bbce5",
+        "executable_sha256": "0942b7ece8bd9d014365b79255fd71e73602042524522109317315ddbc5593d7"
+      }
+    },
+    "game_release": "3a56b13d0e211adf25e66d05c09dedc48506c84cb4fe328af8295b3460be7779",
+    "head": "4c8ed47412020b886df5d8abc373dcc66fc4f7532382c78c8ab52d21d015c3bd",
+    "nodes": 19,
+    "payload_bytes": 129807,
+    "process_id": 2915419,
+    "public_project_volatile": true,
+    "recipient_payload_provisioned": false
+  },
+  "controller_bootstrap_resume": true,
+  "unresolved_optional_mod": {
+    "observed": "physical Enter leaves the trusted Project picker open for the downloaded read-only root; Esc cancels it and restores the Library",
+    "source_inference": "generic picker asks127 for Library; native installation delegated Comp73 from fetched Library89; granting127 fails closed",
+    "scope_required_by_existing_mod_code": "selected Source read/share/revoke without revision or execution authority",
+    "not_passed": true,
+    "recipient_host_graph_or_resource_import": false
+  },
+  "result": "passed",
+  "save_sha256": [
+    "199fe54e37946001f2a728dd841a2476d1e58506a39231c976cc57b5052043fe",
+    "ad129f736a9b9fc90068f491a36bcbe1f55f0c8441237307fe7f5e8613543bf7"
+  ],
+  "provider_and_recipient_image_match": true
+}

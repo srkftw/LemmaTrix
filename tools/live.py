@@ -4,14 +4,30 @@ from pathlib import Path
 import driver,releases,capsule
 import stat,threading,ipaddress
 MAGIC=b'LT2\0';REPLY=b'LR2\0'
-def args_for(backend,image,vault=None,readonly=False,graphics=None,display="none",network_fd=None,server_store=None,server_readonly=False):
+def device_contract(image):
+ # The selected image declares its raw device profile; this is not an app,
+ # provider, admission or acquisition decision made by the host adapter.
+ with Path(image).open('rb') as stream:
+  stream.seek(0x200420);raw=stream.read(24)
+ if not raw or raw==bytes(24):return 1
+ if len(raw)!=24:raise ValueError('unsupported selected image device contract')
+ magic,audio,network=struct.unpack('<8sQQ',raw)
+ if magic!=b'LTDEV2\0\0' or audio!=2 or network not in (1,2):raise ValueError('unsupported selected image device contract')
+ return 2 if network==1 else 3
+def args_for(backend,image,vault=None,readonly=False,graphics=None,display="none",network_fd=None,server_store=None,server_readonly=False,pcm_fd=None):
  if backend=='qemu':
-  args=[driver.tool('qemu-system-riscv64'),'-M','virt','-cpu','rv64','-m','128M','-smp','1','-bios','none','-display',display,'-serial','stdio','-monitor','none','-global','virtio-mmio.force-legacy=false','-kernel',str(image),'-object','rng-random,filename=/dev/urandom,id=lt-rng','-device','virtio-rng-device,rng=lt-rng']
+  args=[driver.tool('qemu-system-riscv64'),'-M','virt','-cpu','rv64','-m','160M','-smp','1','-bios','none','-display',display,'-serial','stdio','-monitor','none','-global','virtio-mmio.force-legacy=false','-kernel',str(image)]
+  if pcm_fd is not None:
+   reliable=device_contract(image)>=2
+   args+=['-chardev',f'socket,id=lt-pcm,fd={pcm_fd}','-device','virtio-serial-device,id=lt-pcmdev,bus=virtio-mmio-bus.7'+(',max_ports=2' if reliable else ''),'-device','virtserialport,chardev=lt-pcm,bus=lt-pcmdev.0,nr=1,name=lt-pcm1' if reliable else 'virtconsole,chardev=lt-pcm,bus=lt-pcmdev.0']
+  args+=['-object','rng-random,filename=/dev/urandom,id=lt-rng','-device','virtio-rng-device,rng=lt-rng']
   args+=['-device','virtio-gpu-device,xres=640,yres=400','-device','virtio-keyboard-device','-device','virtio-mouse-device']
   if graphics:args+=['-qmp',f'unix:{graphics},server=on,wait=off']
   if vault:args+=['-drive',f'file={vault},format=raw,if=none,id=lt-vault'+(',readonly=on' if readonly else ''),'-device','virtio-blk-device,drive=lt-vault,serial=lt-objects-v1']
   if server_store:args+=['-drive',f'file={server_store},format=raw,if=none,id=lt-server'+(',readonly=on' if server_readonly else ''),'-device','virtio-blk-device,drive=lt-server,serial=lt-server-v1']
-  if network_fd is not None:args+=['-chardev',f'socket,id=lt-stream,fd={network_fd}','-device','virtio-serial-device,id=lt-streamdev','-device','virtconsole,chardev=lt-stream']
+  if network_fd is not None:
+   reliable=device_contract(image)==3
+   args+=['-chardev',f'socket,id=lt-stream,fd={network_fd}','-device','virtio-serial-device,id=lt-streamdev'+(',max_ports=2' if reliable else ''),'-device','virtserialport,chardev=lt-stream,bus=lt-streamdev.0,nr=1,name=lt-net1' if reliable else 'virtconsole,chardev=lt-stream,bus=lt-streamdev.0']
   return args
  args=[str(driver.BUILD/('lt-'+backend)),str(image),'--interactive']
  if backend=='aarch64':args.insert(0,driver.tool('qemu-aarch64'))
@@ -21,6 +37,7 @@ def args_for(backend,image,vault=None,readonly=False,graphics=None,display="none
  if server_readonly:args+=['--server-store-readonly']
  if readonly:args+=['--vault-readonly']
  if network_fd is not None:args += ['--network-fd',str(network_fd)]
+ if pcm_fd is not None:args += ['--pcm-fd',str(pcm_fd)]
  return args
 
 class OpaqueStream:
@@ -78,7 +95,9 @@ class OpaqueStream:
    if remote:remote.close()
    if listener:listener.close()
 
-def session(backend,path,vault=None,readonly=False,graphics=None,display="none",network=None,network_listen=None,server_store=None,server_readonly=False,image=None):
+def session(backend,path,vault=None,readonly=False,graphics=None,display="none",network=None,network_listen=None,server_store=None,server_readonly=False,image=None,network_mux=False,pcm_sink=None,pcm_play=False,startup_timeout=None):
+ if startup_timeout is None:startup_timeout=300 if backend=='aarch64' else 60
+ if not 1<=startup_timeout<=600:raise ValueError('startup timeout must be within1..600 seconds')
  image=Path(image or os.environ.get('LT_GUEST_IMAGE') or driver.BUILD/'live/guest.bin')
  if not image.exists():raise ValueError('run ./lt live-build first')
  if vault:
@@ -91,7 +110,12 @@ def session(backend,path,vault=None,readonly=False,graphics=None,display="none",
  if path.exists():raise ValueError('socket path exists; refusing to replace it')
  server=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM)
  input_path=None;input_fd=None;created_input=False
- transport=OpaqueStream(network_listen or network, bool(network_listen)) if network or network_listen else None
+ from pcm import PCMSink
+ audio=PCMSink(pcm_sink,pcm_play) if pcm_sink or pcm_play else None
+ if network_mux:
+  from transport import MultiplexStream
+  transport=MultiplexStream()
+ else:transport=OpaqueStream(network_listen or network, bool(network_listen)) if network or network_listen else None
  try:
   if graphics and backend!='qemu':
    input_path=Path(str(graphics)+'.evdev')
@@ -101,9 +125,15 @@ def session(backend,path,vault=None,readonly=False,graphics=None,display="none",
    # reconnects. The host transports evdev records; no UI commands live here.
    input_fd=os.open(input_path,os.O_RDWR|os.O_NONBLOCK)
   if transport:transport.start()
-  process=subprocess.Popen(args_for(backend,image,vault,readonly,graphics,display,transport.guest.fileno() if transport else None,server_store,server_readonly),stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=None,bufsize=0,pass_fds=(transport.guest.fileno(),) if transport else ())
+  if audio:
+   audio.start()
+   if audio.sink_name:print('PCM OUTPUT '+audio.sink_name+' raw S16LE48000 stereo',flush=True)
+  process=subprocess.Popen(args_for(backend,image,vault,readonly,graphics,display,transport.guest.fileno() if transport else None,server_store,server_readonly,audio.guest.fileno() if audio else None),stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=None,bufsize=0,pass_fds=tuple(x.guest.fileno() for x in (transport,audio) if x))
  except BaseException:
   if transport:transport.close()
+  if audio:
+   audio.close()
+   if audio.sink_name:print('PCM OUTPUT CLOSED '+audio.sink_name+' status '+str(audio.returncode)+' error '+str(audio.error is not None),flush=True)
   server.close()
   if input_fd is not None:os.close(input_fd)
   if created_input:input_path.unlink(missing_ok=True)
@@ -113,7 +143,7 @@ def session(backend,path,vault=None,readonly=False,graphics=None,display="none",
   # Transport readiness only: no requests are interpreted or approved here.
   # Do not advertise a portal until the Lean launcher has completed boot and
   # emitted its empty rid0 ready frame; boot UART reset must not discard input.
-  ready=struct.pack('<4sIQQQ',REPLY,0,0,0,0);deadline=time.monotonic()+60
+  ready=struct.pack('<4sIQQQ',REPLY,0,0,0,0);deadline=time.monotonic()+startup_timeout
   while ready not in pending:
    if process.poll() is not None:raise RuntimeError('guest exited before launcher readiness: '+repr(bytes(pending[-512:])))
    if time.monotonic()>deadline:raise TimeoutError('guest launcher readiness timeout')
@@ -173,6 +203,9 @@ def session(backend,path,vault=None,readonly=False,graphics=None,display="none",
   if client:client.close()
   server.close();path.unlink(missing_ok=True)
   if transport:transport.close()
+  if audio:
+   audio.close()
+   if audio.sink_name:print('PCM OUTPUT CLOSED '+audio.sink_name+' status '+str(audio.returncode)+' error '+str(audio.error is not None),flush=True)
   if process.poll() is None:process.terminate();process.wait(timeout=5)
   if input_fd is not None:os.close(input_fd)
   if created_input:input_path.unlink(missing_ok=True)
@@ -274,7 +307,7 @@ def main(argv=None):
  p=argparse.ArgumentParser(description='Live byte portal; guest owns all state and policy')
  sub=p.add_subparsers(dest='mode',required=True)
  s=sub.add_parser('session');s.add_argument('--backend',choices=['qemu','x86_64','aarch64'],default='qemu');s.add_argument('--socket',required=True,type=Path);s.add_argument('--vault',type=Path);s.add_argument('--vault-readonly',action='store_true');s.add_argument('--display',choices=['none','gtk','sdl'],default='none');s.add_argument('--graphics',type=Path,help='QMP socket (QEMU) or raw pixel/input prefix (assembly)')
- s.add_argument('--network',help='explicit opaque UNIX socket or numeric HOST:PORT endpoint');s.add_argument('--network-listen',help='explicit opaque numeric HOST:PORT listener');s.add_argument('--server-store',type=Path);s.add_argument('--server-store-readonly',action='store_true')
+ s.add_argument('--network-mux',action='store_true',help='LT-Transport-v2: four guest-selected independent opaque connections');s.add_argument('--network',help='explicit opaque UNIX socket or numeric HOST:PORT endpoint');s.add_argument('--network-listen',help='explicit opaque numeric HOST:PORT listener');s.add_argument('--server-store',type=Path);s.add_argument('--server-store-readonly',action='store_true')
  s.add_argument('--image',type=Path,help='explicit identified common guest image (default build/live/guest.bin)')
  v=sub.add_parser('vault-init');v.add_argument('path',type=Path);v.add_argument('--sectors',type=int,default=512);v.add_argument('--key-out',type=Path)
  c=sub.add_parser('ctl');c.add_argument('--socket',required=True,type=Path);cs=c.add_subparsers(dest='command',required=True)
@@ -304,10 +337,12 @@ def main(argv=None):
  for name in ['status','lock','recover','delete']:vs.add_parser(name)
  a=vs.add_parser('unlock');a.add_argument('--key',type=Path,required=True)
  a=vs.add_parser('retain');a.add_argument('handle',type=lambda x:int(x,0))
+ s.add_argument('--pcm-sink',type=Path,help='explicit new raw stereo S16LE48000 capture destination');s.add_argument('--pcm-play',action='store_true',help='output guest-decoded PCM using aplay or little-endian pw-cat')
+ s.add_argument('--startup-timeout',type=int,help='bounded launcher readiness deadline in seconds (default60; ARM interpreter300)')
  args=p.parse_args(argv)
  if args.mode=='session':
-  if args.network and args.network_listen:raise ValueError('select one network endpoint')
-  return session(args.backend,args.socket,args.vault,args.vault_readonly,args.graphics,args.display,args.network,args.network_listen,args.server_store,args.server_store_readonly,args.image)
+  if sum(bool(v) for v in (args.network,args.network_listen,args.network_mux))>1:raise ValueError('select one network transport contract')
+  return session(args.backend,args.socket,args.vault,args.vault_readonly,args.graphics,args.display,args.network,args.network_listen,args.server_store,args.server_store_readonly,args.image,args.network_mux,args.pcm_sink,args.pcm_play,args.startup_timeout)
  if args.mode=='vault-init':
   if args.sectors<304:raise ValueError('development Objects vault needs >=304 sectors')
   if args.path.exists() or (args.key_out and args.key_out.exists()):raise ValueError('vault/key output exists; refusing overwrite')

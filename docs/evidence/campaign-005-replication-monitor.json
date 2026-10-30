@@ -1,0 +1,125 @@
+{
+  "schema": 1,
+  "result": "passed",
+  "campaign": "005",
+  "scope": "executed native headless Library acquisition, independent purpose2 retention/recovery, isolated serving, and later signed publication monitoring",
+  "tests": [
+    "tests/library_durable_replication.py",
+    "tests/library_seed_isolation.py",
+    "tests/library_monitor_publication.py"
+  ],
+  "source_results": {
+    "build/campaign005/durable-seeds/result.json": {
+      "sha256": "8832c44b12b3b0b3d381602f23e5b0c894db1624123b6cc53c3b73888ffc8fbb"
+    },
+    "build/campaign005/durable-seeds/isolation.json": {
+      "sha256": "441f591dafecd6f24ca1e983a8e7e124af2c324cda9dd60655d0a8502193b31b"
+    },
+    "build/campaign005/monitor-publication/result.json": {
+      "sha256": "a6ea99ebba53121a3ea76d3e140c47e8daba45f34cfa7fe29e492725e937921a"
+    }
+  },
+  "images": {
+    "C_durable_seed_guests": "e3767c2d12d335649bf9acf3e731e23abb24e453c1a03b85a5d8580dab02769a",
+    "D3_existing_library_recipient_and_volatile_source": "d3e706f06da6db315b5da809a99f9b95f664c4f012de6c3bba875223c396cc62"
+  },
+  "packages": {
+    "registry_verifier": "b4bcbb0e0d4b8dbe5b8c28bf8a2a6903b6c184208c95fc262afaed23181ff270",
+    "headless_library_acquirer": "f262375ea9543c83e391203f175ccee52098b3368d9d5c8bc34addcd3a84f3aa",
+    "initial_content_peer": "b0709ad90a5ec51e2a8535286272d1d8a323e4218d6faae965ddf8ab0a7f268f",
+    "recovered_seed_peer": "e6dd508b43de5808468ba8b60e036625312b037dee343b4d00b1fb1f158bbce5"
+  },
+  "content": {
+    "original_manifest_sha256": "073980a32193d7edd1fee1a32a4a2bc4dcea02b7de7f8af3fb51266fa6da8eab",
+    "later_manifest_sha256": "be2725e427b0713c3eabfd703ac1392bbe8a0310d4b7e567bf698ab806be5cc9",
+    "bytes_per_item": 1152044,
+    "chunks_per_item": 282,
+    "chunk_bytes": 4096,
+    "format": "RIFF/WAVE PCM signed 16-bit little-endian; 48000 Hz; stereo; 6 seconds",
+    "recipe": "tools/content.py original_wave(6,2), original_wave(6,2,later=True); original CC0-1.0 integer triangle score"
+  },
+  "replication": {
+    "path": [
+      "existing verified volatile source",
+      "new seed1 native acquisition",
+      "seed1 purpose2 commit and normal library-node restart",
+      "new seed2 native acquisition from recovered seed1",
+      "seed2 purpose2 commit and normal library-node restart"
+    ],
+    "seeds": [
+      {
+        "name": "seed1",
+        "namespace": "3e42b8bddb442181f5767105584487a449103a0a0f7390fc31d6d16f2d611aaa",
+        "generation": 1,
+        "bytes": 1152044,
+        "separate_backing": "seed1.store",
+        "resumed_from_verified_chunks": 257,
+        "seconds_in_final_resume_observation": 55.25320288888179,
+        "elapsed_since_role_setup_seconds": 1556.346616268158,
+        "timing_scope": "55.2532 seconds covers only the final resumed portion; 1556.3466 seconds includes setup/diagnostics/reconnection; neither is whole-payload throughput"
+      },
+      {
+        "name": "seed2",
+        "namespace": "cad923d3141aa53f1d474eda07c2063d9ecede9333ffab8974edb16813883c30",
+        "generation": 1,
+        "bytes": 1152044,
+        "separate_backing": "seed2.store",
+        "acquisition_and_validation_observation_seconds": 796.9503868939355,
+        "resumed_observation": false
+      }
+    ],
+    "host_payload_import_to_recipients": false,
+    "backing_copy": false,
+    "personal_vault": false,
+    "retention": "explicit operator purpose2 plaintext; native ServerContent/Vault chunk transactions",
+    "authority": "normal library-node restart issued current namespace and selected content scopes;live grant/session state was not restored"
+  },
+  "isolation": {
+    "publisher_packages_stopped": true,
+    "both_recovered_seeds_independently_read": true,
+    "first_retained_seed_stopped_before_remaining_seed_read": true,
+    "remaining_seed": "seed2",
+    "fresh_authenticated_connection": true,
+    "exact_manifest": true,
+    "first_and_last_index_proofs": "exact",
+    "exact512byte_range_offsets": [
+      0,
+      4096,
+      1151532
+    ],
+    "explicit_operator_policy_renewed_for_each_reader": true
+  },
+  "monitoring": {
+    "recipient_image": "d3e706f06da6db315b5da809a99f9b95f664c4f012de6c3bba875223c396cc62",
+    "existing_policy": "706 previously approved automatic acquisition; selected collection; source1; 6029312-byte ceiling",
+    "new706_configuration": false,
+    "catalog_rows_before": 2,
+    "catalog_rows_after": 3,
+    "new_consumer_sha256": "2a1fa49fee9ff329ffae0478db41c473d1716756fe0516ae63b3bff04c2f96a4",
+    "new_item_id": "a809f238ad0f26fe2a33b1ff29acc83f5493e30f28382b575069bd8c7f82f039",
+    "federation_admission_sequence": 3,
+    "collection_item_sequence": 2,
+    "terminal_job_state": 10,
+    "bytes": 1152044,
+    "chunks": 282,
+    "acquisition_observation_seconds": 864.802864509169,
+    "actual512byte_prefix_sha256": "b30b38e04a511029af69ebb0986e8226591d1ce976bfbd46d9f31a380409fdb5",
+    "both_original_and_later_roots_complete": true,
+    "exact512byte_range_offsets_per_root": [
+      0,
+      4096,
+      1151532
+    ],
+    "host_payload_ingestion_to_recipient": false
+  },
+  "limits": [
+    "Historical C/D3 runs, not a claim that the complete journey was rerun on every later image.",
+    "Finite serving byte budgets and 100000-tick absolute policies were explicitly renewed; this is not unattended perpetual seeding.",
+    "Seed1 required explicit fresh connection/authentication and policy renewal after the bounded session expired; checked chunks were reused.",
+    "Headless operator setup and native Library policy execution are covered; these checks alone do not establish the full graphical RG-06 journey.",
+    "Post-restart remote verification compares the exact manifest, two index proofs, and three 512-byte ranges; native recovery validates all required chunk commitments.",
+    "Approximately 797-second seed2 acquisition and 865-second later-item acquisition are QEMU development observations, not real-time guarantees.",
+    "No personal encrypted retention, audio output, physical crash durability, native ARM64 hardware, or independent operators is established by these three checks.",
+    "Privacy routing and payment modes remain unavailable; direct encrypted bulk discloses endpoints and relationship metadata."
+  ]
+}

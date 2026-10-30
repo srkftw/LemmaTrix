@@ -1,5 +1,5 @@
-/* LT-Stream-v1: modern single-port virtio-console, opaque inherited socket.
- * The two bounded split queues carry bytes only. No catalog/protocol policy. */
+/* Stream2: fixed non-console port1, bounded control queues and raw samples.
+ * Legacy Stream1 q0/q1 remains available when MULTIPORT is not negotiated. */
 network_read:
     lea rdi, [rip+network_state]
     cmp eax, 0
@@ -20,6 +20,8 @@ network_read:
     je network_interrupt
     cmp eax, 0x70
     je network_status
+    cmp eax, 0x104
+    je network_ports
     jmp virtio_zero
 network_id:
     xor eax, eax
@@ -28,16 +30,24 @@ network_id:
     mov eax, 3
 1:  ret
 network_features:
+    mov eax, 2
+    cmp dword ptr [rdi], 0
+    je 1f
     xor eax, eax
     cmp dword ptr [rdi], 1
     sete al
+1:  ret
+network_ports:
+    mov eax, 2
     ret
 network_max:
-    cmp dword ptr [rdi+16], 1
+    cmp dword ptr [rdi+16], 5
     ja virtio_zero
     mov eax, 8
     ret
 network_ready:
+    cmp dword ptr [rdi+16], 5
+    ja virtio_zero
     call network_selected
     mov eax, [rdi+4]
     ret
@@ -49,7 +59,6 @@ network_status:
     ret
 network_selected:
     mov eax, [rdi+16]
-    and eax, 1
     shl eax, 6
     lea rdi, [rdi+rax+64]
     ret
@@ -69,7 +78,7 @@ network_write:
     je network_set_status
     cmp eax, 0x50
     je network_notify
-    cmp dword ptr [rdi+16], 1
+    cmp dword ptr [rdi+16], 5
     ja network_fail
     mov r8d, eax
     call network_selected
@@ -115,15 +124,17 @@ network_set_status:
     jz network_reset
     test edx, 8
     jz 1f
-    cmp dword ptr [rdi+4], 0
-    jne network_fail
+    mov eax, [rdi+4]
+    and eax, -3
+    test eax, eax
+    jnz network_fail
     cmp dword ptr [rdi+12], 1
     jne network_fail
 1:  mov [rdi+28], edx
     ret
 network_reset:
     xor eax, eax
-    mov ecx, 24
+    mov ecx, 56
     rep stosq
     ret
 network_num:
@@ -154,8 +165,35 @@ network_fail:
     or dword ptr [rip+network_state+28], 128
     ret
 network_notify:
+    cmp edx, 5
+    ja network_fail
+    test dword ptr [rdi+4], 2
+    jz network_legacy_notify
+    cmp edx, 2
+    je network_control_notify
+    cmp edx, 3
+    je network_queue_notify
+    cmp edx, 4
+    je network_data_notify
+    cmp edx, 5
+    jne network_fail
+network_data_notify:
+    cmp dword ptr [rdi+40], 1
+    jne network_fail
+    jmp network_queue_notify
+network_control_notify:
+    mov eax, [rdi+36]
+    cmp eax, 1
+    je network_queue_notify
+    cmp eax, 3
+    je network_queue_notify
+    cmp eax, 4
+    je network_queue_notify
+    ret
+network_legacy_notify:
     cmp edx, 1
     ja network_fail
+network_queue_notify:
     mov [rip+network_direction], edx
     mov eax, [rdi+28]
     and eax, 143
@@ -202,7 +240,12 @@ network_notify:
     add rax, [rip+network_desc_host]
     movzx ecx, word ptr [rax+12]
     cmp dword ptr [rip+network_direction], 0
+    je 3f
+    cmp dword ptr [rip+network_direction], 2
+    je 3f
+    cmp dword ptr [rip+network_direction], 4
     jne 1f
+3:
     cmp ecx, 2
     jne network_fail
     jmp 2f
@@ -225,15 +268,78 @@ network_notify:
     add rsi, rax
     mov edx, [rip+network_length]
     sub edx, eax
+    cmp dword ptr [rip+network_direction], 2
+    je network_control_receive
+    cmp dword ptr [rip+network_direction], 3
+    je network_control_send
     mov rdi, [rip+network_fd]
     cmp dword ptr [rip+network_direction], 0
+    je network_receive
+    cmp dword ptr [rip+network_direction], 4
     jne network_send
+network_receive:
     mov eax, 45 /* recvfrom MSG_DONTWAIT */
     mov r10d, 64
     xor r8d, r8d
     xor r9d, r9d
     syscall
     jmp network_io_result
+network_control_receive:
+    cmp edx, 64
+    jne network_fail
+    mov eax, dword ptr [rip+network_state+36]
+    cmp eax, 1
+    jne 1f
+    mov rax, 0x0001000100000001 /* port1 ADD */
+    mov [rsi], rax
+    mov dword ptr [rip+network_state+36], 2
+    mov eax, 8
+    jmp 3f
+1:  cmp eax, 3
+    jne 2f
+    mov rax, 0x0001000700000001 /* port1 NAME */
+    mov [rsi], rax
+    mov rax, 0x003174656e2d746c /* lt-net1 NUL */
+    mov [rsi+8], rax
+    mov dword ptr [rip+network_state+36], 4
+    mov eax, 16
+    jmp 3f
+2:  cmp eax, 4
+    jne network_fail
+    mov rax, 0x0001000600000001 /* host OPEN */
+    mov [rsi], rax
+    mov dword ptr [rip+network_state+36], 5
+    mov eax, 8
+3:  mov rdi, [rip+network_current]
+    mov [rdi+12], eax
+    jmp network_complete
+network_control_send:
+    cmp edx, 8
+    jne network_fail
+    mov rax, [rsi]
+    mov rcx, 0x0001000000000000 /* DEVICE_READY */
+    cmp rax, rcx
+    jne 1f
+    cmp dword ptr [rip+network_state+36], 0
+    jne network_fail
+    mov dword ptr [rip+network_state+36], 1
+    jmp 3f
+1:  mov rcx, 0x0001000300000001 /* port1 READY */
+    cmp rax, rcx
+    jne 2f
+    cmp dword ptr [rip+network_state+36], 2
+    jne network_fail
+    mov dword ptr [rip+network_state+36], 3
+    jmp 3f
+2:  mov rcx, 0x0001000600000001 /* guest OPEN */
+    cmp rax, rcx
+    jne network_fail
+    cmp dword ptr [rip+network_state+36], 5
+    jne network_fail
+    mov dword ptr [rip+network_state+40], 1
+3:  mov rdi, [rip+network_current]
+    mov dword ptr [rdi+12], 8
+    jmp network_complete
 network_send:
     mov eax, 44 /* sendto MSG_DONTWAIT|MSG_NOSIGNAL */
     mov r10d, 16448
@@ -250,6 +356,8 @@ network_io_result:
     mov rdi, [rip+network_current]
     add [rdi+12], eax
     cmp dword ptr [rip+network_direction], 0
+    je network_complete
+    cmp dword ptr [rip+network_direction], 4
     je network_complete
     mov eax, [rdi+12]
     cmp eax, [rip+network_length]
@@ -280,7 +388,7 @@ network_done:
     ret
 .section .bss
 .balign 16
-network_state: .skip 192
+network_state: .skip 448
 network_fd: .skip 8
 network_current: .skip 8
 network_desc_host: .skip 8

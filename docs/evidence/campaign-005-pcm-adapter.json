@@ -1,0 +1,80 @@
+{
+  "schema": 1,
+  "result": "passed",
+  "scope": "host adapter with real stub subprocesses only",
+  "checks": [
+    {
+      "check": "aplay preferred;pw-cat fallback receives exact raw S16LE bytes;missing backend and big-endian fallback reject",
+      "bytes": 16384,
+      "sha256": "1c766b39e52b3a1ca586e216e36d5cc6d804a71886506e61b402b5723de90998",
+      "result": "passed"
+    },
+    {
+      "check": "capture-only preserves exact raw bytes without a child process",
+      "bytes": 16384,
+      "sha256": "1c766b39e52b3a1ca586e216e36d5cc6d804a71886506e61b402b5723de90998",
+      "result": "passed"
+    },
+    {
+      "check": "unexpected child exit closes transport and remains inspectable",
+      "exit_status": 23,
+      "error": "PCM output process exited with status 23",
+      "result": "passed"
+    },
+    {
+      "check": "unexpected child exit closes transport and remains inspectable",
+      "exit_status": 0,
+      "error": "PCM output process exited with status 0",
+      "result": "passed"
+    },
+    {
+      "check": "unreading TERM-resistant child backpressures and bounded cleanup kills/reaps it",
+      "bytes_accepted_before_backpressure": 73728,
+      "cleanup_seconds": 4.001470622140914,
+      "result": "passed"
+    },
+    {
+      "check": "combined capture records only complete blocks accepted by raw child pipe; interrupted next block excluded",
+      "pipe_capacity_bytes": 65536,
+      "captured_bytes": 65536,
+      "result": "passed"
+    }
+  ],
+  "speaker_output_exercised": false,
+  "guest_execution": false,
+  "pcm_or_wav_decoding": false,
+  "implementation": "tools/pcm.py",
+  "test": "tests/pcm_sink.py",
+  "local_pw_cat_version": "1.4.9",
+  "raw_invocation": [
+    "pw-cat",
+    "--playback",
+    "--raw",
+    "--format",
+    "s16",
+    "--rate",
+    "48000",
+    "--channels",
+    "2",
+    "--channel-map",
+    "stereo",
+    "-"
+  ],
+  "byte_order": "pw-cat s16 is native-endian; fallback rejects big-endian adapter hosts",
+  "primary_sources": [
+    "https://docs.pipewire.org/page_man_pw-cat_1.html",
+    "https://github.com/PipeWire/pipewire/blob/1.4.9/src/tools/pw-cat.c",
+    "https://docs.pipewire.org/audio_2raw_8h_source.html"
+  ],
+  "verification": "installed pw-cat --help and --version inspected; raw flag/format behavior checked against primary documentation/source; real stub executables used for adapter tests",
+  "implementation_sha256": "ed604203d76efcd3ed3959133e6bb384451576a534b00371b7ef8c00e02ec4cf",
+  "limits": [
+    "No actual audio endpoint was exercised by this check.",
+    "The 16 KiB payload is raw test samples, not guest playback evidence.",
+    "Observed 73728-byte backpressure includes bounded operating-system pipe/socket queues; the adapter holds at most one 4096-byte raw chunk and has no Python buffered stdin queue.",
+    "Cleanup duration is the observed TERM-resistant stub case, not physical audio latency.",
+    "Combined capture is a complete-block child-pipe acknowledgment, not proof of child processing or physical audio drain."
+  ],
+  "test_sha256": "36daed7b151f5de157af61a6716f292495aab0837fc1a51eb80af9f00902ff43",
+  "capture_semantics": "Combined capture records a complete raw block only after the child stdin pipe accepted every byte; an interrupted partial write is excluded. Capture-only is unchanged. Pipe acceptance is not a speaker-drain acknowledgment."
+}
