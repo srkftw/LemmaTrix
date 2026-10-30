@@ -1,6 +1,7 @@
 import Guest.LiveMemory
 import Guest.ServiceSHA256
 import Guest.ServiceSignature
+import Guest.GameSaveFormat
 namespace Guest.Launcher
 open Guest.LiveMemory
 @[never_extract, extern "lt_effect_value"] opaque keep : UInt64 → UInt64 → UInt64
@@ -51,7 +52,7 @@ def validate (t : UInt64) : Bool :=
   if Guest.load64 stage t != 0x3253454c544c || Guest.load64 (stage+8) t != 2 || Guest.load64 (stage+16) t != 512 ||
      size == 0 || size > (if Guest.load64 (stage+400) t == 2 then 262144 else 65536) || size%4 != 0 || Guest.load64 (control+256) t != size+768 ||
      Guest.load64 (stage+32) t != (if Guest.load64 (stage+400) t == 2 then 0x200000 else 0x400000) || Guest.load64 (stage+40) t != 2 || Guest.load64 (stage+48) t != 2 || Guest.load64 (stage+56) t != 2 ||
-     Guest.load64 (stage+64) t > 4095 || Guest.load64 (stage+72) t > 0xffffffff || Guest.load64 (stage+80) t > 0xffffffff || Guest.load64 (stage+88) t > 0xffffffff ||
+     Guest.load64 (stage+64) t > 8191 || Guest.load64 (stage+72) t > 0xffffffff || Guest.load64 (stage+80) t > 0xffffffff || Guest.load64 (stage+88) t > 0xffffffff ||
      Guest.load64 (stage+384) t != 0 || Guest.load64 (stage+392) t != 0 || (Guest.load64 (stage+400) t != 1 && Guest.load64 (stage+400) t != 2) ||
      Guest.load64 (stage+408) t != 65536+(if Guest.load64 (stage+400) t == 2 then 2097152 else 0) || Guest.load64 (stage+416) t != 16384 || n == 0 || n > 48 || !nameValid 0 n t ||
      !paddingZero (stage+432+n) (48-n) t || Guest.load64 (stage+480) t != 65537 ||
@@ -112,6 +113,7 @@ def install (t : UInt64) : UInt64 :=
         let t := Guest.store64 (buf+8) (Guest.load64 (stage+64) t) t
         let t := Guest.store64 (buf+16) (Guest.load64 (stage+32) t) t
         let t := Guest.store64 (buf+24) (Guest.load64 (stage+400) t) t
+        let t := copy (stage+160) (buf+32) 32 t
         let status := Guest.syscall 52 slot buf 64 0 t
         if status == err then err else
           let status := uploadCode slot size 0 status
@@ -540,6 +542,23 @@ def retainProject (root t : UInt64) : UInt64 :=
           let t := copy projectReply buf received revoked
           releaseFrozenProject received t
 
+def discardRecoveredSave (handle t : UInt64) : UInt64 :=
+  let t := zero buf 8 t
+  let t := Guest.store64 buf 8 t
+  let t := Guest.store64 (buf+8) handle t
+  keep err (forward 2 64 (Guest.store64 (buf+56) 1 t))
+def retainGameSave (handle t : UInt64) : UInt64 :=
+  let t := zero buf 8 t
+  let t := Guest.store64 buf 5 t
+  let t := Guest.store64 (buf+8) handle t
+  let r := forward 2 64 (Guest.store64 (buf+56) 1 t)
+  if r != 96 || Guest.load64 buf r != 0 || Guest.load64 (buf+16) r != 192 || Guest.load64 (buf+32) r != 2 then err else
+    let t := zero buf 8 r
+    let t := Guest.store64 buf 4 t
+    let t := Guest.store64 (buf+8) handle t
+    let t := Guest.store64 (buf+24) 192 t
+    let r := forward 2 64 (Guest.store64 (buf+56) 1 t)
+    if r != 256 || Guest.load64 buf r != 0 || !Guest.GameSaveFormat.valid (buf+64) r then err else retain handle r
 @[noinline] def commandIO (op len t : UInt64) : UInt64 :=
   if op == 70 then Guest.syscall 70 0 0 0 0 t
   else if op == 100 then if len >= 64 && len <= 1024 then forward 2 len t else err
@@ -560,6 +579,14 @@ def retainProject (root t : UInt64) : UInt64 :=
     if len != 8 then err else
       let r := Guest.syscall 114 (Guest.load64 buf t) 0 0 0 t
       if r == err then err else 8+Guest.store64 buf (Guest.load64 buf r) r
+  else if op == 184 then
+    if len != 8 then err else
+      let r := Guest.syscall 118 (Guest.load64 buf t) 0 0 0 t
+      if r == err then err else 8+Guest.store64 buf (Guest.load64 buf r) r
+  else if op == 185 then
+    if len != 0 then err else
+      let r := Guest.syscall 119 0 0 0 0 t
+      8+Guest.store64 buf r r
   else if op == 183 then
     if len != 0 then err else
       let r := Guest.syscall 115 0 0 0 0 t
@@ -571,13 +598,69 @@ def retainProject (root t : UInt64) : UInt64 :=
       forward target (len-8) t
   else if op == 203 then if len == 8 then retain (Guest.load64 buf t) t else err
   else if op == 207 then recover t
+  else if op == 222 then
+    if len != 24 then err else
+      let content := Guest.load64 buf t
+      let metadata := Guest.load64 (buf+8) t
+      let operation := Guest.load64 (buf+16) t
+      if content == 0 || metadata == 0 || operation == 0 then err else
+        let t := zero buf 8 t
+        let t := Guest.store64 buf 240 t
+        let t := Guest.store64 (buf+8) content t
+        let t := Guest.store64 (buf+16) 3 t
+        let t := Guest.store64 (buf+24) operation t
+        let t := Guest.store64 (buf+32) metadata t
+        forward 3 64 (Guest.store64 (buf+56) 1 t)
+  else if op == 223 then
+    if len != 56 then err else
+      let recipient := Guest.load64 buf t
+      let operation := Guest.load64 (buf+8) t
+      let generation := Guest.load64 (buf+16) t
+      let t := copy (buf+24) 0x638000 32 t
+      let current := Guest.syscall 119 0 0 0 0 t
+      if recipient == 0 || recipient != current || operation == 0 || generation == 0 || Guest.syscall 34 recipient 0 0 0 current == err then err else
+        let t := zero buf 12 current
+        let t := Guest.store64 buf 243 t
+        let t := Guest.store64 (buf+16) 3 t
+        let t := Guest.store64 (buf+24) recipient t
+        let t := Guest.store64 (buf+32) operation t
+        let t := Guest.store64 (buf+40) generation t
+        let t := copy 0x638000 (buf+64) 32 t
+        forward 3 96 (Guest.store64 (buf+56) 1 t)
+  else if op == 224 then
+    if len != 16 || Guest.load64 (buf+8) t == 0 then err else retainGameSave (Guest.load64 buf t) t
+  else if op == 225 then
+    if len != 72 then err else
+      let recipient := Guest.load64 buf t
+      let current := Guest.syscall 119 0 0 0 0 t
+      if recipient == 0 || recipient != current || Guest.syscall 34 recipient 0 0 0 current == err then err else
+        let t := copy (buf+8) 0x638000 64 current
+        let r := recover t
+        if r != 96 || Guest.load64 buf r != 0 then err else
+        let handle := Guest.load64 (buf+8) r
+        if Guest.load64 (buf+16) r != 192 || Guest.load64 (buf+32) r != 2 || !equal (buf+64) 0x638020 32 r then discardRecoveredSave handle r else
+        let t := zero buf 8 r
+        let t := Guest.store64 buf 4 t
+        let t := Guest.store64 (buf+8) handle t
+        let t := Guest.store64 (buf+24) 192 t
+        let r := forward 2 64 (Guest.store64 (buf+56) 1 t)
+        if r != 256 || Guest.load64 buf r != 0 || !Guest.GameSaveFormat.valid (buf+64) r ||
+          !equal (buf+80) 0x638000 32 r then
+          discardRecoveredSave handle r
+        else
+          let t := zero buf 8 r
+          let t := Guest.store64 buf 6 t
+          let t := Guest.store64 (buf+8) handle t
+          let t := Guest.store64 (buf+16) recipient t
+          let t := Guest.store64 (buf+24) 25 t
+          forward 2 64 (Guest.store64 (buf+56) 1 t)
   else if op == 221 then if len == 8 then describeProjectRetention (Guest.load64 buf t) t else err
   else if op == 220 then
     if len != 40 then err else
       let root := Guest.load64 buf t
       let t := copy (buf+8) (projectTxn+8) 32 t
       retainProject root t
-  else if (op >= 230 && op <= 239) then
+  else if (op >= 230 && op <= 256) then
     if len < 64 || len > 1024 || Guest.load64 buf t != op then err else forward 3 len t
   else if (op >= 200 && op <= 206) || (op >= 210 && op <= 217) then
     if len < 64 || len > 1024 || Guest.load64 buf t != op then err else
@@ -598,8 +681,14 @@ def pollGUI (t : UInt64) : UInt64 :=
     let op := Guest.load64 0x410820 n
     let length := n-40
     let t := copy 0x410828 buf length n
-    let allowed := op == 2 || op == 3 || op == 12 || op == 13 || op == 24 || op == 25 || op == 26 || op == 27 || op == 28 || op == 29 || op == 14 || op == 16 || op == 202 || op == 211 || op == 213 || op == 212 || op == 221 || op == 180
+    let allowed := op == 2 || op == 3 || op == 12 || op == 13 || op == 24 || op == 25 || op == 26 || op == 27 || op == 28 || op == 29 || op == 14 || op == 16 || op == 202 || op == 211 || op == 213 || op == 212 || op == 221 || op == 180 || op == 241 || op == 246
     let response := if (op == 200 && length == 104) || (op == 217 && length == 72) then
+        let payload := length-8
+        let gesture := Guest.load64 (buf+payload) t
+        let checked := Guest.syscall 98 gesture 0 0 0 t
+        if checked == err then err else command op payload checked
+      else if (op == 222 && length == 32) || (op == 223 && length == 64) ||
+          (op == 224 && length == 24) || (op == 225 && length == 80) then
         let payload := length-8
         let gesture := Guest.load64 (buf+payload) t
         let checked := Guest.syscall 98 gesture 0 0 0 t

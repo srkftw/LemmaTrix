@@ -154,6 +154,9 @@ def main():
     if len(sys.argv)>1 and sys.argv[1]=='project-vault':
         import project_vault
         sys.exit(project_vault.main(sys.argv[2:]))
+    if len(sys.argv)>1 and sys.argv[1]=='server-content':
+        import server_content
+        sys.exit(server_content.main(sys.argv[2:]))
     if len(sys.argv)>1 and sys.argv[1]=='server-store':
         import server_store
         sys.exit(server_store.main(sys.argv[2:]))
@@ -163,6 +166,21 @@ def main():
     if len(sys.argv)>1 and sys.argv[1]=='network':
         import network
         sys.exit(network.main(sys.argv[2:]))
+    if len(sys.argv)>1 and sys.argv[1] in ('consumer','content'):
+        import importlib
+        sys.exit(importlib.import_module({'consumer':'consumers','content':'content'}[sys.argv[1]]).main(sys.argv[2:]))
+    if len(sys.argv)>1 and sys.argv[1]=='library':
+        import library
+        sys.exit(library.main(sys.argv[2:]))
+    if len(sys.argv)>1 and sys.argv[1]=='library-peer':
+        import library_peer
+        sys.exit(library_peer.main(sys.argv[2:]))
+    if len(sys.argv)>1 and sys.argv[1]=='library-node':
+        import library_node
+        sys.exit(library_node.main(sys.argv[2:]))
+    if len(sys.argv)>1 and sys.argv[1]=='library-fetch':
+        import library_fetch
+        sys.exit(library_fetch.main(sys.argv[2:]))
     if len(sys.argv)>1 and sys.argv[1]=='forge':
         import forge
         sys.exit(forge.main(sys.argv[2:]))

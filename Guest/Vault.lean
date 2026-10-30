@@ -5,6 +5,8 @@ import Guest.VaultCrypto
 import Guest.VaultPolicy
 import Guest.ProjectVault
 import Guest.ServerStore
+import Guest.ContentVault
+import Guest.ServerContent
 namespace Guest.Vault
 open Guest.LiveSDK
 -- One explicitly authorized Objects record per vault. Dual authenticated roots select
@@ -56,6 +58,7 @@ def wipePlain (t : UInt64) : UInt64 :=
   store64 (state+16) 0 t
 
 def wipeSecrets (t : UInt64) : UInt64 :=
+  let t := ContentVault.abandonPersonal t
   let t := ProjectVault.clear t
   let t := zero plaintext 8192 t
   let t := zero 0x600000 16384 t
@@ -235,8 +238,22 @@ def dispatch (caller rights length t : UInt64) : UInt64 :=
     let op := load64 command t
     let domain := load64 (command+16) t
     if op >= 230 && op <= 239 then ServerStore.dispatch caller rights length t else
+    if op >= 250 && op <= 256 then ServerContent.dispatch caller rights length t else
+    if op == 247 then
+      let shell := syscall 97 4 0 0 0 t
+      let manager := syscall 97 1 0 0 0 shell
+      if caller != shell || domain != 3 || length != 64 || ContentVault.isServer manager ||
+        load64 (command+8) manager == 0 || load64 (command+8) manager != load64 (ContentVault.st+8) manager ||
+        load64 (ContentVault.st+16) manager != manager then ContentVault.response 1 manager else
+        ContentVault.response (if load64 state manager == 1 then 0 else 3) manager
+    else
     if !VaultPolicy.authorized rights domain then describe 1 0 t else
-      if op == 200 then unlock length t
+      if op == 200 then
+        if ContentVault.active t && !ContentVault.isServer t then describe 7 0 t else unlock length t
+      else if op >= 240 && op <= 249 then
+        if load64 state t != 1 then
+          if op == 240 then ContentVault.rejectRetain 3 (load64 (command+8) t) t else describe 3 0 t
+        else ContentVault.dispatch caller op length t
       else if op >= 210 && op <= 217 then
         if load64 state t != 1 then describe 3 0 t else ProjectVault.dispatch op length t
       else if length != 64 then describe 2 0 t
@@ -248,8 +265,11 @@ def dispatch (caller rights length t : UInt64) : UInt64 :=
       else if op == 206 then recoverChunk (load64 (command+24) t) (load64 (command+32) t) t
       else describe 2 0 t
 
-partial def loop (t : UInt64) : UInt64 :=
-  let received := receive 3 t
+partial def loop (initial : UInt64) : UInt64 :=
+  let t := ContentVault.pump initial
+  let received := if ContentVault.active t then syscall 36 3 incoming 1024 0 t else receive 3 t
+  if received == 0 then loop (syscall 117 (syscall 116 0 0 0 0 received+1) 0 0 0 received) else
+  if received == error then loop received else
   let token := load64 (incoming+8) received
   let caller := load64 incoming received
   let rights := load64 (incoming+16) received
@@ -260,7 +280,7 @@ partial def loop (t : UInt64) : UInt64 :=
   loop t
 
 def appMain (initial : UInt64) : UInt64 :=
-  let t := ProjectVault.clear initial
+  let t := ProjectVault.clear (ContentVault.clear (ServerContent.clear initial))
   let t := zero state 256 t
   let t := zero 0x600000 16384 t
   let t := wipePlain t

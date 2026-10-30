@@ -1,5 +1,6 @@
 import Guest.ProjectSDK
 import Guest.ProjectGraph
+import Guest.ContentStore
 namespace Guest.BuildJobs
 open Guest.LiveSDK
 open Guest.ProjectSDK
@@ -299,6 +300,7 @@ def dispatch (caller rights length t : UInt64) : UInt64 :=
   let op := load64 command t
   let id := load64 (command+8) t
   if length < 64 || load64 (command+56) t != 1 then fail 2 t else
+  if op >= 300 && op <= 316 then Guest.ContentStore.dispatch caller rights length t else
   if op == 1 && length == 64 then enqueue caller id t else
   if op == 2 && length == 64 && (rights &&& 0x100000000) != 0 then
     let i := nextJob 0 t
@@ -336,8 +338,10 @@ def dispatch (caller rights length t : UInt64) : UInt64 :=
           else response j attached
       else fail 1 t
 
-partial def serve (endpoint t : UInt64) : UInt64 :=
-  let n := receive endpoint t
+partial def serve (endpoint initial : UInt64) : UInt64 :=
+  let t := Guest.ContentStore.pump initial
+  let n := if Guest.ContentStore.hasWork 0 t then syscall 36 endpoint incoming 1024 0 t else receive endpoint t
+  if n == 0 then serve endpoint (syscall 117 (syscall 116 0 0 0 0 n+1) 0 0 0 n) else
   if n == error then serve endpoint n else
     let caller := load64 incoming n
     let token := load64 (incoming+8) n
@@ -348,5 +352,5 @@ def main (initial : UInt64) : UInt64 :=
   let t := zero st 2048 initial
   let fetched := syscall 100 0 (st+32) 32 0 t
   let t := store64 (st+64) (if fetched == 0 && !Guest.ProjectGraph.allZero (st+32) 32 fetched then 1 else 0) fetched
-  serve (self t) t
+  serve (self t) (Guest.ContentStore.startStore (self t) t)
 end Guest.BuildJobs

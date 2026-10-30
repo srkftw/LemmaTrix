@@ -28,7 +28,7 @@ partial def discover (index token : UInt64) : UInt64 :=
       let token := store64 (state+128+count*8) base token
       store64 (state+96) (count+1) token
       else token
-    let token := if id == 3 && version == 2 && load64 (state+32) token == 0 then store64 (state+32) base token else token
+    let token := if id == 3 && base != 0x10008000 && version == 2 && load64 (state+32) token == 0 then store64 (state+32) base token else token
     let token := if id == 4 then store64 (state+8) base token else token
     discover (index+1) token
 

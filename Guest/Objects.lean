@@ -988,7 +988,7 @@ def validReserved (op t : UInt64) : Bool :=
   if c != 0 || d != 0 then false else
   if op == 4 || op == 6 || op == 14 then true else
   if b != 0 then false else
-  if op == 2 || op == 7 then true else
+  if op == 2 || op == 7 || op == 15 then true else
   if op == 9 then h == 0 else
   if a != 0 then false else
   if op == 10 || op == 11 then h == 0 else true
@@ -1007,6 +1007,11 @@ def dispatch (caller rights length t : UInt64) : UInt64 :=
     else if length != 64 then respond 2 0 0 0 t
     else if op == 4 then readObject caller rights 1 t
     else if op == 5 then metadataObject caller rights t
+    else if op == 15 then
+      let h := load64 (command+8) t
+      if !has rights 1 || !grantValid caller h 1 t ||
+        load64 (capAt (h &&& 255)+48) t != load64 (command+16) t then respond 1 0 0 0 t
+      else respond 0 h 0 0 t
     else if op == 6 then shareObject caller rights t
     else if op == 7 then revokeObject caller rights t
     else if op == 8 then dropObject caller rights t

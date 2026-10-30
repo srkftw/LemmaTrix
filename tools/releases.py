@@ -10,7 +10,7 @@ except ImportError:
 MAGIC=0x3253454c544c
 HEADER=512
 PREFIX=768
-RIGHTS={'object.read':1,'object.create':2,'object.revise':4,'object.share':8,'object.revoke':16,'object.enumerate':32,'object.export':64,'console.write':128,'display.surface':256,'input.focus':512,'network.broker':1024,'server.store':2048}
+RIGHTS={'object.read':1,'object.create':2,'object.revise':4,'object.share':8,'object.revoke':16,'object.enumerate':32,'object.export':64,'console.write':128,'display.surface':256,'input.focus':512,'network.broker':1024,'server.store':2048,'audio.output':4096}
 def digest(data):return hashlib.sha256(data).digest()
 def project(name):
     if not re.fullmatch('[a-z0-9][a-z0-9._-]{0,47}',name):raise ValueError('project must be1..48 lowercase ASCII name characters')
@@ -45,7 +45,7 @@ def make(binary,name,version,rights,key,sources=(),parent=None,license='NOASSERT
     _require(key is not None,'an explicit publisher signing key is required')
     project_id=project(name)
     _require(profile in (1,2),'supported resource profile is1 or2')
-    _require(type(rights) is int and 0<=rights<=4095,'rights must be the known12-bit capability mask')
+    _require(type(rights) is int and 0<=rights<=8191,'rights must be the known13-bit capability mask')
     _require(re.fullmatch(r'(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)',version) is not None,'canonical major.minor.patch version required')
     major,minor,patch=map(int,version.split('.'))
     _require(max(major,minor,patch)<=0xffffffff,'bounded semantic version required')
@@ -100,7 +100,7 @@ def inspect(data,trusted_modulus=None,manifest=None):
     _require(q(0)==MAGIC and q(8)==2 and q(16)==HEADER,'incompatible release schema')
     _require(0<q(24)<=(262144 if q(400)==2 else 65536) and q(24)%4==0 and len(data)==PREFIX+q(24),'invalid executable length/alignment')
     _require(q(32)==(0x200000 if q(400)==2 else 0x400000) and all(q(x)==2 for x in (40,48,56)),'incompatible entry/machine/runtime/ABI')
-    _require(q(64)<=4095 and all(q(x)<=0xffffffff for x in (72,80,88)),'unknown capabilities or version overflow')
+    _require(q(64)<=8191 and all(q(x)<=0xffffffff for x in (72,80,88)),'unknown capabilities or version overflow')
     _require(q(384)==0 and q(392)==0 and q(400) in (1,2) and q(408)==65536+(2097152 if q(400)==2 else 0) and q(416)==16384,'unsupported dependencies or memory profile')
     _require(1<=q(424)<=48 and data[432+q(424):480]==bytes(48-q(424)) and q(480)==65537 and q(488) in (0,3) and data[496:512]==bytes(16),'invalid name/padding/signature profile')
     try:name=data[432:432+q(424)].decode('ascii')

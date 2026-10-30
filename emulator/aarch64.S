@@ -3,7 +3,7 @@
  * x19: state, x20: RAM, x21: PC, x22: privilege, x28: clock ticks, x29: retired instructions.
  */
 .equ RAM_BASE, 0x80000000
-.equ RAM_SIZE, 0x8000000
+.equ RAM_SIZE, 0xa000000
 .equ CSR, 256
 .equ MTIMECMP, 32760
 .equ HOSTSP, 32752
@@ -34,6 +34,9 @@ _start:
  mov x0, #0xa00000000
  setcsr x0, 0x300
  addr x1, server_fd
+ mov x0, #-1
+ str x0, [x1]
+ addr x1, pcm_fd
  mov x0, #-1
  str x0, [x1]
  addr x1, network_fd
@@ -85,6 +88,11 @@ parse_arguments:
  cbnz x0, argument_server
  add x2, x25, #1
  ldr x0, [x18, x2, lsl #3]
+ addr x1, pcm_arg
+ bl argument_equal
+ cbnz x0, argument_pcm
+ add x2, x25, #1
+ ldr x0, [x18, x2, lsl #3]
  addr x1, network_arg
  bl argument_equal
  cbnz x0, argument_network
@@ -124,6 +132,29 @@ argument_network:
 2: cmp x0, #3
  b.lo usage
  addr x1, network_fd
+ str x0, [x1]
+ add x25, x25, #1
+ b parse_arguments
+argument_pcm:
+ add x25, x25, #1
+ cmp x25, x24
+ b.hs usage
+ add x2, x25, #1
+ ldr x1, [x18, x2, lsl #3]
+ mov x0, #0
+1: ldrb w2, [x1], #1
+ cbz w2, 2f
+ sub w2, w2, #48
+ cmp w2, #9
+ b.hi usage
+ mov x3, #10
+ madd x0, x0, x3, x2
+ cmp x0, #1023
+ b.hi usage
+ b 1b
+2: cmp x0, #3
+ b.lo usage
+ addr x1, pcm_fd
  str x0, [x1]
  add x25, x25, #1
  b parse_arguments
@@ -1542,6 +1573,8 @@ virtio_read:
  sub x5, x0, x3
  lsr x6, x5, #12
  and x5, x5, #4095
+ cmp x6, #7
+ b.eq pcm_read
  cmp x6, #5
  b.eq network_read
  cmp x6, #2
@@ -1672,6 +1705,8 @@ virtio_write:
  sub x5, x0, x3
  lsr x6, x5, #12
  and x5, x5, #4095
+ cmp x6, #7
+ b.eq pcm_write
  cmp x6, #5
  b.eq network_write
  cmp x6, #2
@@ -2136,6 +2171,7 @@ uart_poll_done:
 
 #include "graphics_aarch64.inc"
 #include "network_aarch64.inc"
+#include "pcm_aarch64.inc"
 
 .section .rodata
 usage_msg: .ascii "usage: lemmatrix-arm64 guest.bin [--interactive] [--vault backing.img] [--vault-readonly] [--display-out frame.bgrx] [--input-events events.evdev]\n"

@@ -2,6 +2,8 @@ import Guest.ProjectSDK
 import Guest.ProjectGraph
 import Guest.ServiceSignature
 import Guest.ServerSDK
+import Guest.ConsumerFormat
+import Guest.ContentFormat
 namespace Guest.Registry
 open Guest.LiveSDK
 open Guest.ProjectSDK
@@ -16,6 +18,10 @@ def key (i : UInt64) : UInt64 := 0x660000+i*384
 def entry (i : UInt64) : UInt64 := 0x670000+i*1024
 def catalog : UInt64 := 0x670000
 def stored : UInt64 := 0x680000
+def consumer : UInt64 := 0x690000
+def contentManifest : UInt64 := 0x691000
+def consumerEntry (i : UInt64) : UInt64 := 0x6a0000+i*768
+def snapshotBytes : UInt64 := 25088
 def magic : UInt64 := 0x314d4441544c
 def equal (a b n t : UInt64) : Bool := Guest.ProjectGraph.equal a b n t
 def response (code value t : UInt64) : UInt64 :=
@@ -47,19 +53,30 @@ partial def selectedRelease (i count found t : UInt64) : UInt64 :=
     if load64 (manifest+32+i*128) t == 13 then
       if found != error then error else selectedRelease (i+1) count i t
     else selectedRelease (i+1) count found t
+partial def sourceNamed (name0 name1 name2 nameLength i count found t : UInt64) : UInt64 :=
+  if i == count then found else
+    let p := manifest+32+i*128
+    let matching := load64 p t == 10 && load64 (p+8) t == nameLength &&
+      load64 (p+48) t == name0 &&
+      (if nameLength > 8 then load64 (p+56) t == name1 else true) &&
+      (if nameLength > 16 then load64 (p+64) t == name2 else true)
+    if matching then
+      if found != error then error else sourceNamed name0 name1 name2 nameLength (i+1) count i t
+    else sourceNamed name0 name1 name2 nameLength (i+1) count found t
 def configure (length t : UInt64) : UInt64 :=
   let policy := load64 (command+16) t
-  if load64 st t != 0 || length != 320 || (policy != 1 && policy != 2) || (load8 (command+64) t &&& 128) == 0 || (load8 (command+319) t &&& 1) == 0 then response 2 0 t else
+  if load64 st t != 0 || length != 320 || (load64 (command+32) t > 8191) || (policy != 1 && policy != 2 && policy != 3) || (load8 (command+64) t &&& 128) == 0 || (load8 (command+319) t &&& 1) == 0 then response 2 0 t else
     let t := zero st 128 t
     let t := store64 st 1 t
     let t := store64 (st+8) policy t
+    let t := store64 (st+384) (if policy == 3 then load64 (command+32) t else if policy == 1 then 768 else 256) t
     let t := store64 (st+320) (load64 (command+24) t) t
     let t := copy (command+64) (st+64) 256 t
     let t := hash (st+64) 256 (st+32) t
     -- The policy commitment includes version and actual configured rule set.
     let t := store64 decision 0x31594c4f50544c t
     let t := store64 (decision+8) policy t
-    let t := store64 (decision+16) (if policy == 1 then 768 else 256) t
+    let t := store64 (decision+16) (load64 (st+384) t) t
     let t := store64 (decision+24) (if policy == 1 then 0 else 1) t
     let t := hash decision 32 (st+352) t
     response 0 policy t
@@ -106,7 +123,7 @@ def nativeProfile (h t : UInt64) : Bool :=
   load64 h t == 0x3253454c544c && load64 (h+8) t == 2 && load64 (h+16) t == 512 &&
   (p == 1 || p == 2) && size > 0 && size <= (if p == 2 then 262144 else 65536) && size%4 == 0 &&
   load64 (h+32) t == (if p == 2 then 0x200000 else 0x400000) &&
-  load64 (h+40) t == 2 && load64 (h+48) t == 2 && load64 (h+56) t == 2 && load64 (h+64) t <= 4095 &&
+  load64 (h+40) t == 2 && load64 (h+48) t == 2 && load64 (h+56) t == 2 && load64 (h+64) t <= 8191 &&
   load64 (h+72) t <= 0xffffffff && load64 (h+80) t <= 0xffffffff && load64 (h+88) t <= 0xffffffff &&
   load64 (h+384) t == 0 && load64 (h+392) t == 0 &&
   load64 (h+408) t == 65536+(if p == 2 then 2097152 else 0) && load64 (h+416) t == 16384 &&
@@ -131,7 +148,7 @@ def evaluateRelease (root selected t : UInt64) : UInt64 :=
     if i == error then outcome 3 2 t else
     if !Guest.ServiceSignature.verify h 512 (h+512) (key i+40) t then outcome 3 3 t else
     let rights := load64 (h+64) t
-    let allowed := if load64 (st+8) t == 1 then 768 else 256
+    let allowed := load64 (st+384) t
     if !nativeProfile h t || (rights &&& allowed) != rights then outcome 3 4 t else
     let mn := load64 (material+568) t
     let sn := load64 (material+576) t
@@ -140,6 +157,43 @@ def evaluateRelease (root selected t : UInt64) : UInt64 :=
     let license := h+768+mn+sn+en
     let unknown := ln == 0 || ln > 512 || unknownLicense license ln 0 t
     if load64 (st+8) t == 2 && unknown then outcome 3 5 t else outcome 2 0 t
+def evaluateConsumer (root selected nativeSelected slot t : UInt64) : UInt64 :=
+  let n := getNode root (manifest+48+selected*128) consumer 768 t
+  if n != 768 || !Guest.ConsumerFormat.valid consumer n then outcome 3 7 n else
+    let i := findKey (consumer+32) (consumer+64) 0 n
+    if i == error then outcome 3 2 n else
+    if !Guest.ServiceSignature.verify consumer 512 (consumer+512) (key i+40) n then outcome 3 3 n else
+      let facet := load64 (consumer+16) n
+      let t := if facet == 2 then
+          if nativeSelected == error then outcome 3 1 n else evaluateRelease root nativeSelected n
+        else n
+      if facet == 2 && (load64 (decision+16) t != 2 ||
+        !equal (decision+96) (consumer+32) 32 t || !equal (decision+352) (consumer+64) 32 t ||
+        !equal (decision+128) (consumer+256) 32 t) then outcome 3 4 t else
+      if load64 (st+8) t != 3 then outcome 3 8 t else
+      let count := load64 (manifest+16) t
+      let resource := if facet == 1 then sourceNamed 3347421805067267939 8391162021251277165 0 16 0 count error t
+        else sourceNamed 8531344015649235303 7564389 0 11 0 count error t
+      if resource == error then outcome 3 7 t else
+      let bytes := getNode root (manifest+48+resource*128) contentManifest (if facet == 1 then 256 else 448) t
+      if bytes == error || (facet == 1 && bytes != 256) then outcome 3 7 bytes else
+      let t := hash contentManifest bytes sha bytes
+      if !equal sha (consumer+192) 32 t then outcome 3 7 t else
+      if facet == 1 && (!Guest.ContentFormat.valid contentManifest t ||
+        !equal (contentManifest+64) (consumer+224) 32 t ||
+        load64 (contentManifest+24) t != load64 (consumer+408) t) then outcome 3 7 t else
+        let t := if facet == 1 then
+            let t := copy (consumer+32) (decision+96) 32 t
+            let t := hash consumer 512 (decision+128) t
+            let t := copy (consumer+192) (decision+160) 32 t
+            let t := copy (consumer+224) (decision+192) 32 t
+            copy (consumer+64) (decision+352) 32 t
+          else t
+        let t := hash consumer 768 (decision+400) t
+        let t := store64 (decision+432) facet t
+        let t := store64 (decision+440) (load64 (consumer+24) t) t
+        let t := copy consumer (consumerEntry slot) 768 t
+        outcome (if facet == 1 then 4 else 5) 0 t
 def evaluate (caller root t : UInt64) : UInt64 :=
   let r := describeRoot root t
   if r != 160 || status r != 0 || load64 (wire+48) r != caller then response 1 0 r else
@@ -152,7 +206,10 @@ def evaluate (caller root t : UInt64) : UInt64 :=
   let t := readAll (result r) manifest (load64 (wire+16) r) 0 r
   if t == error || load64 (manifest+16) t > 32 then response 2 0 t else
   let selected := selectedRelease 0 (load64 (manifest+16) t) error t
-  let t := if selected == error then outcome (if load64 (st+8) t == 1 then 1 else 3) (if load64 (st+8) t == 1 then 0 else 1) t else evaluateRelease root selected t
+  let selectedConsumer := sourceNamed 8243115044186779491 7310293708390625838 0 16 0 (load64 (manifest+16) t) error t
+  let t := zero (consumerEntry slot) 96 t
+  let t := if selectedConsumer != error then evaluateConsumer root selectedConsumer selected slot t else
+    if selected == error then outcome (if load64 (st+8) t == 1 then 1 else 3) (if load64 (st+8) t == 1 then 0 else 1) t else evaluateRelease root selected t
   let t := copy decision (entry slot) 512 t
   let t := store64 (entry slot+768) 1 t
   let t := store64 (entry slot+776) root t
@@ -190,28 +247,56 @@ def query (cursor pending t : UInt64) : UInt64 :=
     let t := store64 (wire+24) (i+1) t
     let n := if pending == 1 then 512 else 768
     64+n+copy (entry i) (wire+64) n t
+def folded (c : UInt64) : UInt64 := if c >= 65 && c <= 90 then c+32 else c
+partial def queryBytes (p query count t : UInt64) : Bool :=
+  if count == 0 then true else folded (load8 p t) == folded (load8 query t) && queryBytes (p+1) (query+1) (count-1) t
+partial def containsQuery (title titleLength query queryLength offset t : UInt64) : Bool :=
+  if offset > titleLength || queryLength > titleLength-offset then false else
+    queryBytes (title+offset) query queryLength t || containsQuery title titleLength query queryLength (offset+1) t
+partial def searchEntry (i facet query queryLength t : UInt64) : UInt64 :=
+  if i == 16 then error else
+    let p := consumerEntry i
+    if load64 (entry i+768) t == 2 && !newer i 0 t &&
+       (load64 (entry i+16) t == 4 || load64 (entry i+16) t == 5) &&
+       (facet == 0 || load64 (p+16) t == facet) && load64 p t == Guest.ConsumerFormat.magic &&
+       containsQuery (p+344) (load64 (p+336) t) query queryLength 0 t then i
+    else searchEntry (i+1) facet query queryLength t
+
+def search (length t : UInt64) : UInt64 :=
+  let cursor := load64 (command+8) t
+  let facet := load64 (command+16) t
+  let n := load64 (command+24) t
+  if cursor > 16 || facet > 2 || n > 64 || length != 64+n ||
+     !Guest.ConsumerFormat.title (command+64) n 0 t then response 2 0 t else
+    let i := searchEntry cursor facet (command+64) n t
+    if i == error then response 6 0 t else
+      let t := response 0 (load64 (entry i+48) t) t
+      let t := store64 (wire+16) i t
+      let t := store64 (wire+24) (i+1) t
+      832+copy (entry i) (wire+64) 768 t
 partial def snapshotEntries (i count t : UInt64) : UInt64 :=
   if i == 16 then store64 (stored+24) count t else
     let live := load64 (entry i+768) t == 2
     let t := if live then copy (entry i) (stored+512+i*768) 768 t else zero (stored+512+i*768) 96 t
+    let t := if live then copy (consumerEntry i) (stored+12800+i*768) 768 t else t
     snapshotEntries (i+1) (count+(if live then 1 else 0)) t
 partial def appendSnapshot (grant offset t : UInt64) : UInt64 :=
-  if offset == 12800 then t else
+  if offset == snapshotBytes then t else
     let r := Guest.ServerSDK.append grant offset (stored+offset) 512 t
     if r != 64 || status r != 0 then error else appendSnapshot grant (offset+512) r
 def persist (t : UInt64) : UInt64 :=
   let grant := load64 (st+320) t
   if grant == 0 then t else
-    let t := zero stored 1600 t
+    let t := zero stored (snapshotBytes/8) t
     let t := store64 stored 0x3154474352544c t
-    let t := store64 (stored+8) 1 t
+    let t := store64 (stored+8) 2 t
     let t := store64 (stored+16) (load64 (st+8) t) t
     let t := store64 (stored+32) (load64 (st+16) t) t
     let t := copy (st+32) (stored+48) 32 t
     let t := copy (st+352) (stored+80) 32 t
     let t := snapshotEntries 0 0 t
-    let t := hash stored 12800 sha t
-    let r := Guest.ServerSDK.begin grant 12800 sha t
+    let t := hash stored snapshotBytes sha t
+    let r := Guest.ServerSDK.begin grant snapshotBytes sha t
     if r != 64 || status r != 0 then error else
       let r := appendSnapshot grant 0 r
       if r == error then
@@ -220,36 +305,54 @@ def persist (t : UInt64) : UInt64 :=
       else
         let r := Guest.ServerSDK.commit grant r
         if r != 64 || status r != 0 then error else r
-partial def readSnapshot (grant offset t : UInt64) : UInt64 :=
-  if offset == 12800 then t else
+partial def readSnapshot (grant total offset t : UInt64) : UInt64 :=
+  if offset == total then t else
     let r := Guest.ServerSDK.read grant offset 512 t
     if r != 576 || status r != 0 then error else
-      readSnapshot grant (offset+512) (copy (wire+64) (stored+offset) 512 r)
+      readSnapshot grant total (offset+512) (copy (wire+64) (stored+offset) 512 r)
 def validDescriptor (p t : UInt64) : Bool :=
-  load64 p t == magic && load64 (p+8) t == 1 && load64 (p+16) t > 0 && load64 (p+16) t <= 3 &&
+  load64 p t == magic && load64 (p+8) t == 1 && load64 (p+16) t > 0 && load64 (p+16) t <= 5 &&
   load64 (p+32) t == load64 (st+8) t && load64 (p+48) t > 0 &&
   equal (p+256) (st+352) 32 t && equal (p+288) (st+32) 32 t &&
-  load64 (p+384) t == 1 && Guest.ProjectGraph.allZero (p+392) 120 t &&
+  load64 (p+384) t == 1 && load64 (p+392) t == 0 &&
+  (if load64 (p+16) t == 4 || load64 (p+16) t == 5 || !Guest.ProjectGraph.allZero (p+400) 48 t then
+    !Guest.ProjectGraph.allZero (p+400) 32 t &&
+    (load64 (p+432) t == 1 || load64 (p+432) t == 2) &&
+    (load64 (p+16) t != 4 || load64 (p+432) t == 1) &&
+    (load64 (p+16) t != 5 || load64 (p+432) t == 2) &&
+    load64 (p+440) t == load64 (p+432) t && Guest.ProjectGraph.allZero (p+448) 64 t
+   else Guest.ProjectGraph.allZero (p+400) 112 t) &&
   Guest.ServiceSignature.verify p 512 (p+512) (st+64) t
 partial def restoreEntries (i count t : UInt64) : UInt64 :=
   if i == 16 then if count == load64 (stored+24) t then t else error else
     let p := stored+512+i*768
     if Guest.ProjectGraph.allZero p 768 t then restoreEntries (i+1) count t else
     if !validDescriptor p t || load64 (p+48) t > load64 (stored+32) t then error else
+      let t := if load64 (stored+8) t == 2 && !Guest.ProjectGraph.allZero (p+400) 32 t then
+          let candidate := stored+12800+i*768
+          if Guest.ProjectGraph.allZero candidate 768 t then t else
+          let t := hash candidate 768 sha t
+          if !Guest.ConsumerFormat.valid candidate t || !equal sha (p+400) 32 t then error else
+            copy candidate (consumerEntry i) 768 t
+        else if !Guest.ProjectGraph.allZero (p+400) 32 t then error else t
+      if t == error then error else
       let t := copy p (entry i) 768 t
       restoreEntries (i+1) (count+1) (store64 (entry i+768) 2 t)
 def recover (t : UInt64) : UInt64 :=
   let grant := load64 (st+320) t
   if grant == 0 || load64 (st+16) t != 0 then response 1 0 t else
   let r := Guest.ServerSDK.describe grant t
-  if r != 576 || status r != 0 || load64 (wire+96) r != 12800 then response 6 0 r else
-    let r := readSnapshot grant 0 r
-    if r == error || load64 stored r != 0x3154474352544c || load64 (stored+8) r != 1 ||
+  if r != 576 || status r != 0 || (load64 (wire+96) r != 12800 && load64 (wire+96) r != snapshotBytes) then response 6 0 r else
+    let total := load64 (wire+96) r
+    let r := readSnapshot grant total 0 r
+    if r == error || load64 stored r != 0x3154474352544c ||
+        (load64 (stored+8) r != 1 && load64 (stored+8) r != 2) ||
+        (load64 (stored+8) r == 1 && total != 12800) || (load64 (stored+8) r == 2 && total != snapshotBytes) ||
         load64 (stored+16) r != load64 (st+8) r || load64 (stored+24) r > 16 ||
         !equal (stored+48) (st+32) 32 r || !equal (stored+80) (st+352) 32 r ||
         !Guest.ProjectGraph.allZero (stored+112) 400 r then response 5 0 r else
       let t := restoreEntries 0 0 r
-      if t == error then response 5 0 (zero catalog 2048 t) else
+      if t == error then response 5 0 (zero 0x6a0000 1536 (zero catalog 2048 t)) else
         response 0 (load64 (stored+24) t) (store64 (st+16) (load64 (stored+32) t) t)
 def signResult (job length t : UInt64) : UInt64 :=
   let slot := load64 (command+16) t
@@ -276,6 +379,19 @@ def verifyIncoming (length t : UInt64) : UInt64 :=
         let t := response 0 (load64 (p+16) t) t
         let t := store64 (wire+16) (load64 (p+24) t) t
         832+copy (entry slot) (wire+64) 768 t
+-- Knowledge-relative fast authorization check. Only exact fully verified
+-- cached bytes can pass; this path creates no trust and does not re-run RSA.
+def currentIncoming (length t : UInt64) : UInt64 :=
+  if length != 864 || !equal (command+384) (command+832) 32 t then response 5 0 t else
+    let p := command+64
+    let known := cached p 0 error t
+    if known == error then response 6 0 t else
+      let latest := entry known
+      let exact := equal p latest 768 t
+      let t := response (if exact then 0 else 3) (load64 (latest+16) t) t
+      let t := store64 (wire+16) (load64 (latest+24) t) t
+      let t := store64 (wire+24) (load64 (latest+48) t) t
+      832+copy latest (wire+64) 768 t
 def revokeListing (slot expected t : UInt64) : UInt64 :=
   if slot >= 16 || load64 (entry slot+768) t != 2 || load64 (entry slot+48) t != expected then response 3 0 t else
     let vacant := freeEntry 0 t
@@ -283,6 +399,7 @@ def revokeListing (slot expected t : UInt64) : UInt64 :=
       let sequence := load64 (st+16) vacant+1
       if sequence == 0 then response 4 0 vacant else
         let t := copy (entry slot) (entry vacant) 512 vacant
+        let t := copy (consumerEntry slot) (consumerEntry vacant) 768 t
         let t := store64 (entry vacant+16) 3 t
         let t := store64 (entry vacant+24) 6 t
         let t := store64 (entry vacant+48) sequence t
@@ -308,6 +425,14 @@ def dispatch (caller rights length t : UInt64) : UInt64 :=
   else if op == 9 && admin && length == 64 then response 0 h (store64 (st+320) h t)
   else if op == 10 && admin && length == 64 then recover t
   else if op == 11 then verifyIncoming length t
+  else if op == 22 then currentIncoming length t
+  else if op == 21 then search length t
+  else if op == 20 && length == 64 && h < 16 then
+    if load64 (entry h+768) t != 2 || newer h 0 t ||
+       (load64 (entry h+16) t != 4 && load64 (entry h+16) t != 5) then response 6 0 t else
+      let t := hash (consumerEntry h) 768 sha t
+      if !equal sha (entry h+400) 32 t then response 5 0 t else
+        832+copy (consumerEntry h) (wire+64) 768 (response 0 h t)
   else if op == 12 && admin && length == 64 then
     let r := Guest.ServerSDK.describe (load64 (st+320) t) t
     if r != 576 || status r != 0 then response 6 0 r else
