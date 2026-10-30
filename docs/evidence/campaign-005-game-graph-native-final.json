@@ -1,0 +1,89 @@
+{
+  "result": "passed",
+  "checks": [
+    {
+      "check": "fresh native Library selects enrolled registry/seed and binds independent fetcher through O",
+      "result": "passed",
+      "library_release": "5ed024795ca8a89d33d9268f415591f7189937bcb5757f85bbded0fbe5d8e1c7",
+      "fetch_release": "38b372cd782a95138381f7062ad82e26c9472b4d4e33f4a9c1abaae3df27b5cb",
+      "provider_head": "4c8ed47412020b886df5d8abc373dcc66fc4f7532382c78c8ab52d21d015c3bd",
+      "recipient_game_roots_before_I": 0
+    },
+    {
+      "check": "native I downloads actual Game Project and reaches trusted capability approval without recipient payload preload",
+      "result": "passed",
+      "head": "4c8ed47412020b886df5d8abc373dcc66fc4f7532382c78c8ab52d21d015c3bd",
+      "game_not_running_before_approval": true
+    },
+    {
+      "check": "physical Enter installs exact downloaded release and DD solves original native puzzle",
+      "result": "passed",
+      "game_release": "3a56b13d0e211adf25e66d05c09dedc48506c84cb4fe328af8295b3460be7779",
+      "game_state": {
+        "generation": 1,
+        "level": 0,
+        "moves": 2,
+        "completed": 1,
+        "won": 1,
+        "undo": 2,
+        "game": "c77a40fc178d8ec017c8d31b8c86e8967540fcc72eebd4050da629602edc99ff",
+        "pack": "77ce47e71af7c4d7a3b915b11cdba694554f93e2039403bbe7195aa97a44c8b1",
+        "boxes": 536870912,
+        "player": 28,
+        "save": 0,
+        "notice": 15
+      },
+      "game_rights": 795,
+      "recipient_host_game_import": false
+    }
+  ],
+  "recipient_image": "22f9f9bde6c210ffe0f0ec52d7b8f5d697bed11d61fda7edda5f7c319079c70f",
+  "provider_image": "22f9f9bde6c210ffe0f0ec52d7b8f5d697bed11d61fda7edda5f7c319079c70f",
+  "library_release": "5ed024795ca8a89d33d9268f415591f7189937bcb5757f85bbded0fbe5d8e1c7",
+  "fetch_release": "38b372cd782a95138381f7062ad82e26c9472b4d4e33f4a9c1abaae3df27b5cb",
+  "fetch_binary_sha256": "293ad06764c3b1d5c64678fc24f3b79399182e8d059bfaf36411d615fd12d012",
+  "fetch_package_supplied": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign005/final-7/packages/library-fetch.ltrel",
+  "game_release": "3a56b13d0e211adf25e66d05c09dedc48506c84cb4fe328af8295b3460be7779",
+  "project_head": "4c8ed47412020b886df5d8abc373dcc66fc4f7532382c78c8ab52d21d015c3bd",
+  "recipient_host_game_import": false,
+  "limitations": [
+    "provider public Project was provisioned explicitly; this test does not claim durable Game Project service recovery",
+    "focused O/I/Enter/DD test; save migration and media are separate executed journeys"
+  ],
+  "schema": 1,
+  "provider_setup": {
+    "result": "ready",
+    "image_sha256": "22f9f9bde6c210ffe0f0ec52d7b8f5d697bed11d61fda7edda5f7c319079c70f",
+    "packages": {
+      "library-registry": {
+        "instance": 17251931644235874567,
+        "release": "6297b21e2f039862cea14dc3d96ca78778303a767d31179cf4efdb2c0c3851d8",
+        "executable_sha256": "0b284a806d4b41893d7cad9dd8c35a80e1f8db32e9d73171775539d09718e2c3"
+      },
+      "library-peer": {
+        "instance": 17251931644235874568,
+        "release": "e6dd508b43de5808468ba8b60e036625312b037dee343b4d00b1fb1f158bbce5",
+        "executable_sha256": "0942b7ece8bd9d014365b79255fd71e73602042524522109317315ddbc5593d7"
+      }
+    },
+    "game_release": "3a56b13d0e211adf25e66d05c09dedc48506c84cb4fe328af8295b3460be7779",
+    "head": "4c8ed47412020b886df5d8abc373dcc66fc4f7532382c78c8ab52d21d015c3bd",
+    "nodes": 19,
+    "payload_bytes": 129807,
+    "process_id": 2886947,
+    "public_project_volatile": true,
+    "recipient_payload_provisioned": false
+  },
+  "commands": [
+    "python3 tests/library_graph_provider.py --image build/campaign005/final-7/guest.bin --packages build/campaign005/final-7/packages --output build/campaign005/final7-game-provider",
+    "python3 tests/library_graph_native.py --provider-base build/campaign005/final7-game-provider --image build/campaign005/final-7/guest.bin --packages build/campaign005/final-7/packages --fetch-package build/campaign005/final-7/packages/library-fetch.ltrel --output build/campaign005/final7-game-native"
+  ],
+  "native_actions": "F2 select enrolled registry/seed; F1 Q query; F4 games;1 selected seed; O bind Fetch; I acquire; physical Enter approve; DD push twice",
+  "captured_frames": {
+    "native-acquisition.ppm": "a564d3774efa98620f77a6c1631d5800ce928a9f56752f5a536bd670574749c4",
+    "catalog-before-I.ppm": "da6038ef43b9aa27baece5692de5745ff1a8f23297c549ee65696b731c341db9",
+    "remote-game-solved.ppm": "2514603caf9a48c76e0a217b00e8c7ea22e19a52814738b7994fbb39454d55c6",
+    "trusted-game-approval.ppm": "1be412a85179ced2d127e095a33d47e93de39d1dd6acc96a6d64d3ec4cd36fd1"
+  },
+  "owned_test_guests_stopped": true
+}

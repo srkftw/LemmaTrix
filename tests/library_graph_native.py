@@ -47,6 +47,7 @@ def main():
     parser.add_argument('--image',required=True,type=Path)
     parser.add_argument('--packages',required=True,type=Path)
     parser.add_argument('--fetch',type=Path,default=ROOT/'build/live/apps/library-fetch.bin')
+    parser.add_argument('--fetch-package',type=Path,help='reuse an exact already signed1151-right Fetch release')
     parser.add_argument('--game',type=Path,default=ROOT/'build/campaign005/game-secure-editions/game1/crate-workshop.ltrel')
     parser.add_argument('--key',type=Path,default=ROOT/'build/campaign005/publisher.pem')
     parser.add_argument('--public',type=Path,default=ROOT/'build/campaign005/publisher.pub')
@@ -116,10 +117,16 @@ def main():
                 network.configure(c,base/'reader.credential',base/'game.service',slot=1)
                 c.request(10,bytes.fromhex(game_info['project_id'])+releases.public_modulus(args.public))
                 require(projects.roots(c)==[],'fresh personal guest contains preloaded Game root')
-            fetch_raw,_=releases.make(args.fetch,'graph-native-fetch','1.0.0',1151,args.key,profile=2,license='NOASSERTION')
+            if args.fetch_package:
+                fetch_raw=args.fetch_package.read_bytes()
+                selected_fetch=releases.inspect(fetch_raw,releases.public_modulus(args.public))
+                require(selected_fetch['rights']==1151,'selected Fetch package has different capabilities')
+            else:
+                fetch_raw,_=releases.make(args.fetch,'graph-native-fetch','1.0.0',1151,args.key,profile=2,license='NOASSERTION')
+                selected_fetch=releases.inspect(fetch_raw)
             fetch_package=out/'graph-native-fetch.ltrel';fetch_package.write_bytes(fetch_raw)
             j=Journey(argparse.Namespace(output=personal.base/'native-actions',public=args.public,image=args.image));j.socket=personal.socket;j.graphics=personal.graphics;j.ui=personal.ui;j.image=hashlib.sha256(args.image.read_bytes()).hexdigest()
-            fetch_info,fetch=j.trust_stage(fetch_package,'graph-native-fetch')
+            fetch_info,fetch=j.trust_stage(fetch_package,selected_fetch['project'])
             lib_info,lib=j.trust_stage(args.packages/'library-native.ltrel','library-native')
         else:
             fetch_info=releases.inspect((out/'graph-native-fetch.ltrel').read_bytes())
@@ -194,7 +201,7 @@ def main():
             active=c.request(29,bytes.fromhex(game_info['project_id']))
             require(active[160:192].hex()==game_info['release_id'],'installed a different executable generation')
         passed('physical Enter installs exact downloaded release and DD solves original native puzzle',game_release=game_info['release_id'],game_state=actual,game_rights=795,recipient_host_game_import=False)
-        result=dict(result='passed',checks=checks,recipient_image=hashlib.sha256(args.image.read_bytes()).hexdigest(),provider_image=hashlib.sha256((base/'platform.bin').read_bytes()).hexdigest(),library_release=lib_info['release_id'],fetch_release=fetch_info['release_id'],fetch_binary_sha256=hashlib.sha256(args.fetch.read_bytes()).hexdigest(),game_release=game_info['release_id'],project_head=head.hex(),recipient_host_game_import=False,limitations=['provider reused its explicitly owned prior D3 image; recipient uses corrected247 image','focused O/I/Enter/DD test; save migration and media are separate executed journeys'])
+        result=dict(result='passed',checks=checks,recipient_image=hashlib.sha256(args.image.read_bytes()).hexdigest(),provider_image=hashlib.sha256((base/'platform.bin').read_bytes()).hexdigest(),library_release=lib_info['release_id'],fetch_release=fetch_info['release_id'],fetch_binary_sha256=fetch_info['executable_sha256'],fetch_package_supplied=str(args.fetch_package.resolve()) if args.fetch_package else None,game_release=game_info['release_id'],project_head=head.hex(),recipient_host_game_import=False,limitations=['provider public Project was provisioned explicitly; this test does not claim durable Game Project service recovery','focused O/I/Enter/DD test; save migration and media are separate executed journeys'])
         (out/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2));success=True
     except BaseException:
         (out/'error.txt').write_text(traceback.format_exc());raise
