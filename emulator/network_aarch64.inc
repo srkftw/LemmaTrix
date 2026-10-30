@@ -1,4 +1,4 @@
-/* LT-Stream-v1, independent AArch64 modern console byte device. */
+/* Stream2 non-console port1 with bounded controls; Stream1 remains under low features0. */
 network_read:
  addr x9, network_state
  cbz x5, virtio_magic
@@ -18,6 +18,8 @@ network_read:
  b.eq network_interrupt
  cmp x5, #0x70
  b.eq network_status
+ cmp x5, #0x104
+ b.eq network_ports
  b virtio_zero
 network_id:
  devget x0, network_fd
@@ -27,16 +29,25 @@ network_id:
  b load_return
 network_features:
  ldr w0, [x9]
- cmp w0, #1
+ cbnz w0, 1f
+ mov x0, #2
+ b load_return
+1: cmp w0, #1
  cset x0, eq
+ b load_return
+network_ports:
+ mov x0, #2
  b load_return
 network_max:
  ldr w0, [x9, #16]
- cmp w0, #1
+ cmp w0, #5
  b.hi virtio_zero
  mov x0, #8
  b load_return
 network_ready:
+ ldr w0, [x9, #16]
+ cmp w0, #5
+ b.hi virtio_zero
  bl network_selected
  ldr w0, [x9, #4]
  b load_return
@@ -48,7 +59,6 @@ network_status:
  b load_return
 network_selected:
  ldr w0, [x9, #16]
- and w0, w0, #1
  add x9, x9, x0, lsl #6
  add x9, x9, #64
  ret
@@ -69,7 +79,7 @@ network_write:
  cmp x5, #0x50
  b.eq network_notify
  ldr w0, [x9, #16]
- cmp w0, #1
+ cmp w0, #5
  b.hi network_fail
  bl network_selected
  cmp x5, #0x38
@@ -115,6 +125,7 @@ network_set_status:
  cbz w1, network_reset
  tbz w1, #3, 1f
  ldr w0, [x9, #4]
+ bic w0, w0, #2
  cbnz w0, network_fail
  ldr w0, [x9, #12]
  cmp w0, #1
@@ -122,7 +133,7 @@ network_set_status:
 1: str w1, [x9, #28]
  b store_return
 network_reset:
- mov x0, #12
+ mov x0, #28
 1: stp xzr, xzr, [x9], #16
  subs x0, x0, #1
  b.ne 1b
@@ -158,8 +169,36 @@ network_fail:
  str w0, [x9, #28]
  b store_return
 network_notify:
+ cmp w1, #5
+ b.hi network_fail
+ ldr w0, [x9, #4]
+ tbz w0, #1, network_legacy_notify
+ cmp w1, #2
+ b.eq network_control_notify
+ cmp w1, #3
+ b.eq network_queue_notify
+ cmp w1, #4
+ b.eq network_data_notify
+ cmp w1, #5
+ b.ne network_fail
+network_data_notify:
+ ldr w0, [x9, #40]
+ cmp w0, #1
+ b.ne network_fail
+ b network_queue_notify
+network_control_notify:
+ ldr w0, [x9, #36]
+ cmp w0, #1
+ b.eq network_queue_notify
+ cmp w0, #3
+ b.eq network_queue_notify
+ cmp w0, #4
+ b.eq network_queue_notify
+ b store_return
+network_legacy_notify:
  cmp w1, #1
  b.hi network_fail
+network_queue_notify:
  devset w1, network_direction
  ldr w0, [x9, #28]
  mov w2, #143
@@ -208,7 +247,12 @@ network_notify:
  add x10, x10, x0, lsl #4
  ldrh w0, [x10, #12]
  devget w1, network_direction
- cbnz w1, 1f
+ cbz w1, 3f
+ cmp w1, #2
+ b.eq 3f
+ cmp w1, #4
+ b.ne 1f
+3:
  cmp w0, #2
  b.ne network_fail
  b 2f
@@ -228,15 +272,102 @@ network_notify:
  b.hs network_fail
  sub w2, w2, w1
  add x1, x0, x1
+ devget w4, network_direction
+ cmp w4, #2
+ b.eq network_control_receive
+ cmp w4, #3
+ b.eq network_control_send
  devget x0, network_fd
  devget w4, network_direction
- cbnz w4, network_send
+ cbz w4, network_receive
+ cmp w4, #4
+ b.ne network_send
+network_receive:
  mov x3, #64
  mov x4, #0
  mov x5, #0
  mov x8, #207
  svc #0
  b network_io_result
+network_control_receive:
+ cmp w2, #64
+ b.ne network_fail
+ addr x9, network_state
+ ldr w0, [x9, #36]
+ cmp w0, #1
+ b.ne 1f
+ mov x0, #1
+ movk x0, #1, lsl #32
+ movk x0, #1, lsl #48
+ str x0, [x1]
+ mov w0, #2
+ str w0, [x9, #36]
+ mov w1, #8
+ b 3f
+1: cmp w0, #3
+ b.ne 2f
+ mov x0, #1
+ movk x0, #7, lsl #32
+ movk x0, #1, lsl #48
+ mov x3, #0x746c
+ movk x3, #0x6e2d, lsl #16
+ movk x3, #0x7465, lsl #32
+ movk x3, #0x31, lsl #48
+ stp x0, x3, [x1]
+ mov w0, #4
+ str w0, [x9, #36]
+ mov w1, #16
+ b 3f
+2: cmp w0, #4
+ b.ne network_fail
+ mov x0, #1
+ movk x0, #6, lsl #32
+ movk x0, #1, lsl #48
+ str x0, [x1]
+ mov w0, #5
+ str w0, [x9, #36]
+ mov w1, #8
+3: devget x9, network_current
+ str w1, [x9, #12]
+ b network_complete
+network_control_send:
+ cmp w2, #8
+ b.ne network_fail
+ ldr x0, [x1]
+ mov x3, #0x1000000000000
+ addr x9, network_state
+ cmp x0, x3
+ b.ne 1f
+ ldr w4, [x9, #36]
+ cbnz w4, network_fail
+ mov w4, #1
+ str w4, [x9, #36]
+ b 3f
+1: mov x3, #1
+ movk x3, #3, lsl #32
+ movk x3, #1, lsl #48
+ cmp x0, x3
+ b.ne 2f
+ ldr w4, [x9, #36]
+ cmp w4, #2
+ b.ne network_fail
+ mov w4, #3
+ str w4, [x9, #36]
+ b 3f
+2: mov x3, #1
+ movk x3, #6, lsl #32
+ movk x3, #1, lsl #48
+ cmp x0, x3
+ b.ne network_fail
+ ldr w4, [x9, #36]
+ cmp w4, #5
+ b.ne network_fail
+ mov w4, #1
+ str w4, [x9, #40]
+3: devget x9, network_current
+ mov w1, #8
+ str w1, [x9, #12]
+ b network_complete
 network_send:
  mov x3, #16448
  mov x4, #0
@@ -256,6 +387,8 @@ network_io_result:
  str w1, [x9, #12]
  devget w0, network_direction
  cbz w0, network_complete
+ cmp w0, #4
+ b.eq network_complete
  devget w0, network_length
  cmp w1, w0
  b.lo store_return
@@ -288,7 +421,7 @@ network_complete:
  b store_return
 .section .bss
 .balign 16
-network_state: .skip 192
+network_state: .skip 448
 network_fd: .skip 8
 network_current: .skip 8
 network_desc_host: .skip 8

@@ -110,6 +110,9 @@ def build(clean=False):
   compiler_id=bytes.fromhex(build_jobs.compiler_identity())
  except (OSError,RuntimeError):compiler_id=bytes(32)
  data[0x200400:0x200420]=compiler_id
+ # Adapter-visible device selection only. Personal/catalog policy remains in
+ # the guest. Zero here identifies earlier readable PCM1/stream1 images.
+ struct.pack_into('<8sQQ',data,0x200420,b'LTDEV2\0\0',2,2)
  (B/'compiler.sha256').write_text(compiler_id.hex()+'\n')
  image=B/'guest.bin';image.write_bytes(data);identity=hashlib.sha256(data).hexdigest()
  (B/'image.sha256').write_text(identity+'  guest.bin\n');print('LIVE IMAGE',identity,flush=True)

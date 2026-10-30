@@ -4,16 +4,30 @@ from pathlib import Path
 import driver,releases,capsule
 import stat,threading,ipaddress
 MAGIC=b'LT2\0';REPLY=b'LR2\0'
+def device_contract(image):
+ # The selected image declares its raw device profile; this is not an app,
+ # provider, admission or acquisition decision made by the host adapter.
+ with Path(image).open('rb') as stream:
+  stream.seek(0x200420);raw=stream.read(24)
+ if not raw or raw==bytes(24):return 1
+ if len(raw)!=24:raise ValueError('unsupported selected image device contract')
+ magic,audio,network=struct.unpack('<8sQQ',raw)
+ if magic!=b'LTDEV2\0\0' or audio!=2 or network not in (1,2):raise ValueError('unsupported selected image device contract')
+ return 2 if network==1 else 3
 def args_for(backend,image,vault=None,readonly=False,graphics=None,display="none",network_fd=None,server_store=None,server_readonly=False,pcm_fd=None):
  if backend=='qemu':
   args=[driver.tool('qemu-system-riscv64'),'-M','virt','-cpu','rv64','-m','160M','-smp','1','-bios','none','-display',display,'-serial','stdio','-monitor','none','-global','virtio-mmio.force-legacy=false','-kernel',str(image)]
-  if pcm_fd is not None:args+=['-chardev',f'socket,id=lt-pcm,fd={pcm_fd}','-device','virtio-serial-device,id=lt-pcmdev,bus=virtio-mmio-bus.7','-device','virtconsole,chardev=lt-pcm,bus=lt-pcmdev.0']
+  if pcm_fd is not None:
+   reliable=device_contract(image)>=2
+   args+=['-chardev',f'socket,id=lt-pcm,fd={pcm_fd}','-device','virtio-serial-device,id=lt-pcmdev,bus=virtio-mmio-bus.7'+(',max_ports=2' if reliable else ''),'-device','virtserialport,chardev=lt-pcm,bus=lt-pcmdev.0,nr=1,name=lt-pcm1' if reliable else 'virtconsole,chardev=lt-pcm,bus=lt-pcmdev.0']
   args+=['-object','rng-random,filename=/dev/urandom,id=lt-rng','-device','virtio-rng-device,rng=lt-rng']
   args+=['-device','virtio-gpu-device,xres=640,yres=400','-device','virtio-keyboard-device','-device','virtio-mouse-device']
   if graphics:args+=['-qmp',f'unix:{graphics},server=on,wait=off']
   if vault:args+=['-drive',f'file={vault},format=raw,if=none,id=lt-vault'+(',readonly=on' if readonly else ''),'-device','virtio-blk-device,drive=lt-vault,serial=lt-objects-v1']
   if server_store:args+=['-drive',f'file={server_store},format=raw,if=none,id=lt-server'+(',readonly=on' if server_readonly else ''),'-device','virtio-blk-device,drive=lt-server,serial=lt-server-v1']
-  if network_fd is not None:args+=['-chardev',f'socket,id=lt-stream,fd={network_fd}','-device','virtio-serial-device,id=lt-streamdev','-device','virtconsole,chardev=lt-stream,bus=lt-streamdev.0']
+  if network_fd is not None:
+   reliable=device_contract(image)==3
+   args+=['-chardev',f'socket,id=lt-stream,fd={network_fd}','-device','virtio-serial-device,id=lt-streamdev'+(',max_ports=2' if reliable else ''),'-device','virtserialport,chardev=lt-stream,bus=lt-streamdev.0,nr=1,name=lt-net1' if reliable else 'virtconsole,chardev=lt-stream,bus=lt-streamdev.0']
   return args
  args=[str(driver.BUILD/('lt-'+backend)),str(image),'--interactive']
  if backend=='aarch64':args.insert(0,driver.tool('qemu-aarch64'))
@@ -111,11 +125,15 @@ def session(backend,path,vault=None,readonly=False,graphics=None,display="none",
    # reconnects. The host transports evdev records; no UI commands live here.
    input_fd=os.open(input_path,os.O_RDWR|os.O_NONBLOCK)
   if transport:transport.start()
-  if audio:audio.start()
+  if audio:
+   audio.start()
+   if audio.sink_name:print('PCM OUTPUT '+audio.sink_name+' raw S16LE48000 stereo',flush=True)
   process=subprocess.Popen(args_for(backend,image,vault,readonly,graphics,display,transport.guest.fileno() if transport else None,server_store,server_readonly,audio.guest.fileno() if audio else None),stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=None,bufsize=0,pass_fds=tuple(x.guest.fileno() for x in (transport,audio) if x))
  except BaseException:
   if transport:transport.close()
-  if audio:audio.close()
+  if audio:
+   audio.close()
+   if audio.sink_name:print('PCM OUTPUT CLOSED '+audio.sink_name+' status '+str(audio.returncode)+' error '+str(audio.error is not None),flush=True)
   server.close()
   if input_fd is not None:os.close(input_fd)
   if created_input:input_path.unlink(missing_ok=True)
@@ -185,7 +203,9 @@ def session(backend,path,vault=None,readonly=False,graphics=None,display="none",
   if client:client.close()
   server.close();path.unlink(missing_ok=True)
   if transport:transport.close()
-  if audio:audio.close()
+  if audio:
+   audio.close()
+   if audio.sink_name:print('PCM OUTPUT CLOSED '+audio.sink_name+' status '+str(audio.returncode)+' error '+str(audio.error is not None),flush=True)
   if process.poll() is None:process.terminate();process.wait(timeout=5)
   if input_fd is not None:os.close(input_fd)
   if created_input:input_path.unlink(missing_ok=True)
@@ -317,7 +337,7 @@ def main(argv=None):
  for name in ['status','lock','recover','delete']:vs.add_parser(name)
  a=vs.add_parser('unlock');a.add_argument('--key',type=Path,required=True)
  a=vs.add_parser('retain');a.add_argument('handle',type=lambda x:int(x,0))
- s.add_argument('--pcm-sink',type=Path,help='explicit new raw stereo S16LE48000 capture destination');s.add_argument('--pcm-play',action='store_true',help='output guest-decoded PCM using aplay')
+ s.add_argument('--pcm-sink',type=Path,help='explicit new raw stereo S16LE48000 capture destination');s.add_argument('--pcm-play',action='store_true',help='output guest-decoded PCM using aplay or little-endian pw-cat')
  s.add_argument('--startup-timeout',type=int,help='bounded launcher readiness deadline in seconds (default60; ARM interpreter300)')
  args=p.parse_args(argv)
  if args.mode=='session':

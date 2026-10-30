@@ -1,5 +1,5 @@
-/* LT-PCM-v1: modern single-port virtio-console, opaque inherited socket.
- * The two bounded split queues carry bytes only. No catalog/protocol policy. */
+/* PCM2: fixed non-console port1, bounded control queues and raw samples.
+ * Legacy PCM1 q0/q1 remains available when MULTIPORT is not negotiated. */
 pcm_read:
     lea rdi, [rip+pcm_state]
     cmp eax, 0
@@ -20,6 +20,8 @@ pcm_read:
     je pcm_interrupt
     cmp eax, 0x70
     je pcm_status
+    cmp eax, 0x104
+    je pcm_ports
     jmp virtio_zero
 pcm_id:
     xor eax, eax
@@ -28,16 +30,24 @@ pcm_id:
     mov eax, 3
 1:  ret
 pcm_features:
+    mov eax, 2
+    cmp dword ptr [rdi], 0
+    je 1f
     xor eax, eax
     cmp dword ptr [rdi], 1
     sete al
+1:  ret
+pcm_ports:
+    mov eax, 2
     ret
 pcm_max:
-    cmp dword ptr [rdi+16], 1
+    cmp dword ptr [rdi+16], 5
     ja virtio_zero
     mov eax, 8
     ret
 pcm_ready:
+    cmp dword ptr [rdi+16], 5
+    ja virtio_zero
     call pcm_selected
     mov eax, [rdi+4]
     ret
@@ -49,7 +59,6 @@ pcm_status:
     ret
 pcm_selected:
     mov eax, [rdi+16]
-    and eax, 1
     shl eax, 6
     lea rdi, [rdi+rax+64]
     ret
@@ -69,7 +78,7 @@ pcm_write:
     je pcm_set_status
     cmp eax, 0x50
     je pcm_notify
-    cmp dword ptr [rdi+16], 1
+    cmp dword ptr [rdi+16], 5
     ja pcm_fail
     mov r8d, eax
     call pcm_selected
@@ -115,15 +124,17 @@ pcm_set_status:
     jz pcm_reset
     test edx, 8
     jz 1f
-    cmp dword ptr [rdi+4], 0
-    jne pcm_fail
+    mov eax, [rdi+4]
+    and eax, -3
+    test eax, eax
+    jnz pcm_fail
     cmp dword ptr [rdi+12], 1
     jne pcm_fail
 1:  mov [rdi+28], edx
     ret
 pcm_reset:
     xor eax, eax
-    mov ecx, 24
+    mov ecx, 56
     rep stosq
     ret
 pcm_num:
@@ -154,8 +165,32 @@ pcm_fail:
     or dword ptr [rip+pcm_state+28], 128
     ret
 pcm_notify:
+    cmp edx, 5
+    ja pcm_fail
+    test dword ptr [rdi+4], 2
+    jz pcm_legacy_notify
+    cmp edx, 2
+    je pcm_control_notify
+    cmp edx, 3
+    je pcm_queue_notify
+    cmp edx, 5
+    jne pcm_fail
+    cmp dword ptr [rdi+40], 1
+    jne pcm_fail
+    jmp pcm_queue_notify
+pcm_control_notify:
+    mov eax, [rdi+36]
+    cmp eax, 1
+    je pcm_queue_notify
+    cmp eax, 3
+    je pcm_queue_notify
+    cmp eax, 4
+    je pcm_queue_notify
+    ret
+pcm_legacy_notify:
     cmp edx, 1
     ja pcm_fail
+pcm_queue_notify:
     mov [rip+pcm_direction], edx
     mov eax, [rdi+28]
     and eax, 143
@@ -202,7 +237,10 @@ pcm_notify:
     add rax, [rip+pcm_desc_host]
     movzx ecx, word ptr [rax+12]
     cmp dword ptr [rip+pcm_direction], 0
+    je 3f
+    cmp dword ptr [rip+pcm_direction], 2
     jne 1f
+3:
     cmp ecx, 2
     jne pcm_fail
     jmp 2f
@@ -225,6 +263,10 @@ pcm_notify:
     add rsi, rax
     mov edx, [rip+pcm_length]
     sub edx, eax
+    cmp dword ptr [rip+pcm_direction], 2
+    je pcm_control_receive
+    cmp dword ptr [rip+pcm_direction], 3
+    je pcm_control_send
     mov rdi, [rip+pcm_fd]
     cmp dword ptr [rip+pcm_direction], 0
     jne pcm_send
@@ -234,6 +276,62 @@ pcm_notify:
     xor r9d, r9d
     syscall
     jmp pcm_io_result
+pcm_control_receive:
+    cmp edx, 64
+    jne pcm_fail
+    mov eax, dword ptr [rip+pcm_state+36]
+    cmp eax, 1
+    jne 1f
+    mov rax, 0x0001000100000001 /* port1 ADD */
+    mov [rsi], rax
+    mov dword ptr [rip+pcm_state+36], 2
+    mov eax, 8
+    jmp 3f
+1:  cmp eax, 3
+    jne 2f
+    mov rax, 0x0001000700000001 /* port1 NAME */
+    mov [rsi], rax
+    mov rax, 0x00316d63702d746c /* lt-pcm1 NUL */
+    mov [rsi+8], rax
+    mov dword ptr [rip+pcm_state+36], 4
+    mov eax, 16
+    jmp 3f
+2:  cmp eax, 4
+    jne pcm_fail
+    mov rax, 0x0001000600000001 /* host OPEN */
+    mov [rsi], rax
+    mov dword ptr [rip+pcm_state+36], 5
+    mov eax, 8
+3:  mov rdi, [rip+pcm_current]
+    mov [rdi+12], eax
+    jmp pcm_complete
+pcm_control_send:
+    cmp edx, 8
+    jne pcm_fail
+    mov rax, [rsi]
+    mov rcx, 0x0001000000000000 /* DEVICE_READY */
+    cmp rax, rcx
+    jne 1f
+    cmp dword ptr [rip+pcm_state+36], 0
+    jne pcm_fail
+    mov dword ptr [rip+pcm_state+36], 1
+    jmp 3f
+1:  mov rcx, 0x0001000300000001 /* port1 READY */
+    cmp rax, rcx
+    jne 2f
+    cmp dword ptr [rip+pcm_state+36], 2
+    jne pcm_fail
+    mov dword ptr [rip+pcm_state+36], 3
+    jmp 3f
+2:  mov rcx, 0x0001000600000001 /* guest OPEN */
+    cmp rax, rcx
+    jne pcm_fail
+    cmp dword ptr [rip+pcm_state+36], 5
+    jne pcm_fail
+    mov dword ptr [rip+pcm_state+40], 1
+3:  mov rdi, [rip+pcm_current]
+    mov dword ptr [rdi+12], 8
+    jmp pcm_complete
 pcm_send:
     mov eax, 44 /* sendto MSG_DONTWAIT|MSG_NOSIGNAL */
     mov r10d, 16448
@@ -280,7 +378,7 @@ pcm_done:
     ret
 .section .bss
 .balign 16
-pcm_state: .skip 192
+pcm_state: .skip 448
 pcm_fd: .skip 8
 pcm_current: .skip 8
 pcm_desc_host: .skip 8
