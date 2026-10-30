@@ -32,7 +32,7 @@ def main(argv=None):
    fields,_=call(client,args.instance,400,args.slot,1 if args.role=='registry' else 2,stream,args.content_handle,args.budget,args.lifetime,peer+material[64:96]+root)
    result={'instance':args.instance,'slot':args.slot,'role':args.role,'stream':stream,'scope_index':fields[1],'root':args.root,'configured':True,'retention':'separate explicit storage policy; no persistence created by this command'}
   elif args.command=='inspect':
-   fields,_=call(client,args.instance,401,args.slot);result=dict(instance=args.instance,slot=args.slot,active=bool(fields[2]),role=fields[3],send_pending=bool(fields[4]),response_bytes=fields[5],snapshot_id=fields[6],last_error=fields[7])
+   fields,_=call(client,args.instance,401,args.slot);result=dict(instance=args.instance,slot=args.slot,state=fields[2],active=fields[2]==1,waiting_for_authentication=fields[2]==2,role=fields[3],send_pending=bool(fields[4]),response_bytes=fields[5],snapshot_id=fields[6],last_error=fields[7])
   else:call(client,args.instance,402,args.slot);result={'instance':args.instance,'slot':args.slot,'removed':True}
  finally:client.close()
  print(json.dumps(result,indent=2));return 0

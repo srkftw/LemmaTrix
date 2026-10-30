@@ -18,7 +18,8 @@ def response (code value t : UInt64) : UInt64 :=
   let t := store64 wire code t
   64+store64 (wire+8) value t
 -- Peer fields: grant,role,scopedContent,stream,sendJob,responseBytes,requestID,
--- snapshotID,snapshotNext; expected immutable root at128, response at256,
+-- snapshotID,snapshotNext; policy approved88, remaining payload budget96,
+-- absolute expiry104, next retry112; immutable root128, response256,
 -- metadata snapshot at1024 (admission768 + original consumer768).
 def reply (p op code total value next n t : UInt64) : UInt64 :=
   let out := p+256
@@ -92,8 +93,8 @@ def answer (p t : UInt64) : UInt64 :=
 partial def freeScope (slot stream i t : UInt64) : UInt64 :=
   if i == 16 then error else
   let p := peer i
-  if load64 p t != 0 && load64 (p+80) t == slot && load64 (p+24) t == stream then error else
-  if load64 p t == 0 then i else freeScope slot stream (i+1) t
+  if load64 (p+88) t != 0 && load64 (p+80) t == slot && load64 (p+24) t == stream then error else
+  if load64 (p+88) t == 0 then i else freeScope slot stream (i+1) t
 
 def configure (length t : UInt64) : UInt64 :=
   let slot := load64 (command+8) t
@@ -102,10 +103,12 @@ def configure (length t : UInt64) : UInt64 :=
   let content := load64 (command+32) t
   let budget := load64 (command+40) t
   let lifetime := load64 (command+48) t
-  if length != 160 || slot >= 4 || (role != 1 && role != 2) || stream == 0 then response 2 0 t else
+  if length != 160 || slot >= 4 || (role != 1 && role != 2) || stream == 0 ||
+    budget == 0 || budget > 16777216 || lifetime == 0 || lifetime > 100000 then response 2 0 t else
   let selected := freeScope slot stream 0 t
   if selected == error then response 4 0 t else
   let p := peer selected
+  let t := zero p 512 t
   let t := store64 (p+80) slot t
   let t := copy (command+64) (p+3072) 96 t
   let t := copy (command+128) (p+128) 32 t
@@ -116,16 +119,18 @@ def configure (length t : UInt64) : UInt64 :=
   if role == 2 && (r != 320 || status r != 0) then response 1 0 r else
   let t := if role == 2 then Guest.ServiceHash.sha256At hashScratch (wire+64) 256 hashOut r else r
   if role == 2 && !Guest.ContentFormat.equal hashOut (p+128) 32 t then response 2 0 t else
-  let r := Guest.LibraryPeerSDK.grant slot (p+3072) stream budget lifetime t
-  if r != 64 || status r != 0 then response (if r == error then 7 else status r) 0 r else
-  let t := store64 p (result r) r
+  -- Operator approval is independent of current connection availability.
+  -- Authentication may begin later; work mints fresh epoch-bound authority.
+  let t := store64 (p+88) 1 t
+  let t := store64 (p+96) budget t
+  let t := store64 (p+104) (Guest.WaitSDK.now t+lifetime) t
   response 0 selected t
 
 partial def removeScopes (slot i t : UInt64) : UInt64 :=
   if i == 16 then t else
   let p := peer i
-  let t := if load64 p t != 0 && load64 (p+80) t == slot then
-    let r := Guest.NetworkSDK.revokePeer slot (load64 p t) t
+  let t := if load64 (p+88) t != 0 && load64 (p+80) t == slot then
+    let r := if load64 p t == 0 then t else Guest.NetworkSDK.revokePeer slot (load64 p t) t
     zero p 512 r
     else t
   removeScopes slot (i+1) t
@@ -139,7 +144,7 @@ def dispatch (caller rights length t : UInt64) : UInt64 :=
   if op == 401 && length == 64 && slot < 16 then
     let p := peer slot
     let t := response 0 slot t
-    let t := store64 (wire+16) (if load64 p t == 0 then 0 else 1) t
+    let t := store64 (wire+16) (if load64 (p+88) t == 0 then 0 else if load64 p t == 0 then 2 else 1) t
     let t := store64 (wire+24) (load64 (p+8) t) t
     let t := store64 (wire+32) (load64 (p+32) t) t
     let t := store64 (wire+40) (load64 (p+40) t) t
@@ -149,35 +154,75 @@ def dispatch (caller rights length t : UInt64) : UInt64 :=
     response 0 slot (removeScopes slot 0 t)
   else response 1 0 t
 
+def lost (p t : UInt64) : UInt64 :=
+  let t := zero (p+256) 288 t
+  let t := zero p 1 t
+  let t := zero (p+32) 5 t
+  let t := store64 (p+72) 7 t
+  store64 (p+112) (Guest.WaitSDK.now t+100) t
+
+def renew (p t : UInt64) : UInt64 :=
+  let now := Guest.WaitSDK.now t
+  if now < load64 (p+112) now then now else
+  let t := store64 (p+112) (now+100) now
+  let slot := load64 (p+80) t
+  let r := Guest.NetworkSDK.inspectPeer slot t
+  if r != 64 || status r != 0 || result r != 3 then r else
+  -- A loss may discard four already authenticated inbox records before this
+  -- application consumes them. Reserve their worst-case704-byte payloads on
+  -- every fresh grant, so reconnect cannot replenish unobserved charged work.
+  if load64 (p+96) r <= 2816 then store64 (p+88) 0 (store64 (p+72) 4 r) else
+  let r := Guest.LibraryPeerSDK.grant slot (p+3072) (load64 (p+24) r)
+    (load64 (p+96) r) (load64 (p+104) r-now) r
+  if r != 64 || status r != 0 then store64 (p+72) (if r == error then 7 else status r) r else
+  let t := store64 (p+96) (load64 (p+96) r-2816) r
+  store64 p (result r) (store64 (p+72) 0 t)
+
 def work (scope t : UInt64) : UInt64 :=
   let p := peer scope
   let slot := load64 (p+80) t
-  if load64 p t == 0 then t else
+  if load64 (p+88) t == 0 then t else
+  let now := Guest.WaitSDK.now t
+  if now >= load64 (p+104) now || load64 (p+96) now < 64 then
+    let r := if load64 p now == 0 then now else Guest.NetworkSDK.revokePeer slot (load64 p now) now
+    store64 (p+88) 0 (lost p r)
+  else if load64 p now == 0 then renew p now else
+  let t := now
   if load64 (p+32) t != 0 then
     let r := Guest.NetworkSDK.pollPeer slot (load64 (p+32) t) t
     let state := load64 (wire+16) r
     if r != 64 || status r != 0 || state >= 4 then
-      let t := store64 (p+72) 7 r
-      store64 p 0 t
+      lost p r
     else if state == 3 then store64 (p+32) 0 r else r
   else if load64 (p+40) t != 0 then
+    if load64 (p+40) t > load64 (p+96) t then
+      let r := Guest.NetworkSDK.revokePeer slot (load64 p t) t
+      store64 (p+88) 0 (lost p r)
+    else
     let r := Guest.NetworkSDK.sendPeer slot (load64 p t) 2 (load64 (p+48) t) (p+256) (load64 (p+40) t) t
     if r != 64 || status r != 0 then
-      if r != error && status r == 4 then r else store64 p 0 (store64 (p+72) 7 r)
+      if r != error && status r == 4 then r else lost p r
     else
-      let t := store64 (p+32) (result r) r
+      let t := store64 (p+96) (load64 (p+96) r-load64 (p+40) r) r
+      let t := store64 (p+32) (result r) t
       store64 (p+40) 0 t
   else
     let r := Guest.LibraryPeerSDK.receive slot (load64 p t) t
+    let bytes := if r >= 64 && r <= 768 && status r == 0 then r-64 else 0
+    let t := if bytes <= load64 (p+96) r then store64 (p+96) (load64 (p+96) r-bytes) r else store64 (p+88) 0 r
     if r != 128 || status r != 0 then
-      if r != error && status r == 6 then r else store64 p 0 (store64 (p+72) 7 r)
+      if r != error && status r == 6 then t else lost p t
     else
-      let t := store64 (p+48) (load64 (wire+24) r) r
+      let t := store64 (p+48) (load64 (wire+24) r) t
       let t := copy (wire+64) request 64 t
       answer p t
 
 partial def workAll (slot t : UInt64) : UInt64 :=
   if slot == 16 then t else workAll (slot+1) (work slot t)
+partial def delay (scope t : UInt64) : UInt64 :=
+  if scope == 16 then 20 else
+  let p := peer scope
+  if load64 (p+32) t != 0 || load64 (p+40) t != 0 then 1 else delay (scope+1) t
 partial def serve (endpoint t : UInt64) : UInt64 :=
   let t := workAll 0 t
   let n := syscall 36 endpoint incoming 1024 0 t
@@ -188,7 +233,7 @@ partial def serve (endpoint t : UInt64) : UInt64 :=
     let r := dispatch caller rights (n-32) n
     Guest.LiveSDK.reply token r r
     else n
-  serve endpoint (Guest.WaitSDK.deadline (Guest.WaitSDK.now t+1) t)
+  serve endpoint (Guest.WaitSDK.deadline (Guest.WaitSDK.now t+delay 0 t) t)
 def main (t : UInt64) : UInt64 :=
   let t := zero 0x600000 16384 t
   serve (self t) t

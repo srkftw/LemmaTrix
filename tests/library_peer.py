@@ -52,12 +52,14 @@ def run():
    identity=hashlib.sha256(os.getrandom(32)).digest();description=base/'registry.service'
    service=network.create_description(keys['network'][0],identity,f'127.0.0.1:{port}','library-registry',description)
    credentials=[base/'client.credential',base/'server.credential'];network.provision(*credentials,identity,bytes.fromhex(service['server_id']),bytes.fromhex(service['service_id']))
+   root=bytes.fromhex(configured['federation_id']);service_id=bytes.fromhex(service['service_id'])
+   library_peer.call(server,peer,400,0,1,23,0,32768,100000,identity+service_id+root)
+   pending,_=library_peer.call(server,peer,401,0);assert pending[2]==2,'offline approved policy was discarded'
    for index in (1,0):
     network.configure(clients[index],credentials[index],description,slot=0)
     wait(lambda:network.call(clients[index],13,slot=0,allow_error=True)[0][0]==0)
    wait(lambda:all(network.status(c,0)['endpoint_authenticated'] for c in clients))
-   root=bytes.fromhex(configured['federation_id']);service_id=bytes.fromhex(service['service_id'])
-   library_peer.call(server,peer,400,0,1,23,0,32768,100000,identity+service_id+root)
+   wait(lambda:library_peer.call(server,peer,401,0)[0][2]==1)
    grant=network.call(client,2,a=3,b=3,c=32768,d=65536,e=100000,data=bytes.fromhex(service['server_id'])+service_id+root+struct.pack('<QQ',2,23),slot=0)[0][1]
    counter=0
    def request(op,h=0,a=0,b=0):
@@ -81,7 +83,19 @@ def run():
    q,_=request(2,snapshot+1,0,64);assert q[3]==3,'stale snapshot admitted'
    q,_=request(5,0,64);assert q[3]==1,'registry role served seed range'
    q,_=request(1,16);assert q[3]==6,'catalog termination not bounded'
-   return dict(registry_package=registry_release,peer_package=peer_release,consumer_sha256=hashlib.sha256(raw).hexdigest(),metadata_bytes=len(received),metadata_sha256=hashlib.sha256(received).hexdigest(),metadata_only=True,payload_transferred=False,stale_snapshot='denied',wrong_role_range='denied',source='actual native Registry consumer admission and signed publisher record',backends=['QEMU RV64','native x86-64 assembly'])
+   # Reauthentication changes epochs and destroys prior grants/snapshots. The
+   # original explicit operator policy can mint fresh bounded authority itself.
+   network.call(server,14,slot=0)
+   for index in (1,0):
+    network.configure(clients[index],credentials[index],description,slot=0)
+    wait(lambda:network.call(clients[index],13,slot=0,allow_error=True)[0][0]==0)
+   wait(lambda:all(network.status(c,0)['endpoint_authenticated'] for c in clients))
+   wait(lambda:library_peer.call(server,peer,401,0)[0][2]==1)
+   grant=network.call(client,2,a=3,b=3,c=32768,d=65536,e=100000,data=bytes.fromhex(service['server_id'])+service_id+root+struct.pack('<QQ',2,23),slot=0)[0][1]
+   q,_=request(2,snapshot,0,64);assert q[3]==3,'old epoch snapshot survived reauthentication'
+   q,_=request(1);assert q[3]==0,'fresh operator-policy authority did not serve'
+   library_peer.call(server,peer,402,0);assert library_peer.call(server,peer,401,0)[0][2]==0,'explicit revoke preserved automatic renewal'
+   return dict(registry_package=registry_release,peer_package=peer_release,consumer_sha256=hashlib.sha256(raw).hexdigest(),metadata_bytes=len(received),metadata_sha256=hashlib.sha256(received).hexdigest(),metadata_only=True,payload_transferred=False,stale_snapshot='denied before and after epoch change',wrong_role_range='denied',operator_policy='configured offline, freshly granted after authentication and epoch recovery, explicitly revoked',source='actual native Registry consumer admission and signed publisher record',backends=['QEMU RV64','native x86-64 assembly'])
   finally:
    for c in clients:c.close()
    for p in processes:p.terminate()
