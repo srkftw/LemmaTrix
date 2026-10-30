@@ -5,21 +5,25 @@ reserve operation only retrieves its queryable idempotent local result; this
 script never appends payload bytes into the replica. All acquisition crosses
 Native LibraryPeer + Network-v2 and native Content validation.
 """
-import argparse,hashlib,json,os,socket,struct,sys,time
+import argparse,contextlib,hashlib,json,os,socket,struct,sys,time
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1];sys.path[:0]=[str(ROOT/'tools'),str(ROOT/'tests')]
 import capsule,content,federation,library_peer,live,network,nodes,releases
 from library_journey import Node,appcall,wait
 
 def main():
- parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--source',type=Path,required=True);parser.add_argument('--output',type=Path,required=True);parser.add_argument('--image',type=Path,default=ROOT/'build/live/guest.bin');parser.add_argument('--acquirer',type=Path,default=ROOT/'build/live/apps/library-acquirer.bin');parser.add_argument('--registry',type=Path,default=ROOT/'build/live/apps/registry-consumer-check.bin');parser.add_argument('--peer',type=Path,default=ROOT/'build/live/apps/library-peer.bin');parser.add_argument('--key',type=Path,default=ROOT/'build/campaign005/publisher.pem');parser.add_argument('--public',type=Path,default=ROOT/'build/campaign005/publisher.pub');parser.add_argument('--seconds',type=int,default=6);parser.add_argument('--timeout',type=int,default=2400)
+ parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--source',type=Path,required=True);parser.add_argument('--output',type=Path,required=True);parser.add_argument('--image',type=Path,default=ROOT/'build/live/guest.bin');parser.add_argument('--acquirer',type=Path,default=ROOT/'build/live/apps/library-acquirer.bin');parser.add_argument('--registry',type=Path,default=ROOT/'build/live/apps/registry-consumer-check.bin');parser.add_argument('--peer',type=Path,default=ROOT/'build/live/apps/library-peer.bin');parser.add_argument('--key',type=Path,default=ROOT/'build/campaign005/publisher.pem');parser.add_argument('--public',type=Path,default=ROOT/'build/campaign005/publisher.pub');parser.add_argument('--seconds',type=int,default=6);parser.add_argument('--timeout',type=int,default=2400);parser.add_argument('--keep-running',action='store_true',help='preserve the owned replica for diagnosis/retry, including after failure')
  args=parser.parse_args();out=args.output.resolve();out.mkdir(parents=True,exist_ok=False);source=args.source.resolve();image=out/'platform.bin';image.write_bytes(args.image.read_bytes());replica=None
  def package(binary,name,rights):
   raw,manifest=releases.make(binary,name,'1.0.0',rights,args.key,profile=2,license='NOASSERTION');path=out/(name+'.ltrel');path.write_bytes(raw);return path,releases.inspect(raw)
  def install(node,binary,name,rights):
   path,info=package(binary,name,rights);config=nodes.approved_package(path,args.public,info['release_id'],rights)
   with node.client() as c:return nodes.start_package(c,config,path.read_bytes()),info['release_id']
- def connect_source(name):return live.Client(source/name/'portal.sock',timeout=600)
+ @contextlib.contextmanager
+ def connect_source(name):
+  c=live.Client(source/name/'portal.sock',timeout=600)
+  try:yield c
+  finally:c.close()
  def find_peer(c):
   rows=c.request(2);matches=[struct.unpack_from('<4Q',rows,i) for i in range(7*32,len(rows),32) if struct.unpack_from('<Q',rows,i+16)[0]==1025 and 0<struct.unpack_from('<Q',rows,i+8)[0]<5]
   if len(matches)!=1:raise RuntimeError('expected one explicitly started LibraryPeer role')
@@ -29,6 +33,7 @@ def main():
   verifier,verifier_release=install(replica,args.registry,'replica-verifier',2175)
   acquirer,acquirer_release=install(replica,args.acquirer,'replica-acquirer',1151)
   peer,peer_release=install(replica,args.peer,'replica-content-peer',1025)
+  (out/'instances.json').write_text(json.dumps(dict(verifier=verifier,acquirer=acquirer,peer=peer),indent=2)+'\n')
   fedpublic=source/'federation.pub';fed_id=hashlib.sha256(releases.public_modulus(fedpublic)).digest();identity=hashlib.sha256(os.getrandom(32)).digest()
   with replica.client() as c:federation.configure(c,verifier,fedpublic,'consumer',allowed_rights=8191)
   # Both producer relationships occupy independent source guest contexts1.
@@ -61,6 +66,7 @@ def main():
    with replica.client() as c:return appcall(c,acquirer,704,0,0,128)[1]
   def done():
    data=state();phase=struct.unpack_from('<Q',data)[0]
+   (out/'latest-job.json').write_text(json.dumps(dict(words=list(struct.unpack('<16Q',data)),elapsed_seconds=time.monotonic()-started),indent=2)+'\n')
    if phase in (12,13,14):raise RuntimeError(('replication terminal failure',list(struct.unpack('<16Q',data))))
    return phase==10
   wait(done,args.timeout,'actual guest-to-guest headless replication')
@@ -105,5 +111,6 @@ def main():
   result=dict(image=hashlib.sha256(image.read_bytes()).hexdigest(),acquirer_release=acquirer_release,verifier_release=verifier_release,provider_release=peer_release,source='separately running seed1 native Content service',replica_guest='new independent guest',host_payload_ingestion=False,payload_bytes=len(stereo),chunks=(len(stereo)+4095)//4096,manifest_sha256=manifest_id.hex(),actual_sha256=actual.hexdigest(),elapsed_seconds=time.monotonic()-started,served_to_fresh_authenticated_client=True,served_manifest_proof_and_512_bytes=True,retention='volatile; no server backing persistence claimed')
   (out/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))
  finally:
-  if replica:replica.stop()
+  if replica and not args.keep_running:replica.stop()
+  elif replica:print('Replica intentionally preserved at '+str(replica.socket),flush=True)
 if __name__=='__main__':main()

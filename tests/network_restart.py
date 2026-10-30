@@ -1,5 +1,5 @@
 """Broker-restart stale local grant/job generation check through normal IPC."""
-import hashlib,os,socket,struct,subprocess,sys,tempfile,time
+import hashlib,os,signal,socket,struct,subprocess,sys,tempfile,time
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/'tools'))
 import live,network
@@ -7,7 +7,7 @@ import live,network
 def main():
  with tempfile.TemporaryDirectory(prefix='lt-network-restart-') as tmp:
   base=Path(tmp);portal=base/'portal.sock';probe=socket.socket();probe.bind(('127.0.0.1',0));port=probe.getsockname()[1];probe.close()
-  log=(base/'transport.log').open('wb');process=subprocess.Popen([str(ROOT/'lt'),'run','--backend','qemu','--socket',str(portal),'--network-listen',f'127.0.0.1:{port}'],stdout=log,stderr=subprocess.STDOUT,cwd=ROOT);client=None
+  log=(base/'transport.log').open('wb');process=subprocess.Popen([str(ROOT/'lt'),'run','--backend','qemu','--socket',str(portal),'--network-listen',f'127.0.0.1:{port}'],stdout=log,stderr=subprocess.STDOUT,cwd=ROOT,start_new_session=True);client=None
   try:
    end=time.monotonic()+90
    while not portal.exists():
@@ -28,9 +28,14 @@ def main():
    network.call(client,5,new_job)
    print('broker restart keeps old grant/job IDs stale; type and incarnation namespaces: PASS')
   finally:
-   if client:client.close()
-   process.terminate()
+   if client:
+    try:client.request(70)
+    except (EOFError,OSError,ValueError):pass
+    client.close()
    try:process.wait(5)
-   except subprocess.TimeoutExpired:process.kill();process.wait()
+   except subprocess.TimeoutExpired:
+    os.killpg(process.pid,signal.SIGTERM)
+    try:process.wait(5)
+    except subprocess.TimeoutExpired:os.killpg(process.pid,signal.SIGKILL);process.wait()
    log.close()
 if __name__=='__main__':main()

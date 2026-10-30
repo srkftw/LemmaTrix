@@ -3,7 +3,7 @@
 Uses the normal run/management portal. No guest memory writes or shared socket
 replacements. Transport-only assertions are separate from consumer admission.
 """
-import argparse,hashlib,json,os,socket,struct,subprocess,sys,tempfile,time
+import argparse,hashlib,json,os,signal,socket,struct,subprocess,sys,tempfile,time
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/'tools'))
 import capsule,live,network
@@ -23,7 +23,7 @@ def run(client_backend='qemu',server_backend='x86_64',library_profile=False):
   try:
    for index,backend in enumerate((client_backend,server_backend)):
     path=base/f'{index}.sock';log=(base/f'{index}.log').open('wb');logs.append(log)
-    processes.append(subprocess.Popen([str(ROOT/'lt'),'run','--backend',backend,'--socket',str(path),'--network-mux'],cwd=ROOT,stdout=log,stderr=subprocess.STDOUT))
+    processes.append(subprocess.Popen([str(ROOT/'lt'),'run','--backend',backend,'--socket',str(path),'--network-mux'],cwd=ROOT,stdout=log,stderr=subprocess.STDOUT,start_new_session=True))
     wait(path.exists,90);clients.append(live.Client(path,timeout=180))
    for slot in range(3):
     probe=socket.socket();probe.bind(('127.0.0.1',0));port=probe.getsockname()[1];probe.close()
@@ -79,11 +79,16 @@ def run(client_backend='qemu',server_backend='x86_64',library_profile=False):
    assert wait(surviving)==b'surviving seed'
    return {'client_backend':client_backend,'server_backend':server_backend,'connections':3,'service_operation':operation,'public_description_schema':2 if library_profile else 1,'separate_endpoints':True,'bytes_per_connection':4097,'payload_sha256':[hashlib.sha256(p).hexdigest() for p in payloads],'surviving_sessions':[0,2],'stale_epoch_grant':'denied','request_binding':'authenticated','duplicate_receive_scope':'denied','consumer_admission':'not tested by this transport component check'}
   finally:
-   for c in clients:c.close()
-   for p in processes:p.terminate()
+   for c in clients:
+    try:c.request(70)
+    except (EOFError,OSError,ValueError):pass
+    c.close()
    for p in processes:
     try:p.wait(5)
-    except subprocess.TimeoutExpired:p.kill();p.wait()
+    except subprocess.TimeoutExpired:
+     os.killpg(p.pid,signal.SIGTERM)
+     try:p.wait(5)
+     except subprocess.TimeoutExpired:os.killpg(p.pid,signal.SIGKILL);p.wait()
    for log in logs:log.close()
 
 if __name__=='__main__':

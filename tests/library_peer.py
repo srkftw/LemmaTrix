@@ -3,7 +3,7 @@
 Host setup signs explicitly selected original metadata and role packages. Query,
 consumer admission, snapshot authorization and serving execute inside guests.
 """
-import hashlib,json,os,socket,struct,subprocess,sys,tempfile,time
+import hashlib,json,os,signal,socket,struct,subprocess,sys,tempfile,time
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/'tools'))
 import capsule,consumers,content,federation,library_peer,live,network,nodes,releases
@@ -23,7 +23,7 @@ def run():
   try:
    for i,backend in enumerate(('qemu','x86_64')):
     path=base/f'{i}.sock';log=(base/f'{i}.log').open('wb');logs.append(log)
-    processes.append(subprocess.Popen([str(ROOT/'lt'),'run','--backend',backend,'--socket',str(path),'--network-mux'],stdout=log,stderr=subprocess.STDOUT,cwd=ROOT))
+    processes.append(subprocess.Popen([str(ROOT/'lt'),'run','--backend',backend,'--socket',str(path),'--network-mux'],stdout=log,stderr=subprocess.STDOUT,cwd=ROOT,start_new_session=True))
     wait(path.exists,90);clients.append(live.Client(path,timeout=180))
    client,server=clients
    keys={}
@@ -97,10 +97,15 @@ def run():
    library_peer.call(server,peer,402,0);assert library_peer.call(server,peer,401,0)[0][2]==0,'explicit revoke preserved automatic renewal'
    return dict(registry_package=registry_release,peer_package=peer_release,consumer_sha256=hashlib.sha256(raw).hexdigest(),metadata_bytes=len(received),metadata_sha256=hashlib.sha256(received).hexdigest(),metadata_only=True,payload_transferred=False,stale_snapshot='denied before and after epoch change',wrong_role_range='denied',operator_policy='configured offline, freshly granted after authentication and epoch recovery, explicitly revoked',source='actual native Registry consumer admission and signed publisher record',backends=['QEMU RV64','native x86-64 assembly'])
   finally:
-   for c in clients:c.close()
-   for p in processes:p.terminate()
+   for c in clients:
+    try:c.request(70)
+    except (EOFError,OSError,ValueError):pass
+    c.close()
    for p in processes:
     try:p.wait(5)
-    except subprocess.TimeoutExpired:p.kill();p.wait()
+    except subprocess.TimeoutExpired:
+     os.killpg(p.pid,signal.SIGTERM)
+     try:p.wait(5)
+     except subprocess.TimeoutExpired:os.killpg(p.pid,signal.SIGKILL);p.wait()
    for log in logs:log.close()
 if __name__=='__main__':print(json.dumps(run(),indent=2))
