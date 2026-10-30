@@ -559,46 +559,10 @@ def retainGameSave (handle t : UInt64) : UInt64 :=
     let t := Guest.store64 (buf+24) 192 t
     let r := forward 2 64 (Guest.store64 (buf+56) 1 t)
     if r != 256 || Guest.load64 buf r != 0 || !Guest.GameSaveFormat.valid (buf+64) r then err else retain handle r
-@[noinline] def commandIO (op len t : UInt64) : UInt64 :=
-  if op == 70 then Guest.syscall 70 0 0 0 0 t
-  else if op == 100 then if len >= 64 && len <= 1024 then forward 2 len t else err
-  else if op == 160 then if len >= 64 && len <= 1024 then forward 5 len t else err
-  else if op == 170 then
-    if len < 64 || len > 1024 then err else
-      let provisioning := Guest.load64 buf t == 1
-      let received := forward 6 len t
-      -- Provisioning secrets are never retained in the management replay cache.
-      let t := if provisioning then zero (buf+64) 120 received else received
-      keep received t
-  else if op == 180 then if len == 8 then stageProject (Guest.load64 buf t) t else err
-  else if op == 181 then
-    if len != 8 then err else
-      let r := Guest.syscall 112 (Guest.load64 buf t) 0 0 0 t
-      if r == err then err else 8+Guest.store64 buf (Guest.load64 buf r) r
-  else if op == 182 then
-    if len != 8 then err else
-      let r := Guest.syscall 114 (Guest.load64 buf t) 0 0 0 t
-      if r == err then err else 8+Guest.store64 buf (Guest.load64 buf r) r
-  else if op == 184 then
-    if len != 8 then err else
-      let r := Guest.syscall 118 (Guest.load64 buf t) 0 0 0 t
-      if r == err then err else 8+Guest.store64 buf (Guest.load64 buf r) r
-  else if op == 185 then
-    if len != 0 then err else
-      let r := Guest.syscall 119 0 0 0 0 t
-      8+Guest.store64 buf r r
-  else if op == 183 then
-    if len != 0 then err else
-      let r := Guest.syscall 115 0 0 0 0 t
-      8+Guest.store64 buf r r
-  else if op == 150 then
-    if len < 72 || len > 1032 then err else
-      let target := Guest.load64 buf t
-      let t := copy (buf+8) buf (len-8) t
-      forward target (len-8) t
-  else if op == 203 then if len == 8 then retain (Guest.load64 buf t) t else err
-  else if op == 207 then recover t
-  else if op == 222 then
+-- Keep approval-specific local variables off unrelated graph installation
+-- call stacks. Each branch preserves its original gesture/identity checks.
+@[noinline] partial def commandContent (op len t : UInt64) : UInt64 :=
+  if op == 222 then
     if len != 24 then err else
       let content := Guest.load64 buf t
       let metadata := Guest.load64 (buf+8) t
@@ -654,6 +618,48 @@ def retainGameSave (handle t : UInt64) : UInt64 :=
           let t := Guest.store64 (buf+16) recipient t
           let t := Guest.store64 (buf+24) 25 t
           forward 2 64 (Guest.store64 (buf+56) 1 t)
+  else err
+
+@[noinline] def commandIO (op len t : UInt64) : UInt64 :=
+  if op == 70 then Guest.syscall 70 0 0 0 0 t
+  else if op == 100 then if len >= 64 && len <= 1024 then forward 2 len t else err
+  else if op == 160 then if len >= 64 && len <= 1024 then forward 5 len t else err
+  else if op == 170 then
+    if len < 64 || len > 1024 then err else
+      let provisioning := Guest.load64 buf t == 1
+      let received := forward 6 len t
+      -- Provisioning secrets are never retained in the management replay cache.
+      let t := if provisioning then zero (buf+64) 120 received else received
+      keep received t
+  else if op == 180 then if len == 8 then stageProject (Guest.load64 buf t) t else err
+  else if op == 181 then
+    if len != 8 then err else
+      let r := Guest.syscall 112 (Guest.load64 buf t) 0 0 0 t
+      if r == err then err else 8+Guest.store64 buf (Guest.load64 buf r) r
+  else if op == 182 then
+    if len != 8 then err else
+      let r := Guest.syscall 114 (Guest.load64 buf t) 0 0 0 t
+      if r == err then err else 8+Guest.store64 buf (Guest.load64 buf r) r
+  else if op == 184 then
+    if len != 8 then err else
+      let r := Guest.syscall 118 (Guest.load64 buf t) 0 0 0 t
+      if r == err then err else 8+Guest.store64 buf (Guest.load64 buf r) r
+  else if op == 185 then
+    if len != 0 then err else
+      let r := Guest.syscall 119 0 0 0 0 t
+      8+Guest.store64 buf r r
+  else if op == 183 then
+    if len != 0 then err else
+      let r := Guest.syscall 115 0 0 0 0 t
+      8+Guest.store64 buf r r
+  else if op == 150 then
+    if len < 72 || len > 1032 then err else
+      let target := Guest.load64 buf t
+      let t := copy (buf+8) buf (len-8) t
+      forward target (len-8) t
+  else if op == 203 then if len == 8 then retain (Guest.load64 buf t) t else err
+  else if op == 207 then recover t
+  else if op >= 222 && op <= 225 then commandContent op len t
   else if op == 221 then if len == 8 then describeProjectRetention (Guest.load64 buf t) t else err
   else if op == 220 then
     if len != 40 then err else
