@@ -26,6 +26,7 @@ def main():
     p.add_argument('--expected-image',default='643b801e42091c99f5d20e3ff40f5ab293840c6c5377a260491201b2b71c4fe1')
     p.add_argument('--game',type=Path,default=ROOT/'build/campaign005/game-secure-editions/game1/crate-workshop.ltrel')
     p.add_argument('--library',type=Path,default=ROOT/'build/campaign005/final-2/packages/library-native.ltrel')
+    p.add_argument('--expected-library',default='3a440ae9d37a4f4a99cb0f6fe5634d55bcda12edfc6568c0941aa446afff2dbb',help='exact selected signed Library release; historical default is unchanged')
     p.add_argument('--public',type=Path,default=ROOT/'build/campaign005/publisher.pub')
     p.add_argument('--output',type=Path,required=True)
     a=p.parse_args();a.output=a.output.resolve();a.output.mkdir(exist_ok=False)
@@ -34,7 +35,7 @@ def main():
     game_info=releases.inspect(a.game.read_bytes());library_info=releases.inspect(a.library.read_bytes())
     require(image==a.expected_image,'unexpected common image')
     require(game_info['release_id']=='3a56b13d0e211adf25e66d05c09dedc48506c84cb4fe328af8295b3460be7779','unexpected secure Game release')
-    require(library_info['release_id']=='3a440ae9d37a4f4a99cb0f6fe5634d55bcda12edfc6568c0941aa446afff2dbb','unexpected Library release')
+    require(library_info['release_id']==a.expected_library,'unexpected Library release')
     def passed(label,**details):
         checks.append(dict(check=label,result='passed',**details));print('PASS',label,flush=True)
         (a.output/'progress.json').write_text(json.dumps(dict(image=image,checks=checks),indent=2)+'\n')

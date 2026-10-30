@@ -1,0 +1,136 @@
+{
+  "schema": 1,
+  "result": "passed",
+  "image_sha256": "22ed2b68787a3b484955ab4aa9df6de79730edb2f92da6e0e156f74cb6f9679b",
+  "game_release": "3a56b13d0e211adf25e66d05c09dedc48506c84cb4fe328af8295b3460be7779",
+  "library_release": "503888769aae9aeff49a2ae06d9ab4285754106ed512f2ca0ee1637f04357f58",
+  "checks": [
+    {
+      "check": "native DD and GameSDK502 create actual ephemeral progress/save; private metadata, source and checked content remain unretained",
+      "result": "passed",
+      "game_state": {
+        "generation": 1,
+        "level": 0,
+        "moves": 2,
+        "completed": 1,
+        "won": 1,
+        "undo": 2,
+        "game": "c77a40fc178d8ec017c8d31b8c86e8967540fcc72eebd4050da629602edc99ff",
+        "pack": "77ce47e71af7c4d7a3b915b11cdba694554f93e2039403bbe7195aa97a44c8b1",
+        "boxes": 536870912,
+        "player": 28,
+        "save": 0,
+        "notice": 15
+      },
+      "save_sha256": "199fe54e37946001f2a728dd841a2476d1e58506a39231c976cc57b5052043fe",
+      "save_bytes": 192,
+      "private_metadata_sha256": "9ab9bdbdc75b29534c2250fea49bfd2878edd38ac8793157ddbb443018bd3bff",
+      "source_head": "1a8176be7565e22714b1f297e273a08ded7d0461e78c85f33503d568964c62c8",
+      "content_total": 9644,
+      "verified_content_bytes": 4096,
+      "paused_job_state": 3,
+      "hash_cursor": 48,
+      "no_vault_save_retain_status": 3,
+      "library_add_exercised": false
+    },
+    {
+      "check": "fresh identical no-vault image contains no private Objects/root/save or resumed job authority",
+      "result": "passed",
+      "old_authority_rejections": {
+        "save": "Objects status3",
+        "private": "Objects status3",
+        "source_blob": "Objects status3",
+        "source_root": "Objects status3",
+        "content": "ContentJobs status1",
+        "job": "ContentJobs status3",
+        "job_control": "ContentJobs status3",
+        "missing_old_range": "ContentJobs status6",
+        "content_after_allocation": "ContentJobs status1",
+        "job_after_allocation": "ContentJobs status3"
+      },
+      "fresh_content_verified_bytes": 0,
+      "vault_unlock_without_backing_status": 5
+    },
+    {
+      "check": "fresh execution approvals start secure Game at zero progress and refuse old save; Library starts empty",
+      "result": "passed",
+      "fresh_game_state": {
+        "generation": 1,
+        "level": 0,
+        "moves": 0,
+        "completed": 0,
+        "won": 0,
+        "undo": 0,
+        "game": "c77a40fc178d8ec017c8d31b8c86e8967540fcc72eebd4050da629602edc99ff",
+        "pack": "77ce47e71af7c4d7a3b915b11cdba694554f93e2039403bbe7195aa97a44c8b1",
+        "boxes": 134217728,
+        "player": 26,
+        "save": 0,
+        "notice": 15
+      },
+      "old_save_load_status": 1,
+      "native_library_add_exercised": false
+    }
+  ],
+  "first_guest_command": [
+    "/run/current-system/sw/bin/python3",
+    "/home/sreekumaar/Desktop/LemmaTrix/lt",
+    "run",
+    "--image",
+    "/home/sreekumaar/Desktop/LemmaTrix/build/campaign005/final-10/guest.bin",
+    "--socket",
+    "/home/sreekumaar/Desktop/LemmaTrix/build/campaign005/no-vault-final10/first/portal.sock",
+    "--graphics",
+    "/home/sreekumaar/Desktop/LemmaTrix/build/campaign005/no-vault-final10/first/display.qmp"
+  ],
+  "second_guest_command": [
+    "/run/current-system/sw/bin/python3",
+    "/home/sreekumaar/Desktop/LemmaTrix/lt",
+    "run",
+    "--image",
+    "/home/sreekumaar/Desktop/LemmaTrix/build/campaign005/final-10/guest.bin",
+    "--socket",
+    "/home/sreekumaar/Desktop/LemmaTrix/build/campaign005/no-vault-final10/second/portal.sock",
+    "--graphics",
+    "/home/sreekumaar/Desktop/LemmaTrix/build/campaign005/no-vault-final10/second/display.qmp"
+  ],
+  "old_handles": {
+    "game": 3632054757608128775,
+    "library": 3632054757608128776,
+    "save": 3632054761903096065,
+    "save_read": 3632054761903096066,
+    "private": 3632054761903096067,
+    "private_grant": 3632054761903096068,
+    "source_blob": 3632054761903096069,
+    "source_root": 3632054761903096064,
+    "content": 3632054761903096065,
+    "content_read": 3632054761903096834,
+    "job": 3632054761903096641
+  },
+  "first_objects_stats": [
+    0,
+    3,
+    322,
+    4,
+    0,
+    0,
+    0,
+    0
+  ],
+  "first_private_roots": [
+    {
+      "cap": 3632054761903096064,
+      "name": "private-session-source",
+      "head": "1a8176be7565e22714b1f297e273a08ded7d0461e78c85f33503d568964c62c8"
+    }
+  ],
+  "no_storage_backend_selected": true,
+  "personal_object_payload_written_to_host": false,
+  "host_artifacts": "explicit framebuffer captures, UART transport logs and hash/state evidence; no personal backing",
+  "native_library_add_exercised": false,
+  "limitations": [
+    "private collection metadata is an explicitly labeled Objects boundary fixture, not a claimed native Library Add/monitoring operation",
+    "graph source and selected content use public SDK setup; Game input and package approvals use actual device input",
+    "process restart/volatile-memory behavior, not a physical data-remanence claim"
+  ]
+}
