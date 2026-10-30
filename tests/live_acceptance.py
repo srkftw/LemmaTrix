@@ -116,6 +116,7 @@ class Session:
             self.process.wait(timeout=10)
         self.log.close()
         self.path.unlink(missing_ok=True)
+        Path(str(self.path)+'.client.lock').unlink(missing_ok=True)
         self.socket_directory.rmdir()
         self.closed = True
         require(self.process.returncode == 0, 'guest session did not terminate successfully')
@@ -131,6 +132,7 @@ class Session:
         self.process.wait(timeout=10)
         self.log.close()
         self.path.unlink(missing_ok=True)
+        Path(str(self.path)+'.client.lock').unlink(missing_ok=True)
         self.socket_directory.rmdir()
         self.closed = True
 
