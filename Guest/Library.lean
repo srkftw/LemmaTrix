@@ -837,6 +837,10 @@ def chosenJob (t : UInt64) : UInt64 :=
     let t := if h == 0 then t else Guest.ContentSDK.control h 4 t
     let slot := load64 (st+136) t
     if ((load64 (j+112) t >>> slot) &&& 1) == 0 then notice 21 t else
+    let inspected := Guest.NetworkSDK.inspectPeer slot t
+    let t := if inspected == 64 && status inspected == 0 && result inspected == 3 then inspected else
+      let opened := Guest.NetworkSDK.openPeer slot inspected
+      store64 (peer slot+64) (if opened == 64 && status opened == 0 then 0 else 1) opened
     let t := store64 (j+16) slot t
     let t := store64 (j+48) 0 t
     dirty (store64 j 1 t)

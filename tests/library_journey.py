@@ -21,10 +21,11 @@ def wait(check,seconds=180,label='condition'):
  raise TimeoutError(label)
 
 class Node:
- def __init__(self,name,out,image,graphics=False):
+ def __init__(self,name,out,image,graphics=False,server_store=None):
   self.name=name;self.base=out/name;self.base.mkdir();self.socket=self.base/'portal.sock';self.graphics=self.base/'display.qmp';self.capture=self.base/'guest.pcm';self.ui=None
   self.log=(self.base/'transport.log').open('wb')
   command=[ROOT/'lt','run','--backend','qemu','--socket',self.socket,'--image',image,'--network-mux']
+  if server_store:command+=['--server-store',server_store]
   if graphics:command+=['--graphics',self.graphics,'--pcm-sink',self.capture]
   self.proc=subprocess.Popen(list(map(str,command)),cwd=ROOT,stdout=self.log,stderr=self.log,start_new_session=True)
   wait(lambda:self.socket.exists() or (self.proc.poll() is not None and self.failed()),90,name+' boot')
@@ -44,7 +45,18 @@ class Node:
   self.log.close()
 
 def appcall(c,instance,op,h=0,a=0,b=0,data=b''):
- raw=c.request(150,struct.pack('<Q8Q',instance,op,h,a,b,0,0,0,1)+data)
+ # Launcher can be serving a physical approval while an application is inside
+ # another broker call. A timed-out read has no committed effect to replay.
+ # Retry only listed inspections, and only while this exact incarnation lives.
+ deadline=time.monotonic()+60
+ while True:
+  try:
+   raw=c.request(150,struct.pack('<Q8Q',instance,op,h,a,b,0,0,0,1)+data);break
+  except ValueError as error:
+   if str(error)!='guest rejected command150, status1' or op not in (500,601,701,703,704,708) or time.monotonic()>=deadline:raise
+   table=c.request(2)
+   if not any(struct.unpack_from('<Q',table,i)[0]==instance and 0<struct.unpack_from('<Q',table,i+8)[0]<5 for i in range(0,len(table),32)):raise
+   time.sleep(.15)
  require(len(raw)>=64,'short native app result')
  return struct.unpack_from('<8Q',raw),raw[64:]
 
