@@ -29,8 +29,8 @@ from library_journey import Node, wait
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--image', type=Path, default=ROOT/'build/live/guest.bin')
-    parser.add_argument('--archive', type=Path, default=ROOT/'build/campaign005/game-stable-graph/game1-closure.json')
-    parser.add_argument('--game', type=Path, default=ROOT/'build/campaign005/consumer-catalog-2/game1/crate-workshop.ltrel')
+    parser.add_argument('--archive', type=Path, default=ROOT/'build/campaign005/game-secure-editions/game1-closure.json')
+    parser.add_argument('--game', type=Path, default=ROOT/'build/campaign005/game-secure-editions/game1/crate-workshop.ltrel')
     parser.add_argument('--registry', type=Path, default=ROOT/'build/live/apps/registry.bin')
     parser.add_argument('--peer', type=Path, default=ROOT/'build/live/apps/library-peer.bin')
     parser.add_argument('--fetch', type=Path, default=ROOT/'build/live/apps/library-fetch.bin')
