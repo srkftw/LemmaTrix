@@ -174,6 +174,15 @@ def draw (surface t : UInt64) : UInt64 :=
   let t := label 14 16 315 t
   let t := store64 (st+48) 0 t
   upload surface 0 901120 0 t
+-- Playback changes only these twelve position digits. Upload their nine
+-- bounded rows instead of repainting/copying the entire application surface
+-- between audio blocks. State changes still redraw the complete interface.
+partial def positionRows (surface row t : UInt64) : UInt64 :=
+  if row == 9 then t else
+    let r := upload surface ((180+row)*2560+80*4) (12*6*4) 0 t
+    if r == error then error else positionRows surface (row+1) r
+def drawPosition (surface t : UInt64) : UInt64 :=
+  positionRows surface 0 (hex (load64 (st+16) t) 12 80 180 fg bg t)
 def request (n t : UInt64) : UInt64 :=
   let token := load64 (incoming+8) t
   let caller := load64 incoming t
@@ -198,9 +207,12 @@ partial def loop (surface initial : UInt64) : UInt64 :=
   let t := input surface ev ev
   let t := pump t
   let now := Guest.WaitSDK.now t
-  let t := if load64 (st+48) now != 0 || (load64 (st+8) now == 2 && now >= load64 (st+72) now) then
+  let t := if load64 (st+48) now != 0 then
     let drawn := draw surface now
     store64 (st+72) (Guest.WaitSDK.now drawn+20) drawn
+    else if load64 (st+8) now == 2 && now >= load64 (st+72) now then
+      let drawn := drawPosition surface now
+      store64 (st+72) (Guest.WaitSDK.now drawn+20) drawn
     else now
   let deadline := Guest.WaitSDK.now t+(if load64 (st+8) t == 2 || load64 (st+8) t == 4 then 1 else 100)
   -- Each successful block already performs a scoped range IPC, and timer
