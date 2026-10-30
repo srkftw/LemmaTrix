@@ -83,6 +83,17 @@ def run():
    q,_=request(2,snapshot+1,0,64);assert q[3]==3,'stale snapshot admitted'
    q,_=request(5,0,64);assert q[3]==1,'registry role served seed range'
    q,_=request(1,16);assert q[3]==6,'catalog termination not bounded'
+   # An authenticated malformed-size request retires the local receive path
+   # while its broker grant is still active in the same connection epoch.
+   # Renewal must revoke that authority before acquiring the same stream again.
+   counter+=1
+   invalid=struct.pack('<8Q',MAGIC,1,1,0,0,0,0,0)+b'\0'
+   malformed=network.call(client,3,grant,a=2,b=counter,data=invalid,slot=0)[0][1]
+   wait(lambda:network.call(client,4,malformed,slot=0)[0][2]==3)
+   wait(lambda:library_peer.call(server,peer,401,0)[0][6]==0)
+   wait(lambda:library_peer.call(server,peer,401,0)[0][2]==1)
+   q,_=request(2,snapshot,0,64);assert q[3]==3,'same-epoch malformed request retained a metadata snapshot'
+   q,_=request(1);assert q[3]==0,'same-epoch lost path failed to retire broker grant before renewal'
    # Reauthentication changes epochs and destroys prior grants/snapshots. The
    # original explicit operator policy can mint fresh bounded authority itself.
    network.call(server,14,slot=0)
@@ -95,7 +106,7 @@ def run():
    q,_=request(2,snapshot,0,64);assert q[3]==3,'old epoch snapshot survived reauthentication'
    q,_=request(1);assert q[3]==0,'fresh operator-policy authority did not serve'
    library_peer.call(server,peer,402,0);assert library_peer.call(server,peer,401,0)[0][2]==0,'explicit revoke preserved automatic renewal'
-   return dict(registry_package=registry_release,peer_package=peer_release,consumer_sha256=hashlib.sha256(raw).hexdigest(),metadata_bytes=len(received),metadata_sha256=hashlib.sha256(received).hexdigest(),metadata_only=True,payload_transferred=False,stale_snapshot='denied before and after epoch change',wrong_role_range='denied',operator_policy='configured offline, freshly granted after authentication and epoch recovery, explicitly revoked',source='actual native Registry consumer admission and signed publisher record',backends=['QEMU RV64','native x86-64 assembly'])
+   return dict(registry_package=registry_release,peer_package=peer_release,consumer_sha256=hashlib.sha256(raw).hexdigest(),metadata_bytes=len(received),metadata_sha256=hashlib.sha256(received).hexdigest(),metadata_only=True,payload_transferred=False,stale_snapshot='denied before and after epoch change',wrong_role_range='denied',operator_policy='configured offline, renewed after authenticated malformed-size loss in same epoch and after reauthentication, explicitly revoked',source='actual native Registry consumer admission and signed publisher record',backends=['QEMU RV64','native x86-64 assembly'])
   finally:
    for c in clients:
     try:c.request(70)

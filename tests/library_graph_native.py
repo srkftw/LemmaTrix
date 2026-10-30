@@ -26,6 +26,19 @@ import releases
 from creator_journey import Journey,require,rendered_text
 from crate_game import state as game_state
 from library_journey import Node,appcall,wait
+from graphical_devices import DeviceInput
+
+
+class AttachedPersonal(Node):
+    """Resume this fixture after bootstrap inspection, retaining no host payload."""
+    def __init__(self,out):
+        self.base=out/'personal';self.socket=self.base/'portal.sock';self.graphics=self.base/'display.qmp'
+        self.ui=DeviceInput('qemu',self.graphics)
+    def stop(self):
+        if self.ui:self.ui.close();self.ui=None
+        with self.client() as c:
+            try:c.request(70)
+            except EOFError:pass
 
 
 def main():
@@ -39,8 +52,9 @@ def main():
     parser.add_argument('--public',type=Path,default=ROOT/'build/campaign005/publisher.pub')
     parser.add_argument('--output',required=True,type=Path)
     parser.add_argument('--keep-on-failure',action='store_true')
+    parser.add_argument('--resume-bootstrap',action='store_true',help='resume this explicitly owned pre-I recipient after a transient bootstrap inspection')
     args = parser.parse_args()
-    out=args.output.resolve();out.mkdir(exist_ok=False);base=args.provider_base.resolve()
+    out=args.output.resolve();out.mkdir(exist_ok=args.resume_bootstrap);base=args.provider_base.resolve()
     personal=None;success=False;checks=[];provider_instances={}
     @contextlib.contextmanager
     def source():
@@ -81,33 +95,53 @@ def main():
         # context0; context1 keeps the selected Game seed relationship.
         _,game_desc,_=network.load_description(base/'game.service')
         client_id=game_desc[64:96]
-        probe=socket.socket();probe.bind(('127.0.0.1',0));port=probe.getsockname()[1];probe.close()
         registry_desc=out/'registry.service'
-        detail=network.create_description(base/'network.pem',client_id,'127.0.0.1:'+str(port),'library-registry',registry_desc)
         client_credential,server_credential=out/'registry.client',out/'registry.server'
-        network.provision(client_credential,server_credential,client_id,bytes.fromhex(detail['server_id']),bytes.fromhex(detail['service_id']))
-        with source() as c:
-            library_peer.call(c,peer,402,0)
-            network.configure(c,server_credential,registry_desc,slot=0);network.call(c,13,slot=0)
-            library_peer.call(c,peer,400,0,1,1,0,16777216,100000,client_id+bytes.fromhex(detail['service_id'])+fid)
-        personal=Node('personal',out,args.image.resolve(),graphics=True)
-        regpkg=args.packages/'library-registry.ltrel';raw=regpkg.read_bytes();info=releases.inspect(raw)
-        with personal.client() as c:
-            verifier=nodes.start_package(c,nodes.approved_package(regpkg,args.public,info['release_id'],2175),raw)
-            federation.configure(c,verifier,base/'federation.pub','consumer',allowed_rights=8191)
-            network.configure(c,client_credential,registry_desc,slot=0)
-            network.configure(c,base/'reader.credential',base/'game.service',slot=1)
-            game_info=releases.inspect(args.game.read_bytes())
-            c.request(10,bytes.fromhex(game_info['project_id'])+releases.public_modulus(args.public))
-            require(projects.roots(c)==[],'fresh personal guest contains preloaded Game root')
-        fetch_raw,_=releases.make(args.fetch,'graph-native-fetch','1.0.0',1151,args.key,profile=2,license='NOASSERTION')
-        fetch_package=out/'graph-native-fetch.ltrel';fetch_package.write_bytes(fetch_raw)
-        j=Journey(argparse.Namespace(output=personal.base/'native-actions',public=args.public,image=args.image));j.socket=personal.socket;j.graphics=personal.graphics;j.ui=personal.ui;j.image=hashlib.sha256(args.image.read_bytes()).hexdigest()
-        fetch_info,fetch=j.trust_stage(fetch_package,'graph-native-fetch')
-        lib_info,lib=j.trust_stage(args.packages/'library-native.ltrel','library-native')
-        with personal.client()as c:c.request(184,struct.pack('<Q',lib));appcall(c,lib,700,data=fid)
+        if not args.resume_bootstrap:
+            probe=socket.socket();probe.bind(('127.0.0.1',0));port=probe.getsockname()[1];probe.close()
+            detail=network.create_description(base/'network.pem',client_id,'127.0.0.1:'+str(port),'library-registry',registry_desc)
+            network.provision(client_credential,server_credential,client_id,bytes.fromhex(detail['server_id']),bytes.fromhex(detail['service_id']))
+            with source() as c:
+                library_peer.call(c,peer,402,0)
+                network.configure(c,server_credential,registry_desc,slot=0);network.call(c,13,slot=0)
+                library_peer.call(c,peer,400,0,1,1,0,16777216,100000,client_id+bytes.fromhex(detail['service_id'])+fid)
+        personal=AttachedPersonal(out) if args.resume_bootstrap else Node('personal',out,args.image.resolve(),graphics=True)
+        game_info=releases.inspect(args.game.read_bytes())
+        if not args.resume_bootstrap:
+            regpkg=args.packages/'library-registry.ltrel';raw=regpkg.read_bytes();info=releases.inspect(raw)
+            with personal.client() as c:
+                verifier=nodes.start_package(c,nodes.approved_package(regpkg,args.public,info['release_id'],2175),raw)
+                federation.configure(c,verifier,base/'federation.pub','consumer',allowed_rights=8191)
+                network.configure(c,client_credential,registry_desc,slot=0)
+                network.configure(c,base/'reader.credential',base/'game.service',slot=1)
+                c.request(10,bytes.fromhex(game_info['project_id'])+releases.public_modulus(args.public))
+                require(projects.roots(c)==[],'fresh personal guest contains preloaded Game root')
+            fetch_raw,_=releases.make(args.fetch,'graph-native-fetch','1.0.0',1151,args.key,profile=2,license='NOASSERTION')
+            fetch_package=out/'graph-native-fetch.ltrel';fetch_package.write_bytes(fetch_raw)
+            j=Journey(argparse.Namespace(output=personal.base/'native-actions',public=args.public,image=args.image));j.socket=personal.socket;j.graphics=personal.graphics;j.ui=personal.ui;j.image=hashlib.sha256(args.image.read_bytes()).hexdigest()
+            fetch_info,fetch=j.trust_stage(fetch_package,'graph-native-fetch')
+            lib_info,lib=j.trust_stage(args.packages/'library-native.ltrel','library-native')
+        else:
+            fetch_info=releases.inspect((out/'graph-native-fetch.ltrel').read_bytes())
+            lib_info=releases.inspect((args.packages/'library-native.ltrel').read_bytes())
+            with personal.client() as c:
+                table=c.request(2)
+                def running(rights):
+                    found=[struct.unpack_from('<Q',table,i)[0]for i in range(7*32,len(table),32)if struct.unpack_from('<Q',table,i+16)[0]==rights and 0<struct.unpack_from('<Q',table,i+8)[0]<5]
+                    require(len(found)==1,'owned bootstrap role unavailable');return found[0]
+                fetch,lib=running(1151),running(1919)
+                require(projects.roots(c)==[],'bootstrap resume contains an unexpected Game root')
+        with personal.client()as c:c.request(184,struct.pack('<Q',lib))
+        def configured():
+            with personal.client() as c:
+                appcall(c,lib,700,data=fid)
+                fields,data=appcall(c,lib,701)
+                return len(data)>=288 and struct.unpack_from('<Q',data,224)[0]==1 and data[256:288]==fid
+        wait(configured,120,'exact idempotent Library federation setup confirmation')
         def word(offset):
-            with personal.client()as c:return struct.unpack_from('<Q',appcall(c,lib,701)[1],offset)[0]
+            with personal.client()as c:
+                fields,data=appcall(c,lib,701)
+                return struct.unpack_from('<Q',data,offset)[0] if len(data)>=offset+8 else 0
         def frame_text(x,y,text):return rendered_text(personal.ui.frame(),x,y,len(text))==text
         def focus_library():
             for _ in range(5):
@@ -116,6 +150,8 @@ def main():
             raise AssertionError('actual native Library focus absent')
         focus_library()
         for slot in (0,1):
+            with personal.client() as c:already=network.status(c,slot)['endpoint_authenticated']
+            if already:continue
             personal.ui.press(60);personal.ui.press(slot+2);personal.ui.press(28)
             def authenticated():
                 with personal.client()as c:return network.status(c,slot)['endpoint_authenticated']

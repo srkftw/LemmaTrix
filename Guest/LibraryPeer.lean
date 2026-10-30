@@ -168,6 +168,13 @@ def dispatch (caller rights length t : UInt64) : UInt64 :=
   else response 1 0 t
 
 def lost (p t : UInt64) : UInt64 :=
+  let slot := load64 (p+80) t
+  let job := load64 (p+32) t
+  let grant := load64 p t
+  -- A response timeout can leave broker work live in the same epoch. Retire
+  -- that authority before dropping local references or attempting renewal.
+  let t := if job == 0 then t else Guest.NetworkSDK.cancelPeer slot job t
+  let t := if grant == 0 then t else Guest.NetworkSDK.revokePeer slot grant t
   let t := zero (p+256) 288 t
   let t := zero p 1 t
   let t := zero (p+32) 5 t

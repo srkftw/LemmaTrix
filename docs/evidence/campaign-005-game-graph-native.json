@@ -6,19 +6,19 @@
       "result": "passed",
       "library_release": "3a440ae9d37a4f4a99cb0f6fe5634d55bcda12edfc6568c0941aa446afff2dbb",
       "fetch_release": "aca05e94088974f6e992661b1cbdc2269a9dfc430f1f02eedc614758c6cbc124",
-      "provider_head": "c3d962668ed87f5298d3d8cb1aea0a7d1aff9e2dcb6f98caf0797b91bf26d862",
+      "provider_head": "4c8ed47412020b886df5d8abc373dcc66fc4f7532382c78c8ab52d21d015c3bd",
       "recipient_game_roots_before_I": 0
     },
     {
       "check": "native I downloads actual Game Project and reaches trusted capability approval without recipient payload preload",
       "result": "passed",
-      "head": "c3d962668ed87f5298d3d8cb1aea0a7d1aff9e2dcb6f98caf0797b91bf26d862",
+      "head": "4c8ed47412020b886df5d8abc373dcc66fc4f7532382c78c8ab52d21d015c3bd",
       "game_not_running_before_approval": true
     },
     {
       "check": "physical Enter installs exact downloaded release and DD solves original native puzzle",
       "result": "passed",
-      "game_release": "a8844b561b9ee4b5469dbac14e6666f4b95ebf356f5a9f8b51eb4841e84e30cc",
+      "game_release": "3a56b13d0e211adf25e66d05c09dedc48506c84cb4fe328af8295b3460be7779",
       "game_state": {
         "generation": 1,
         "level": 0,
@@ -42,13 +42,15 @@
   "library_release": "3a440ae9d37a4f4a99cb0f6fe5634d55bcda12edfc6568c0941aa446afff2dbb",
   "fetch_release": "aca05e94088974f6e992661b1cbdc2269a9dfc430f1f02eedc614758c6cbc124",
   "fetch_binary_sha256": "c45b90b7da58f7579e54d6970ccdbae48bb619150c0e4a2bd2209a31da5bcf6e",
-  "game_release": "a8844b561b9ee4b5469dbac14e6666f4b95ebf356f5a9f8b51eb4841e84e30cc",
-  "project_head": "c3d962668ed87f5298d3d8cb1aea0a7d1aff9e2dcb6f98caf0797b91bf26d862",
+  "game_release": "3a56b13d0e211adf25e66d05c09dedc48506c84cb4fe328af8295b3460be7779",
+  "project_head": "4c8ed47412020b886df5d8abc373dcc66fc4f7532382c78c8ab52d21d015c3bd",
   "recipient_host_game_import": false,
   "limitations": [
     "provider reused its explicitly owned prior D3 image; recipient uses corrected247 image",
     "focused O/I/Enter/DD test; save migration and media are separate executed journeys"
   ],
   "schema": 1,
-  "fixture_scope": "Historical Game edition a884; subsequent current secure Game3a56 check is recorded separately."
+  "source_closure_nodes": 19,
+  "source_payload_bytes": 129807,
+  "bootstrap_resume": "Initial explicit federation configuration returned a short management response before applying; resumed same recipient with idempotent exact-FID query/confirmation before catalog/O/I. No Game root existed before I."
 }
