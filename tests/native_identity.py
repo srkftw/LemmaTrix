@@ -69,7 +69,7 @@ def contact_body(device, mailbox):
     return struct.pack('<4Q', identity.CONTACT_MAGIC, 1, 1, 3)+device+hashlib.sha256(device+b'device').digest()+mailbox
 
 
-def run(backend, directory, signer_package, probe_package):
+def run(backend, directory, signer_package, probe_package, timeout=180):
     checks = []
     def passed(description, **data):
         checks.append(dict(check=description, result='passed', **data))
@@ -81,6 +81,7 @@ def run(backend, directory, signer_package, probe_package):
             return
         raise AssertionError('forbidden call succeeded')
     with accept.Session(backend, directory) as c:
+        c.timeout = timeout
         service = identity.start(c, signer_package, ROOT/'tests/keys/development-rsa-public.pem')
         before = {r[0] for r in identity.instances(c) if 0 < r[1] < 5}
         # A valid newer admission reaches start/bind; reinstalling the identical
@@ -189,6 +190,7 @@ def run(backend, directory, signer_package, probe_package):
         assert c.read_object(object_handle).startswith(b'Campaign006')
         passed('existing Objects flow remains usable after isolated signer teardown')
     with accept.Session(backend, directory/'fresh-session') as c:
+        c.timeout = timeout
         identity.start(c, signer_package, ROOT/'tests/keys/development-rsa-public.pem')
         denied(lambda: identity.invoke(c, 401, h=key))
         f, fresh = identity.invoke(c, 400, a=2, data=federation+scope)
@@ -196,7 +198,8 @@ def run(backend, directory, signer_package, probe_package):
         assert f[1] != key
         denied(lambda: identity.invoke(c, 401, h=key))
         passed('independent new guest owns a new key and cannot recover unretained old authority')
-    report = {'backend':backend, 'checks':checks, 'public':public, 'limits':{'identity_keys':8,'one_use_approvals':16,'private_arena_bytes':2097152}}
+    report = {'backend':backend, 'checks':checks, 'public':public, 'portal_timeout_seconds':timeout,
+              'limits':{'identity_keys':8,'one_use_approvals':16,'private_arena_bytes':2097152}}
     (directory/'backend-result.json').write_text(json.dumps(report, indent=2)+'\n')
     return report
 
@@ -252,7 +255,7 @@ def fresh_only(backend, directory, signer, timeout):
 def main():
     p = argparse.ArgumentParser(); p.add_argument('--backend', choices=['qemu','x86_64','aarch64','all'], default='qemu')
     p.add_argument('--fresh-only', action='store_true')
-    p.add_argument('--timeout', type=float, default=600)
+    p.add_argument('--timeout', type=float, default=180)
     p.add_argument('--output', type=Path, default=ROOT/'build/campaign007/native-identity')
     args = p.parse_args(); args.output.mkdir(parents=True, exist_ok=True)
     signer = package('Guest.Identity','Guest.Identity.main','identity',args.output)
@@ -262,7 +265,8 @@ def main():
         return
     probe = package('tests.fixtures.IdentityClientProbe','Guest.IdentityClientProbe.main','identity-client-probe',args.output)
     backends = ['qemu','x86_64','aarch64'] if args.backend == 'all' else [args.backend]
-    results = [run(b, args.output/b, signer, probe) for b in backends]
+    assert 30 <= args.timeout <= 900
+    results = [run(b, args.output/b, signer, probe, args.timeout) for b in backends]
     report = {'image_sha256':hashlib.sha256((ROOT/'build/live/guest.bin').read_bytes()).hexdigest(),
               'signer_sha256':hashlib.sha256((ROOT/'build/live/apps/identity.bin').read_bytes()).hexdigest(),
               'signer_release':releases.inspect(signer.read_bytes())['release_id'],
