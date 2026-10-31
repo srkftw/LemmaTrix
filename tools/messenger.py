@@ -64,6 +64,7 @@ def main(argv=None):
     q=sub.add_parser('authorize-retention');q.add_argument('--owner',type=int,required=True)
     q=sub.add_parser('unlock');q.add_argument('--key',type=Path,required=True);q.add_argument('--mode',choices=['create','recover','history-import'],required=True);q.add_argument('--retain-history',action='store_true')
     for name in ['lock','forget']:sub.add_parser(name)
+    q=sub.add_parser('forget-attachment');q.add_argument('handle',type=lambda value:int(value,0),help='exact native attachment handle (decimal or 0x hexadecimal)')
     q=sub.add_parser('stage-contact');q.add_argument('--ui',type=int,required=True);q.add_argument('invitation',type=Path)
     q=sub.add_parser('receive-ciphertext');q.add_argument('ciphertext',type=Path)
     q=sub.add_parser('inbox');q.add_argument('--cursor',type=int,default=0)
@@ -90,7 +91,12 @@ def main(argv=None):
             path=a.output/(name+'.ltrel');path.write_bytes(raw)
             items.append(dict(name=name,path=str(path),rights=rights,code_bytes=binary.stat().st_size,code_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),package_sha256=hashlib.sha256(raw).hexdigest(),release_id=releases.inspect(raw)['release_id']))
         report=dict(schema=1,packages=items,publisher='explicit host RSA bootstrap',messaging_private_keys_generated=False)
-        (a.output/'packages.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2));return 0
+        (a.output/'packages.json').write_text(json.dumps(report,indent=2)+'\n')
+        ready={key:str((a.output/(name+'.ltrel')).resolve())for key,name in
+               [('identity','identity'),('owner','messenger-session'),('ui','messenger'),
+                ('delivery','messenger-delivery'),('mailbox','mailbox')]}
+        (a.output/'ready.json').write_text(json.dumps(ready,indent=2)+'\n')
+        print(json.dumps(report,indent=2));return 0
     if a.socket is None:raise ValueError('--socket is required for native service commands')
     client=live.Client(a.socket,timeout=600)
     try:
@@ -241,6 +247,12 @@ def main(argv=None):
             raw=a.ciphertext.read_bytes();f,_=invoke(client,2,428,a=len(raw),data=raw);result=dict(status=list(f))
         elif a.command=='inbox':
             f,raw=invoke(client,2,429,h=a.cursor);result=dict(status=list(f),text=raw.decode('utf-8',errors='replace'))
+        elif a.command=='forget-attachment':
+            if not 0<a.handle<1<<64:raise ValueError('attachment handle must be a nonzero UInt64')
+            # Preserve the complete native failure header; only status0 succeeds.
+            f,_=invoke(client,2,434,h=a.handle,a=4,allowed_status=range(1<<64))
+            result=dict(operation=434,action=4,attachment=a.handle,status=list(f),forgotten=f[0]==0)
+            print(json.dumps(result,indent=2));return int(f[0]!=0)
         else:
             f,_=invoke(client,2,{'status':420,'lock':431,'forget':433}[a.command]);result=dict(status=list(f))
         print(json.dumps(result,indent=2));return 0

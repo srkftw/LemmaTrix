@@ -436,7 +436,10 @@ def admin (length t : UInt64) : UInt64 :=
     let i := load64 (command+16) t
     if i >= 16 then response 2 0 0 0 0 t else
     let p := row active i
-    response 0 (handle p t) (load64 p t) (load64 (p+128) t) (load64 (active+16) t) t
+    -- Public administrative evidence describes the published receipt only;
+    -- the first ciphertext publication and signed acceptance are distinct.
+    64+header 0 (handle p t) (load64 p t) (load64 (p+128) t) (load64 (active+16) t)
+      (load64 (p+224) t) (load64 (p+216) t) t
   else if pending t || load64 (st+48) t != 0 then response 6 0 0 0 0 t else
   if action == 4 && length == 480 then
     if load64 (active+48) t != 1 && liveRows 0 t then response 4 0 0 0 0 t else

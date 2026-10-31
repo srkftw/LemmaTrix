@@ -242,6 +242,8 @@ def main():
             wait_ui(alice, ui, lambda f: f[4] == 23 and f[3] == 0 and f[5] == 0)
             fields, _ = native(alice, alice_owner, 420)
             assert fields[1] == 0
+            forge_state=ui_invoke(alice,ui,785)
+            assert len(forge_state)==128 and forge_state[64:]==bytes(64)
             frame = device.frame()
             (out/'locked.ppm').write_bytes(frame.ppm())
             passed('graphical F8 clears accessible plaintext and locks the actual session owner')

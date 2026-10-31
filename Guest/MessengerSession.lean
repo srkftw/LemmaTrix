@@ -76,11 +76,10 @@ def exportBundle (t : UInt64) : UInt64 :=
   320+copy bundle (wire+64) 256 t
 
 def create (caller token t : UInt64) : UInt64 :=
+  if !Guest.MessengerPolicy.mayResumeSending true (load64 (st+416) t == 1) then fail 12 t else
   if load64 st t == 1 then exportBundle t else
   if Guest.Ed25519.nonzero (command+64) 32 0 t == 0 then fail 2 t else
-  let historySerial := if load64 (st+416) t == 1 then load64 (st+400) t else 0
   let t := zero st 512 t
-  let t := store64 (st+400) historySerial t
   let t := copy (command+64) (st+256) 32 t
   let r := draw (st+32) t
   if r == err then fail 6 (zero st 512 r) else
@@ -454,8 +453,11 @@ def attachment (rights token length t : UInt64) : UInt64 :=
     if h == 0 || h > 4 || length != 64 then fail 2 t else
     let c := contactAt (h-1)
     if load64 c t == 0 then fail 3 t else
+    let committed := load64 c t == 2 && load64 (c+1600) t == 2 && load64 (c+1624) t == 1
     let t := header 0 h (load64 c t)
-      (if Guest.MessengerContactBinding.nonzero (c+3200) 352 t then 1 else 0) 0 0 0 t
+      (if Guest.MessengerContactBinding.nonzero (c+3200) 352 t then 1 else 0)
+      (if committed then load64 (c+1608) t else 0)
+      (if committed then 2 else 0) (if committed then load64 (c+1616) t else 0) t
     96+copy (c+64) (wire+64) 32 t
   else if action == 21 then
     if h >= 2 || length != 64 then fail 2 t else
@@ -624,8 +626,10 @@ def dispatch (caller rights token length t : UInt64) : UInt64 :=
     if mode == 2 then
       -- Supported older-backup import is history only: no stale identity,
       -- session, prekey, outbox, attachment nonce or sending authority survives.
-      let historySerial := load64 (st+400) t
-      let t := zero st 3072 t
+      let retired := Guest.MessengerVault.retireForHistory t
+      if retired == err then fail 13 (lock retired) else
+      let historySerial := load64 (st+400) retired
+      let t := zero st 3072 retired
       let t := store64 (st+400) historySerial t
       let t := store64 (st+416) 1 t
       let t := Guest.MessengerAttachment.clear t

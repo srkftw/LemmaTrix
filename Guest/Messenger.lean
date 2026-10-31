@@ -50,10 +50,10 @@ def attachmentLabel (id x y color t : UInt64) : UInt64 :=
     text labelBuffer 47 x y color bg t
   else
   if id == 71 then
-    let t := store64 (labelBuffer+0) 7308327703012258118 t
-    let t := store64 (labelBuffer+8) 7307775882660181091 t
-    let t := store64 (labelBuffer+16) 2319970935305696355 t
-    let t := store64 (labelBuffer+24) 8223700954423258441 t
+    let t := store64 (labelBuffer+0) 7308327840451211590 t
+    let t := store64 (labelBuffer+8) 7307775882123310179 t
+    let t := store64 (labelBuffer+16) 2338333891886085219 t
+    let t := store64 (labelBuffer+24) 8223700954423258473 t
     let t := store64 (labelBuffer+32) 2334102066133558117 t
     let t := store64 (labelBuffer+40) 32760384526971504 t
     text labelBuffer 47 x y color bg t
@@ -663,6 +663,17 @@ partial def masked (n x y t : UInt64) : UInt64 :=
   if n == 0 then t else
   let t := char x y 42 fg bg t
   masked (n-1) (if x >= 610 then 16 else x+6) (if x >= 610 then y+12 else y) t
+def drawTransfer (t : UInt64) : UInt64 :=
+  let phase := load64 transfer t
+  let incomingTransfer := phase >= 20
+  if (phase > 0 && phase < 20) || (phase >= 20 && phase < 24) then
+    let t := label 75 14 204 accent t
+    let sent := load64 (if incomingTransfer then transfer+104 else transfer+136) t*512
+    let total := load64 (if incomingTransfer then transfer+64 else transfer+24) t
+    let t := hex (if sent > total then total else sent) 6 250 204 accent bg t
+    let t := hex total 6 306 204 accent bg t
+    t else if load64 (history (load64 (st+24) t)+640) t != 0 then label 78 14 204 accent t else
+    if load64 (transfer+56) t != 0 then label 70 14 204 accent t else t
 def draw (surface t : UInt64) : UInt64 :=
   let t := fill 0 0 640 352 bg t
   let t := fill 0 0 640 36 0x223448 t
@@ -726,23 +737,34 @@ def draw (surface t : UInt64) : UInt64 :=
   let t := label 12 344 309 accent t
   let t := label 13 452 309 accent t
   let t := label 71 14 334 0x9fb4c4 t
-  let t := if load64 transfer t > 0 && load64 transfer t < 20 then
-    let t := label 75 14 204 accent t
-    let t := hex (load64 (transfer+136) t*512) 6 250 204 accent bg t
-    let t := hex (load64 (transfer+24) t) 6 306 204 accent bg t
-    t else if load64 (history (load64 (st+24) t)+640) t != 0 then label 78 14 204 accent t else
-    if load64 (transfer+56) t != 0 then label 70 14 204 accent t else t
+  let t := drawTransfer t
   let t := upload surface 0 901120 0 t
   store64 (st+8) 0 t
-def submit (operation length t : UInt64) : UInt64 :=
+def backgroundRequest (operation action : UInt64) : Bool :=
+  operation == 420 || (operation == 463 && action == 0)
+def submitTagged (operation action length t : UInt64) : UInt64 :=
+  let pending := load64 (st+144) t
+  -- A completed status poll must not consume a user's approval/send gesture.
+  -- A rejected gesture cannot replace the action of an admitted request.
+  -- A chunk fetch poll is idempotent and cannot acknowledge deletion. Text may
+  -- preempt that poll, while crypto staging/commit requests must finish.
+  let fetchPoll := operation == 426 && load64 (st+152) t == 463 && load64 (st+256) t == 463
+  let t := if pending != 0 && !backgroundRequest operation action &&
+      (backgroundRequest (load64 (st+152) t) (load64 (st+256) t) || fetchPoll) then
+    let r := Guest.MessengerSDK.cancelRequest pending t
+    if r == error then r else store64 (transfer+128) 0 (store64 (st+144) 0 r)
+    else t
   if load64 (st+144) t != 0 then notice 28 t else
   let token := Guest.MessengerSDK.submit (if operation >= 460 then 4 else 2) operation length t
   if token == error then
     let t := if operation >= 460 then store64 (st+104) 0 token else token
-    let t := if load64 (transfer+128) t == 0 then t else store64 (transfer+128) 0 (store64 transfer 9 t)
+    let t := if action == 0 then t else store64 (transfer+128) 0 (store64 transfer 9 t)
     notice (if operation >= 460 then 21 else 31) t else
-  let t := store64 (st+152) operation (store64 (st+144) token token)
-  if operation == 420 then t else notice 28 t
+  let t := store64 (transfer+128) action (store64 (st+256) action (store64 (st+152) operation (store64 (st+144) token token)))
+  let t := if operation == 426 then store64 (st+264) (load64 (st+24) t) t else t
+  if backgroundRequest operation (load64 (st+256) t) || load64 (st+16) t == 28 ||
+      (load64 (st+16) t == 69 && (load64 (st+256) t == 463 || load64 (st+256) t == 461)) then t else notice 28 t
+def submit (operation length t : UInt64) : UInt64 := submitTagged operation 0 length t
 def checkStatus (t : UInt64) : UInt64 := submit 420 64 (header 420 0 0 0 0 0 0 t)
 def createIdentity (t : UInt64) : UInt64 :=
   submit 421 96 (copy federation (wire+64) 32 (header 421 0 0 0 0 0 0 t))
@@ -782,11 +804,12 @@ def clearPlaintext (t : UInt64) : UInt64 :=
   let t := Guest.MessengerProject.clear (zero transfer 32 t)
   let t := zero reference 9 (zero expectedRoot 4 t)
   let t := zero inviteBuffer 168 (zero 0x70c000 640 (zero 0x70b000 40 (zero composeBuffer 64 (zero displayText 64 (zero publicBundle 84 (zero fingerprint 4 t))))))
-  store64 (st+32) 0 (store64 (st+48) 0 (store64 (st+40) 0 (store64 (st+96) 0 t)))
+  store64 (st+64) 0 (store64 (st+248) 0 (store64 (st+104) 0
+    (store64 (st+32) 0 (store64 (st+48) 0 (store64 (st+40) 0 (store64 (st+96) 0 t))))))
 def nextRestoredContact (t : UInt64) : UInt64 :=
   let old := load64 (st+208) t
   if old >= 4 then
-    submit 434 64 (header 434 0 21 0 0 0 0 (store64 (transfer+232) 0 (store64 (transfer+128) 21 (store64 (st+208) 0 t)))) else
+    submitTagged 434 21 64 (header 434 0 21 0 0 0 0 (store64 (transfer+232) 0 (store64 (st+208) 0 t))) else
   let i := old+1
   submit 434 64 (header 434 i 15 0 0 0 0 (store64 (st+208) i t))
 def referenceNibble (c : UInt64) : UInt64 :=
@@ -808,13 +831,13 @@ def parseReference (source n contact t : UInt64) : UInt64 :=
   if r == error then zero p 10 r else store64 p (load8 (source+142) r-48) r
 def inspectProjectReference (t : UInt64) : UInt64 :=
   let p := history (load64 (st+24) t)+640
-  if load64 p t == 0 || load64 (st+144) t != 0 then notice 45 t else
+  if load64 p t == 0 || (load64 (st+144) t != 0 && !backgroundRequest (load64 (st+152) t) (load64 (st+256) t)) then notice 45 t else
   let t := copy (p+8) reference 64 t
   let t := store64 (reference+64) (load64 p t) t
   let t := header 463 0 3 0 0 0 0 t
-  submit 463 136 (copy reference (wire+64) 72 (store64 (st+32) 6 (store64 (transfer+248) 0 (store64 (transfer+128) 303 t))))
+  submitTagged 463 303 136 (copy reference (wire+64) 72 (store64 (st+32) 6 (store64 (transfer+248) 0 t)))
 def submitTransfer (operation action length t : UInt64) : UInt64 :=
-  submit operation length (store64 (transfer+128) action t)
+  submitTagged operation action length t
 def projectPortal (op h nonce t : UInt64) : UInt64 :=
   let shell := syscall 97 4 0 0 0 t
   syscall 30 shell wire 64 1024 (header op h nonce 0 0 0 0 shell)
@@ -831,7 +854,7 @@ def chooseProject (t : UInt64) : UInt64 :=
   notice 76 (store64 transfer 1 (store64 (transfer+112) nonce (store64 (transfer+16) (load64 (st+24) r) r)))
 def importProject (t : UInt64) : UInt64 :=
   let h := load64 (transfer+56) t
-  if h == 0 || load64 (st+144) t != 0 || (load64 transfer t > 0 && load64 transfer t < 8) then notice 45 t else
+  if h == 0 || (load64 (st+144) t != 0 && !backgroundRequest (load64 (st+152) t) (load64 (st+256) t)) || (load64 transfer t > 0 && load64 transfer t < 8) then notice 45 t else
   submitTransfer 434 5 64 (header 434 h 5 0 0 0 0 (store64 (transfer+240) 2 (store64 transfer 20 t)))
 def nextTransfer (t : UInt64) : UInt64 :=
   if load64 (transfer+232) t == 0 then
@@ -851,6 +874,8 @@ def attachmentCompleted (action length t : UInt64) : UInt64 :=
     let first := if staged > published then published else if published == 0 then 0 else ((published-1)/14)*14
     let t := store64 (transfer+152) (if staged == published && published != 0 then 1 else 0) t
     let t := store64 (transfer+24) (load64 (wire+32) t) (store64 (transfer+32) first (store64 (transfer+40) first t))
+    -- Publication is local ciphertext availability, not a persisted remote
+    -- receipt. Recovery must replay the final uncertain batch exactly.
     nextTransfer (store64 transfer (if staged == 0 then 0 else 10) t)
   else if action == 304 then notice 44 (store64 (transfer+216) 0 t)
   else if action == 303 then
@@ -861,7 +886,8 @@ def attachmentCompleted (action length t : UInt64) : UInt64 :=
     if state == 3 then notice 79 (store64 (transfer+216) 0 t) else
     if state == 4 then notice 80 (store64 (transfer+216) 0 t) else notice 81 (store64 (transfer+216) 1 t)
   else if code == 6 && action >= 460 then
-    notice 69 (if action == 460 then store64 transfer 6 t else t) else
+    let t := if action == 460 then store64 transfer 6 t else t
+    if load64 (st+16) t == 69 then t else notice 69 t else
   if code != 0 then notice 73 (store64 transfer 9 (store64 (transfer+120) code t)) else
   if action == 1 then
     if length != 64 then notice 73 t else
@@ -880,7 +906,7 @@ def attachmentCompleted (action length t : UInt64) : UInt64 :=
     if state == 5 then store64 transfer 6 (store64 (transfer+48) (load64 (transfer+48) t+1) t) else
     if state != 2 then t else
     let next := load64 (transfer+48) t+1
-    let t := store64 (transfer+224) 0 (store64 (transfer+136) next (store64 (transfer+32) next (store64 (transfer+40) next t)))
+    let t := dirty (store64 (transfer+224) 0 (store64 (transfer+136) next (store64 (transfer+32) next (store64 (transfer+40) next t))))
     if next*512 >= load64 (transfer+24) t then notice 72 (store64 transfer 8 t) else store64 transfer 4 t
   else if action == 5 then
     if length != 128 || load64 (wire+16) t != 2 then notice 73 t else
@@ -898,13 +924,36 @@ def attachmentCompleted (action length t : UInt64) : UInt64 :=
     let n := load64 (wire+16) t
     if n == 0 || n > 512 || length != 64+n then notice 73 t else
     let t := Guest.MessengerProject.feed (wire+64) n t
-    store64 (transfer+104) (load64 (transfer+104) t+1) (store64 transfer 21 t)
+    let next := load64 (transfer+104) t+1
+    let t := store64 (transfer+104) next (store64 transfer 21 t)
+    if next%8 == 0 || next*512 >= load64 (transfer+64) t then dirty t else t
   else if action == 203 then notice 74 (store64 transfer 24 t)
   else notice 73 t
-def completed (operation length t : UInt64) : UInt64 :=
-  if operation == 434 && load64 (st+200) t == 672 && (status t == 3 || status t == 7) && load64 (transfer+128) t == 0 && load64 (st+208) t == 0 then
-    submit 434 64 (header 434 0 12 0 0 0 0 (store64 (st+200) 320 t)) else
-  if load64 (transfer+128) t != 0 then attachmentCompleted (load64 (transfer+128) t) length t else
+def restoredContact (t : UInt64) : UInt64 :=
+  let slot := result t
+  let state := load64 (wire+16) t
+  if slot == 0 || slot > 4 || state == 0 || state > 3 then notice 24 t else
+  let t := store64 (contact slot) (if state == 2 then 1 else 0) t
+  let t := store64 (contact slot+40) (if load64 (wire+24) t == 1 then 1 else 0) t
+  let t := copy (wire+64) (contact slot+8) 32 t
+  let retainedMessage := if state == 2 && load64 (wire+40) t == 2 && load64 (wire+48) t > 208 && load64 (wire+48) t <= 720 then load64 (wire+32) t else 0
+  let t := store64 (contact slot+48) retainedMessage (store64 (contact slot+56) (if retainedMessage == 0 then 0 else load64 (wire+48) t) t)
+  let t := if load64 (st+24) t == 0 || load64 (st+24) t == slot then
+    let t := copy (wire+64) fingerprint 32 t
+    store64 (st+64) retainedMessage (store64 (st+248) slot
+      (store64 (st+24) slot (store64 (st+48) (if state == 2 then 1 else 0) t)))
+    else t
+  nextRestoredContact t
+def completedStatus (t : UInt64) : UInt64 :=
+  let t := store64 (st+72) (result t) t
+  let retained := load64 (wire+40) t
+  let t := if load64 (st+80) t == retained then t else dirty (store64 (st+80) retained t)
+  let latest := load64 (wire+32) t
+  if latest == 0 || latest == load64 (st+88) t then
+    let endpoint := syscall 128 4 463 0 0 t
+    if endpoint == error then t else submit 463 64 (header 463 0 0 0 0 0 0 t) else
+  submit 429 64 (header 429 latest 0 0 0 0 0 t)
+def completedPlain (operation length t : UInt64) : UInt64 :=
   if operation == 434 && load64 (st+208) t != 0 && status t == 3 then nextRestoredContact t else
   if operation == 462 && status t == 14 then notice (if load64 (wire+16) t == 2 then 19 else 63) t else
   if operation == 460 && status t == 4 then notice 18 (store64 (st+104) (if load64 (st+104) t == 6 then 1 else 5) t) else
@@ -912,13 +961,7 @@ def completed (operation length t : UInt64) : UInt64 :=
   if operation >= 460 && status t == 6 then notice 28 (store64 (st+104) (if load64 (st+104) t == 6 then 1 else 4) t) else
   if status t != 0 then failed length t else
   if operation == 420 && length == 64 then
-    let t := store64 (st+72) (result t) t
-    let t := store64 (st+80) (load64 (wire+40) t) t
-    let latest := load64 (wire+32) t
-    if latest == 0 || latest == load64 (st+88) t then
-      let endpoint := syscall 128 4 463 0 0 t
-      if endpoint == error then t else submit 463 64 (header 463 0 0 0 0 0 0 t) else
-    submit 429 64 (header 429 latest 0 0 0 0 0 t)
+    completedStatus t
   else if (operation == 421 || operation == 422) && length == 320 then
     let t := copy (wire+64) publicBundle 256 t
     let t := copy (publicBundle+192) federation 32 t
@@ -932,17 +975,7 @@ def completed (operation length t : UInt64) : UInt64 :=
     let t := copy (publicBundle+192) federation 32 t
     notice 30 (store64 (st+200) 320 (store64 (st+32) 3 t))
   else if operation == 434 && length == 96 && load64 (st+208) t != 0 then
-    let slot := result t
-    let state := load64 (wire+16) t
-    if slot == 0 || slot > 4 || state == 0 || state > 3 then notice 24 t else
-    let t := store64 (contact slot) (if state == 2 then 1 else 0) t
-    let t := store64 (contact slot+40) (if load64 (wire+24) t == 1 then 1 else 0) t
-    let t := copy (wire+64) (contact slot+8) 32 t
-    let t := if load64 (st+24) t == 0 || load64 (st+24) t == slot then
-      let t := copy (wire+64) fingerprint 32 t
-      store64 (st+24) slot (store64 (st+48) (if state == 2 then 1 else 0) t)
-      else t
-    nextRestoredContact t
+    restoredContact t
   else if operation == 423 && length == 96 then
     let t := store64 (st+24) (result t) t
     let t := copy (wire+64) fingerprint 32 t
@@ -954,13 +987,17 @@ def completed (operation length t : UInt64) : UInt64 :=
   else if operation == 425 && length == 64 then
     notice 33 (store64 (contact (load64 (st+24) t)) 0 (store64 (st+48) 0 t))
   else if operation == 426 && length == 64 then
-    let t := store64 (st+64) (result t) t
+    let chosen := load64 (st+264) t
+    let t := store64 (st+248) chosen (store64 (contact chosen+48) (result t) (store64 (st+64) (result t) t))
     let t := store64 (st+104) 1 t
     let t := store64 (st+232) 1 t
     notice 18 (store64 (st+40) 0 (zero composeBuffer 64 t))
   else if (operation == 427 || operation == 435) && length >= 64 then
     let n := load64 (wire+16) t
-    if n == 0 || n > 896 || length != 64+n || load64 (wire+24) t != 2 then notice 24 t else
+    let message := result t
+    let chosen := load64 (wire+32) t
+    if message == 0 || chosen == 0 || chosen > 4 || n == 0 || n > 896 || length != 64+n || load64 (wire+24) t != 2 then notice 24 t else
+    let t := store64 (st+64) message (store64 (contact chosen+48) message (store64 (contact chosen+56) n t))
     let t := store64 (st+240) n (store64 (st+248) (load64 (wire+32) t) t)
     let t := copy (wire+64) ciphertext n t
     let t := Guest.ServiceHash.sha256At hashScratch ciphertext n commitment t
@@ -983,6 +1020,7 @@ def completed (operation length t : UInt64) : UInt64 :=
     let endpoint := syscall 128 4 462 0 0 t
     if endpoint == error then notice 23 endpoint else submit 462 64 (header 462 0 0 0 0 0 0 endpoint)
   else if operation == 432 && length == 64 then
+    let t := store64 (st+32) 0 t
     if load64 (st+176) t != 1 then notice 64 t else
     submit 434 64 (header 434 1 15 0 0 0 0 (store64 (st+208) 1 t))
   else if operation == 429 && length >= 64 then
@@ -997,14 +1035,20 @@ def completed (operation length t : UInt64) : UInt64 :=
     let t := if source == load64 (st+24) t then copy (wire+64) displayText n (store64 (st+96) n t) else t
     notice 20 t
   else notice 45 t
+def completed (operation action length t : UInt64) : UInt64 :=
+  if operation == 434 && load64 (st+200) t == 672 && (status t == 3 || status t == 7) && action == 0 && load64 (st+208) t == 0 then
+    submit 434 64 (header 434 0 12 0 0 0 0 (store64 (st+200) 320 t)) else
+  if action != 0 then attachmentCompleted action length t else
+  completedPlain operation length t
 def collect (t : UInt64) : UInt64 :=
   let token := load64 (st+144) t
   if token == 0 then t else
   let r := Guest.MessengerSDK.collect token t
   if r == 0 then r else
   let operation := load64 (st+152) r
-  let t := store64 (st+144) 0 r
-  if r == error || r < 64 || r > 1024 then failed r t else completed operation r t
+  let action := load64 (st+256) r
+  let t := store64 (transfer+128) 0 (store64 (st+256) 0 (store64 (st+144) 0 r))
+  if r == error || r < 64 || r > 1024 then failed r t else completed operation action r t
 def nibble (c : UInt64) : UInt64 :=
   if c >= 48 && c <= 57 then c-48 else if c >= 97 && c <= 102 then c-87 else if c >= 65 && c <= 70 then c-55 else error
 partial def parseInvite (i t : UInt64) : UInt64 :=
@@ -1045,19 +1089,20 @@ def key (code t : UInt64) : UInt64 :=
   if code == 66 then lock t else
   if mode == 5 then unlockKey code t else
   if code == 1 then
-    if load64 (transfer+216) t != 0 then submitTransfer 462 304 64 (header 462 0 0 0 0 0 0 (cancelPending t)) else
+    if mode == 6 && load64 (transfer+216) t == 0 then notice 44 (store64 (st+32) 0 t) else
+    if load64 (transfer+216) t != 0 then submitTransfer 462 304 64 (header 462 0 0 0 0 0 0 (store64 (st+32) 0 (cancelPending t))) else
     if load64 transfer t >= 20 then notice 44 (store64 transfer 9 (Guest.MessengerProject.fail 10 (cancelPending t))) else
     if load64 transfer t > 0 && load64 transfer t < 8 then
       submit 462 64 (header 462 (load64 (transfer+8) t) 0 0 0 0 0 (store64 transfer 9 (cancelPending t))) else cancel t else
   if code == 87 then chooseProject t else
-  if code == 88 then importProject t else
+  if code == 110 then importProject (store64 (transfer+72) 0 t) else
   if code == 60 then createIdentity t else
   if code == 61 then showInvitation t else
   if code == 62 then notice 29 (store64 (st+32) 2 (store64 (st+56) 0 (zero inviteBuffer 168 t))) else
   if code == 63 then approveContact t else
   if code == 64 then blockContact t else
   if code == 65 then
-    if load64 transfer t == 9 && load64 (transfer+240) t == 2 then importProject t else
+    if load64 transfer t == 9 && load64 (transfer+240) t == 2 then importProject (store64 (transfer+72) 1 t) else
     if load64 transfer t == 9 && load64 (transfer+8) t != 0 then notice 69 (store64 transfer 6 t) else retry t else
   if code == 67 then unlock t else
   if code == 68 then notice 36 (store64 (st+32) 4 t) else
@@ -1066,6 +1111,7 @@ def key (code t : UInt64) : UInt64 :=
   if mode == 3 && (code == 104 || code == 109 || code == 105 || code == 106) then
     turnExportPage (if code == 109 || code == 106 then 1 else 0) t else
   if mode == 0 && (code == 104 || code == 109) then
+    if load64 (st+104) t != 0 || (load64 (st+144) t != 0 && load64 (st+152) t == 426) then notice 28 t else
     let old := load64 (st+24) t
     let next := if code == 104 then (old+2)%4+1 else old%4+1
     let t := copy (contact next+8) fingerprint 32 t
@@ -1073,14 +1119,15 @@ def key (code t : UInt64) : UInt64 :=
     let n := load64 (history next) t
     let t := copy (history next+64) displayText n (store64 (st+96) n t)
     notice (if load64 (contact next) t == 1 then 32 else 17)
-      (store64 (st+24) next (store64 (st+48) (load64 (contact next) t) t))
+      (store64 (st+64) (load64 (contact next+48) t) (store64 (st+248) next
+        (store64 (st+24) next (store64 (st+48) (load64 (contact next) t) t))))
   else if code == 28 then
-    if mode == 3 then t else if mode == 1 then approveContact t else if mode == 4 then forget t else
+    if mode == 3 || mode == 6 then t else if mode == 1 then approveContact t else if mode == 4 then forget t else
     if mode == 2 then
       let n := load64 (st+56) t
       if n == 512 || n == 640 || n == 1344 then parseInvite 0 (store64 (st+200) (n/2) t) else notice 24 t
     else send t
-  else if mode == 1 || mode == 3 || mode == 4 then t else
+  else if mode == 1 || mode == 3 || mode == 4 || mode == 6 then t else
   let ptr := if mode == 2 then inviteBuffer else composeBuffer
   let length := if mode == 2 then st+56 else st+40
   let n := load64 length t
@@ -1195,8 +1242,8 @@ def projectPump (t : UInt64) : UInt64 :=
       let t := header 463 (load64 (transfer+56) t) 2 0 0 0 0 t
       submitTransfer 463 203 96 (copy transferId (wire+64) 32 (store64 transfer 23 t))
     else if !Guest.MessengerProject.needsChunk t then t else
-    let t := header 463 (load64 (transfer+56) t) 1 (load64 (transfer+104) t) 0 0 0 t
-    submitTransfer 463 463 96 (copy transferId (wire+64) 32 t)
+    let t := header 463 (load64 (transfer+56) t) 1 (load64 (transfer+104) t) (load64 (transfer+72) t) 0 0 t
+    submitTransfer 463 463 96 (copy transferId (wire+64) 32 (store64 (transfer+72) 0 t))
   else t
 def request (length t : UInt64) : UInt64 :=
   let token := load64 (incoming+8) t
@@ -1220,8 +1267,11 @@ def request (length t : UInt64) : UInt64 :=
     reply token 64 (header 0 (load64 (st+56) t) (load64 (st+176) t) (load64 (st+184) t)
       (load64 (st+152) t) (load64 (st+224) t) (if load64 (st+144) t == 0 then 0 else 1) t)
   else if op == 784 && length == 96 then
-    reply token 64 (header 0 (load64 transfer t) (load64 (transfer+32) t) (load64 (transfer+136) t)
-      (load64 (transfer+24) t) (Guest.MessengerProject.phase t) (load64 (Guest.MessengerProject.st+88) t) t)
+    let receiving := load64 transfer t >= 20
+    reply token 64 (header 0 (load64 transfer t) (load64 (if receiving then transfer+104 else transfer+32) t)
+      (load64 (if receiving then transfer+104 else transfer+136) t)
+      (load64 (if receiving then transfer+64 else transfer+24) t)
+      (Guest.MessengerProject.phase t) (load64 (Guest.MessengerProject.st+88) t) t)
   else if op == 785 && length == 96 then
     let t := header 0 (load64 (st+32) t) (load64 (transfer+192) t) (load64 (transfer+200) t)
       (load64 (transfer+208) t) (load64 (transfer+216) t) (load64 (reference+64) t) t

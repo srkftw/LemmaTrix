@@ -37,6 +37,9 @@ def extendedInvitation (t : UInt64) : UInt64 := invoke 434 64 (header 434 0 12 0
 def approve (contact fingerprint t : UInt64) : UInt64 :=
   invoke 424 96 (copy fingerprint (wire+64) 32 (header 424 contact 0 0 0 0 0 t))
 def block (contact t : UInt64) : UInt64 := invoke 425 64 (header 425 contact 0 0 0 0 0 t)
+-- Public recovery metadata: fingerprint, approval/binding and an exact retained
+-- text outbox handle/state/length. This never encrypts or transmits a draft.
+def contactState (contact t : UInt64) : UInt64 := invoke 434 64 (header 434 contact 15 0 0 0 0 t)
 def compose (contact source bytes t : UInt64) : UInt64 :=
   if bytes == 0 || bytes > 512 then error else
   invoke 426 (64+bytes) (copy source (wire+64) bytes (header 426 contact bytes 0 0 0 0 t))
@@ -105,6 +108,10 @@ def deliverAttachmentChunk (attachment index contact total fresh t : UInt64) : U
   delivery 460 72 (store64 (wire+64) fresh (header 460 attachment index 1 contact total 2 t))
 def fetchAttachmentChunk (attachment index id t : UInt64) : UInt64 :=
   delivery 463 96 (copy id (wire+64) 32 (header 463 attachment 1 index 0 0 0 t))
+-- Explicit retry re-admits only a failed transport fetch, up to three times
+-- per retained coordinator row. Authorization/integrity/ACK failures remain.
+def retryAttachmentChunk (attachment index id t : UInt64) : UInt64 :=
+  delivery 463 96 (copy id (wire+64) 32 (header 463 attachment 1 index 1 0 0 t))
 -- This acknowledgment is issued only after the separately authorized Objects
 -- importer has completed canonical validation and atomic graph publication.
 def acknowledgeImportedAttachment (attachment id t : UInt64) : UInt64 :=

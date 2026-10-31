@@ -28,6 +28,46 @@ def publicPrekeys : UInt64 := preflight+160
 def claimedPrekeys : UInt64 := preflight+448
 def claimIdentity : UInt64 := preflight+736
 def claimCaps : UInt64 := preflight+800
+-- One frozen public foreground reference. It waits behind already admitted
+-- work; it does not let a perpetual background fetch win every idle boundary.
+def foreground : UInt64 := 0x675000
+def forgePending (t : UInt64) : Bool := load64 foreground t == 1
+def requestCallerAllowed (owner caller : UInt64) : Bool := owner != 0 && owner == caller
+theorem zero_request_owner_denied (caller : UInt64) : requestCallerAllowed 0 caller = false := by rfl
+theorem different_request_caller_denied (owner caller : UInt64) (different : (owner == caller) = false) :
+    requestCallerAllowed owner caller = false := by
+  unfold requestCallerAllowed
+  rw [different]
+  exact Bool.and_false _
+-- This is a scheduling hint, not an admitted operation or saved authority.
+-- Only another current, kernel-checked460 can start its owner request.
+def attachmentHint : UInt64 := st+336
+def attachmentWaiting (t : UInt64) : Bool := load64 attachmentHint t == 1
+def clearAttachmentHint (t : UInt64) : UInt64 := zero attachmentHint 7 t
+def attachmentHintMatches (caller h index contact fresh t : UInt64) : Bool :=
+  requestCallerAllowed (load64 (attachmentHint+8) t) caller &&
+  load64 (attachmentHint+16) t == h && load64 (attachmentHint+24) t == index &&
+  load64 (attachmentHint+32) t == contact && load64 (attachmentHint+40) t == fresh
+def deferAttachment (caller h index contact fresh t : UInt64) : UInt64 :=
+  if attachmentWaiting t then t else
+  let t := clearAttachmentHint t
+  store64 attachmentHint 1 (store64 (attachmentHint+8) caller (store64 (attachmentHint+16) h
+    (store64 (attachmentHint+24) index (store64 (attachmentHint+32) contact (store64 (attachmentHint+40) fresh t)))))
+def attachmentHintQuantum (t : UInt64) : UInt64 :=
+  if !attachmentWaiting t then t else
+  let used := load64 (attachmentHint+48) t
+  if used >= 8191 then store64 attachmentHint 2 (store64 (attachmentHint+48) 8192 t) else
+  store64 (attachmentHint+48) (used+1) t
+def attachmentReceiveAllowed (mode phase selected : UInt64) : Bool :=
+  mode != 1 || phase != 0 || selected != 0
+theorem attachment_wait_blocks_background : attachmentReceiveAllowed 1 0 0 = false := by decide
+theorem attachment_expired_allows_background : attachmentReceiveAllowed 2 0 0 = true := by decide
+theorem attachment_partial_receive_drains (mode selected : UInt64) :
+    attachmentReceiveAllowed mode 1 selected = true := by simp [attachmentReceiveAllowed]
+theorem attachment_ack_receive_drains (mode selected : UInt64) :
+    attachmentReceiveAllowed mode 3 selected = true := by simp [attachmentReceiveAllowed]
+theorem attachment_ack_poll_drains (mode selected : UInt64) :
+    attachmentReceiveAllowed mode 4 selected = true := by simp [attachmentReceiveAllowed]
 def preflightFailure (reason t : UInt64) : UInt64 := store64 preflight 9 (store64 (preflight+32) reason t)
 def publicationFailure (reason t : UInt64) : UInt64 := store64 (preflight+128) 6 (store64 (preflight+136) reason t)
 def blobMagic : UInt64 := 0x31424c424d544c
@@ -49,9 +89,10 @@ theorem failed_auth_never_acknowledges : acknowledgeAllowed 9 = false := by deci
 def response (code h state reason t : UInt64) : UInt64 :=
   64+header code h state reason (load64 (st+192) t) (load64 (st+160) t) 0 t
 def failSend (reason t : UInt64) : UInt64 :=
+  let t := clearAttachmentHint t
   let t := if load64 attachment t == 3 then store64 attachment 7 (store64 (attachment+64) reason t) else t
   store64 (st+24) 7 (store64 (st+112) reason t)
-def failReceive (reason t : UInt64) : UInt64 := store64 (st+160) 7 (store64 (st+200) reason t)
+def failReceive (reason t : UInt64) : UInt64 := store64 (st+160) 7 (store64 (st+200) reason (clearAttachmentHint t))
 def ownerSubmit (op h a source bytes purpose t : UInt64) : UInt64 :=
   if load64 (st+8) t != 0 then error else
   let target := syscall 128 2 op 0 0 t
@@ -89,6 +130,44 @@ partial def markAck (id i t : UInt64) : UInt64 :=
   if i == 16 then t else
   let p := parked+i*128
   markAck id (i+1) (if load64 p t != 0 && eq id (p+8) 32 t then store64 (p+96) 1 t else t)
+def releaseParked (p t : UInt64) : UInt64 :=
+  if p == 0 then t else
+  let t := if load64 (st+296) t == p then store64 (st+296) 0 (zero blob 1024 t) else t
+  let t := if load64 (st+280) t == p then store64 (st+280) 0 t else t
+  zero p 16 t
+def residentMatches (p id t : UInt64) : Bool :=
+  load64 (st+296) t == p && eq (blob+16) id 32 t &&
+    load64 (blob+48) t == load64 (p+80) t && load64 (blob+56) t == load64 (p+88) t
+def fetchRetryAllowed (reason purpose attempts : UInt64) : Bool :=
+  reason == 14 && purpose == 10 && attempts < 3
+theorem failed_auth_cannot_retry_fetch (purpose attempts : UInt64) :
+    fetchRetryAllowed 1 purpose attempts = false := by rfl
+theorem failed_integrity_cannot_retry_fetch (purpose attempts : UInt64) :
+    fetchRetryAllowed 9 purpose attempts = false := by rfl
+theorem failed_ack_cannot_retry_fetch (attempts : UInt64) :
+    fetchRetryAllowed 14 11 attempts = false := by rfl
+def fetchAttachment (h index id explicit t : UInt64) : UInt64 :=
+  if explicit > 1 then response 2 h 0 0 t else
+  let failed := load64 (st+160) t == 7
+  let p := parkSelect id index 0 t
+  if p == 0 then response (if failed then 14 else 6) h 0 (if failed then load64 (st+200) t else 0) t else
+  if failed && explicit == 0 then response 14 h 0 (load64 (st+200) t) t else
+  if failed && (!fetchRetryAllowed (load64 (st+200) t) (load64 (st+96) t) (load64 (p+112) t) ||
+      load64 (st+8) t != 0 || load64 (st+88) t != 0 || load64 (st+152) t != 1) then
+    response 14 h 0 (load64 (st+200) t) t else
+  -- Only a fresh, explicit GUI retry re-admits this already selected blob.
+  -- It cannot replay an acknowledgment or override an authorization failure.
+  let t := if !failed then t else
+    store64 (p+112) (load64 (p+112) t+1) (store64 (st+160) 0 (store64 (st+200) 0
+      (store64 (st+136) 0 (store64 (st+248) 0 (store64 (st+216) 0 (store64 (st+280) p t))))))
+  if !residentMatches p id t then
+    let t := if load64 (st+296) t == p then store64 (st+296) 0 (zero blob 1024 t) else t
+    response 6 h 0 0 (store64 (st+280) p t) else
+  let off := blobOffset blob index 0 64 t
+  if off == 0 then response 9 h 0 0 t else
+  let n := load64 (blob+off+8) t
+  let t := header 0 h n index 0 0 0 t
+  64+n+copy (blob+off+16) (wire+64) n t
 def network (op h t : UInt64) : UInt64 :=
   syscall 30 6 wire 64 1024 (store64 (wire+56) 2 (header op h 0 0 0 0 0 t))
 def ready (descriptor t : UInt64) : Bool :=
@@ -116,9 +195,9 @@ def configure (token length t : UInt64) : UInt64 :=
   let owner := load64 (command+8) t
   let selected := syscall 128 2 434 0 0 t
   if owner == 0 || owner != selected || syscall 131 token 0 0 0 selected != 0 then response 1 0 0 0 selected else
-  if length == 64 && owner == load64 st selected && load64 (st+152) selected == 1 then response 0 0 0 0 selected else
+  if length == 64 && owner == load64 st selected && load64 (st+152) selected == 1 then response 0 0 0 0 (clearAttachmentHint selected) else
   if length != 64 || load64 (st+8) selected != 0 || load64 (st+88) selected != 0 then response 4 0 0 0 selected else
-  let t := zero st 64 (zero preflight 128 selected)
+  let t := zero foreground 20 (zero st 64 (zero preflight 128 selected))
   let t := store64 (preflight+128) 1 (store64 st owner t)
   let r := ownerSubmit 434 0 11 0 0 11 t
   if r == error then response 1 0 0 0 r else response 0 0 0 0 r
@@ -152,7 +231,7 @@ def queue (caller length t : UInt64) : UInt64 :=
   let t := hash (command+96) n hashed t
   if !eq hashed (command+64) 32 t then response 9 h 0 0 t else
   if load64 (st+32) t == h && load64 (st+40) t == caller then
-    if !eq commitment hashed 32 t || load64 (st+48) t != n then response 12 h 0 0 t else
+    if !eq commitment hashed 32 t || load64 (st+48) t != n || load64 (st+64) t != contact then response 12 h 0 0 t else
     if load64 (st+24) t == 11 then response 0 h 2 0 t else
     if load64 (st+24) t != 7 && load64 (st+24) t != 8 then response 0 h 1 0 t else
     if load64 (st+8) t != 0 || load64 (st+88) t != 0 then response 6 h 1 0 t else
@@ -181,9 +260,16 @@ def queueAttachment (caller length t : UInt64) : UInt64 :=
     if index != load64 (attachment+40) t-1 then response 12 h 0 0 t else
     response 0 h 1 0 (store64 attachment 3 (store64 (st+24) 2 (store64 (st+224) 0 (store64 (st+112) 0 t)))) else
   if load64 attachment t == 4 && index == load64 (attachment+40) t-1 then response 0 h 2 0 t else
-  if load64 (st+8) t != 0 || load64 (st+88) t != 0 || (load64 (st+24) t > 0 && load64 (st+24) t <= 6) || load64 (st+24) t == 9 || load64 (st+24) t == 10 || load64 (st+24) t == 10 then response 6 h 1 0 t else
-  let first := if load64 attachment t == 0 || load64 attachment t == 4 then index else load64 (attachment+32) t
   if load64 attachment t == 2 && index != load64 (attachment+40) t then response 12 h 0 0 t else
+  let fresh := load64 (command+64) t
+  let same := attachmentHintMatches caller h index contact fresh t
+  if attachmentWaiting t && !same then response 4 h 0 0 t else
+  if load64 attachmentHint t == 2 && same then response 14 h 0 14 (clearAttachmentHint t) else
+  let t := if load64 attachmentHint t == 2 then clearAttachmentHint t else t
+  if load64 (st+8) t != 0 || load64 (st+88) t != 0 || (load64 (st+24) t > 0 && load64 (st+24) t <= 6) || load64 (st+24) t == 9 || load64 (st+24) t == 10 then
+    response 6 h 1 0 (deferAttachment caller h index contact fresh t) else
+  let t := clearAttachmentHint t
+  let first := if load64 attachment t == 0 || load64 attachment t == 4 then index else load64 (attachment+32) t
   let t := if load64 attachment t == 0 || load64 attachment t == 4 then
       let t := zero attachment 32 (zero batch 1024 t)
       let t := store64 (attachment+72) (load64 (command+64) t) (store64 (attachment+32) first (store64 (attachment+48) 64 t))
@@ -347,13 +433,13 @@ def rpcCompleted (purpose length t : UInt64) : UInt64 :=
   else if purpose == 11 then
     if code == 6 then store64 (st+160) 4 t else if code == 0 then
       let row := load64 (st+304) t
-      let t := if row == 0 then t else zero row 16 t
+      let t := releaseParked row t
       store64 (st+216) 0 (store64 (st+304) 0 (store64 (st+192) (load64 (st+192) t+1) (store64 (st+160) 0 (store64 (st+136) 0 t))))
     else failReceive code t
   else if purpose == 12 then
     if code == 6 then t else if code == 0 && load64 (answer+16) t == 2 then
       let row := load64 (st+304) t
-      let t := if row == 0 then t else zero row 16 t
+      let t := releaseParked row t
       store64 (st+216) 0 (store64 (st+304) 0 (store64 (st+192) (load64 (st+192) t+1) (store64 (st+160) 0 (store64 (st+136) 0 t))))
     else failReceive code t
   else failSend 7 t
@@ -430,6 +516,7 @@ def receiveQuantum (t : UInt64) : UInt64 :=
     if p == 0 then t else
     store64 (st+304) p (copy (p+40) receiveCommitment 32 (store64 (st+144) (load64 p t) (store64 (st+160) 3 t))) else t
   let phase := load64 (st+160) t
+  if !attachmentReceiveAllowed (load64 attachmentHint t) phase (load64 (st+280) t) then t else
   if phase == 2 || phase == 7 then t else
   let now := Guest.WaitSDK.now t
   if phase == 0 && load64 (st+280) now == 0 && now < load64 (st+208) now then now else
@@ -487,26 +574,73 @@ def prekeyQuantum (t : UInt64) : UInt64 :=
     let r := rpc 160 31 t
     if r == error then preflightFailure 14 r else r
   else t
+def queuedForgeReply (t : UInt64) : UInt64 :=
+  let t := header 0 6 0 0 0 0 1 t
+  128+copy (foreground+56) (wire+96) 32 (copy (foreground+24) (wire+64) 32 t)
+def queueForge (caller t : UInt64) : UInt64 :=
+  let policy := load64 (command+128) t
+  if load64 st t == 0 || load64 (st+152) t != 1 then response 14 0 0 0 t else
+  if (policy != 1 && policy != 2) || Guest.ProjectGraph.allZero (command+64) 32 t ||
+      Guest.ProjectGraph.allZero (command+96) 32 t then response 2 0 0 0 t else
+  if forgePending t then
+    if requestCallerAllowed (load64 (foreground+8) t) caller && load64 (foreground+88) t == policy &&
+      eq (foreground+24) (command+64) 32 t && eq (foreground+56) (command+96) 32 t then queuedForgeReply t
+    else response 6 0 0 0 t
+  else if Guest.MessengerForge.active t then
+    if !requestCallerAllowed (load64 (foreground+96) t) caller then response 1 0 0 0 t else
+    if eq Guest.ForgeRouted.root (command+64) 32 t && eq (Guest.ForgeFederation.st+160) (command+96) 32 t &&
+      load64 (Guest.ForgeFederation.st+136) t == policy then Guest.MessengerForge.inspect t else response 6 0 0 0 t
+  else
+    let t := zero foreground 20 t
+    let t := copy (command+64) (foreground+24) 64 t
+    let t := store64 (foreground+8) caller (store64 (foreground+88) policy (store64 foreground 1 t))
+    queuedForgeReply t
+def queuedForgeQuantum (t : UInt64) : UInt64 :=
+  if !forgePending t then t else
+  if load64 (foreground+16) t >= 8192 then
+    let caller := load64 (foreground+8) t
+    Guest.ForgeRouted.failure 14 (store64 (foreground+96) caller (zero foreground 20 t)) else
+  let t := store64 (foreground+16) (load64 (foreground+16) t+1) t
+  let t := collectRPC (collectOwner t)
+  if load64 (st+8) t != 0 || load64 (st+88) t != 0 then t else
+  let sendPhase := load64 (st+24) t
+  let prekeyPhase := load64 preflight t
+  let publicationPhase := load64 (preflight+128) t
+  if (sendPhase > 0 && sendPhase <= 6) || sendPhase == 9 || sendPhase == 10 ||
+      (prekeyPhase > 0 && prekeyPhase < 8) || (publicationPhase > 0 && publicationPhase < 5) then
+    sendQuantum (prekeyQuantum t)
+  else
+  let receivePhase := load64 (st+160) t
+  if (receivePhase > 0 && receivePhase < 5) || parkAck 0 t != 0 then receiveQuantum t else
+  -- No new background receive begins while a foreground request is queued.
+  -- The shared request identity advances only after every admitted RPC drains.
+  let t := store64 (Guest.ForgeRouted.st+16) (load64 (st+80) t) t
+  let r := Guest.MessengerForge.begin (foreground+24) (foreground+56) (load64 (foreground+88) t) 0 t
+  let caller := load64 (foreground+8) r
+  let t := store64 (foreground+96) caller (zero foreground 20 r)
+  if r == error then Guest.ForgeRouted.failure 14 t else
+  store64 (st+80) (load64 (Guest.ForgeRouted.st+16) t) t
 def dispatch (caller rights token length t : UInt64) : UInt64 :=
   let op := load64 command t
   let h := load64 (command+8) t
   if length < 64 || length > 1024 || load64 (command+56) t != 1 || syscall 131 token 0 0 0 t != 0 then response 1 h 0 0 t else
-  if op == 463 && load64 (command+16) t == 3 && length == 136 then
-    if Guest.MessengerForge.active t || load64 (st+88) t != 0 || load64 (st+8) t != 0 ||
-      load64 (st+160) t == 3 || load64 (st+160) t == 4 ||
-      (load64 (st+24) t > 0 && load64 (st+24) t <= 6) || load64 (st+24) t == 9 || load64 (st+24) t == 10 then response 6 h 0 0 t else
-    -- Both consumers share one protected stream and its request identity space.
-    let t := store64 (Guest.ForgeRouted.st+16) (load64 (st+80) t) t
-    let r := Guest.MessengerForge.begin (command+64) (command+96) (load64 (command+128) t) 0 t
-    if r == error then response 14 h 0 0 r else
-    Guest.MessengerForge.inspect (store64 (st+80) (load64 (Guest.ForgeRouted.st+16) r) r)
-  else if op == 461 && load64 (command+16) t == 3 && length == 64 then Guest.MessengerForge.inspect t else
-  if Guest.MessengerForge.active t && op == 460 then response 6 h 1 0 t else
+  if op == 463 && load64 (command+16) t == 3 && length == 136 then queueForge caller t
+  else if op == 461 && load64 (command+16) t == 3 && length == 64 then
+    if forgePending t then
+      if requestCallerAllowed (load64 (foreground+8) t) caller then queuedForgeReply t else response 1 h 0 0 t
+    else if Guest.ForgeRouted.phase t != 0 && !requestCallerAllowed (load64 (foreground+96) t) caller then response 1 h 0 0 t
+    else Guest.MessengerForge.inspect t
+  else
+  if (Guest.MessengerForge.active t || forgePending t) && op == 460 then response 6 h 1 0 t else
   if op == 464 then
     if (rights &&& 0x100000000) == 0 then response 1 h 0 0 t else
     if load64 (command+16) t == 1 && length == 64 then
       64+header 0 (load64 (preflight+128) t) (load64 (preflight+136) t)
         (load64 preflight t) (load64 (preflight+32) t) (load64 (preflight+144) t) (load64 (preflight+40) t) t
+    else if load64 (command+16) t == 2 && length == 64 then
+      64+header 0 (Guest.ForgeRouted.phase t) (load64 (Guest.ForgeRouted.st+24) t)
+        (if load64 (st+8) t == 0 then 0 else 1) (if load64 (st+88) t == 0 then 0 else 1)
+        (load64 (st+24) t) (load64 (st+160) t) t
     else configure token length t
   else
   if op == 460 then if load64 (command+48) t == 3 then queuePreflight caller length t else
@@ -522,8 +656,10 @@ def dispatch (caller rights token length t : UInt64) : UInt64 :=
     let phase := load64 (st+24) t
     response (if phase == 7 then 14 else 0) h (if phase == 11 then 2 else if phase == 8 then 4 else 1) (load64 (st+112) t) t
   else if op == 462 && length == 64 then
+    let t := if h != 0 && load64 (attachmentHint+16) t == h &&
+      requestCallerAllowed (load64 (attachmentHint+8) t) caller then clearAttachmentHint t else t
     if h == 0 then
-      let t := zero preflight 128 t
+      let t := zero foreground 20 (zero preflight 128 t)
       let owner := load64 st t
       let pending := load64 (st+8) t
       let t := if pending == 0 then t else syscall 135 pending 0 0 0 t
@@ -532,7 +668,11 @@ def dispatch (caller rights token length t : UInt64) : UInt64 :=
       let t := network 42 0 t
       let t := zero own 16 (zero remote 12 (zero ciphertext 1024 (zero received 1024 (zero request 128 (zero answer 128 t)))))
       response 0 0 4 0 (store64 st owner (zero st 64 (zero attachment 32 (zero batch 1024 (zero parked 256 (zero blob 1024 (zero receiptProfile 52 (zero receiptNode 60 (zero receiptCache 32 (zero receiptArgs 6 t))))))))))
-    else if Guest.MessengerForge.active t then response 0 h 4 0 (Guest.MessengerForge.cancel t) else
+    else if forgePending t then
+      if requestCallerAllowed (load64 (foreground+8) t) caller then response 0 h 4 0 (zero foreground 20 t) else response 1 h 0 0 t
+    else if Guest.MessengerForge.active t then
+      if requestCallerAllowed (load64 (foreground+96) t) caller then response 0 h 4 0 (Guest.MessengerForge.cancel t) else response 1 h 0 0 t
+    else
     if h == load64 (preflight+16) t && caller == load64 (preflight+8) t && load64 preflight t != 0 then
       let pending := load64 (st+8) t
       let purpose := load64 (st+16) t
@@ -552,15 +692,7 @@ def dispatch (caller rights token length t : UInt64) : UInt64 :=
     let t := if pending == 0 then t else syscall 135 pending 0 0 0 t
     response 0 h 4 0 (store64 (st+8) 0 (store64 (st+24) 8 t))
   else if op == 463 && load64 (command+16) t == 1 && length == 96 then
-    let index := load64 (command+24) t
-    let p := parkSelect (command+64) index 0 t
-    if p == 0 then response 6 h 0 0 t else
-    if load64 (st+296) t != p then response 6 h 0 0 (store64 (st+280) p t) else
-    let off := blobOffset blob index 0 64 t
-    if off == 0 then response 9 h 0 0 t else
-    let n := load64 (blob+off+8) t
-    let t := header 0 h n index 0 0 0 t
-    64+n+copy (blob+off+16) (wire+64) n t
+    fetchAttachment h (load64 (command+24) t) (command+64) (load64 (command+32) t) t
   else if op == 463 && load64 (command+16) t == 2 && length == 96 then
     response 0 h 0 0 (markAck (command+64) 0 t)
   else if op == 463 && length == 64 then response 0 (load64 (st+144) t) (load64 (st+192) t) (load64 (st+200) t) t
@@ -572,12 +704,14 @@ partial def loop (t : UInt64) : UInt64 :=
     let size := dispatch (load64 incoming n) (load64 (incoming+16) n) token (n-32) n
     reply token size size
   else n
-  let t := if Guest.MessengerForge.active t then Guest.MessengerForge.pump t else receiveQuantum (sendQuantum (prekeyQuantum (collectRPC (collectOwner t))))
+  let t := attachmentHintQuantum t
+  let t := if forgePending t then queuedForgeQuantum t else
+    if Guest.MessengerForge.active t then Guest.MessengerForge.pump t else receiveQuantum (sendQuantum (prekeyQuantum (collectRPC (collectOwner t))))
   let t := zero command 124 (zero wire 128 (zero scratch 80 t))
-  let work := (load64 preflight t > 0 && load64 preflight t < 8) ||
+  let work := attachmentWaiting t || forgePending t || (load64 preflight t > 0 && load64 preflight t < 8) ||
     (load64 (preflight+128) t > 0 && load64 (preflight+128) t < 5) || load64 (st+8) t != 0 || load64 (st+88) t != 0 ||
     (load64 (st+24) t > 0 && load64 (st+24) t <= 6) || load64 (st+24) t == 9 || load64 (st+24) t == 10 ||
     (load64 (st+160) t > 0 && load64 (st+160) t < 5)
   loop (Guest.WaitSDK.deadline (Guest.WaitSDK.now t+(if work then 1 else 100)) t)
-def main (t : UInt64) : UInt64 := loop (zero preflight 128 (zero st 64 (zero own 16 (zero remote 12 (zero attachment 32 (zero parked 256 t))))))
+def main (t : UInt64) : UInt64 := loop (zero foreground 20 (zero preflight 128 (zero st 64 (zero own 16 (zero remote 12 (zero attachment 32 (zero parked 256 t)))))))
 end Guest.MessengerDelivery

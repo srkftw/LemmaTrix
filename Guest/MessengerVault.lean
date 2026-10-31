@@ -1,4 +1,5 @@
 import Guest.MessengerCrypto
+import Guest.MessengerRetentionPolicy
 import Guest.MessengerAttachment
 import Guest.LiveSDK
 namespace Guest.MessengerVault
@@ -110,7 +111,8 @@ def nonceCurrent (t : UInt64) : Bool :=
   let bv := validCounter allocatorOther b
   if (!av && !empty allocator 512 b) || (!bv && !empty allocatorOther 512 b) || (!av && !bv) then false else
   let p := if av && (!bv || load64 (allocator+16) b >= load64 (allocatorOther+16) b) then allocator else allocatorOther
-  load64 (p+16) b == Guest.VaultCrypto.le32 (root+44) b && eq (p+24) (root+40) 4 b
+  Guest.MessengerRetentionPolicy.currentNonce (Guest.VaultCrypto.le32 (root+44) b)
+    (load64 (p+16) b) (eq (p+24) (root+40) 4 b)
 
 def scan (allowHistoryFallback t : UInt64) : UInt64 :=
   let r := disk 136 2 root 512 t
@@ -208,4 +210,11 @@ def forget (t : UInt64) : UInt64 :=
   if r != 0 then err else
   let r := flush r
   if r != 0 then err else clear r
+-- A supported history import retires this input copy's old sending roots.
+-- Reserve and flush first: even an interruption during root invalidation makes
+-- every old root fail normal recovery's allocator check. Keep the allocator so
+-- a fresh explicitly created domain cannot reuse this credential's nonces.
+def retireForHistory (t : UInt64) : UInt64 :=
+  let r := reserveNonce t
+  if r == err then err else forget r
 end Guest.MessengerVault

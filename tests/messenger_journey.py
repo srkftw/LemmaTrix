@@ -62,9 +62,10 @@ class AttachedProcess:
   except TimeoutError:raise subprocess.TimeoutExpired(str(self.pid),timeout)
 
 class Guest:
- def __init__(self,name,backend,out,image,*,graphical=False,vault=None,store=None):
+ def __init__(self,name,backend,out,image,*,graphical=False,vault=None,store=None,network_fault_control=None):
   self.name,self.backend,self.out,self.image=name,backend,out,image
   self.graphical,self.vault,self.store=graphical,vault,store;self.client=self.process=self.log=None;self.device=None
+  self.network_fault_control=network_fault_control
   self.path=out/(name+'.sock');self.graphics=out/(name+'.qmp')
  def start(self):
   backing_bytes=max((path.stat().st_size for path in (self.vault,self.store) if path),default=0)
@@ -74,6 +75,7 @@ class Guest:
    resource.setrlimit(resource.RLIMIT_FSIZE,(backing_bytes,hard))
   self.log=(self.out/(self.name+'.log')).open('ab')
   command=[str(ROOT/'lt'),'run','--backend',self.backend,'--image',str(self.image),'--socket',str(self.path),'--network-mux']
+  if self.network_fault_control is not None:command+=['--network-fault-control',str(self.network_fault_control)]
   if self.graphical:command+=['--graphics',str(self.graphics)]
   if self.vault:command+=['--vault',str(self.vault)]
   if self.store:command+=['--server-store',str(self.store)]
@@ -110,6 +112,20 @@ def package(out,module,entry,name,rights):
  return path,releases.inspect(raw)
 
 def install(g,packages,name,rights):
+ info=packages[name][1]
+ # Reuse an already admitted exact public release after process teardown.
+ # Native25 still checks current publisher trust and launchability. Upgrades
+ # continue through signature/admission and the native parent/version checks.
+ try:current=g.client.request(14,bytes.fromhex(info['project_id']))
+ except ValueError:current=None
+ if current and len(current)==128 and current[64:96]==bytes.fromhex(info['release_id']):
+  for index in range(16):
+   try:entry=g.client.request(13,struct.pack('<Q',index))
+   except ValueError:continue
+   if len(entry)==512 and entry[160:192]==bytes.fromhex(info['release_id']):
+    owner=struct.unpack_from('<Q',g.client.request(25,struct.pack('<Q',index+1)),8)[0]
+    return owner,bytes.fromhex(info['release_id'])
+  raise ValueError('current public release has no matching admitted catalog record')
  owner,sid=messenger.install(g.client,packages[name][0],PUB,rights)
  return owner,sid
 
@@ -182,7 +198,17 @@ def wait_ui(g,predicate,label):
  return wait(check,900,g.name+' '+label)
 
 def screenshot(g,name):
- frame=g.device.frame();(g.out/(g.name+'-'+name+'.ppm')).write_bytes(frame.ppm());return frame.digest
+ # Native state completion may precede the compositor's bounded901120-byte
+ # redraw. Wait for an actual completed display frame, then two stable reads.
+ time.sleep(1)
+ last=None;stable=0;end=time.monotonic()+8
+ while time.monotonic()<end:
+  frame=g.device.frame()
+  stable=stable+1 if frame.digest==last else 0
+  last=frame.digest
+  if stable>=2:break
+  time.sleep(.25)
+ (g.out/(g.name+'-'+name+'.ppm')).write_bytes(frame.ppm());return frame.digest
 
 def setup_personal(g,packages,mailpin):
  g.owner,sid=install(g,packages,'owner',0);g.ui,uid=install(g,packages,'ui',packages['ui'][1]['rights']);g.delivery,did=install(g,packages,'delivery',1024)
@@ -202,20 +228,43 @@ def unlock_ui(g,key,mode):
  g.client.request(174,struct.pack('<2Q',g.owner,1))
  g.device.press(67,delay=.15);g.device.press(59+mode,delay=.15);g.device.press(62,delay=.15)
  g.device.textASCII(key.hex(),delay=.08);time.sleep(.5);g.device.press(28,delay=.15)
- wait_ui(g,lambda f:f[4] in (34,64),'explicit graphical domain2 unlock')
- f,_=role(g,2,420);assert f[1]==1 and f[5]==1,('owner retention state',f)
- raw=g.client.request(150,struct.pack('<Q8Q',g.ui,783,0,0,0,0,0,0,1))
- status=struct.unpack_from('<8Q',raw);assert status[5]==0 and status[6]==0,('graphical owner completion',status)
+ def committed():
+  raw=g.client.request(150,struct.pack('<Q8Q',g.ui,783,0,0,0,0,0,0,1))
+  status=struct.unpack_from('<8Q',raw)
+  if status[1]!=64 or status[5]!=0 or (status[6]!=0 and status[4] not in (420,463)):return None
+  f,_=role(g,2,420)
+  return (f,status) if f[1]==1 and f[5]==1 else None
+ f,status=wait(committed,300,g.name+' authorized native domain2 commit/recovery')
+ print(g.name,'graphical domain2 committed',f,'UI',status,flush=True)
 
 
 def approve_ui(g,invitation):
+ # Status polling is asynchronous. A user gesture during another request is
+ # visibly busy, so retry the real gesture only after completion, boundedly.
+ def ui_async():
+  raw=g.client.request(150,struct.pack('<Q8Q',g.ui,783,0,0,0,0,0,0,1))
+  return struct.unpack_from('<8Q',raw)
+ wait(lambda:ui_async()[6]==0,120,g.name+' idle before invitation import')
  raw=g.client.request(150,struct.pack('<Q8Q',g.ui,780,0,0,0,0,0,0,1)+invitation)
  assert struct.unpack_from('<Q',raw)[0]==0
  state,fingerprint=wait_ui(g,lambda f:f[2]==1,'candidate fingerprint')
  assert any(fingerprint) and state[5]==0
- screenshot(g,'contact-candidate');g.device.click(500,96)
- wait_ui(g,lambda f:f[5]==1 and f[4]==32,'pointer contact approval')
- return fingerprint.hex()
+ screenshot(g,'contact-candidate')
+ end=time.monotonic()+180;gestures=0;last=None
+ while time.monotonic()<end:
+  state,shown=inspect(g)
+  if state!=last:print(g.name,'pointer approval',state,'async',ui_async(),flush=True);last=state
+  assert shown==fingerprint,'candidate fingerprint changed before approval'
+  if state[5]==1:
+   actual,public=role(g,2,434,h=state[1],a=15)
+   assert actual[2]==2 and public==fingerprint,('actual approved owner identity',actual)
+   return fingerprint.hex()
+  pending=ui_async()
+  if pending[6]==0 and gestures<16:
+   assert state[2]==1,'approval gesture is only valid on candidate screen'
+   g.device.click(500,96);gestures+=1
+  time.sleep(.25)
+ raise TimeoutError((g.name,'bounded graphical pointer approval',state,ui_async(),gestures))
 
 def mailbox_start(g,packages):
  g.identity_package=packages['identity'][0]
@@ -294,14 +343,23 @@ def route(g,certs,mailbox):
  return time.monotonic()-began
 
 def send_ui(g,text):
+ before,_=inspect(g)
  g.device.textASCII(text,delay=.025)
  wait_ui(g,lambda f:f[3]==len(text),'keyboard composition')
- g.device.press(28)
- state,_=wait_ui(g,lambda f:f[6]!=0,'native queued message')
- message=state[6];began=time.monotonic()
+ message=0;began=time.monotonic();end=began+120;gestures=0
+ while time.monotonic()<end:
+  state,_=inspect(g)
+  if state[6]!=0 and state[6]!=before[6]:message=state[6];break
+  raw=g.client.request(150,struct.pack('<Q8Q',g.ui,783,0,0,0,0,0,0,1))
+  pending=struct.unpack_from('<8Q',raw)
+  if state[3]==len(text) and pending[6]==0 and gestures<16:
+   g.device.press(28,delay=.08);gestures+=1
+  time.sleep(.25)
+ if not message:raise TimeoutError((g.name,'bounded actual compose submit',state,pending,gestures))
  for attempt in range(4):
-  outcome,_=wait_ui(g,lambda f:f[4] in (19,27),'mailbox acceptance or bounded admission result')
+  outcome,_=wait_ui(g,lambda f:f[4] in (19,27,21),'mailbox acceptance or bounded admission result')
   if outcome[4]==19:break
+  if outcome[4]==21:raise RuntimeError((g.name,'native unavailable',outcome))
   if attempt==3:raise RuntimeError('native broker still reports quota after three graphical exact-ciphertext retries')
   g.device.press(65,delay=.08)
   wait_ui(g,lambda f:f[4] in (18,28,19),'graphical exact-ciphertext retry admitted')
@@ -310,14 +368,15 @@ def send_ui(g,text):
 
 def import_useful_project(g):
  records=[];entries=[];files={}
- for name in ('Guest/Messenger.lean','Guest/MessengerDelivery.lean'):
+ for name in ('Guest/Messenger.lean','Guest/MessengerSDK.lean'):
   payload=(ROOT/name).read_bytes();assert 0<len(payload)<=65536
   identifier=projects.canonical_node(10,payload)
   records.append(dict(kind=10,id=identifier,payload=payload));entries.append((name,10,identifier));files[name]=payload
  assert sum(map(len,files.values()))>65536
  payload=projects.manifest(entries);head=projects.canonical_node(11,payload)
  records.insert(0,dict(kind=11,id=head,payload=payload))
- root=projects.import_records(g.client,[dict(name='messenger-review-source',head=head)],records)[0]['cap']
+ existing=next((r for r in projects.roots(g.client) if r['head']==head),None)
+ root=existing['cap'] if existing else projects.import_records(g.client,[dict(name='messenger-source-'+head[:12],head=head)],records)[0]['cap']
  compositor=next(row[0] for row in identity.instances(g.client) if row[0]&255==4)
  g.client.objects(27,root,compositor,31)
  return root,head,files

@@ -4,7 +4,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/'tools'))
 import driver,live_build
 MODULES=('ServiceBindingPolicy','IdentityPolicy','MessengerStoragePolicy','NodeStoragePolicy',
-         'MessengerPolicy','MessengerContactBinding','NetworkSDK','TorPolicy','NodeEnrollmentPolicy',
+         'MessengerPolicy','MessengerRetentionPolicy','MessengerContactBinding','NetworkSDK','TorPolicy','NodeEnrollmentPolicy',
          'MessengerDelivery','Mailbox','VaultPolicy','ServiceJobs')
 
 def main():
