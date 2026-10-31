@@ -30,29 +30,46 @@ def start(image, backend, backing, folder):
     socket = folder / 'guest.sock'
     socket.unlink(missing_ok=True)
     log = (folder / 'guest.log').open('ab')
-    process = subprocess.Popen([sys.executable, str(driver.ROOT / 'lt'),
-        'run', '--backend', backend, '--socket', str(socket), '--image', str(image),
-        '--server-store', str(backing)], cwd=driver.ROOT, stdout=log, stderr=log,
-        start_new_session=True)
-    deadline = time.monotonic() + (300 if backend == 'aarch64' else 60)
-    while not socket.exists():
-        if process.poll() is not None:
-            raise AssertionError((folder / 'guest.log').read_text())
-        if time.monotonic() >= deadline:
-            process.terminate()
-            raise TimeoutError('test guest startup')
-        time.sleep(.05)
-    return process, live.Client(socket, timeout=300 if backend == 'aarch64' else 60), log
+    process = None
+    try:
+        process = subprocess.Popen([sys.executable, str(driver.ROOT / 'lt'),
+            'run', '--backend', backend, '--socket', str(socket), '--image', str(image),
+            '--server-store', str(backing)], cwd=driver.ROOT, stdout=log, stderr=log,
+            start_new_session=True)
+        deadline = time.monotonic() + (300 if backend == 'aarch64' else 60)
+        while not socket.exists():
+            if process.poll() is not None:
+                raise AssertionError((folder / 'guest.log').read_text())
+            if time.monotonic() >= deadline:
+                raise TimeoutError('test guest startup')
+            time.sleep(.05)
+        client = live.Client(socket, timeout=300 if backend == 'aarch64' else 60)
+        return process, client, log
+    except BaseException:
+        # Startup and portal-open failures happen before qualify owns a Client.
+        # Reap the entire opaque adapter/guest group, rather than just its
+        # Python wrapper, and close the private log on those paths too.
+        if process is None:
+            log.close()
+        else:
+            stop(process, None, log)
+        raise
 
 
 def stop(process, client, log):
     if client:
         client.close()
-    os.killpg(process.pid, signal.SIGTERM)
+    try:
+        os.killpg(process.pid, signal.SIGTERM)
+    except ProcessLookupError:
+        pass
     try:
         process.wait(timeout=10)
     except subprocess.TimeoutExpired:
-        process.kill()
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
         process.wait()
     log.close()
 

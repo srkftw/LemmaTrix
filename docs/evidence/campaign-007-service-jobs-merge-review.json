@@ -1,0 +1,68 @@
+{
+  "schema": 1,
+  "recorded_utc": "2026-10-31T07:25:03.458046+00:00",
+  "reviewed_commit": "a783482",
+  "guest_source_sha256": "24eab64956b70803dcbb572a71c647b72e22c21152b2b84a7eba4e4d79781850",
+  "qualification_runner_sha256": "6df6a4eae5fad556483869ea3895bf499de0b7ef88ae5beb42b8089767d0eac0",
+  "review_scope": [
+    "All ServiceJobs SDK and host consumers preserve allocation epoch handles; only administrative inventory296 addresses physical rows.",
+    "No product lifecycle blocker or new Messenger/circuit completion claim found in the reviewed partial increment.",
+    "Historical final journal evidence retains its original runner hash and measurements."
+  ],
+  "fixed_defect": "Qualification startup/portal failures now close their log and terminate the complete adapter/guest process group; repeated cleanup tolerates an exited group.",
+  "targeted_checks": [
+    {
+      "check": "Controlled startup deadline with a real child process",
+      "result": "passed",
+      "method": "Forced the helper deadline to expire after launching a real adapter wrapper and sleeping child; wrapper was reaped and child stopped."
+    },
+    {
+      "check": "Controlled process creation failure",
+      "result": "passed",
+      "method": "OSError from process creation propagated after the private log was closed."
+    },
+    {
+      "check": "Repeated cleanup after group exit",
+      "result": "passed",
+      "method": "Cleanup tolerated missing process group and closed the log."
+    },
+    {
+      "check": "Python compilation and diff whitespace",
+      "result": "passed"
+    }
+  ],
+  "native_command": "python3 tools/service_job_checks.py --image build/campaign007/final/guest.bin --backend qemu --iterations 2 --output /tmp/lt-service-jobs-merge-review.json",
+  "native_result": {
+    "backend": "qemu",
+    "image_sha256": "860be9eb7f63311b8a3b9976a2305263c4f485eb1397f6548d7dc23fbb5e9b76",
+    "source_sha256": "24eab64956b70803dcbb572a71c647b72e22c21152b2b84a7eba4e4d79781850",
+    "source_bytes": 19553,
+    "sequential_operations": 2,
+    "physical_rows_used": 1,
+    "reboot_during_sequence": false,
+    "capacity_increased": false,
+    "last_handle": 256,
+    "last_publication_generation": 9,
+    "seconds": 0.7427737188991159,
+    "checks": [
+      "same-boot terminal reclamation and allocation epoch increments",
+      "exact completion retry leaves reservations, work, attempts and generation unchanged",
+      "conflicting idempotency terms, stale owner/admin handles and retired operations reject",
+      "evicted unknown retry cannot automatically acquire another allowance",
+      "reused high-generation row recovers after guest termination without old-bank resurrection",
+      "fresh boot restores no owner binding",
+      "corrupted latest bank falls back to preceding checked complete publication"
+    ],
+    "scope": "native durable service journal; no mailbox, routing or message-delivery claim",
+    "arm_execution": null
+  },
+  "scope": "Focused merge review and qualification-helper cleanup; no new guest binary, protocol, mailbox, Messenger or connected-journey evidence",
+  "remaining_capabilities": [
+    "mode1 circuits",
+    "durable ciphertext mailbox",
+    "X3DH/Double Ratchet",
+    "Messenger domain2 retention and recovery",
+    "native Messenger UI",
+    "routed Forge journey"
+  ]
+}
