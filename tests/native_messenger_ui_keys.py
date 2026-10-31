@@ -43,6 +43,11 @@ def check (t : UInt64) : UInt64 :=
   if !unchanged t then 5 else
   let t := key 14 (baseline t)
   if !unchanged t then 6 else
+  -- The pointer's Send control calls the same function directly. It must not
+  -- submit a compose buffer hidden behind an inspector or credential form.
+  let t := send (baseline t)
+  if load64 (st+40) t != 3 || load64 composeBuffer t != 0x00434241 || load64 (st+64) t != 0xabcdef ||
+    load64 (st+144) t != 0 || load64 (st+16) t != 45 then 16 else
   -- A rejected new attachment action cannot replace the admitted action.
   let t := store64 (st+144) 77 (store64 (st+152) 434 (store64 (st+256) 16 (store64 (transfer+128) 16 (baseline t))))
   let t := submitTagged 463 21 64 t
@@ -191,7 +196,7 @@ okay:
   checks.append(dict(backend=backend,result='pass',seconds=time.monotonic()-began,emulated_arm=backend=='aarch64'))
  report=dict(schema=1,result='pass',checks=checks,image_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),image_bytes=binary.stat().st_size,
   messenger_source_sha256=hashlib.sha256((ROOT/'Guest/Messenger.lean').read_bytes()).hexdigest(),
-  boundaries=['completed inspector Escape closes local view and preserves nonzero retained outbox','completed inspector Escape preserves unrelated pending background request without cancellation','inspector printable Backspace and Enter preserve compose/outbox/pending-request and wire state','rejected attachment action preserves the admitted completion identity','locally published restore remains an uncertain exact-batch retry without inventing a durable remote receipt','text completion uses its captured contact and action, not a newer view or obsolete transfer tag','contact selection waits for in-flight text routing','actual recovery enumeration captures role2/434 action21 through checked128 and133 calls','actual reference inspection captures role4/463 action303 and immutable root federation policy through checked128 and133 calls','all other native IPC/syscalls fail the bare probe'],
+  boundaries=['completed inspector Escape closes local view and preserves nonzero retained outbox','completed inspector Escape preserves unrelated pending background request without cancellation','inspector printable Backspace and Enter preserve compose/outbox/pending-request and wire state','direct pointer Send denies a hidden compose buffer in a modal view','rejected attachment action preserves the admitted completion identity','locally published restore remains an uncertain exact-batch retry without inventing a durable remote receipt','text completion uses its captured contact and action, not a newer view or obsolete transfer tag','contact selection waits for in-flight text routing','actual recovery enumeration captures role2/434 action21 through checked128 and133 calls','actual reference inspection captures role4/463 action303 and immutable root federation policy through checked128 and133 calls','all other native IPC/syscalls fail the bare probe'],
   limits='Actual compiled UI transitions and admitted-call identity fixture only. A test-only M-mode trap accepts exactly two parameter-checked SDK calls per gated admission case; it implements no service or protocol. No installed graphical input, real kernel grants, network, storage or connected campaign claim. AArch64 is emulated.')
  (B/'evidence.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2))
 

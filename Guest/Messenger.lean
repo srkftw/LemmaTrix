@@ -777,6 +777,7 @@ def approveContact (t : UInt64) : UInt64 :=
   submit 424 96 (copy fingerprint (wire+64) 32 (header 424 (load64 (st+24) t) 0 0 0 0 0 t))
 def blockContact (t : UInt64) : UInt64 := submit 425 64 (header 425 (load64 (st+24) t) 0 0 0 0 0 t)
 def send (t : UInt64) : UInt64 :=
+  if load64 (st+32) t != 0 then notice 45 t else
   if load64 (st+48) t != 1 then notice 17 t else
   let n := load64 (st+40) t
   if n == 0 then t else
