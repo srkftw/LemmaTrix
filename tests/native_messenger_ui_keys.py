@@ -4,7 +4,9 @@ The actual Messenger.key function runs in a bounded bare native probe. Escape
 must close a completed inspector without cancelling a retained outbox or an
 unrelated background request. Printable input, Backspace and Enter in the
 inspector must leave composition and send state alone. This is a transition
-and call-denial check, not an installed graphical or routed campaign.
+and call-denial check, not an installed graphical or routed campaign. An
+uncertain attachment batch also requires a distinct confirmation before fresh
+mailbox admission; warning, cancellation and invalid contexts preserve it.
 """
 from __future__ import annotations
 import argparse,hashlib,json,subprocess,sys,time
@@ -29,6 +31,33 @@ def unchanged (t : UInt64) : Bool :=
   load64 (st+64) t == 0xabcdef && load64 (st+104) t == 3 && load64 (st+144) t == 0 &&
   load64 (st+152) t == 0 && load64 (st+248) t == 0 && load64 wire t == 0x11223344 &&
   load64 (st+8) t == 0 && load64 (st+16) t == 0
+def savedBatch : UInt64 := 0x7ac000
+def uncertain (t : UInt64) : UInt64 :=
+  let t := store64 (st+32) 0 (baseline t)
+  let t := zero ciphertext 112 (zero commitment 4 (zero expectedRoot 4 (zero transferId 4 t)))
+  let t := store64 ciphertext 0x0102030405060708 (store64 (ciphertext+888) 0xf1f2f3f4f5f6f7f8 t)
+  let t := store64 commitment 0x5152535455565758 (store64 (commitment+24) 0x6162636465666768 t)
+  let t := store64 expectedRoot 0x7172737475767778 (store64 (expectedRoot+24) 0x8182838485868788 t)
+  let t := store64 transferId 0x9192939495969798 (store64 (transferId+24) 0xa1a2a3a4a5a6a7a8 t)
+  let t := copy transferId savedBatch 32 (copy expectedRoot (savedBatch+32) 32 t)
+  let t := copy ciphertext (savedBatch+64) 896 (copy commitment (savedBatch+960) 32 t)
+  let t := store64 transfer 9 (store64 (transfer+8) 0x100000003 (store64 (transfer+16) 2 t))
+  let t := store64 (transfer+24) 9142 (store64 (transfer+32) 14 (store64 (transfer+40) 0 t))
+  let t := store64 (transfer+48) 13 (store64 (transfer+120) 11 (store64 (transfer+136) 0 t))
+  store64 (transfer+224) 3 (store64 (transfer+240) 1 t)
+def sameBatch (t : UInt64) : Bool :=
+  load64 (transfer+8) t == 0x100000003 && load64 (transfer+16) t == 2 &&
+  load64 (transfer+24) t == 9142 && load64 (transfer+32) t == 14 &&
+  load64 (transfer+40) t == 0 && load64 (transfer+48) t == 13 && load64 (transfer+136) t == 0 &&
+  load64 (transfer+240) t == 1 && load64 (st+64) t == 0xabcdef &&
+  load64 composeBuffer t == 0x00434241 && load64 (st+144) t == 0 &&
+  Guest.ProjectGraph.equal transferId savedBatch 32 t &&
+  Guest.ProjectGraph.equal expectedRoot (savedBatch+32) 32 t &&
+  Guest.ProjectGraph.equal ciphertext (savedBatch+64) 896 t &&
+  Guest.ProjectGraph.equal commitment (savedBatch+960) 32 t
+def warningPending (t : UInt64) : Bool :=
+  sameBatch t && load64 (st+32) t == 7 && load64 transfer t == 9 &&
+  load64 (transfer+120) t == 11 && load64 (transfer+224) t == 3
 def check (t : UInt64) : UInt64 :=
   let t := baseline (zero trapState 2 t)
   let t := store64 (st+144) 77 (store64 (st+152) 420 t)
@@ -52,6 +81,9 @@ def check (t : UInt64) : UInt64 :=
   let t := store64 (st+144) 77 (store64 (st+152) 434 (store64 (st+256) 16 (store64 (transfer+128) 16 (baseline t))))
   let t := submitTagged 463 21 64 t
   if load64 (st+144) t != 77 || load64 (st+256) t != 16 || load64 (transfer+128) t != 16 then 7 else
+  let t := store64 transfer 10 (store64 (transfer+16) 1 (store64 (st+24) 2 (baseline t)))
+  let t := chooseProject t
+  if load64 transfer t != 10 || load64 (transfer+16) t != 1 || load64 (st+16) t != 17 then 31 else
   -- Native ciphertext publication, rather than a resumed UI counter, decides
   -- whether the exact final batch is locally available, not remotely accepted.
   let t := store64 (transfer+232) 1 (header 0 0x100000001 1 1 73651 144 144 (baseline t))
@@ -70,6 +102,49 @@ def check (t : UInt64) : UInt64 :=
   let t := store64 (st+32) 0 (store64 (st+24) 1 t)
   let t := key 109 t
   if load64 (st+24) t != 1 || load64 (st+248) t != 1 || load64 (st+64) t != 42 then 11 else
+  -- A native unavailable reply carries its underlying reconciliation reason.
+  -- Local publication alone has not granted a new mailbox admission.
+  let t := attachmentCompleted 461 64 (header 14 0x100000003 1 11 0 0 0 (uncertain t))
+  if load64 transfer t != 9 || load64 (transfer+120) t != 11 || load64 (st+16) t != 26 ||
+    load64 (transfer+224) t != 3 || !sameBatch t then 17 else
+  let t := key 65 t
+  if !warningPending t || load64 (st+16) t != 26 then 18 else
+  -- Ordinary Enter in the conversation with an empty composer cannot serve
+  -- as the separate confirmation or set the attachment's fresh flag.
+  let t := key 28 (store64 (st+40) 0 (uncertain t))
+  if load64 (st+32) t != 0 || load64 transfer t != 9 || load64 (transfer+120) t != 11 ||
+    load64 (transfer+224) t != 3 || !sameBatch t then 19 else
+  let t := key 1 (key 65 (uncertain t))
+  if load64 (st+32) t != 0 || load64 transfer t != 9 || load64 (transfer+120) t != 11 ||
+    load64 (transfer+224) t != 3 || load64 (st+16) t != 26 || !sameBatch t then 20 else
+  -- Only Enter inside the warning enables the retained exact batch. It does
+  -- not itself call a service, alter ciphertext or allocate another handle.
+  let t := key 28 (key 65 (uncertain t))
+  if load64 (st+32) t != 0 || load64 transfer t != 6 || load64 (transfer+120) t != 0 ||
+    load64 (transfer+224) t != 1 || load64 (st+16) t != 69 || !sameBatch t then 21 else
+  let t := key 28 (store64 (st+32) 7 (store64 (transfer+120) 9 (uncertain t)))
+  if load64 (st+32) t != 0 || load64 transfer t != 9 || load64 (transfer+120) t != 9 ||
+    load64 (transfer+224) t != 3 || load64 (st+16) t != 45 || !sameBatch t then 22 else
+  let t := key 28 (store64 (st+32) 7 (store64 transfer 8 (uncertain t)))
+  if load64 (st+32) t != 0 || load64 transfer t != 8 || load64 (transfer+224) t != 3 ||
+    load64 (st+16) t != 45 || !sameBatch t then 23 else
+  let t := key 28 (store64 (st+32) 7 (store64 (transfer+240) 2 (uncertain t)))
+  if load64 (st+32) t != 0 || load64 transfer t != 9 || load64 (transfer+224) t != 3 ||
+    load64 (transfer+240) t != 2 || load64 (st+16) t != 45 then 24 else
+  let t := key 28 (store64 (st+32) 7 (store64 (transfer+8) 0 (uncertain t)))
+  if load64 (st+32) t != 0 || load64 transfer t != 9 || load64 (transfer+224) t != 3 ||
+    load64 (transfer+8) t != 0 || load64 (st+16) t != 45 then 25 else
+  -- While the warning is modal, hidden compose and ordinary controls cannot
+  -- submit work or redirect the exact attachment. All ecalls remain fatal.
+  let t := key 65 (uncertain t)
+  let t := key 65 (key 63 (key 110 (key 87 (key 14 (key 30 t)))))
+  let t := click (store64 (st+120) 20 (store64 (st+128) 360 t))
+  let t := click (store64 (st+120) 20 (store64 (st+128) 390 t))
+  let t := click (store64 (st+120) 400 (store64 (st+128) 390 t))
+  let t := click (store64 (st+120) 20 (store64 (st+128) 100 t))
+  if !warningPending t || load64 (st+40) t != 3 || load64 wire t != 0x11223344 then 26 else
+  let t := send t
+  if !warningPending t || load64 (st+40) t != 3 || load64 (st+16) t != 45 then 27 else
   -- Only the final two cases admit exactly one lookup and one async submit.
   -- Recovery's transfer enumeration must retain action21 after admission.
   let t := store64 trapState 1 (store64 (trapState+8) 0 (store64 (st+208) 4 (baseline t)))
@@ -196,7 +271,7 @@ okay:
   checks.append(dict(backend=backend,result='pass',seconds=time.monotonic()-began,emulated_arm=backend=='aarch64'))
  report=dict(schema=1,result='pass',checks=checks,image_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),image_bytes=binary.stat().st_size,
   messenger_source_sha256=hashlib.sha256((ROOT/'Guest/Messenger.lean').read_bytes()).hexdigest(),
-  boundaries=['completed inspector Escape closes local view and preserves nonzero retained outbox','completed inspector Escape preserves unrelated pending background request without cancellation','inspector printable Backspace and Enter preserve compose/outbox/pending-request and wire state','direct pointer Send denies a hidden compose buffer in a modal view','rejected attachment action preserves the admitted completion identity','locally published restore remains an uncertain exact-batch retry without inventing a durable remote receipt','text completion uses its captured contact and action, not a newer view or obsolete transfer tag','contact selection waits for in-flight text routing','actual recovery enumeration captures role2/434 action21 through checked128 and133 calls','actual reference inspection captures role4/463 action303 and immutable root federation policy through checked128 and133 calls','all other native IPC/syscalls fail the bare probe'],
+  boundaries=['completed inspector Escape closes local view and preserves nonzero retained outbox','completed inspector Escape preserves unrelated pending background request without cancellation','inspector printable Backspace and Enter preserve compose/outbox/pending-request and wire state','direct pointer Send denies a hidden compose buffer in a modal view','rejected attachment action preserves the admitted completion identity','restored attachment cannot be redirected by selecting a different contact','locally published restore remains an uncertain exact-batch retry without inventing a durable remote receipt','text completion uses its captured contact and action, not a newer view or obsolete transfer tag','contact selection waits for in-flight text routing','attachment unavailable reply retains reconciliation reason11 and shows its distinct warning','F7 opens reconciliation warning without fresh admission; ordinary Enter and Escape preserve uncertainty','only explicit warning Enter permits fresh admission of the unchanged exact batch without IPC','wrong reason phase direction or missing handle cannot confirm reconciliation','reconciliation modal typing hidden controls pointer Send and direct Send cannot submit or mutate the exact batch','actual recovery enumeration captures role2/434 action21 through checked128 and133 calls','actual reference inspection captures role4/463 action303 and immutable root federation policy through checked128 and133 calls','all other native IPC/syscalls fail the bare probe'],
   limits='Actual compiled UI transitions and admitted-call identity fixture only. A test-only M-mode trap accepts exactly two parameter-checked SDK calls per gated admission case; it implements no service or protocol. No installed graphical input, real kernel grants, network, storage or connected campaign claim. AArch64 is emulated.')
  (B/'evidence.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2))
 

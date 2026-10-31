@@ -24,6 +24,67 @@ def attachmentCommand (h index contact fresh t : UInt64) : UInt64 :=
   store64 command 460 (store64 (command+8) h (store64 (command+16) index
     (store64 (command+24) 1 (store64 (command+32) contact (store64 (command+48) 2
       (store64 (command+56) 1 (store64 (command+64) fresh t)))))))
+def reconciliationHintChecks (t : UInt64) : UInt64 :=
+  let t := zero st 64 (zero attachment 32 (zero parked 256 (zero calls 4 t)))
+  let t := store64 st 77 (store64 (st+152) 1 (store64 (st+24) 7
+    (store64 (st+112) 11 (store64 (st+88) 123 (store64 (calls+16) 1 t)))))
+  let t := store64 attachment 7 (store64 (attachment+8) 77 (store64 (attachment+16) 55
+    (store64 (attachment+24) 1 (store64 (attachment+40) 14 (store64 (attachment+64) 11 t)))))
+  let t := store64 ciphertext 0xaabb (store64 commitment 0xccdd (store64 requestId 0xeeff t))
+  let r := dispatch 55 799 1012 72 (attachmentCommand 77 13 1 1 t)
+  if status r != 6 || !attachmentHintMatches 55 77 13 1 1 r ||
+    load64 (st+88) r != 123 || load64 attachment r != 7 || load64 (st+24) r != 7 ||
+    load64 calls r != 1 || load64 (calls+8) r != 131 then 76 else
+  let r := dispatch 55 799 1013 72 (store64 (attachmentHint+48) 9 r)
+  if status r != 6 || load64 (attachmentHint+48) r != 9 then 77 else
+  let t := store64 (st+88) 0 (store64 (calls+16) 1 (zero calls 4 r))
+  let t := receiveQuantum t
+  if load64 calls t != 0 || load64 (st+88) t != 0 || !attachmentWaiting t then 78 else
+  let r := dispatch 55 799 1014 72 t
+  if status r != 0 || load64 attachmentHint r != 0 || load64 attachment r != 3 ||
+    load64 (st+24) r != 2 || load64 (st+224) r != 1 || load64 calls r != 1 ||
+    load64 (calls+8) r != 131 || load64 ciphertext r != 0xaabb ||
+    load64 commitment r != 0xccdd || load64 requestId r != 0xeeff then 79 else
+  let t := store64 attachment 7 (store64 (st+24) 7 (store64 (st+88) 123 r))
+  let t := attachmentHintQuantum (store64 (attachmentHint+48) 8191
+    (deferAttachment 55 77 13 1 1 t))
+  let r := dispatch 55 799 1015 72 t
+  if status r != 14 || load64 attachmentHint r != 0 || load64 attachment r != 7 ||
+    load64 (st+88) r != 123 || load64 (st+24) r != 7 then 80 else
+  let r := dispatch 55 799 1016 72 (attachmentCommand 77 14 1 1 r)
+  if status r != 12 || load64 attachmentHint r != 0 then 81 else 0
+def reconciliationChecks (t : UInt64) : UInt64 :=
+  let t := zero st 64 (zero attachment 32 (zero calls 4 t))
+  let t := store64 st 77 (store64 (st+24) 7 (store64 (st+112) 11 (store64 (calls+16) 1 t)))
+  let t := store64 attachment 7 (store64 (attachment+8) 77 (store64 (attachment+16) 55
+    (store64 (attachment+24) 1 (store64 (attachment+40) 14 (store64 (attachment+64) 11 t)))))
+  let t := store64 (st+32) 77 (store64 (st+40) 55 (store64 (st+48) 7520
+    (store64 (st+56) 32 (store64 (st+64) 1 (store64 (st+72) 555 t)))))
+  let t := store64 ciphertext 0xaabb (store64 commitment 0xccdd (store64 requestId 0xeeff (store64 remote 0x1122 t)))
+  let r := dispatch 55 799 1005 72 (attachmentCommand 77 13 1 1 t)
+  if status r != 0 || load64 (st+224) r != 1 || load64 attachment r != 3 || load64 (st+24) r != 2 ||
+    load64 calls r != 1 || load64 (calls+8) r != 131 then 68 else
+  if load64 ciphertext r != 0xaabb || load64 commitment r != 0xccdd || load64 requestId r != 0xeeff ||
+    load64 remote r != 0x1122 || load64 (st+32) r != 77 || load64 (st+40) r != 55 ||
+    load64 (st+48) r != 7520 || load64 (st+56) r != 32 || load64 (st+64) r != 1 || load64 (st+72) r != 555 then 69 else
+  let t := store64 attachment 7 (store64 (attachment+64) 9 (store64 (st+24) 7 r))
+  let r := dispatch 55 799 1006 72 t
+  if status r != 0 || load64 (st+224) r != 0 then 70 else
+  let t := store64 attachment 7 (store64 (attachment+64) 1 (store64 (st+24) 7 (store64 (st+224) 1 r)))
+  let r := dispatch 55 799 1007 72 t
+  if status r != 0 || load64 (st+224) r != 0 then 71 else
+  let t := store64 attachment 7 (store64 (attachment+64) 11 (store64 (st+24) 7 (store64 (st+224) 1 r)))
+  let r := dispatch 55 799 1008 72 (attachmentCommand 77 13 1 0 t)
+  if status r != 0 || load64 (st+224) r != 0 then 72 else
+  let t := store64 attachment 7 (store64 (st+24) 7 r)
+  let r := dispatch 55 799 1009 72 (attachmentCommand 77 14 1 1 t)
+  if status r != 12 || load64 attachment r != 7 || load64 (st+224) r != 0 then 73 else
+  let r := dispatch 56 799 1010 72 (attachmentCommand 77 13 1 1 r)
+  if status r != 4 || load64 attachment r != 7 || load64 (st+224) r != 0 then 74 else
+  let r := dispatch 55 799 1011 72 (store64 (calls+16) 0 r)
+  if status r != 1 || load64 attachment r != 7 || load64 (st+224) r != 0 ||
+    load64 ciphertext r != 0xaabb || load64 commitment r != 0xccdd || load64 requestId r != 0xeeff ||
+    load64 remote r != 0x1122 || load64 (st+72) r != 555 || load64 calls r != 7 then 75 else 0
 def hintChecks (t : UInt64) : UInt64 :=
   let t := zero st 64 (zero attachment 32 (zero parked 256 (zero calls 4 t)))
   let t := store64 st 77 (store64 (st+152) 1 (store64 (st+8) 999 (store64 (st+88) 123 t)))
@@ -100,7 +161,22 @@ def hintChecks (t : UInt64) : UInt64 :=
   let t := receiveQuantum (store64 (st+160) 4 (store64 (st+248) 1 t))
   if load64 (st+160) t != 4 || !attachmentWaiting t then 63 else
   let t := receiveQuantum (store64 (st+160) 0 (store64 (st+280) parked (store64 (st+248) 1 t)))
-  if load64 (st+280) t != parked || !attachmentWaiting t then 64 else 0
+  if load64 (st+280) t != parked || !attachmentWaiting t then 64 else
+  let t := zero command 128 (zero calls 4 t)
+  let t := store64 command 464 (store64 (command+16) 3 (store64 (command+56) 1 t))
+  let t := store64 (st+24) 7 (store64 (st+112) 14 (store64 attachment 7 (store64 (attachment+64) 3
+    (store64 (attachmentHint+48) 9 (store64 (st+8) 999 (store64 (st+88) 123 (store64 (calls+16) 1 t)))))))
+  let r := dispatch 55 799 1003 64 t
+  if status r != 1 || load64 (st+8) r != 999 || load64 (st+88) r != 123 || load64 (st+24) r != 7 then 65 else
+  let r := dispatch 55 0x100000000 1004 64 r
+  if r != 64 || status r != 0 || load64 (wire+8) r != 7 || load64 (wire+16) r != 14 ||
+    load64 (wire+24) r != 7 || load64 (wire+32) r != 3 || load64 (wire+40) r != 1 ||
+    load64 (wire+48) r != 9 || load64 (wire+56) r != 1 then 66 else
+  if load64 (st+8) r != 999 || load64 (st+88) r != 123 || load64 attachment r != 7 ||
+    load64 (attachment+64) r != 3 || load64 (st+112) r != 14 || load64 (attachmentHint+48) r != 9 ||
+    load64 calls r != 2 || load64 (calls+8) r != 131 then 67 else
+  let result := reconciliationChecks r
+  if result != 0 then result else reconciliationHintChecks r
 def opaqueReply (h id value t : UInt64) : UInt64 :=
   let t := zero answer 128 t
   let t := store64 (answer+8) h (store64 (answer+16) 112 (store64 (answer+32) 112 t))
@@ -243,6 +319,6 @@ fixtureReturn:
  report=dict(schema=1,result='pass',checks=checks,image_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),image_bytes=binary.stat().st_size,
   boundaries=['native decoder parks and refetches first opaque blob','actual immediate and polled ACK completion clear resident cache','second transfer reuses freed row without stale ciphertext','resident access rechecks random transfer identity','failed fetch including unknown blob stays unavailable until eligible explicit retry','explicit unavailable-fetch retry resumes selected blob only','authorization integrity ACK failures and exhausted retry budget remain failed','foreground Forge admission preserves in-flight work and returns queued phase instead of stale success','exact queued foreground retry preserves its bound and different callers or references conflict','bounded foreground admission failure preserves unrelated admitted RPC tokens','cached exact-ciphertext acceptance rejects a changed contact without replacing its original state'],
   limits='Direct compiled coordinator-transition fixture with opaque reply bytes. A bounded guest trap supplies rejected/current-token syscall131 results and rejects owner endpoint/network admission; it checks native dispatch revalidation and counts attempted foreign calls, not live kernel grant semantics. No real route, mailbox durability or AEAD/session claim. ARM backend, when selected, is emulated.')
- report['boundaries']+=['bounded immutable attachment scheduling hint preserves admitted RPC and Owner tokens','exact repeat does not renew the8192work bound and conflicting caller or reference cannot replace it','new background phase0fetch yields while partial fetch, Owner commit, ACK and selected fetch remain eligible','ACK promotion occurs before the suppression gate','passive hint quantum performs no Owner or Network admission','expiry returns native unavailable on the next exact real request and releases scheduling priority','a distinct valid caller can replace expired intent without a deadcaller blockade','next native460dispatch rechecks131 and owner endpoint before admission; revoked current-token result never executes saved intent','send and receive failure clear passive intent','exact caller and handle cancellation clears only the passive hint while normal cancellation semantics continue','actual partial receive and ACK-poll phases remain eligible while Owner-commit phase remains untouched','selected incoming fetch bypasses the background-only suppression gate']
+ report['boundaries']+=['bounded immutable attachment scheduling hint preserves admitted RPC and Owner tokens','exact repeat does not renew the8192work bound and conflicting caller or reference cannot replace it','new background phase0fetch yields while partial fetch, Owner commit, ACK and selected fetch remain eligible','ACK promotion occurs before the suppression gate','passive hint quantum performs no Owner or Network admission','expiry returns native unavailable on the next exact real request and releases scheduling priority','a distinct valid caller can replace expired intent without a deadcaller blockade','next native460dispatch rechecks131 and owner endpoint before admission; revoked current-token result never executes saved intent','send and receive failure clear passive intent','exact caller and handle cancellation clears only the passive hint while normal cancellation semantics continue','actual partial receive and ACK-poll phases remain eligible while Owner-commit phase remains untouched','selected incoming fetch bypasses the background-only suppression gate','readonly administrator464action3 rejects ordinary rights and exposes only the eight scalar state words while preserving tokens and state','failed attachment reconciliation also reserves bounded receive-free admission; exact retry cannot renew it, drain preserves ciphertext and expiry stays unavailable','explicit missing-receipt reconciliation flag is admitted only for reason11 and keeps exact ciphertext request commitment caps handle and index','integrity or authorization failures and unconfirmed retries force strict fresh0; changedcaller index and rejected current-token checks cannot admit reconciliation']
  (B/'evidence.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2))
 if __name__=='__main__':main()

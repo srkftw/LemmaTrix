@@ -674,6 +674,23 @@ def drawTransfer (t : UInt64) : UInt64 :=
     let t := hex total 6 306 204 accent bg t
     t else if load64 (history (load64 (st+24) t)+640) t != 0 then label 78 14 204 accent t else
     if load64 (transfer+56) t != 0 then label 70 14 204 accent t else t
+def reconciliationPrompt (t : UInt64) : UInt64 :=
+  let t := store64 (labelBuffer+0) 2338617704487019858 t
+  let t := store64 (labelBuffer+8) 2340027304416340328 t
+  let t := store64 (labelBuffer+16) 5917780919097519717 t
+  let t := store64 (labelBuffer+24) 7020303009861432165 t
+  let t := store64 (labelBuffer+32) 7163375912571117689 t
+  let t := store64 (labelBuffer+40) 778400865 t
+  let t := text labelBuffer 44 14 112 accent bg t
+  let t := store64 (labelBuffer+0) 8223637182581337669 t
+  let t := store64 (labelBuffer+8) 8675375872920089445 t
+  let t := store64 (labelBuffer+16) 7166459981132489569 t
+  let t := store64 (labelBuffer+24) 2322277904595037800 t
+  let t := store64 (labelBuffer+32) 7954887601446806891 t
+  let t := store64 (labelBuffer+40) 199303784804 t
+  let t := text labelBuffer 45 14 136 accent bg t
+  hexBytes (contact (load64 (transfer+16) t)+8) 32 16 172 t
+
 def draw (surface t : UInt64) : UInt64 :=
   let t := fill 0 0 640 352 bg t
   let t := fill 0 0 640 36 0x223448 t
@@ -713,6 +730,7 @@ def draw (surface t : UInt64) : UInt64 :=
       let t := label (if load64 (st+184) t == 1 then 61 else 62) 14 174 accent t
       let t := hex (load64 (st+56) t) 2 588 174 accent bg t
       masked (load64 (st+56) t) 16 200 t
+    else if mode == 7 then reconciliationPrompt t
     else if mode == 6 then
       let t := label 78 14 104 accent t
       let t := hexBytes reference 32 16 124 t
@@ -843,6 +861,7 @@ def projectPortal (op h nonce t : UInt64) : UInt64 :=
   let shell := syscall 97 4 0 0 0 t
   syscall 30 shell wire 64 1024 (header op h nonce 0 0 0 0 shell)
 def chooseProject (t : UInt64) : UInt64 :=
+  if load64 transfer t == 10 && load64 (transfer+16) t != load64 (st+24) t then notice 17 t else
   if load64 (st+48) t != 1 || (load64 transfer t > 0 && load64 transfer t < 8) then notice 17 t else
   let t := if load64 transfer t == 10 then t else
     store64 (transfer+32) 0 (store64 (transfer+40) 0 (store64 (transfer+48) 0
@@ -889,7 +908,9 @@ def attachmentCompleted (action length t : UInt64) : UInt64 :=
   else if code == 6 && action >= 460 then
     let t := if action == 460 then store64 transfer 6 t else t
     if load64 (st+16) t == 69 then t else notice 69 t else
-  if code != 0 then notice 73 (store64 transfer 9 (store64 (transfer+120) code t)) else
+  if code != 0 then
+    let reason := if code == 14 && action >= 460 then load64 (wire+24) t else code
+    notice (if reason == 11 then 26 else 73) (store64 transfer 9 (store64 (transfer+120) reason t)) else
   if action == 1 then
     if length != 64 then notice 73 t else
     let t := store64 (st+64) (result t) (store64 (st+232) 1 t)
@@ -1085,10 +1106,23 @@ def turnExportPage (forward t : UInt64) : UInt64 :=
   let pages := if load64 (st+200) t == 672 then 3 else if load64 (st+200) t == 320 then 2 else 1
   let old := load64 (st+216) t%pages
   dirty (store64 (st+216) (if forward == 1 then (old+1)%pages else (old+pages-1)%pages) t)
+def reconciliationPending (t : UInt64) : Bool :=
+  load64 transfer t == 9 && load64 (transfer+120) t == 11 &&
+  load64 (transfer+240) t == 1 && load64 (transfer+8) t != 0
+def confirmReconciliation (t : UInt64) : UInt64 :=
+  if !reconciliationPending t then notice 45 (store64 (st+32) 0 t) else
+  -- Only explicit confirmation permits fresh mailbox admission. The native
+  -- broker retains and checks the identical request and ciphertext.
+  notice 69 (store64 (st+32) 0 (store64 (transfer+224) 1
+    (store64 (transfer+120) 0 (store64 transfer 6 t))))
 def key (code t : UInt64) : UInt64 :=
   let mode := load64 (st+32) t
   if code == 66 then lock t else
   if mode == 5 then unlockKey code t else
+  if mode == 7 then
+    if code == 1 then notice 26 (store64 (st+32) 0 t) else
+    if code == 28 then confirmReconciliation t else t
+  else
   if code == 1 then
     if mode == 6 && load64 (transfer+216) t == 0 then notice 44 (store64 (st+32) 0 t) else
     if load64 (transfer+216) t != 0 then submitTransfer 462 304 64 (header 462 0 0 0 0 0 0 (store64 (st+32) 0 (cancelPending t))) else
@@ -1103,6 +1137,7 @@ def key (code t : UInt64) : UInt64 :=
   if code == 63 then approveContact t else
   if code == 64 then blockContact t else
   if code == 65 then
+    if reconciliationPending t then notice 26 (store64 (st+32) 7 t) else
     if load64 transfer t == 9 && load64 (transfer+240) t == 2 then importProject (store64 (transfer+72) 1 t) else
     if load64 transfer t == 9 && load64 (transfer+8) t != 0 then notice 69 (store64 transfer 6 t) else retry t else
   if code == 67 then unlock t else
@@ -1146,6 +1181,9 @@ def boundedMotion (old value limit : UInt64) : UInt64 :=
 def click (t : UInt64) : UInt64 :=
   let x := load64 (st+120) t
   let y := load64 (st+128) t
+  if load64 (st+32) t == 7 then
+    if y >= 350 && y < 378 && x >= 240 && x < 338 then lock t else t
+  else
   if load64 (st+32) t == 3 && y >= 260 && y < 292 then turnExportPage (if x >= 120 then 1 else 0) t else
   if y >= 250 && y < 274 && load64 (history (load64 (st+24) t)+640) t != 0 then inspectProjectReference t else
   if y >= 250 && y < 274 && load64 (transfer+56) t != 0 then importProject t else

@@ -248,6 +248,14 @@ def queue (caller length t : UInt64) : UInt64 :=
   let t := store64 (st+216) 0 t
   let t := store64 (st+224) (load64 (command+40) t) t
   response 0 h 1 0 (store64 (st+24) 1 t)
+def reconciliationAdmissionAllowed (reason requested : UInt64) : Bool := reason == 11 && requested == 1
+theorem reconciliation_integrity_cannot_fresh (requested : UInt64) :
+    reconciliationAdmissionAllowed 9 requested = false := by rfl
+theorem reconciliation_authorization_cannot_fresh (requested : UInt64) :
+    reconciliationAdmissionAllowed 1 requested = false := by rfl
+theorem reconciliation_without_confirmation_denied (reason : UInt64) :
+    reconciliationAdmissionAllowed reason 0 = false := by simp [reconciliationAdmissionAllowed]
+theorem reconciliation_confirmed_missing_receipt : reconciliationAdmissionAllowed 11 1 = true := by decide
 def queueAttachment (caller length t : UInt64) : UInt64 :=
   let h := load64 (command+8) t
   let index := load64 (command+16) t
@@ -255,17 +263,19 @@ def queueAttachment (caller length t : UInt64) : UInt64 :=
   if length != 72 || load64 (command+64) t > 1 || h == 0 || contact == 0 || contact > 4 || load64 (command+24) t != 1 || load64 st t == 0 then response 2 h 0 0 t else
   if load64 attachment t != 0 && (load64 (attachment+8) t != h || load64 (attachment+16) t != caller || load64 (attachment+24) t != contact) then response 4 h 0 0 t else
   if load64 attachment t == 3 then response 0 h 1 0 t else
-  if load64 attachment t == 7 then
-    if load64 (st+8) t != 0 || load64 (st+88) t != 0 || load64 (st+24) t != 7 then response 6 h 1 0 t else
-    if index != load64 (attachment+40) t-1 then response 12 h 0 0 t else
-    response 0 h 1 0 (store64 attachment 3 (store64 (st+24) 2 (store64 (st+224) 0 (store64 (st+112) 0 t)))) else
-  if load64 attachment t == 4 && index == load64 (attachment+40) t-1 then response 0 h 2 0 t else
-  if load64 attachment t == 2 && index != load64 (attachment+40) t then response 12 h 0 0 t else
+  if load64 attachment t == 7 && index != load64 (attachment+40) t-1 then response 12 h 0 0 t else
   let fresh := load64 (command+64) t
   let same := attachmentHintMatches caller h index contact fresh t
   if attachmentWaiting t && !same then response 4 h 0 0 t else
   if load64 attachmentHint t == 2 && same then response 14 h 0 14 (clearAttachmentHint t) else
   let t := if load64 attachmentHint t == 2 then clearAttachmentHint t else t
+  if load64 attachment t == 7 then
+    if load64 (st+8) t != 0 || load64 (st+88) t != 0 || load64 (st+24) t != 7 then
+      response 6 h 1 0 (deferAttachment caller h index contact fresh t) else
+    let fresh := if reconciliationAdmissionAllowed (load64 (attachment+64) t) (load64 (command+64) t) then 1 else 0
+    response 0 h 1 0 (clearAttachmentHint (store64 attachment 3 (store64 (st+24) 2 (store64 (st+224) fresh (store64 (st+112) 0 t))))) else
+  if load64 attachment t == 4 && index == load64 (attachment+40) t-1 then response 0 h 2 0 t else
+  if load64 attachment t == 2 && index != load64 (attachment+40) t then response 12 h 0 0 t else
   if load64 (st+8) t != 0 || load64 (st+88) t != 0 || (load64 (st+24) t > 0 && load64 (st+24) t <= 6) || load64 (st+24) t == 9 || load64 (st+24) t == 10 then
     response 6 h 1 0 (deferAttachment caller h index contact fresh t) else
   let t := clearAttachmentHint t
@@ -641,6 +651,10 @@ def dispatch (caller rights token length t : UInt64) : UInt64 :=
       64+header 0 (Guest.ForgeRouted.phase t) (load64 (Guest.ForgeRouted.st+24) t)
         (if load64 (st+8) t == 0 then 0 else 1) (if load64 (st+88) t == 0 then 0 else 1)
         (load64 (st+24) t) (load64 (st+160) t) t
+    else if load64 (command+16) t == 3 && length == 64 then
+      64+header 0 (load64 (st+24) t) (load64 (st+112) t)
+        (load64 attachment t) (load64 (attachment+64) t)
+        (load64 attachmentHint t) (load64 (attachmentHint+48) t) t
     else configure token length t
   else
   if op == 460 then if load64 (command+48) t == 3 then queuePreflight caller length t else
