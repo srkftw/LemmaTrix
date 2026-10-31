@@ -44,7 +44,25 @@ def verify(public, body, signature, directory):
 
 def client_call(c, probe, inner):
     raw = c.request(150, struct.pack('<Q', probe)+accept.command(500, data=inner))
-    return accept.fields(raw), raw[64:]
+    queued = accept.fields(raw)
+    assert queued[0] == 0, queued
+    deadline = time.monotonic()+300
+    while time.monotonic() < deadline:
+        try:
+            raw = c.request(150, struct.pack('<Q', probe)+accept.command(504, h=queued[1]))
+        except ValueError as error:
+            # A bounded outer readiness poll may expire while the independent
+            # native signer call continues under its own authorized budget.
+            if 'guest rejected command150' not in str(error):
+                raise
+            time.sleep(.05)
+            continue
+        f = accept.fields(raw)
+        if f[0] == 6:
+            time.sleep(.05)
+            continue
+        return f, raw[64:]
+    raise TimeoutError('native certification job did not complete')
 
 
 def contact_body(device, mailbox):
