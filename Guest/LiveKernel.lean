@@ -2,6 +2,8 @@ import Guest.LiveMemory
 import Guest.Devices
 import Guest.GraphicsDevice
 import Guest.AudioDevice
+import Guest.ServiceBindingPolicy
+import Guest.SignerEntropy
 namespace Guest.Live
 open Guest.LiveMemory
 @[never_extract, extern "lt_idle_pc"] opaque idlePC : UInt64 → UInt64
@@ -37,6 +39,156 @@ partial def encoded (p n t : UInt64) : UInt64 :=
 def live (who t : UInt64) : Bool :=
   let p := who &&& 255
   p > 0 && p < 12 && Guest.load64 (proc p) t > 0 && Guest.load64 (proc p) t < 5 && identity p t == who
+
+-- Registry-v1: four local role records and 32 exact operation grants. These
+-- supervisor-only ranges are disjoint from release descriptors at 0x80b10000.
+-- A registered target is sticky until teardown: revocation cannot reopen the
+-- old generic Launcher/Compositor endpoint bypass.
+def bindingRole (role : UInt64) : UInt64 := 0x80b00000+role*128
+def bindingGrant (index : UInt64) : UInt64 := 0x80b02000+index*128
+def packageRecord (p t : UInt64) : UInt64 :=
+  let installed := Guest.load64 (proc p+112) t
+  if p >= 7 && installed > 0 && installed <= 16 then 0x80b10000+(installed-1)*256 else 0
+
+def packageMatches (p expected t : UInt64) : Bool :=
+  let record := packageRecord p t
+  if p < 7 then
+    Guest.load64 (proc p+24) t == p && Guest.load64 expected t == 0 &&
+      Guest.load64 (expected+8) t == 0 && Guest.load64 (expected+16) t == 0 && Guest.load64 (expected+24) t == 0
+  else record != 0 && Guest.load64 record t == 1 && equal (record+64) expected 32 t
+
+def grantLive (grant t : UInt64) : Bool :=
+  let caller := Guest.load64 (grant+16) t
+  let service := Guest.load64 (grant+24) t
+  let role := Guest.load64 (grant+8) t
+  let target := service &&& 255
+  Guest.load64 grant t == 1 && role > 0 && role <= 4 && live caller t && live service t &&
+    Guest.load64 (bindingRole role) t == service && Guest.load64 (proc target+272) t == role &&
+    packageMatches (caller &&& 255) (grant+96) t && packageMatches target (grant+64) t &&
+    Guest.ServiceBindingPolicy.serviceRightsValid role (Guest.load64 (proc target+16) t)
+
+partial def findGrant (caller service operation index t : UInt64) : UInt64 :=
+  if index == 32 then 0 else
+  let grant := bindingGrant index
+  if Guest.load64 grant t == 1 && Guest.load64 (grant+16) t == caller &&
+      Guest.load64 (grant+24) t == service && Guest.load64 (grant+32) t == operation then grant
+  else findGrant caller service operation (index+1) t
+
+partial def vacantGrant (index t : UInt64) : UInt64 :=
+  if index == 32 then 0 else
+  if Guest.load64 (bindingGrant index) t == 0 then bindingGrant index else vacantGrant (index+1) t
+
+def authorizedGrant (caller service operation generation t : UInt64) : Bool :=
+  let grant := findGrant caller service operation 0 t
+  grant != 0 && grantLive grant t &&
+    Guest.ServiceBindingPolicy.currentGrant caller service operation generation
+      (Guest.load64 (grant+16) t) (Guest.load64 (grant+24) t) (Guest.load64 (grant+32) t) (Guest.load64 (grant+40) t)
+
+partial def cancelGrant (generation p t : UInt64) : UInt64 :=
+  if p == 12 then t else
+  let t := if Guest.load64 (proc p) t == 2 && Guest.load64 (proc p+232) t == generation then
+    let t := Guest.store64 (proc p+40) 0 t
+    let t := Guest.store64 (proc p+232) 0 t
+    let t := Guest.store64 (frame p+80) err t
+    Guest.store64 (proc p) 1 t
+  else t
+  cancelGrant generation (p+1) t
+
+-- Revoked or terminated requests leave holes that receive discards normally;
+-- their queue plaintext is cleared immediately, without reusing reply tokens.
+partial def purgeQueued (principal generation index t : UInt64) : UInt64 :=
+  if index == 96 then t else
+  let slot := queue (index/8)+64+(index%8)*1088
+  let selected := (principal != 0 && Guest.load64 slot t == principal) ||
+    (generation != 0 && Guest.load64 (slot+1056) t == generation)
+  let t := if selected then zero slot 136 t else t
+  purgeQueued principal generation (index+1) t
+
+partial def invalidateBindings (principal role index t : UInt64) : UInt64 :=
+  if index == 32 then t else
+  let grant := bindingGrant index
+  let selected := Guest.load64 grant t == 1 &&
+    ((principal != 0 && (Guest.load64 (grant+16) t == principal || Guest.load64 (grant+24) t == principal)) ||
+     (role != 0 && Guest.load64 (grant+8) t == role))
+  let t := if selected then
+    let t := purgeQueued 0 (Guest.load64 (grant+40) t) 0 t
+    let t := cancelGrant (Guest.load64 (grant+40) t) 1 t
+    zero grant 16 t
+  else t
+  invalidateBindings principal role (index+1) t
+
+partial def invalidateRoles (principal role t : UInt64) : UInt64 :=
+  if role == 5 then t else
+  let t := if Guest.load64 (bindingRole role) t == principal then zero (bindingRole role) 16 t else t
+  invalidateRoles principal (role+1) t
+
+-- Only Launcher can install grants. Both complete process incarnations and
+-- exact admitted release identities are checked and copied into kernel state.
+-- Request128: version, role, service, caller, op, priorGeneration, serviceHash32,
+-- callerHash32, zero16. A zero priorGeneration creates; replacement requires CAS.
+def registerBinding (ptr t : UInt64) : UInt64 :=
+  let version := Guest.load64 ptr t
+  let role := Guest.load64 (ptr+8) t
+  let service := Guest.load64 (ptr+16) t
+  let caller := Guest.load64 (ptr+24) t
+  let operation := Guest.load64 (ptr+32) t
+  let expected := Guest.load64 (ptr+40) t
+  let target := service &&& 255
+  if version != 1 || !Guest.ServiceBindingPolicy.roleValid role ||
+      !Guest.ServiceBindingPolicy.operationValid role operation || !live service t || !live caller t || target < 7 ||
+      Guest.load64 (proc target+96) t != 2 || !packageMatches target (ptr+48) t ||
+      !packageMatches (caller &&& 255) (ptr+80) t ||
+      !Guest.ServiceBindingPolicy.serviceRightsValid role (Guest.load64 (proc target+16) t) ||
+      Guest.load64 (ptr+112) t != 0 || Guest.load64 (ptr+120) t != 0 then err else
+  let existingRole := Guest.load64 (bindingRole role) t
+  let stickyRole := Guest.load64 (proc target+272) t
+  let previous := findGrant caller service operation 0 t
+  if (existingRole != 0 && existingRole != service) || (stickyRole != 0 && stickyRole != role) ||
+      (previous == 0 && expected != 0) ||
+      (previous != 0 && Guest.load64 (previous+40) t != expected) then err else
+  let grant := if previous == 0 then vacantGrant 0 t else previous
+  let generation := Guest.load64 (state+232) t
+  if grant == 0 || generation >= err-1 then err else
+  let t := if previous != 0 then
+    let t := purgeQueued 0 (Guest.load64 (previous+40) t) 0 t
+    cancelGrant (Guest.load64 (previous+40) t) 1 t
+  else t
+  let t := zero grant 16 t
+  let t := Guest.store64 (state+232) (generation+1) t
+  let t := Guest.store64 (bindingRole role) service t
+  let t := Guest.store64 (proc target+272) role t
+  let t := Guest.store64 (grant+8) role t
+  let t := Guest.store64 (grant+16) caller t
+  let t := Guest.store64 (grant+24) service t
+  let t := Guest.store64 (grant+32) operation t
+  let t := Guest.store64 (grant+40) (generation+1) t
+  let t := copy (ptr+48) (grant+64) 64 t
+  let t := Guest.store64 grant 1 t
+  generation+1+t
+
+def revokeBinding (role caller operation generation t : UInt64) : UInt64 :=
+  if !Guest.ServiceBindingPolicy.roleValid role then err else
+  let service := Guest.load64 (bindingRole role) t
+  if service == 0 then err else
+  if caller == 0 && operation == 0 && generation == 0 then
+    zero (bindingRole role) 16 (invalidateBindings 0 role 0 t)
+  else
+    let grant := findGrant caller service operation 0 t
+    if grant == 0 || Guest.load64 (grant+40) t != generation then err else
+    zero grant 16 (purgeQueued 0 generation 0 (cancelGrant generation 1 t))
+
+def boundEndpoint (caller role operation t : UInt64) : UInt64 :=
+  if !Guest.ServiceBindingPolicy.roleValid role then err else
+  let service := Guest.load64 (bindingRole role) t
+  let grant := findGrant caller service operation 0 t
+  if grant != 0 && grantLive grant t then service else err
+
+partial def activeServiceRequest (service token caller t : UInt64) : Bool :=
+  if caller == 12 then false else
+  (Guest.load64 (proc caller) t == 2 && Guest.load64 (proc caller+32) t == service &&
+   Guest.load64 (proc caller+40) t == token &&
+   authorizedGrant (identity caller t) service (Guest.load64 (proc caller+240) t) (Guest.load64 (proc caller+232) t) t) ||
+  activeServiceRequest service token (caller+1) t
 
 def pte (pa flags : UInt64) : UInt64 := (pa >>> 12)*1024+flags
 partial def pages (tab pa count flags t : UInt64) : UInt64 :=
@@ -89,6 +241,9 @@ def clearPrivate (p t : UInt64) : UInt64 :=
 
 def teardown (p why t : UInt64) : UInt64 :=
   let old := identity p t
+  let t := purgeQueued old 0 0 t
+  let t := invalidateBindings old 0 0 t
+  let t := invalidateRoles old 1 t
   let t := Guest.AudioDevice.died old t
   let t := if Guest.load64 (state+216) t == old then Guest.store64 (state+216) 0 t else t
   let t := if Guest.load64 (state+128) t == old then Guest.store64 (state+128) 0 t else t
@@ -100,6 +255,8 @@ def teardown (p why t : UInt64) : UInt64 :=
   let t := if p >= 6 then zero (0x87200000+(p-5)*0x100000) 112640 t else t
   let t := if p == 2 || p == 3 then zero (code p+stackOffset p) 2048 (zero (code p+dataOffset p) 8192 t)
     else zero (code p+262144) 18432 t
+  let t := zero (proc p+232) 6 t
+  let t := zero (0x80d10000+p*1024) 128 t
   zero (frame p) 34 t
 
 def start (p source len rights entry service t : UInt64) : UInt64 :=
@@ -203,6 +360,12 @@ def rpcBudget (caller target endpoint ptr len t : UInt64) : UInt64 :=
       Guest.load64 (physical caller ptr+56) t == 1 then 30000
   else if target == 6 && operation == 12 && len == 320 &&
       (Guest.load64 (physical caller ptr+56) t &&& 255) == 2 then 30000
+  else if Guest.load64 (bindingRole 1) t == endpoint && endpoint == identity target t &&
+      Guest.load64 (proc target+272) t == 1 &&
+      ((operation == 400 && len == 128) || (operation == 401 && len == 64) ||
+       (operation == 402 && (len == 192 || len == 320))) &&
+      Guest.load64 (physical caller ptr+56) t == 1 &&
+      authorizedGrant (identity caller t) endpoint operation (Guest.load64 (proc caller+232) t) t then 30000
   else if target == 3 || endpoint == Guest.load64 (state+200) t then 30000
   else 5000
 
@@ -210,6 +373,11 @@ def call (p endpoint ptr len capacity t : UInt64) : UInt64 :=
   let target := endpoint &&& 255
   if target == 0 || target >= 12 || target == p || !validFor p ptr len 1024 t || capacity > 1024 || !validFor p ptr capacity 1024 t then err else
     let operation := if len >= 64 then Guest.load64 (physical p ptr) t else err
+    let generic := Guest.load64 (proc target+272) t != 0
+    let grant := if generic then findGrant (identity p t) endpoint operation 0 t else 0
+    let generation := if grant != 0 then Guest.load64 (grant+40) t else 0
+    let genericAllowed := generic && endpoint == identity target t && len >= 64 &&
+      authorizedGrant (identity p t) endpoint operation generation t
     let contentCall := target == 5 && (endpoint == 5 || endpoint == identity 5 t) &&
       ((operation >= 300 && operation <= 316) || operation == 318) && (Guest.load64 (proc p+16) t &&& 127) != 0
     -- Trusted compositor progress never calls back through a Launcher that
@@ -234,7 +402,8 @@ def call (p endpoint ptr len capacity t : UInt64) : UInt64 :=
     let contentProgress := p == 4 && Guest.load64 (proc p+24) t == 4 && target == 3 &&
       (endpoint == 3 || endpoint == identity 3 t) && len == 64 && operation == 247 &&
       Guest.load64 (physical p ptr+16) t == 3 && Guest.load64 (physical p ptr+56) t == 1
-    if !live (identity target t) t || (!contentCall && !contentProgress && !retainedRead && !retainedAttach && !retainedSelection && !serviceProgress && !allowedEndpoint p target endpoint t) then err else
+    if !live (identity target t) t || (if generic then !genericAllowed else
+      !contentCall && !contentProgress && !retainedRead && !retainedAttach && !retainedSelection && !serviceProgress && !allowedEndpoint p target endpoint t) then err else
       let t := if Guest.load64 (proc target) t == 4 then
         let t := Guest.store64 (frame target+80) 0 t
         Guest.store64 (proc target) 1 t else t
@@ -245,6 +414,8 @@ def call (p endpoint ptr len capacity t : UInt64) : UInt64 :=
         let t := Guest.store64 (state+8) serial t
         let t := Guest.store64 (proc p+32) (identity target t) t
         let t := Guest.store64 (proc p+40) serial t
+        let t := Guest.store64 (proc p+232) generation t
+        let t := Guest.store64 (proc p+240) operation t
         let t := Guest.store64 (proc p+120) (Guest.load64 (state+16) t+rpcBudget p target endpoint ptr len t) t
         let t := Guest.store64 (proc p+48) ptr t
         let t := Guest.store64 (proc p+56) capacity t
@@ -266,6 +437,7 @@ def call (p endpoint ptr len capacity t : UInt64) : UInt64 :=
           let t := Guest.store64 (slot+8) serial t
           let t := Guest.store64 (slot+16) (callerRights p t) t
           let t := Guest.store64 (slot+24) len t
+          let t := Guest.store64 (slot+1056) generation t
           let t := copy (physical p ptr) (slot+32) len t
           let t := Guest.store64 (q+8) (tail+1) t
           Guest.store64 (q+16) (count+1) t
@@ -287,7 +459,10 @@ partial def receive (p ptr capacity fuel t : UInt64) : UInt64 :=
       let len := Guest.load64 (slot+24) t
       let t := Guest.store64 q (head+1) t
       let t := Guest.store64 (q+16) (count-1) t
-      if !live caller t || Guest.load64 (proc callerPID) t != 2 || Guest.load64 (proc callerPID+40) t != token || Guest.load64 (proc callerPID+32) t != identity p t then receive p ptr capacity (fuel-1) (zero slot 136 t)
+      let generation := Guest.load64 (slot+1056) t
+      let genericInvalid := Guest.load64 (proc p+272) t != 0 &&
+        !authorizedGrant caller (identity p t) (Guest.load64 (slot+32) t) generation t
+      if !live caller t || Guest.load64 (proc callerPID) t != 2 || Guest.load64 (proc callerPID+40) t != token || Guest.load64 (proc callerPID+32) t != identity p t || genericInvalid then receive p ptr capacity (fuel-1) (zero slot 136 t)
       else if len+32 > capacity then
         let t := Guest.store64 (proc callerPID) 1 t
         let t := Guest.store64 (frame callerPID+80) err t
@@ -555,6 +730,33 @@ def dispatch (p op h ptr n v t : UInt64) : UInt64 :=
       let result := Devices.streamInit t
       if result == err then err else Devices.streamStatus result
     else err
+  else if op == 127 then
+    if p != 1 || n != 128 || !valid ptr n 128 then err else registerBinding (physical p ptr) t
+  else if op == 128 then boundEndpoint (identity p t) h ptr t
+  else if op == 129 then
+    if p != 1 then err else revokeBinding h ptr n v t
+  else if op == 130 then
+    -- The signer can request only a seed-sized entropy sample in its private
+    -- arena. No stream/device authority or application RNG right is granted.
+    if Guest.load64 (bindingRole 1) t != identity p t || Guest.load64 (proc p+272) t != 1 ||
+        Guest.load64 (proc p+16) t != 0 || n != 32 || h != 0 || v != 0 ||
+        ptr < 0x600000 || ptr > 0x7fffe0 || ptr % 8 != 0 then err else
+    let t := zero (physical p ptr) 4 t
+    let t := zero Devices.randomBuffer 32 t
+    let result := Devices.random Devices.randomBuffer 32 t
+    let t := if result == 0 then Guest.SignerEntropy.copy32 Devices.randomBuffer (physical p ptr) result else result
+    let t := zero Devices.randomBuffer 32 t
+    if result == 0 then t else err
+  else if op == 131 then
+    if Guest.load64 (proc p+272) t == 0 || h == 0 ||
+        !activeServiceRequest (identity p t) h 1 t then err else t
+  else if op == 132 then
+    -- A scoped signer permit must follow the current IPC402 grant generation.
+    -- Revoking and rebinding the same live recipient cannot revive old consent.
+    if Guest.load64 (bindingRole 1) t != identity p t || Guest.load64 (proc p+272) t != 1 ||
+        Guest.load64 (proc p+16) t != 0 || ptr != 402 || n != 0 || v != 0 || !live h t then err else
+    let grant := findGrant h (identity p t) 402 0 t
+    if grant != 0 && grantLive grant t then Guest.load64 (grant+40) t else err
   else if op == 116 then Guest.load64 (state+16) t
   else if op == 117 then
     let now := Guest.load64 (state+16) t
@@ -652,6 +854,7 @@ partial def bootServices (p t : UInt64) : UInt64 :=
 def kernelMain (initial : UInt64) : UInt64 :=
   let t := zero state 16384 initial
   let t := zero 0x80100000 24576 t
+  let t := zero 0x80b00000 2560 t
   let t := zero 0x80b10000 512 t
   let t := zero 0x80c00000 24576 t
   let t := zero rx 2048 t

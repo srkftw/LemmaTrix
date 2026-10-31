@@ -12,7 +12,7 @@ def configure (n t : UInt64) : UInt64 :=
   let token := load64 (incoming+8) t
   let ci := load64 (command+8) t
   let slot := load64 (command+16) t
-  if (load64 incoming t &&& 255) != 1 || n != 160 || ci >= 8 || slot >= 16 then
+  if (load64 incoming t &&& 255) != 1 || n != 160 || ci >= 8 || !Guest.ServiceSDK.validHandle slot then
     reply token 64 (header 2 0 0 0 0 0 0 t) else
   let r := Guest.ServiceSDK.inspect slot t
   let policy := Guest.LibraryCollections.record ci

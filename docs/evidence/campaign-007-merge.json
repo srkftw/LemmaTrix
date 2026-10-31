@@ -1,0 +1,582 @@
+{
+  "schema": 1,
+  "recorded_utc": "2026-10-31T07:49:30.285959+00:00",
+  "scope": "Merge qualification of native identity and reusable service foundations; Campaign007 connected Messenger acceptance remains incomplete",
+  "base_commit": "f22a7d9aea0ee3e51a198051f4975d82837c17fa",
+  "clean_build_source_commit": "a783482f27cd0b647520987f4bd90d86403a57b7",
+  "merge_review_source_commit": "71219b4c10fbc4623681c245ee98ca240493877f",
+  "clean_build": {
+    "command": "./lt build --clean",
+    "result": "passed",
+    "log_sha256": "22c191e546c403cd7c01c28043dbd4e79d4d96247afe8e182b1b41138fa72ad1",
+    "guest_sha256": "860be9eb7f63311b8a3b9976a2305263c4f485eb1397f6548d7dc23fbb5e9b76",
+    "guest_bytes": 6291456,
+    "guest_code_unchanged_since": "4054f6876d659b93ac7d17e6ab3d2c818ee257a2"
+  },
+  "layout": {
+    "image": "860be9eb7f63311b8a3b9976a2305263c4f485eb1397f6548d7dc23fbb5e9b76",
+    "result": "passed",
+    "image_bytes": 6291456,
+    "services": [
+      {
+        "slot": 1,
+        "image_offset": 3145728,
+        "length": 168180,
+        "limit": 262144,
+        "descriptor": 2,
+        "sha256": "839a858e32e2f9ed0627c7736092d12e3f11e9eab5478a00689ce3dfad480139"
+      },
+      {
+        "slot": 2,
+        "image_offset": 4718592,
+        "length": 300880,
+        "limit": 393216,
+        "descriptor": 2,
+        "sha256": "7559360b221ab33c8d46005bc248e435ce7110f9f4f8ce7815c99390b81b2c85"
+      },
+      {
+        "slot": 3,
+        "image_offset": 5242880,
+        "length": 390644,
+        "limit": 393216,
+        "descriptor": 2,
+        "sha256": "0b09adaf5af94eb30466bb40f6ad83bd573dab0defd27cb19dbb5957c74ee499"
+      },
+      {
+        "slot": 4,
+        "image_offset": 3932160,
+        "length": 254940,
+        "limit": 262144,
+        "descriptor": 2,
+        "sha256": "0f4e54c2fffb24dbc9ec98c5d133ab3a037092d9d63b2f63a94d044bd9fec843"
+      },
+      {
+        "slot": 5,
+        "image_offset": 4194304,
+        "length": 238400,
+        "limit": 262144,
+        "descriptor": 2,
+        "sha256": "cbaad903e1177c26b4f7080195b48e4b729df2e44bff7bdfc479f7aba3606b8e"
+      },
+      {
+        "slot": 6,
+        "image_offset": 4456448,
+        "length": 139064,
+        "limit": 262144,
+        "descriptor": 2,
+        "sha256": "a7af227fcbbac07a673fc2778adaff954a64d09134109445e6ff56c230d950a6"
+      }
+    ],
+    "audio_profile": 2,
+    "network_profile": 2,
+    "supervisor_dma_regions": [
+      {
+        "start": 2162294784,
+        "end_exclusive": 2162311168,
+        "purpose": "network data rings"
+      },
+      {
+        "start": 2162311168,
+        "end_exclusive": 2162313216,
+        "purpose": "network data buffers"
+      },
+      {
+        "start": 2162319360,
+        "end_exclusive": 2162319616,
+        "purpose": "audio owner/control state"
+      },
+      {
+        "start": 2162327552,
+        "end_exclusive": 2162335744,
+        "purpose": "audio output ring"
+      },
+      {
+        "start": 2162335744,
+        "end_exclusive": 2162336768,
+        "purpose": "audio samples"
+      },
+      {
+        "start": 2162343936,
+        "end_exclusive": 2162360320,
+        "purpose": "audio control rings"
+      },
+      {
+        "start": 2162360320,
+        "end_exclusive": 2162361352,
+        "purpose": "audio control buffers"
+      },
+      {
+        "start": 2162364416,
+        "end_exclusive": 2162364496,
+        "purpose": "network control state"
+      },
+      {
+        "start": 2162368512,
+        "end_exclusive": 2162384896,
+        "purpose": "network control rings"
+      },
+      {
+        "start": 2162384896,
+        "end_exclusive": 2162385928,
+        "purpose": "network control buffers"
+      }
+    ],
+    "objects_physical": {
+      "code": [
+        2165309440,
+        2165702656
+      ],
+      "data": [
+        2165702656,
+        2165768192
+      ],
+      "stack": [
+        2165768192,
+        2165784576
+      ],
+      "next_service_code": 2165833728
+    },
+    "vault_physical": {
+      "code": [
+        2165833728,
+        2166226944
+      ],
+      "data": [
+        2166226944,
+        2166292480
+      ],
+      "stack": [
+        2166292480,
+        2166308864
+      ],
+      "next_service_code": 2166358016
+    },
+    "ordinary_signed_application_code_limit": 262144,
+    "process_slots": 12,
+    "ram_bytes": 167772160,
+    "assumptions": "static ranges correspond to the documented kernel functions; actual boot/IPC/restart tested separately"
+  },
+  "identity_command": "python3 tests/native_identity.py --backend all --timeout 600 --output build/campaign007/merge/native-identity",
+  "identity_runner_sha256": "f8b87379e6cdeab72333b72ff8d1406c7af5d77e44ed9e086580e63ea499e3a9",
+  "identity_log_sha256": "374a9aaa1de384b2f3f1e73a9fc12bda20096b4859425787fa23bbf73ffe3015",
+  "identity_result": "passed:16 checks on each of QEMU, x86-64 assembly and AArch64 assembly under qemu-aarch64",
+  "identity_matrix": {
+    "image_sha256": "860be9eb7f63311b8a3b9976a2305263c4f485eb1397f6548d7dc23fbb5e9b76",
+    "signer_sha256": "a2088598f1c1975b68cf4c96ef607f9005d6753ffe753d7b36770da0e43865ae",
+    "signer_release": "160daade5785f62deae19fa1b460d792f5c6788f736a74fc4f745983f7655282",
+    "results": [
+      {
+        "backend": "qemu",
+        "checks": [
+          {
+            "check": "failed duplicate provisioning reclaims its process and preserves the current signer",
+            "result": "passed"
+          },
+          {
+            "check": "native fresh identity and independently verified canonical public descriptor",
+            "result": "passed",
+            "seconds": 4.127057239180431,
+            "key": 14442955734809313542,
+            "public_key": "6863d992a9b9a87acb1324b45270fe72a7125ef50685e5c94a20c82d8ff84a66",
+            "fingerprint": "8cc3f31b81b427ed83b9fc6f5aaa945ce25dc980744876562ebe3274e6a9c2c8"
+          },
+          {
+            "check": "separate node and Messenger identity keys are independently generated",
+            "result": "passed"
+          },
+          {
+            "check": "operation binding does not give an ordinary application identity-creation authority",
+            "result": "passed"
+          },
+          {
+            "check": "public export binding cannot enumerate or link separate scoped keys",
+            "result": "passed"
+          },
+          {
+            "check": "unregistered caller denied signer entropy and Network raw entropy",
+            "result": "passed"
+          },
+          {
+            "check": "one-use certificate authority binds exact caller, purpose, federation, scope and canonical body",
+            "result": "passed"
+          },
+          {
+            "check": "node signing scope cannot certify Messenger contact material",
+            "result": "passed"
+          },
+          {
+            "check": "cancelled one-use approvals reclaim capacity through more than16 operations",
+            "result": "passed"
+          },
+          {
+            "check": "fresh IPC binding cannot revive an approval issued under a revoked generation",
+            "result": "passed"
+          },
+          {
+            "check": "native typed numeric-endpoint service declaration signature verified independently",
+            "result": "passed"
+          },
+          {
+            "check": "key revocation wipes selected key and leaves unrelated scoped identity usable",
+            "result": "passed"
+          },
+          {
+            "check": "binding revocation denies discovery and guessed direct endpoint access",
+            "result": "passed"
+          },
+          {
+            "check": "lock and service termination invalidate old keys and live bindings",
+            "result": "passed"
+          },
+          {
+            "check": "existing Objects flow remains usable after isolated signer teardown",
+            "result": "passed"
+          },
+          {
+            "check": "independent new guest owns a new key and cannot recover unretained old authority",
+            "result": "passed"
+          }
+        ],
+        "public": {
+          "role": 2,
+          "generation": 1,
+          "federation": "8cd62b5b6322de7dd6a3fd38b1b7833812edb28a531234abf2d557235b64a562",
+          "scope": "f5fd2bc44bf6e2f2240c087b34cb2b67fa5f87f38dbb7ee2b68ffff4af8f83f6",
+          "public_key": "6863d992a9b9a87acb1324b45270fe72a7125ef50685e5c94a20c82d8ff84a66",
+          "fingerprint": "8cc3f31b81b427ed83b9fc6f5aaa945ce25dc980744876562ebe3274e6a9c2c8",
+          "signature": "37731277f4e7b4547424025a18a4c76ab196a250708ed9bbabd05c6c2d91fa6171a0970f535f93beb926dd8d0cb7427d8b96908da602451beb35c1e8828e2605",
+          "retention": "ephemeral",
+          "validity": "explicit revocation; no reboot-relative expiry",
+          "person_identity": "not established by this self-signed descriptor"
+        },
+        "portal_timeout_seconds": 600.0,
+        "limits": {
+          "identity_keys": 8,
+          "one_use_approvals": 16,
+          "private_arena_bytes": 2097152
+        }
+      },
+      {
+        "backend": "x86_64",
+        "checks": [
+          {
+            "check": "failed duplicate provisioning reclaims its process and preserves the current signer",
+            "result": "passed"
+          },
+          {
+            "check": "native fresh identity and independently verified canonical public descriptor",
+            "result": "passed",
+            "seconds": 34.02851413493045,
+            "key": 2224605888948207878,
+            "public_key": "efa75019b5dabc7ed1e2376a64caa259eb6f74a4058607ec9ea63befa07cd3e3",
+            "fingerprint": "9d1a0fddf999a09ea53951782440e2fbb2e607d4270a2ee4d23834aa41ffe662"
+          },
+          {
+            "check": "separate node and Messenger identity keys are independently generated",
+            "result": "passed"
+          },
+          {
+            "check": "operation binding does not give an ordinary application identity-creation authority",
+            "result": "passed"
+          },
+          {
+            "check": "public export binding cannot enumerate or link separate scoped keys",
+            "result": "passed"
+          },
+          {
+            "check": "unregistered caller denied signer entropy and Network raw entropy",
+            "result": "passed"
+          },
+          {
+            "check": "one-use certificate authority binds exact caller, purpose, federation, scope and canonical body",
+            "result": "passed"
+          },
+          {
+            "check": "node signing scope cannot certify Messenger contact material",
+            "result": "passed"
+          },
+          {
+            "check": "cancelled one-use approvals reclaim capacity through more than16 operations",
+            "result": "passed"
+          },
+          {
+            "check": "fresh IPC binding cannot revive an approval issued under a revoked generation",
+            "result": "passed"
+          },
+          {
+            "check": "native typed numeric-endpoint service declaration signature verified independently",
+            "result": "passed"
+          },
+          {
+            "check": "key revocation wipes selected key and leaves unrelated scoped identity usable",
+            "result": "passed"
+          },
+          {
+            "check": "binding revocation denies discovery and guessed direct endpoint access",
+            "result": "passed"
+          },
+          {
+            "check": "lock and service termination invalidate old keys and live bindings",
+            "result": "passed"
+          },
+          {
+            "check": "existing Objects flow remains usable after isolated signer teardown",
+            "result": "passed"
+          },
+          {
+            "check": "independent new guest owns a new key and cannot recover unretained old authority",
+            "result": "passed"
+          }
+        ],
+        "public": {
+          "role": 2,
+          "generation": 1,
+          "federation": "8cd62b5b6322de7dd6a3fd38b1b7833812edb28a531234abf2d557235b64a562",
+          "scope": "f5fd2bc44bf6e2f2240c087b34cb2b67fa5f87f38dbb7ee2b68ffff4af8f83f6",
+          "public_key": "efa75019b5dabc7ed1e2376a64caa259eb6f74a4058607ec9ea63befa07cd3e3",
+          "fingerprint": "9d1a0fddf999a09ea53951782440e2fbb2e607d4270a2ee4d23834aa41ffe662",
+          "signature": "2c25e9533bcbe0d10fb1c7f0f41e4d6e1fc647a242ad00fa327d507a681e4d6c30a8e0b132af073e8c8657e6e81327fe7c6585673d9c996ebdc40412261b850c",
+          "retention": "ephemeral",
+          "validity": "explicit revocation; no reboot-relative expiry",
+          "person_identity": "not established by this self-signed descriptor"
+        },
+        "portal_timeout_seconds": 600.0,
+        "limits": {
+          "identity_keys": 8,
+          "one_use_approvals": 16,
+          "private_arena_bytes": 2097152
+        }
+      },
+      {
+        "backend": "aarch64",
+        "checks": [
+          {
+            "check": "failed duplicate provisioning reclaims its process and preserves the current signer",
+            "result": "passed"
+          },
+          {
+            "check": "native fresh identity and independently verified canonical public descriptor",
+            "result": "passed",
+            "seconds": 149.11583218583837,
+            "key": 8554110922619093254,
+            "public_key": "3146515d368ecc895c8678e8edc9eafc3c50abe9dcb010bd2c82bda0ec197384",
+            "fingerprint": "7011afb89b4513b7fa3a1f4361372bb777a0b45e66562beee5b085c5d63764b2"
+          },
+          {
+            "check": "separate node and Messenger identity keys are independently generated",
+            "result": "passed"
+          },
+          {
+            "check": "operation binding does not give an ordinary application identity-creation authority",
+            "result": "passed"
+          },
+          {
+            "check": "public export binding cannot enumerate or link separate scoped keys",
+            "result": "passed"
+          },
+          {
+            "check": "unregistered caller denied signer entropy and Network raw entropy",
+            "result": "passed"
+          },
+          {
+            "check": "one-use certificate authority binds exact caller, purpose, federation, scope and canonical body",
+            "result": "passed"
+          },
+          {
+            "check": "node signing scope cannot certify Messenger contact material",
+            "result": "passed"
+          },
+          {
+            "check": "cancelled one-use approvals reclaim capacity through more than16 operations",
+            "result": "passed"
+          },
+          {
+            "check": "fresh IPC binding cannot revive an approval issued under a revoked generation",
+            "result": "passed"
+          },
+          {
+            "check": "native typed numeric-endpoint service declaration signature verified independently",
+            "result": "passed"
+          },
+          {
+            "check": "key revocation wipes selected key and leaves unrelated scoped identity usable",
+            "result": "passed"
+          },
+          {
+            "check": "binding revocation denies discovery and guessed direct endpoint access",
+            "result": "passed"
+          },
+          {
+            "check": "lock and service termination invalidate old keys and live bindings",
+            "result": "passed"
+          },
+          {
+            "check": "existing Objects flow remains usable after isolated signer teardown",
+            "result": "passed"
+          },
+          {
+            "check": "independent new guest owns a new key and cannot recover unretained old authority",
+            "result": "passed"
+          }
+        ],
+        "public": {
+          "role": 2,
+          "generation": 1,
+          "federation": "8cd62b5b6322de7dd6a3fd38b1b7833812edb28a531234abf2d557235b64a562",
+          "scope": "f5fd2bc44bf6e2f2240c087b34cb2b67fa5f87f38dbb7ee2b68ffff4af8f83f6",
+          "public_key": "3146515d368ecc895c8678e8edc9eafc3c50abe9dcb010bd2c82bda0ec197384",
+          "fingerprint": "7011afb89b4513b7fa3a1f4361372bb777a0b45e66562beee5b085c5d63764b2",
+          "signature": "61d1aa4b03bc78e0c584bbeaaaae2e795f7d8b5fc33c5cd13dc2792868ead2b6ab04c31ba49389d8261a9325988238538885405c4a506a670fda756b043ffd05",
+          "retention": "ephemeral",
+          "validity": "explicit revocation; no reboot-relative expiry",
+          "person_identity": "not established by this self-signed descriptor"
+        },
+        "portal_timeout_seconds": 600.0,
+        "limits": {
+          "identity_keys": 8,
+          "one_use_approvals": 16,
+          "private_arena_bytes": 2097152
+        }
+      }
+    ],
+    "unsupported": [
+      "Messenger application",
+      "mode1 circuits",
+      "mailbox",
+      "durable personal keys",
+      "X3DH",
+      "Double Ratchet"
+    ]
+  },
+  "prior_failure_record": "campaign-007-final.json retains the original180-second ARM timeout and separately identified focused repeat; this is a newly executed complete600-second matrix",
+  "emitted_code_review": {
+    "reviewed_revision": "b22cf5b",
+    "hashes": {
+      "build/live/kernel.S": "ba947c68d39d492a203e634da632e89634b765f01cea9d33525c0d1416a7ed57",
+      "build/live/apps/identity.S": "ea1ecafa1bc56d3de48afe13e1dce8a0c54a25cc26b1e0846c818e8bc48cb096",
+      "build/live/apps/identity.bin": "a2088598f1c1975b68cf4c96ef607f9005d6753ffe753d7b36770da0e43865ae",
+      "build/live/guest.bin": "860be9eb7f63311b8a3b9976a2305263c4f485eb1397f6548d7dc23fbb5e9b76",
+      "Compiler/Main.lean": "59743761e7672b4b3bd77e28f30c2b573d38a24a657caad96dcd1081a78897dd",
+      "Guest/Ed25519.lean": "550eb53400df153c4fad3ccf5aab89f6423cc5c3348939b1dd1aa619c7d6c834",
+      "Guest/SHA512.lean": "f7f7aa1fd7e6ce19df52d29521eea642c945d36c53aa915d72020549ca6b9cb0",
+      "Guest/SignerEntropy.lean": "ca12053787a0a47b9304d86011e7ff08915f1674dc4acba4b4d3010097f1a88c",
+      "Guest/Identity.lean": "27209cb006c76de50d35053961bf4e92d4d94bfd62677a04f4031802642a8bde"
+    },
+    "installed_signer_assembly": {
+      "sensitive_functions": 60,
+      "sensitive_return_paths": 164,
+      "fixed_frame_and_argument_temporary_register_erasure": "present on every emitted return",
+      "reviewed_routines": {
+        "Guest_Ed25519_scalarLoop": {
+          "sha256": "885e267bfe4aee843ccc458f26305bad605e025a6c55687331d699bb2110a13e",
+          "conditional_branches": 3
+        },
+        "Guest_Ed25519_pointSwap": {
+          "sha256": "f2e6b22425df0c6e8aa9fcaadea3679b3c8161df30c005ec14d962a0345e54e5",
+          "conditional_branches": 3
+        },
+        "Guest_Ed25519_reduceBits": {
+          "sha256": "2cddf7d23e3893e83c479950e52818fa500a85084ec55400668a1fd45aa0a1e2",
+          "conditional_branches": 3
+        },
+        "Guest_Ed25519_reduceSelect": {
+          "sha256": "a80eeb9c04af714516f583099c6da489587c207a9c6b23dc6c00958a57da2362",
+          "conditional_branches": 3
+        },
+        "Guest_Ed25519_reduceSubtract": {
+          "sha256": "41b3d91d83b2964900550e0916df47d34c5d3276252c5437f789a00fba0ca27c",
+          "conditional_branches": 3
+        },
+        "Guest_Ed25519_reduceShift": {
+          "sha256": "9d4bf41f8871fef9c0c5bfb8d7ede4342b7ec650c378b546a0cf6cc9d914ed0d",
+          "conditional_branches": 3
+        },
+        "Guest_Ed25519_multiplyInner": {
+          "sha256": "4bac973d4d4e77f1ff8b1c8c85f60759ffe2b0dc776f035a3ec4c900bacd2152",
+          "conditional_branches": 3
+        },
+        "Guest_Ed25519_carryWide": {
+          "sha256": "4f10eb98ae2967caa0330f16a008acbfdd6b4c389d38ac0c7f31c3ab478fa889",
+          "conditional_branches": 3
+        },
+        "Guest_Noise25519_multiplyInner": {
+          "sha256": "260660b12b9b868c068f282cbb6f8f4e22c9bd89d30ef10d9c48f0b04b164baf",
+          "conditional_branches": 3
+        },
+        "Guest_SHA512_rounds": {
+          "sha256": "6aca30bbd54a1a9fedc65fb8ebd5e212173b9542deee6baebb95eb4a01d78402",
+          "conditional_branches": 3
+        }
+      },
+      "manual_control_flow_review": "Scalar-bit selection and reduction use masks. Core loop exits use public counters; addresses use fixed scratch, public pointers and public indices. SHA padding uses public length/offset and constants use public round indices.",
+      "limits": "No dynamic taint proof, compiler correctness proof, microarchitectural constant-time proof or independent audit. Live result a0 and protected in-progress kernel contexts remain necessary; whole-process termination cleanup belongs to the kernel."
+    },
+    "kernel_seed_helper": {
+      "function_sha256": "72071c0fd3643e98be97ec378b61b4454a225747d1cf7a7eb98750971082bff3",
+      "loads": 4,
+      "stores": 4,
+      "frame_bytes": 176,
+      "explicit_cleanup": "present; RA restored before wipe; a0 preserved; a1..a7 and t0..t6 cleared"
+    },
+    "maximum_static_user_stack_frames": {
+      "Guest_Ed25519_sign": [
+        3472,
+        [
+          "Guest_Ed25519_sign",
+          "Guest_Ed25519_expand",
+          "Guest_SHA512_sha512At",
+          "Guest_SHA512_blocks",
+          "Guest_SHA512_rounds",
+          "Guest_SHA512_k"
+        ]
+      ],
+      "Guest_Ed25519_publicKey": [
+        3216,
+        [
+          "Guest_Ed25519_publicKey",
+          "Guest_Ed25519_expand",
+          "Guest_SHA512_sha512At",
+          "Guest_SHA512_blocks",
+          "Guest_SHA512_rounds",
+          "Guest_SHA512_k"
+        ]
+      ],
+      "Guest_Identity_main": [
+        6080,
+        [
+          "Guest_Identity_main",
+          "Guest_Identity_serve",
+          "Guest_Identity_dispatch",
+          "Guest_Identity_create",
+          "Guest_Identity_exportKey",
+          "Guest_Identity_descriptor",
+          "Guest_Ed25519_sign",
+          "Guest_Ed25519_expand",
+          "Guest_SHA512_sha512At",
+          "Guest_SHA512_blocks",
+          "Guest_SHA512_rounds",
+          "Guest_SHA512_k"
+        ]
+      ]
+    },
+    "conclusion": "No new merge-blocking defect found in the scoped foundation review; no constant-time or independent cryptographic-audit claim."
+  },
+  "journal_review": "campaign-007-service-jobs-merge-review.json",
+  "other_checks": [
+    "Python compilation of changed tools/tests",
+    "UTF-8 HTML, local document references and JSON decoding",
+    "git diff --check against origin/main"
+  ],
+  "limitations": [
+    "All checks use one host; AArch64 evidence is emulated ARM",
+    "Static emitted-code review is not a constant-time proof, compiler correctness proof or independent audit",
+    "No new circuit, mailbox, message, attachment, retained Messenger or routed Forge acceptance was executed"
+  ],
+  "remaining_implementation": [
+    "Complete authenticated public enrollment and three-relay mode1 circuit state/channel profile",
+    "Native XEdDSA, classical X3DH and Double Ratchet session lifecycle",
+    "Durable ciphertext mailbox and native acceptance receipts",
+    "Messenger-domain atomic retention/recovery and backup invalidation",
+    "Native Messenger application and routed Forge connected journey A-G"
+  ]
+}

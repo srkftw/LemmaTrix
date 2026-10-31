@@ -367,7 +367,7 @@ partial def pumpArtifacts (i t : UInt64) : UInt64 :=
   if i == 4 then t else pumpArtifacts (i+1) (artifactQuantum (job i) t)
 
 def durableBind (j slot t : UInt64) : UInt64 :=
-  if slot >= 16 || load64 j t != 1 then fail 1 t else
+  if !Guest.ServiceSDK.validHandle slot || load64 j t != 1 then fail 1 t else
   if load64 (j+1008) t != 0 then fail (if load64 (j+1008) t == slot+1 then 6 else 2) t else
     let r := Guest.ServiceSDK.inspect slot t
     if r != 576 || status r != 0 || !Guest.ProjectGraph.equal (wire+192) (j+64) 32 r ||
@@ -397,7 +397,7 @@ def verifyReceiptSignature (message signature publicKey t : UInt64) : UInt64 :=
   let t := copy 0x62e000 0x602000 4096 t
   Guest.Effects.effectValue (load64 0x62d000 t) t
 def attachServiceReceipt (slot length t : UInt64) : UInt64 :=
-  if slot >= 16 || length != 576 then fail 2 t else
+  if !Guest.ServiceSDK.validHandle slot || length != 576 then fail 2 t else
   let t := copy (command+64) 0x62b000 512 t
   let r := Guest.ServiceSDK.callService 64 (header 297 slot 0 0 0 0 0 t)
   if r != 320 || status r != 0 then fail 1 r else
@@ -409,7 +409,7 @@ def attachServiceReceipt (slot length t : UInt64) : UInt64 :=
     let t := header 295 slot 0 0 0 0 0 verified
     Guest.ServiceSDK.callService 576 (copy 0x62b000 (wire+64) 512 t)
 def readServiceReceipt (slot t : UInt64) : UInt64 :=
-  if slot >= 16 then fail 2 t else
+  if !Guest.ServiceSDK.validHandle slot then fail 2 t else
   let r := Guest.ServiceSDK.callService 64 (header 298 slot 0 0 0 0 0 t)
   if r != 832 || status r != 0 then fail 6 r else
   let t := copy (wire+64) 0x62a000 768 r
@@ -430,7 +430,7 @@ def archiveSource (j grant t : UInt64) : UInt64 :=
       let t := store64 (sourceArchive+16) 1 t
       fail 0 (store64 (j+1744) 1 t)
 def recoverSource (slot grant t : UInt64) : UInt64 :=
-  if slot >= 16 || grant == 0 || Guest.ForgeArchive.active t then fail 1 t else
+  if !Guest.ServiceSDK.validHandle slot || grant == 0 || Guest.ForgeArchive.active t then fail 1 t else
   let r := Guest.ServiceSDK.callService 64 (header 292 slot 0 0 0 0 0 t)
   if r != 576 || status r != 0 then fail 1 r else
     let t := copy (wire+192) (sourceArchive+32) 32 r

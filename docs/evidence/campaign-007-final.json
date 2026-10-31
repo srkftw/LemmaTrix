@@ -1,0 +1,421 @@
+{
+  "schema": 1,
+  "campaign": "007 partial foundations",
+  "status": "selected foundation checks complete; connected campaign acceptance incomplete",
+  "base_commit": "f22a7d9aea0ee3e51a198051f4975d82837c17fa",
+  "final_guest": {
+    "sha256": "860be9eb7f63311b8a3b9976a2305263c4f485eb1397f6548d7dc23fbb5e9b76",
+    "bytes": 6291456,
+    "clean_build_source_commit": "4054f6876d659b93ac7d17e6ab3d2c818ee257a2",
+    "clean_build_log_sha256": "22c191e546c403cd7c01c28043dbd4e79d4d96247afe8e182b1b41138fa72ad1"
+  },
+  "layout": {
+    "image": "860be9eb7f63311b8a3b9976a2305263c4f485eb1397f6548d7dc23fbb5e9b76",
+    "result": "passed",
+    "image_bytes": 6291456,
+    "services": [
+      {
+        "slot": 1,
+        "image_offset": 3145728,
+        "length": 168180,
+        "limit": 262144,
+        "descriptor": 2,
+        "sha256": "839a858e32e2f9ed0627c7736092d12e3f11e9eab5478a00689ce3dfad480139"
+      },
+      {
+        "slot": 2,
+        "image_offset": 4718592,
+        "length": 300880,
+        "limit": 393216,
+        "descriptor": 2,
+        "sha256": "7559360b221ab33c8d46005bc248e435ce7110f9f4f8ce7815c99390b81b2c85"
+      },
+      {
+        "slot": 3,
+        "image_offset": 5242880,
+        "length": 390644,
+        "limit": 393216,
+        "descriptor": 2,
+        "sha256": "0b09adaf5af94eb30466bb40f6ad83bd573dab0defd27cb19dbb5957c74ee499"
+      },
+      {
+        "slot": 4,
+        "image_offset": 3932160,
+        "length": 254940,
+        "limit": 262144,
+        "descriptor": 2,
+        "sha256": "0f4e54c2fffb24dbc9ec98c5d133ab3a037092d9d63b2f63a94d044bd9fec843"
+      },
+      {
+        "slot": 5,
+        "image_offset": 4194304,
+        "length": 238400,
+        "limit": 262144,
+        "descriptor": 2,
+        "sha256": "cbaad903e1177c26b4f7080195b48e4b729df2e44bff7bdfc479f7aba3606b8e"
+      },
+      {
+        "slot": 6,
+        "image_offset": 4456448,
+        "length": 139064,
+        "limit": 262144,
+        "descriptor": 2,
+        "sha256": "a7af227fcbbac07a673fc2778adaff954a64d09134109445e6ff56c230d950a6"
+      }
+    ],
+    "audio_profile": 2,
+    "network_profile": 2,
+    "supervisor_dma_regions": [
+      {
+        "start": 2162294784,
+        "end_exclusive": 2162311168,
+        "purpose": "network data rings"
+      },
+      {
+        "start": 2162311168,
+        "end_exclusive": 2162313216,
+        "purpose": "network data buffers"
+      },
+      {
+        "start": 2162319360,
+        "end_exclusive": 2162319616,
+        "purpose": "audio owner/control state"
+      },
+      {
+        "start": 2162327552,
+        "end_exclusive": 2162335744,
+        "purpose": "audio output ring"
+      },
+      {
+        "start": 2162335744,
+        "end_exclusive": 2162336768,
+        "purpose": "audio samples"
+      },
+      {
+        "start": 2162343936,
+        "end_exclusive": 2162360320,
+        "purpose": "audio control rings"
+      },
+      {
+        "start": 2162360320,
+        "end_exclusive": 2162361352,
+        "purpose": "audio control buffers"
+      },
+      {
+        "start": 2162364416,
+        "end_exclusive": 2162364496,
+        "purpose": "network control state"
+      },
+      {
+        "start": 2162368512,
+        "end_exclusive": 2162384896,
+        "purpose": "network control rings"
+      },
+      {
+        "start": 2162384896,
+        "end_exclusive": 2162385928,
+        "purpose": "network control buffers"
+      }
+    ],
+    "objects_physical": {
+      "code": [
+        2165309440,
+        2165702656
+      ],
+      "data": [
+        2165702656,
+        2165768192
+      ],
+      "stack": [
+        2165768192,
+        2165784576
+      ],
+      "next_service_code": 2165833728
+    },
+    "vault_physical": {
+      "code": [
+        2165833728,
+        2166226944
+      ],
+      "data": [
+        2166226944,
+        2166292480
+      ],
+      "stack": [
+        2166292480,
+        2166308864
+      ],
+      "next_service_code": 2166358016
+    },
+    "ordinary_signed_application_code_limit": 262144,
+    "process_slots": 12,
+    "ram_bytes": 167772160,
+    "assumptions": "static ranges correspond to the documented kernel functions; actual boot/IPC/restart tested separately"
+  },
+  "bulk_regression": {
+    "client_backend": "qemu",
+    "server_backend": "qemu",
+    "guest_image_sha256": "860be9eb7f63311b8a3b9976a2305263c4f485eb1397f6548d7dc23fbb5e9b76",
+    "profile": "Noise_NNpsk0_25519_ChaChaPoly_SHA256",
+    "payload_bytes": 4097,
+    "payload_sha256": "9183d4fef5c2614af5b6897eac473e9178c1c1bc96e0f6da9bb35a1c75331454",
+    "bidirectional_authenticated_records": "pass",
+    "bounded_inbox_slot_reuse_preserves_FIFO": "pass",
+    "denied_privacy_mode_wrong_peer_stale_grant": "pass",
+    "signed_service_descriptor": false,
+    "public_signature_tamper_pin_substitution_operation_scope_no_downgrade": "not exercised",
+    "scope": "actual guest broker transport; no application/graph acceptance claim"
+  },
+  "axioms_log": "'Guest.IdentityPolicy.revoked_denies' depends on axioms: [propext]\n'Guest.IdentityPolicy.wrong_caller_denies' depends on axioms: [propext]\n'Guest.IdentityPolicy.stale_generation_denies' depends on axioms: [propext]\n'Guest.IdentityPolicy.changed_body_denies' depends on axioms: [propext]\n'Guest.IdentityPolicy.exhausted_denies' depends on axioms: [propext]\n'Guest.IdentityPolicy.project_key_cannot_certify_contact' does not depend on any axioms\n'Guest.IdentityPolicy.receipt_key_cannot_certify_contact' does not depend on any axioms\n'Guest.IdentityPolicy.messenger_key_cannot_declare_node' does not depend on any axioms\n'Guest.IdentityPolicy.missing_binding_denies' depends on axioms: [propext]\n'Guest.IdentityPolicy.replaced_binding_denies' depends on axioms: [propext]\n'Guest.ServiceBindingPolicy.signer_has_no_package_rights' depends on axioms: [propext]\n'Guest.ServiceBindingPolicy.zero_generation_denied' depends on axioms: [propext]\n'Guest.ServiceBindingPolicy.wrong_incarnation_denied' depends on axioms: [propext]\n'Guest.ServiceBindingPolicy.wrong_operation_denied' depends on axioms: [propext]\n'Guest.ServiceBindingPolicy.revoked_generation_denied' depends on axioms: [propext]\n'Guest.VaultPolicy.wallet_denied' depends on axioms: [propext, Quot.sound]\n'Guest.VaultPolicy.messenger_denied' depends on axioms: [propext, Quot.sound]\n'Guest.VaultPolicy.denied_preserves_generation' depends on axioms: [propext, Quot.sound]\n",
+  "claims_excluded": [
+    "native Messenger UI",
+    "three relay circuit",
+    "mailbox delivery",
+    "mailbox acceptance receipt",
+    "X3DH",
+    "Double Ratchet",
+    "Messenger domain2 retention/recovery",
+    "routed Forge request",
+    "connected acceptance journey A-G",
+    "MSG-001 completion",
+    "RG-07 completion",
+    "public MVP completion"
+  ],
+  "development_failures": [
+    {
+      "scope": "qualification harness",
+      "result": "corrected",
+      "detail": "wrong existing trust opcode and endpoint result shape in first draft of public provisioning tool; corrected to existing trust10 and8-byte registry results before final tests"
+    },
+    {
+      "scope": "qualification helper cleanup",
+      "result": "corrected",
+      "detail": "existing Session helper left a client lock file in its temporary directory; explicit close/abort cleanup added"
+    },
+    {
+      "scope": "final image, first synchronous native test proxy",
+      "result": "failed",
+      "backend": "x86_64",
+      "detail": "outer5000-tick Launcher-to-proxy call expired while inner authorized signing continued; replaced the test proxy with a bounded asynchronous native job. Guest image unchanged; original QEMU checks are not labeled as all-backend success."
+    },
+    {
+      "scope": "final image, original asynchronous identity matrix cold ARM case",
+      "result": "initial 180-second host timeout; focused case subsequently passed with600-second portal wait",
+      "detail": "Same guest image and signer binary; measured198.98188956012018-second creation explains insufficient original wait. Guest authority/work limits unchanged. Whole original matrix stays marked failed."
+    }
+  ],
+  "final_journal_evidence": "campaign-007-service-jobs-final.json",
+  "final_ipc_evidence": "campaign-007-service-bindings-final.json",
+  "primitive_evidence": "campaign-007-native-crypto.json",
+  "assembly_inspection": {
+    "installed_identity_assembly_sha256": "ea1ecafa1bc56d3de48afe13e1dce8a0c54a25cc26b1e0846c818e8bc48cb096",
+    "installed_identity_secret_frame_checks": {
+      "sensitive_functions": 60,
+      "sensitive_return_paths": 164,
+      "fixed_frame_and_argument_temporary_register_erasure": "present on every emitted return",
+      "reviewed_routines": {
+        "Guest_Ed25519_scalarLoop": {
+          "sha256": "885e267bfe4aee843ccc458f26305bad605e025a6c55687331d699bb2110a13e",
+          "conditional_branches": 3
+        },
+        "Guest_Ed25519_pointSwap": {
+          "sha256": "f2e6b22425df0c6e8aa9fcaadea3679b3c8161df30c005ec14d962a0345e54e5",
+          "conditional_branches": 3
+        },
+        "Guest_Ed25519_reduceBits": {
+          "sha256": "2cddf7d23e3893e83c479950e52818fa500a85084ec55400668a1fd45aa0a1e2",
+          "conditional_branches": 3
+        },
+        "Guest_Ed25519_reduceSelect": {
+          "sha256": "a80eeb9c04af714516f583099c6da489587c207a9c6b23dc6c00958a57da2362",
+          "conditional_branches": 3
+        },
+        "Guest_Ed25519_reduceSubtract": {
+          "sha256": "41b3d91d83b2964900550e0916df47d34c5d3276252c5437f789a00fba0ca27c",
+          "conditional_branches": 3
+        },
+        "Guest_Ed25519_reduceShift": {
+          "sha256": "9d4bf41f8871fef9c0c5bfb8d7ede4342b7ec650c378b546a0cf6cc9d914ed0d",
+          "conditional_branches": 3
+        },
+        "Guest_Ed25519_multiplyInner": {
+          "sha256": "4bac973d4d4e77f1ff8b1c8c85f60759ffe2b0dc776f035a3ec4c900bacd2152",
+          "conditional_branches": 3
+        },
+        "Guest_Ed25519_carryWide": {
+          "sha256": "4f10eb98ae2967caa0330f16a008acbfdd6b4c389d38ac0c7f31c3ab478fa889",
+          "conditional_branches": 3
+        },
+        "Guest_Noise25519_multiplyInner": {
+          "sha256": "260660b12b9b868c068f282cbb6f8f4e22c9bd89d30ef10d9c48f0b04b164baf",
+          "conditional_branches": 3
+        },
+        "Guest_SHA512_rounds": {
+          "sha256": "6aca30bbd54a1a9fedc65fb8ebd5e212173b9542deee6baebb95eb4a01d78402",
+          "conditional_branches": 3
+        }
+      },
+      "manual_control_flow_review": "Scalar-bit selection and reduction use masks. Core loop exits use public counters; addresses use fixed scratch, public pointers and public indices. SHA padding uses public length/offset and constants use public round indices.",
+      "limits": "No dynamic taint proof, compiler correctness proof, microarchitectural constant-time proof or independent audit. Live result a0 and protected in-progress kernel contexts remain necessary; whole-process termination cleanup belongs to the kernel."
+    },
+    "kernel_assembly_sha256": "ba947c68d39d492a203e634da632e89634b765f01cea9d33525c0d1416a7ed57",
+    "signer_entropy_helper_sha256": "72071c0fd3643e98be97ec378b61b4454a225747d1cf7a7eb98750971082bff3",
+    "signer_entropy_fixed_frame_and_register_clear": "present",
+    "limits": "Static emitted-code inspection; no taint or constant-time proof. In-progress protected kernel contexts remain part of TCB."
+  },
+  "identity_initial_async_run": {
+    "source_commit": "89785c3",
+    "command": "python3 tests/native_identity.py --backend all --output build/campaign007/final/native-identity-async",
+    "image_sha256": "860be9eb7f63311b8a3b9976a2305263c4f485eb1397f6548d7dc23fbb5e9b76",
+    "log_sha256": "15b52899bfd20075af3b9f7806f7a30bbebfe9da918e3dd9c133068e04ca4d13",
+    "portal_timeout_seconds": 180,
+    "checks_passed_before_terminal_timeout": {
+      "qemu": [
+        "failed duplicate provisioning reclaims its process and preserves the current signer",
+        "native fresh identity and independently verified canonical public descriptor",
+        "separate node and Messenger identity keys are independently generated",
+        "operation binding does not give an ordinary application identity-creation authority",
+        "public export binding cannot enumerate or link separate scoped keys",
+        "unregistered caller denied signer entropy and Network raw entropy",
+        "one-use certificate authority binds exact caller, purpose, federation, scope and canonical body",
+        "node signing scope cannot certify Messenger contact material",
+        "cancelled one-use approvals reclaim capacity through more than16 operations",
+        "fresh IPC binding cannot revive an approval issued under a revoked generation",
+        "native typed numeric-endpoint service declaration signature verified independently",
+        "key revocation wipes selected key and leaves unrelated scoped identity usable",
+        "binding revocation denies discovery and guessed direct endpoint access",
+        "lock and service termination invalidate old keys and live bindings",
+        "existing Objects flow remains usable after isolated signer teardown",
+        "independent new guest owns a new key and cannot recover unretained old authority"
+      ],
+      "x86_64": [
+        "failed duplicate provisioning reclaims its process and preserves the current signer",
+        "native fresh identity and independently verified canonical public descriptor",
+        "separate node and Messenger identity keys are independently generated",
+        "operation binding does not give an ordinary application identity-creation authority",
+        "public export binding cannot enumerate or link separate scoped keys",
+        "unregistered caller denied signer entropy and Network raw entropy",
+        "one-use certificate authority binds exact caller, purpose, federation, scope and canonical body",
+        "node signing scope cannot certify Messenger contact material",
+        "cancelled one-use approvals reclaim capacity through more than16 operations",
+        "fresh IPC binding cannot revive an approval issued under a revoked generation",
+        "native typed numeric-endpoint service declaration signature verified independently",
+        "key revocation wipes selected key and leaves unrelated scoped identity usable",
+        "binding revocation denies discovery and guessed direct endpoint access",
+        "lock and service termination invalidate old keys and live bindings",
+        "existing Objects flow remains usable after isolated signer teardown",
+        "independent new guest owns a new key and cannot recover unretained old authority"
+      ],
+      "aarch64": [
+        "failed duplicate provisioning reclaims its process and preserves the current signer",
+        "native fresh identity and independently verified canonical public descriptor",
+        "separate node and Messenger identity keys are independently generated",
+        "operation binding does not give an ordinary application identity-creation authority",
+        "public export binding cannot enumerate or link separate scoped keys",
+        "unregistered caller denied signer entropy and Network raw entropy",
+        "one-use certificate authority binds exact caller, purpose, federation, scope and canonical body",
+        "node signing scope cannot certify Messenger contact material",
+        "cancelled one-use approvals reclaim capacity through more than16 operations",
+        "fresh IPC binding cannot revive an approval issued under a revoked generation",
+        "native typed numeric-endpoint service declaration signature verified independently",
+        "key revocation wipes selected key and leaves unrelated scoped identity usable",
+        "binding revocation denies discovery and guessed direct endpoint access",
+        "lock and service termination invalidate old keys and live bindings",
+        "existing Objects flow remains usable after isolated signer teardown"
+      ]
+    },
+    "terminal_result": "emulated ARM final fresh-guest create exceeded180-second host portal wait; remaining core checks passed as listed; this whole run is not marked passed"
+  },
+  "identity_cold_case_reexecution": {
+    "command": "python3 tests/native_identity.py --backend aarch64 --fresh-only --timeout 600 --output build/campaign007/final/native-identity-cold",
+    "source_commit": "bae67b7",
+    "result": {
+      "schema": 1,
+      "result": "passed",
+      "image_sha256": "860be9eb7f63311b8a3b9976a2305263c4f485eb1397f6548d7dc23fbb5e9b76",
+      "signer_sha256": "a2088598f1c1975b68cf4c96ef607f9005d6753ffe753d7b36770da0e43865ae",
+      "signer_release": "160daade5785f62deae19fa1b460d792f5c6788f736a74fc4f745983f7655282",
+      "portal_timeout_seconds": 600.0,
+      "guest_authority_limits": "unchanged",
+      "observations": [
+        {
+          "phase": "old",
+          "backend": "qemu",
+          "service": 6682324717157744903,
+          "key": 6682324712862777606,
+          "public": {
+            "role": 2,
+            "generation": 1,
+            "federation": "8cd62b5b6322de7dd6a3fd38b1b7833812edb28a531234abf2d557235b64a562",
+            "scope": "f5fd2bc44bf6e2f2240c087b34cb2b67fa5f87f38dbb7ee2b68ffff4af8f83f6",
+            "public_key": "554cd83f1e989ac779821ff621286298bb0f6380929d9753f8d9a396363f5685",
+            "fingerprint": "273db74b8dc9a0f41aac5d3c5fb61189488472ed306dfacd896f850c6a38573d",
+            "signature": "49bb02a5c5ebdc64b85c490872fa8c4b3f8b2eb42bdcd3e5c69468c0d02c50f124b6ba376a6338303ea8a1de890e8c63b6bfe7c73390bd73ad38631cf5350d0e",
+            "retention": "ephemeral",
+            "validity": "explicit revocation; no reboot-relative expiry",
+            "person_identity": "not established by this self-signed descriptor"
+          },
+          "creation_seconds": 3.608326524030417
+        },
+        {
+          "phase": "fresh",
+          "backend": "aarch64",
+          "service": 3755791356656615687,
+          "key": 3755791352361648390,
+          "public": {
+            "role": 2,
+            "generation": 1,
+            "federation": "8cd62b5b6322de7dd6a3fd38b1b7833812edb28a531234abf2d557235b64a562",
+            "scope": "f5fd2bc44bf6e2f2240c087b34cb2b67fa5f87f38dbb7ee2b68ffff4af8f83f6",
+            "public_key": "3197133bb987280fa9790d34e846c4dca3b4c73dac990dd72b75eb9412e47569",
+            "fingerprint": "ce84e93cd00b283ba684015422ad27cbb79b422915ad5d62c0ae421981f197c6",
+            "signature": "d647499486384803a293e7fb14e397e1339329054d034c169a04adeaf489a3cc8f0ee83484c92a14bdb128dc464be2fec468c72c9be594f61208f80d38a7300a",
+            "retention": "ephemeral",
+            "validity": "explicit revocation; no reboot-relative expiry",
+            "person_identity": "not established by this self-signed descriptor"
+          },
+          "creation_seconds": 198.98188956012018
+        }
+      ],
+      "checks": [
+        "old key denied before allocation",
+        "independently generated new key and handle",
+        "old key still denied after allocation",
+        "both native descriptor signatures independently verified"
+      ]
+    },
+    "log_sha256": "bceb771b6947cd8c9a08a3daa024a03b50ebe3d87d5f4e16e0662971bfdbed2a",
+    "scope": "Focused repeat of the terminal failed case only. Actual old key created inside separate QEMU guest; new AArch64 guest executes same image and signer. Not a rerun or relabeling of the whole original all-backend command."
+  },
+  "identity_source_commits": {
+    "guest_source": "a85e17c",
+    "kernel_source": "4054f6876d659b93ac7d17e6ab3d2c818ee257a2",
+    "async_fixture": "89785c3",
+    "bounded_portal_and_focused_case": "bae67b7",
+    "consistent_timeout_option": "15353b9"
+  },
+  "reproduction_commands": [
+    "./lt build --clean",
+    "python3 tests/platform_layout.py --image build/campaign007/final/guest.bin --artifacts build/live",
+    "python3 tests/native_identity.py --backend all --timeout 600 --output build/campaign007/reproduction",
+    "python3 tests/native_identity.py --backend aarch64 --fresh-only --timeout 600 --output build/campaign007/cold-reproduction",
+    "python3 tests/network_broker.py --client qemu --server qemu"
+  ],
+  "reproduction_command_limits": "The all-backend600-second identity command is the updated reproducible configuration; evidence above is the initial180-second run plus focused600-second repeat, not an executed full600-second rerun.",
+  "artifact_sizes": {
+    "identity_package_binary_bytes": 89344,
+    "identity_package_binary_sha256": "a2088598f1c1975b68cf4c96ef607f9005d6753ffe753d7b36770da0e43865ae",
+    "identity_async_probe_bytes": 6360,
+    "private_arena_limit_bytes": 2097152,
+    "ordinary_code_limit_bytes": 262144,
+    "guest_ram_bytes": 167772160,
+    "kernel_binary_bytes": 298592,
+    "vault_binary_bytes": 390644
+  },
+  "tc_b": {
+    "guest": "Lean-authored identity,crypto,policy,kernel,journal;freestandingRV64",
+    "host_bootstrap": "PinnedLean elaboration,repositoryIRcompiler,LLVM assembly/link,existingRSA package publisher; test OpenSSL public verification",
+    "adapters": "existingopaque bytes,entropy,block,input,pixels",
+    "evidence_limit": "Same-host qualification; emulatedAArch64; no independent operators,physicalARM,CTproof,securityaudit or connected Messenger acceptance"
+  }
+}

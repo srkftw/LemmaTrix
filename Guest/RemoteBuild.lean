@@ -357,7 +357,7 @@ def inspectArtifact (t : UInt64) : UInt64 :=
     384+zero (wire+128) 32 t
 
 def bindArtifactService (slot t : UInt64) : UInt64 :=
-  if slot >= 16 then error else
+  if !Guest.ServiceSDK.validHandle slot then error else
     let t := store64 (st+360) (slot+1) t
     if load64 (st+312) t != 2 then 64+header 0 0 0 0 0 0 0 t else
       let r := syscall 30 5 wire 64 1024 (header 24 0 slot 0 0 0 0 t)

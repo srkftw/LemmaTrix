@@ -1,0 +1,218 @@
+{
+  "schema": 1,
+  "source_commit": "5e89e10",
+  "source_files": {
+    "Guest/Ed25519.lean": "550eb53400df153c4fad3ccf5aab89f6423cc5c3348939b1dd1aa619c7d6c834",
+    "Guest/SHA512.lean": "f7f7aa1fd7e6ce19df52d29521eea642c945d36c53aa915d72020549ca6b9cb0",
+    "Compiler/Main.lean": "c1833d289bed06f65f852e59d501473363173224aec48ad9e9d6fd9b597aa75f",
+    "tests/native_ed25519.py": "1a62335201b9f440fae0edd7b2c68b98012d1ea870cf19b7a77d3414115cae44",
+    "tests/fixtures/ed25519_rfc8032.json": "834b79a66bad24b213bcb8dbad06706e079b0f980fbcbe21e4cf58a3722572a6"
+  },
+  "primary_sources": [
+    "https://www.rfc-editor.org/rfc/rfc8032",
+    "https://www.rfc-editor.org/rfc/rfc6234"
+  ],
+  "commands": [
+    "python tests/native_ed25519.py --first --backend qemu --backend x86_64 --backend aarch64",
+    "python tests/native_ed25519.py --backend qemu",
+    "python tests/network_crypto.py"
+  ],
+  "executed": {
+    "compact": {
+      "schema": 1,
+      "profile": "RFC8032 pure Ed25519",
+      "image_sha256": "5a32047f66dc472885dd605e66d96e59fd1ff983d15047a5ede415538a26d279",
+      "image_bytes": 77172,
+      "source_sha256": "9b658c09ffccd7bc9e5ac8ac150a70fd786c18aa38277e565795bab244450e7b",
+      "assembly_sha256": "8668f587a228cecb3ee8863e2f16c03f708a3574a065cbbd10d1a04bb5b39024",
+      "checks": [
+        {
+          "backend": "qemu",
+          "seconds": 4.034614246804267,
+          "result": "pass",
+          "vectors": 1
+        },
+        {
+          "backend": "x86_64",
+          "seconds": 29.297410937957466,
+          "result": "pass",
+          "vectors": 1
+        },
+        {
+          "backend": "aarch64",
+          "seconds": 149.80718259420246,
+          "result": "pass",
+          "vectors": 1
+        }
+      ],
+      "strict_inputs": [
+        "S=L",
+        "y=p",
+        "negative_zero",
+        "identity_public_key",
+        "nonsquare_y",
+        "sign_and_verify_length_bound"
+      ],
+      "scratch_cleanup": "28672 bytes zero after public derivation, signing, verification and failure",
+      "sha512_padding_boundaries": [
+        111,
+        112,
+        127,
+        128,
+        129
+      ],
+      "independent_implementation": "published RFC8032 vector only",
+      "assurance": "Implementation vectors only; no constant-time proof or independent cryptographic review.",
+      "assembly_inspection": {
+        "sensitive_functions": 70,
+        "sensitive_return_paths": 183,
+        "fixed_frame_and_argument_temporary_register_erasure": "present on every emitted return",
+        "reviewed_routines": {
+          "Guest_Ed25519_scalarLoop": {
+            "sha256": "885e267bfe4aee843ccc458f26305bad605e025a6c55687331d699bb2110a13e",
+            "conditional_branches": 3
+          },
+          "Guest_Ed25519_pointSwap": {
+            "sha256": "f2e6b22425df0c6e8aa9fcaadea3679b3c8161df30c005ec14d962a0345e54e5",
+            "conditional_branches": 3
+          },
+          "Guest_Ed25519_reduceBits": {
+            "sha256": "2cddf7d23e3893e83c479950e52818fa500a85084ec55400668a1fd45aa0a1e2",
+            "conditional_branches": 3
+          },
+          "Guest_Ed25519_reduceSelect": {
+            "sha256": "a80eeb9c04af714516f583099c6da489587c207a9c6b23dc6c00958a57da2362",
+            "conditional_branches": 3
+          },
+          "Guest_Ed25519_reduceSubtract": {
+            "sha256": "41b3d91d83b2964900550e0916df47d34c5d3276252c5437f789a00fba0ca27c",
+            "conditional_branches": 3
+          },
+          "Guest_Ed25519_reduceShift": {
+            "sha256": "9d4bf41f8871fef9c0c5bfb8d7ede4342b7ec650c378b546a0cf6cc9d914ed0d",
+            "conditional_branches": 3
+          },
+          "Guest_Ed25519_multiplyInner": {
+            "sha256": "4bac973d4d4e77f1ff8b1c8c85f60759ffe2b0dc776f035a3ec4c900bacd2152",
+            "conditional_branches": 3
+          },
+          "Guest_Ed25519_carryWide": {
+            "sha256": "4f10eb98ae2967caa0330f16a008acbfdd6b4c389d38ac0c7f31c3ab478fa889",
+            "conditional_branches": 3
+          },
+          "Guest_Noise25519_multiplyInner": {
+            "sha256": "260660b12b9b868c068f282cbb6f8f4e22c9bd89d30ef10d9c48f0b04b164baf",
+            "conditional_branches": 3
+          },
+          "Guest_SHA512_rounds": {
+            "sha256": "6aca30bbd54a1a9fedc65fb8ebd5e212173b9542deee6baebb95eb4a01d78402",
+            "conditional_branches": 3
+          }
+        },
+        "manual_control_flow_review": "Scalar-bit selection and reduction use masks. Core loop exits use public counters; addresses use fixed scratch, public pointers and public indices. SHA padding uses public length/offset and constants use public round indices.",
+        "limits": "No dynamic taint proof, compiler correctness proof, microarchitectural constant-time proof or independent audit. Live result a0 and protected in-progress kernel contexts remain necessary; whole-process termination cleanup belongs to the kernel."
+      }
+    },
+    "full": {
+      "schema": 1,
+      "profile": "RFC8032 pure Ed25519",
+      "image_sha256": "c4517f1efee8a96f9dd162c2e4b73da4b3e9912cafd9337e92e0af58a3ed174c",
+      "image_bytes": 175896,
+      "source_sha256": "9bba56f840ae46559ee6c8793fa4c352964f2efaac87d550909270f54acc6560",
+      "assembly_sha256": "dd286e22927b58e4b9f1efbde9160aaeed2c7e00e1ed18906748f7d7afaff8ec",
+      "checks": [
+        {
+          "backend": "qemu",
+          "seconds": 22.61228420585394,
+          "result": "pass",
+          "vectors": 7
+        }
+      ],
+      "strict_inputs": [
+        "S=L",
+        "y=p",
+        "negative_zero",
+        "identity_public_key",
+        "nonsquare_y",
+        "sign_and_verify_length_bound"
+      ],
+      "scratch_cleanup": "28672 bytes zero after public derivation, signing, verification and failure",
+      "sha512_padding_boundaries": [
+        111,
+        112,
+        127,
+        128,
+        129
+      ],
+      "independent_implementation": "OpenSSL 3.6.3 9 Jun 2026 (Library: OpenSSL 3.6.3 9 Jun 2026)",
+      "assurance": "Implementation vectors only; no constant-time proof or independent cryptographic review.",
+      "assembly_inspection": {
+        "sensitive_functions": 70,
+        "sensitive_return_paths": 183,
+        "fixed_frame_and_argument_temporary_register_erasure": "present on every emitted return",
+        "reviewed_routines": {
+          "Guest_Ed25519_scalarLoop": {
+            "sha256": "885e267bfe4aee843ccc458f26305bad605e025a6c55687331d699bb2110a13e",
+            "conditional_branches": 3
+          },
+          "Guest_Ed25519_pointSwap": {
+            "sha256": "f2e6b22425df0c6e8aa9fcaadea3679b3c8161df30c005ec14d962a0345e54e5",
+            "conditional_branches": 3
+          },
+          "Guest_Ed25519_reduceBits": {
+            "sha256": "2cddf7d23e3893e83c479950e52818fa500a85084ec55400668a1fd45aa0a1e2",
+            "conditional_branches": 3
+          },
+          "Guest_Ed25519_reduceSelect": {
+            "sha256": "a80eeb9c04af714516f583099c6da489587c207a9c6b23dc6c00958a57da2362",
+            "conditional_branches": 3
+          },
+          "Guest_Ed25519_reduceSubtract": {
+            "sha256": "41b3d91d83b2964900550e0916df47d34c5d3276252c5437f789a00fba0ca27c",
+            "conditional_branches": 3
+          },
+          "Guest_Ed25519_reduceShift": {
+            "sha256": "9d4bf41f8871fef9c0c5bfb8d7ede4342b7ec650c378b546a0cf6cc9d914ed0d",
+            "conditional_branches": 3
+          },
+          "Guest_Ed25519_multiplyInner": {
+            "sha256": "4bac973d4d4e77f1ff8b1c8c85f60759ffe2b0dc776f035a3ec4c900bacd2152",
+            "conditional_branches": 3
+          },
+          "Guest_Ed25519_carryWide": {
+            "sha256": "4f10eb98ae2967caa0330f16a008acbfdd6b4c389d38ac0c7f31c3ab478fa889",
+            "conditional_branches": 3
+          },
+          "Guest_Noise25519_multiplyInner": {
+            "sha256": "260660b12b9b868c068f282cbb6f8f4e22c9bd89d30ef10d9c48f0b04b164baf",
+            "conditional_branches": 3
+          },
+          "Guest_SHA512_rounds": {
+            "sha256": "6aca30bbd54a1a9fedc65fb8ebd5e212173b9542deee6baebb95eb4a01d78402",
+            "conditional_branches": 3
+          }
+        },
+        "manual_control_flow_review": "Scalar-bit selection and reduction use masks. Core loop exits use public counters; addresses use fixed scratch, public pointers and public indices. SHA padding uses public length/offset and constants use public round indices.",
+        "limits": "No dynamic taint proof, compiler correctness proof, microarchitectural constant-time proof or independent audit. Live result a0 and protected in-progress kernel contexts remain necessary; whole-process termination cleanup belongs to the kernel."
+      }
+    }
+  },
+  "legacy_noise_regression": {
+    "schema": 1,
+    "environment": "QEMU RV64 system emulation; generated Lean native crypto",
+    "binary_sha256": "e7815a50087dd360f215ac74bf3f1c1ed9ce308f2c6d71ff6940eee7226b7a16",
+    "RFC7748_section6_1": "pass",
+    "Noise_NNpsk0_independent_transcript_and_bidirectional_records": "pass",
+    "replay_tamper_transcript_mismatch": "reject"
+  },
+  "scope": "Published and deterministic development fixtures, native compiled Lean functions. These are separate identified probe guests, not an installed-personal-client or connected-message acceptance claim.",
+  "key_ownership": "Published RFC8032 probe seeds and deterministic cross-check fixture seeds are public test material. Production identity creation and signing hold keys only in the native Identity process; this probe provisions no online identity credentials.",
+  "assumptions": [
+    "AArch64 assembly backend runs under qemu-aarch64 on this x86 host; no physical ARM evidence.",
+    "Crypto input pointer extents and non-overlap are enforced by callers; primitives have no raw network authority.",
+    "Verification is canonical A/R/S, negative-zero/curve checks, small-order A/R rejection and exact uncofactored equation. No full prime-subgroup validation claim.",
+    "Compiler frame cleanup is checked on emitted returns. The unverified Lean-to-RV64 backend, upstream optimizer, assembler/linker, machine/emulators and host remain in the implementation TCB.",
+    "Fixed loop counts and masked secret selection are source/assembly implementation observations, not a constant-time proof, independent review or physical side-channel guarantee.",
+    "Scratch is erased on API success/failure; in-progress registers and kernel context are protected state. Kernel teardown must erase the entire process arena."
+  ]
+}

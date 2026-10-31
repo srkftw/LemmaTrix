@@ -157,8 +157,26 @@ def bodyLabel (c : FnContext) : String := s!".L{symbol c.fn}_body"
 
 def epilogue (c : FnContext) : EmitM Unit := do
   loadOffset "ra" (c.frame - 8)
+  -- Secret primitives use scalar stack spills in this backend. Clear the whole
+  -- fixed-size frame before releasing it, including on error returns. Preserve
+  -- only a0 (the result), ra and sp; temporary/argument registers are cleared.
+  -- This is an explicit namespace policy, not inferred binary constant time.
+  let sensitive := ["Guest.Ed25519.", "Guest.Noise25519.", "Guest.SHA512.", "Guest.SignerEntropy."].any
+    (fun namespaceName => c.fn.toString.startsWith namespaceName)
+  if sensitive then
+    let loop ← fresh "secret_frame_clear"
+    emit "  mv t4, sp"
+    emit s!"  li t6, {c.frame}"
+    emit s!"{loop}:"
+    emit "  sd zero, 0(t4)"
+    emit "  addi t4, t4, 8"
+    emit "  addi t6, t6, -8"
+    emit s!"  bnez t6, {loop}"
   emit s!"  li t6, {c.frame}"
   emit "  add sp, sp, t6"
+  if sensitive then
+    for r in ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "t0", "t1", "t2", "t3", "t4", "t5", "t6"] do
+      emit s!"  li {r}, 0"
   emit "  ret"
 
 def externSymbol (env : Environment) (f : Name) : Except String String := do

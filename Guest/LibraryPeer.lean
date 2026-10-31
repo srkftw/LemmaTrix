@@ -207,7 +207,7 @@ def dispatch (caller rights length t : UInt64) : UInt64 :=
   else if op == 403 && admin && length == 64 && slot < 16 then
     let selected := load64 (command+16) t
     let p := peer slot
-    if selected >= 16 || load64 (p+88) t == 0 || load64 (p+8) t != 2 then response 2 0 t else
+    if !Guest.ServiceSDK.validHandle selected || load64 (p+88) t == 0 || load64 (p+8) t != 2 then response 2 0 t else
     let r := Guest.ServiceSDK.inspect selected t
     -- Bind the exact retained request, never merely a reusable numeric slot.
     -- The job already needs a fresh owner bind before it can be inspected here.

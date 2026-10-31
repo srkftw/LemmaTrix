@@ -1,0 +1,173 @@
+{
+  "schema": 1,
+  "recorded_utc": "2026-10-30T23:53:57.717961+00:00",
+  "reviewed_base": "f22a7d9aea0ee3e51a198051f4975d82837c17fa",
+  "source_files_sha256": {
+    "Guest/ServiceJobs.lean": "24eab64956b70803dcbb572a71c647b72e22c21152b2b84a7eba4e4d79781850",
+    "Guest/ServiceSDK.lean": "dcbd3fb0df26d6f2d4a33c3b74baaed792dcd9600a7d51534c3b65463904f29d",
+    "Guest/BuildJobs.lean": "cbfe72440dd85bc8926292194f6ede31e223738f5da868e6e40fb0a17296d11a",
+    "Guest/LibraryPeer.lean": "6de89a579d84143b336249cbedda79932fb06750829350264547bc04576d3a1b",
+    "Guest/LibraryOperator.lean": "9fa39fb8be3ebd52fefa237118480ea5a51c48a540b290ac06219fc9c1d1cb76",
+    "Guest/RemoteBuild.lean": "dcc676a0155ccfdc1a90fb5946679ab7223f2a5bcfaa219268de72e94e84fb88",
+    "tools/service_jobs.py": "a0b5ffa441068d3ee7ada98c6034ce3f2849a9035a0d322e110b888661a03d64",
+    "tools/service_job_checks.py": "09ee72b1daf8d21a4a4d1fde164593d3512354615da645b1316e1b223b1401fd",
+    "tools/library_node.py": "0a7e6be704a67c08937554e03bff0039a28323c2a3569927b5bdb884a8b9071f",
+    "tools/remote_build.py": "64722b8dfc42e846c55f612a23fbf8c4cb9c653b924161d86649d93ff1b5f188"
+  },
+  "common_image_runs": [
+    {
+      "backend": "qemu",
+      "image_sha256": "f51e73f7eb8d14b69f6cab2d652a88467028c71c6bd0b401b3c2fa79b02439fd",
+      "source_sha256": "24eab64956b70803dcbb572a71c647b72e22c21152b2b84a7eba4e4d79781850",
+      "source_bytes": 19553,
+      "sequential_operations": 40,
+      "physical_rows_used": 1,
+      "reboot_during_sequence": false,
+      "capacity_increased": false,
+      "last_handle": 9984,
+      "last_publication_generation": 199,
+      "seconds": 22.427660501096398,
+      "checks": [
+        "same-boot terminal reclamation and allocation epoch increments",
+        "exact completion retry leaves reservations, work, attempts and generation unchanged",
+        "conflicting idempotency terms, stale owner/admin handles and retired operations reject",
+        "evicted unknown retry cannot automatically acquire another allowance",
+        "reused high-generation row recovers after guest termination without old-bank resurrection",
+        "fresh boot restores no owner binding",
+        "corrupted latest bank falls back to preceding checked complete publication"
+      ],
+      "scope": "native durable service journal; no mailbox, routing or message-delivery claim",
+      "arm_execution": null,
+      "command": "python3 tools/service_job_checks.py --image /tmp/lt-c007-service-common.bin --backend qemu --iterations 40 --output /tmp/lt-c007-service-common-qemu.json"
+    },
+    {
+      "backend": "x86_64",
+      "image_sha256": "f51e73f7eb8d14b69f6cab2d652a88467028c71c6bd0b401b3c2fa79b02439fd",
+      "source_sha256": "24eab64956b70803dcbb572a71c647b72e22c21152b2b84a7eba4e4d79781850",
+      "source_bytes": 19553,
+      "sequential_operations": 4,
+      "physical_rows_used": 1,
+      "reboot_during_sequence": false,
+      "capacity_increased": false,
+      "last_handle": 768,
+      "last_publication_generation": 19,
+      "seconds": 7.5016653870698065,
+      "checks": [
+        "same-boot terminal reclamation and allocation epoch increments",
+        "exact completion retry leaves reservations, work, attempts and generation unchanged",
+        "conflicting idempotency terms, stale owner/admin handles and retired operations reject",
+        "evicted unknown retry cannot automatically acquire another allowance",
+        "reused high-generation row recovers after guest termination without old-bank resurrection",
+        "fresh boot restores no owner binding",
+        "corrupted latest bank falls back to preceding checked complete publication"
+      ],
+      "scope": "native durable service journal; no mailbox, routing or message-delivery claim",
+      "arm_execution": null,
+      "command": "python3 tools/service_job_checks.py --image /tmp/lt-c007-service-common.bin --backend x86_64 --iterations 4 --output /tmp/lt-c007-service-common-x86_64.json"
+    },
+    {
+      "backend": "aarch64",
+      "image_sha256": "f51e73f7eb8d14b69f6cab2d652a88467028c71c6bd0b401b3c2fa79b02439fd",
+      "source_sha256": "24eab64956b70803dcbb572a71c647b72e22c21152b2b84a7eba4e4d79781850",
+      "source_bytes": 19553,
+      "sequential_operations": 2,
+      "physical_rows_used": 1,
+      "reboot_during_sequence": false,
+      "capacity_increased": false,
+      "last_handle": 256,
+      "last_publication_generation": 9,
+      "seconds": 20.493806781014428,
+      "checks": [
+        "same-boot terminal reclamation and allocation epoch increments",
+        "exact completion retry leaves reservations, work, attempts and generation unchanged",
+        "conflicting idempotency terms, stale owner/admin handles and retired operations reject",
+        "evicted unknown retry cannot automatically acquire another allowance",
+        "reused high-generation row recovers after guest termination without old-bank resurrection",
+        "fresh boot restores no owner binding",
+        "corrupted latest bank falls back to preceding checked complete publication"
+      ],
+      "scope": "native durable service journal; no mailbox, routing or message-delivery claim",
+      "arm_execution": "qemu-aarch64 emulation on x86-64",
+      "command": "python3 tools/service_job_checks.py --image /tmp/lt-c007-service-common.bin --backend aarch64 --iterations 2 --output /tmp/lt-c007-service-common-aarch64.json"
+    }
+  ],
+  "earlier_identified_runs": [
+    {
+      "backend": "qemu",
+      "image_sha256": "50599912abd09962a4316667f71d620d2adec9a3f6d6fddd38d0ac8dcbcdd419",
+      "source_sha256": "24eab64956b70803dcbb572a71c647b72e22c21152b2b84a7eba4e4d79781850",
+      "source_bytes": 19553,
+      "sequential_operations": 40,
+      "physical_rows_used": 1,
+      "reboot_during_sequence": false,
+      "capacity_increased": false,
+      "last_handle": 9984,
+      "last_publication_generation": 199,
+      "seconds": 14.90047597582452,
+      "checks": [
+        "same-boot terminal reclamation and allocation epoch increments",
+        "exact completion retry leaves reservations, work, attempts and generation unchanged",
+        "conflicting idempotency terms, stale owner/admin handles and retired operations reject",
+        "evicted unknown retry cannot automatically acquire another allowance",
+        "reused high-generation row recovers after guest termination without old-bank resurrection",
+        "fresh boot restores no owner binding",
+        "corrupted latest bank falls back to preceding checked complete publication"
+      ],
+      "scope": "native durable service journal; no mailbox, routing or message-delivery claim",
+      "arm_execution": null
+    },
+    {
+      "backend": "x86_64",
+      "image_sha256": "b237bbe47c1f772bf93a83b52a51009c42aabc0e6248df744ac2210a5288c672",
+      "source_sha256": "24eab64956b70803dcbb572a71c647b72e22c21152b2b84a7eba4e4d79781850",
+      "source_bytes": 19553,
+      "sequential_operations": 4,
+      "physical_rows_used": 1,
+      "reboot_during_sequence": false,
+      "capacity_increased": false,
+      "last_handle": 768,
+      "last_publication_generation": 19,
+      "seconds": 5.428209761157632,
+      "checks": [
+        "same-boot terminal reclamation and allocation epoch increments",
+        "exact completion retry leaves reservations, work, attempts and generation unchanged",
+        "conflicting idempotency terms, stale owner/admin handles and retired operations reject",
+        "evicted unknown retry cannot automatically acquire another allowance",
+        "reused high-generation row recovers after guest termination without old-bank resurrection",
+        "fresh boot restores no owner binding",
+        "corrupted latest bank falls back to preceding checked complete publication"
+      ],
+      "scope": "native durable service journal; no mailbox, routing or message-delivery claim",
+      "arm_execution": null
+    },
+    {
+      "backend": "aarch64",
+      "image_sha256": "b237bbe47c1f772bf93a83b52a51009c42aabc0e6248df744ac2210a5288c672",
+      "source_sha256": "24eab64956b70803dcbb572a71c647b72e22c21152b2b84a7eba4e4d79781850",
+      "source_bytes": 19553,
+      "sequential_operations": 2,
+      "physical_rows_used": 1,
+      "reboot_during_sequence": false,
+      "capacity_increased": false,
+      "last_handle": 256,
+      "last_publication_generation": 9,
+      "seconds": 14.412187765119597,
+      "checks": [
+        "same-boot terminal reclamation and allocation epoch increments",
+        "exact completion retry leaves reservations, work, attempts and generation unchanged",
+        "conflicting idempotency terms, stale owner/admin handles and retired operations reject",
+        "evicted unknown retry cannot automatically acquire another allowance",
+        "reused high-generation row recovers after guest termination without old-bank resurrection",
+        "fresh boot restores no owner binding",
+        "corrupted latest bank falls back to preceding checked complete publication"
+      ],
+      "scope": "native durable service journal; no mailbox, routing or message-delivery claim",
+      "arm_execution": "qemu-aarch64 emulation on x86-64"
+    }
+  ],
+  "limitations": [
+    "controlled native operator journal assertions, not mailbox or message delivery",
+    "same development host; AArch64 executed under qemu-aarch64",
+    "source-level typechecking and execution do not prove compiler correctness, physical persistence, malicious rollback resistance or independent audit"
+  ]
+}

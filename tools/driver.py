@@ -169,6 +169,11 @@ def main():
     if len(sys.argv)>1 and sys.argv[1]=='network':
         import network
         sys.exit(network.main(sys.argv[2:]))
+    if len(sys.argv)>1 and sys.argv[1]=='identity':
+        import identity
+        try:sys.exit(identity.main(sys.argv[2:]))
+        except (ValueError,OSError,EOFError,TimeoutError) as error:
+            print('lt identity:',error,file=sys.stderr);sys.exit(1)
     if len(sys.argv)>1 and sys.argv[1] in ('consumer','content'):
         import importlib
         sys.exit(importlib.import_module({'consumer':'consumers','content':'content'}[sys.argv[1]]).main(sys.argv[2:]))

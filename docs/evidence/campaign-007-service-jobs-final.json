@@ -1,0 +1,105 @@
+{
+  "schema": 1,
+  "recorded_utc": "2026-10-31T00:05:29.435543+00:00",
+  "source_commit": "4054f6876d659b93ac7d17e6ab3d2c818ee257a2",
+  "clean_build_command": "./lt build --clean",
+  "clean_build_log_sha256": "22c191e546c403cd7c01c28043dbd4e79d4d96247afe8e182b1b41138fa72ad1",
+  "image_sha256": "860be9eb7f63311b8a3b9976a2305263c4f485eb1397f6548d7dc23fbb5e9b76",
+  "test_runner_sha256": "09ee72b1daf8d21a4a4d1fde164593d3512354615da645b1316e1b223b1401fd",
+  "emulator_sha256": {
+    "x86_64": "3b7a6a43297d9b84253f095bbdab01755993980196d2aa768fbe68b8d41b519a",
+    "aarch64": "73be76bd91c7da28592889549fbc10aa3b6086e53bfb248d7ac18ac919a99372"
+  },
+  "runs": [
+    {
+      "backend": "qemu",
+      "image_sha256": "860be9eb7f63311b8a3b9976a2305263c4f485eb1397f6548d7dc23fbb5e9b76",
+      "source_sha256": "24eab64956b70803dcbb572a71c647b72e22c21152b2b84a7eba4e4d79781850",
+      "source_bytes": 19553,
+      "sequential_operations": 40,
+      "physical_rows_used": 1,
+      "reboot_during_sequence": false,
+      "capacity_increased": false,
+      "last_handle": 9984,
+      "last_publication_generation": 199,
+      "seconds": 14.160222246078774,
+      "checks": [
+        "same-boot terminal reclamation and allocation epoch increments",
+        "exact completion retry leaves reservations, work, attempts and generation unchanged",
+        "conflicting idempotency terms, stale owner/admin handles and retired operations reject",
+        "evicted unknown retry cannot automatically acquire another allowance",
+        "reused high-generation row recovers after guest termination without old-bank resurrection",
+        "fresh boot restores no owner binding",
+        "corrupted latest bank falls back to preceding checked complete publication"
+      ],
+      "scope": "native durable service journal; no mailbox, routing or message-delivery claim",
+      "arm_execution": null,
+      "result": "passed",
+      "command": "python3 tools/service_job_checks.py --image build/campaign007/final/guest.bin --backend qemu --iterations 40 --output build/campaign007/final/service-jobs-qemu.json",
+      "raw_result_sha256": "fa72c23b4a555b77b3a4cf477fae1027414acb3048f5490b36660743d45828cb"
+    },
+    {
+      "backend": "x86_64",
+      "image_sha256": "860be9eb7f63311b8a3b9976a2305263c4f485eb1397f6548d7dc23fbb5e9b76",
+      "source_sha256": "24eab64956b70803dcbb572a71c647b72e22c21152b2b84a7eba4e4d79781850",
+      "source_bytes": 19553,
+      "sequential_operations": 4,
+      "physical_rows_used": 1,
+      "reboot_during_sequence": false,
+      "capacity_increased": false,
+      "last_handle": 768,
+      "last_publication_generation": 19,
+      "seconds": 5.414973912993446,
+      "checks": [
+        "same-boot terminal reclamation and allocation epoch increments",
+        "exact completion retry leaves reservations, work, attempts and generation unchanged",
+        "conflicting idempotency terms, stale owner/admin handles and retired operations reject",
+        "evicted unknown retry cannot automatically acquire another allowance",
+        "reused high-generation row recovers after guest termination without old-bank resurrection",
+        "fresh boot restores no owner binding",
+        "corrupted latest bank falls back to preceding checked complete publication"
+      ],
+      "scope": "native durable service journal; no mailbox, routing or message-delivery claim",
+      "arm_execution": null,
+      "result": "passed",
+      "command": "python3 tools/service_job_checks.py --image build/campaign007/final/guest.bin --backend x86_64 --iterations 4 --output build/campaign007/final/service-jobs-x86_64.json",
+      "raw_result_sha256": "943933c0cd6ea72f68ea76f1822b25602916783a2f8f43bf8af4af6b2ab81176"
+    },
+    {
+      "backend": "aarch64",
+      "image_sha256": "860be9eb7f63311b8a3b9976a2305263c4f485eb1397f6548d7dc23fbb5e9b76",
+      "source_sha256": "24eab64956b70803dcbb572a71c647b72e22c21152b2b84a7eba4e4d79781850",
+      "source_bytes": 19553,
+      "sequential_operations": 2,
+      "physical_rows_used": 1,
+      "reboot_during_sequence": false,
+      "capacity_increased": false,
+      "last_handle": 256,
+      "last_publication_generation": 9,
+      "seconds": 20.908533185953274,
+      "checks": [
+        "same-boot terminal reclamation and allocation epoch increments",
+        "exact completion retry leaves reservations, work, attempts and generation unchanged",
+        "conflicting idempotency terms, stale owner/admin handles and retired operations reject",
+        "evicted unknown retry cannot automatically acquire another allowance",
+        "reused high-generation row recovers after guest termination without old-bank resurrection",
+        "fresh boot restores no owner binding",
+        "corrupted latest bank falls back to preceding checked complete publication"
+      ],
+      "scope": "native durable service journal; no mailbox, routing or message-delivery claim",
+      "arm_execution": "qemu-aarch64 emulation on x86-64",
+      "result": "passed",
+      "command": "python3 tools/service_job_checks.py --image build/campaign007/final/guest.bin --backend aarch64 --iterations 2 --output build/campaign007/final/service-jobs-aarch64.json",
+      "raw_result_sha256": "453d2c054c797d7b0cdacfd1a7d2c25b6af8474b5af3c5721de271d6fce8e311"
+    }
+  ],
+  "preserved_earlier_evidence": "campaign-007-service-jobs.json",
+  "scope": "Final clean-image native ServiceJobs journal lifecycle; no mailbox, circuit or connected Messenger journey claim",
+  "limitations": [
+    "Every backend ran on one x86-64 development host; AArch64 assembly ran under qemu-aarch64, not native ARM hardware.",
+    "Elapsed seconds measure native transition sequence only, excluding startup and later restart checks.",
+    "Provider completion is a controlled journal assertion over the actual19553-byte ServiceJobs source commitment, not a network transmission or recipient acceptance.",
+    "Backings were fresh explicit per-run operator images; the40-operation QEMU sequence reused one physical row without reboot or capacity increase.",
+    "Execution and source checking do not prove compiler correctness, physical power-loss durability, malicious whole-store rollback detection or independent cryptographic review."
+  ]
+}

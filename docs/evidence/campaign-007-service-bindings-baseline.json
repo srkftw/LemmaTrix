@@ -1,0 +1,204 @@
+{
+  "schema": 1,
+  "kind": "preintegration-service-binding-regression",
+  "final_image": false,
+  "image_sha256": "f51e73f7eb8d14b69f6cab2d652a88467028c71c6bd0b401b3c2fa79b02439fd",
+  "scope": "Actual independently installed native fixture packages exercise Registry-v1 and mediated signer entropy through the live kernel.",
+  "changes_not_in_this_image": [
+    "later narrow role1 cryptographic operation deadline extension",
+    "later syscall132 grant-generation query for signing-permit revocation"
+  ],
+  "source_to_binary": "Lean-authored kernel compiled by unverified repository backend; this working-tree image precedes final clean integration and is not an exact final-commit claim.",
+  "resources": {
+    "process_slots": 12,
+    "boot_services": 6,
+    "installed_slots": 5,
+    "roles": 4,
+    "operation_grants": 32,
+    "ordinary_code_bytes": 262144,
+    "private_arena_bytes": 2097152,
+    "ram_bytes": 167772160
+  },
+  "note": "QEMU and x86 runs include added same-slot data/stack/near-and-far-arena wipe markers. ARM run completed the six earlier checks; package identities are recorded separately and it does not qualify the added marker check. AArch64 ran under qemu-aarch64 on the same development host.",
+  "runs": [
+    {
+      "schema": 1,
+      "result": "passed",
+      "backend": "qemu",
+      "image_sha256": "f51e73f7eb8d14b69f6cab2d652a88467028c71c6bd0b401b3c2fa79b02439fd",
+      "packages": {
+        "binding-service": {
+          "instance": 16630450872937087239,
+          "release": "e050e317ee2893bb52fc15a31c6cee3831845b491bd2097dbaf2f20fe95589df",
+          "rights": 0
+        },
+        "binding-network-service": {
+          "instance": 16630450872937087240,
+          "release": "57bf1c0d2def2d1430f230480c1014cb8e99e4ac90283acf3456ff79af33331a",
+          "rights": 1024
+        },
+        "binding-client": {
+          "instance": 16630450872937087241,
+          "release": "e5faf436f6c1a90b5435e709a9db4ac3563affe0aaf89be9571a2d722621b07e",
+          "rights": 0
+        },
+        "binding-other-client": {
+          "instance": 16630450872937087242,
+          "release": "653f834c862114eb1a475ddc9a12aed8db97bfdb6cbd164ba2c097ac3971dcc4",
+          "rights": 0
+        }
+      },
+      "checks": [
+        "role1 requires installed rights-zero service, exact admitted service/caller releases and typed operation400..409",
+        "actual registered signer gets fresh32-byte private-arena entropy; wrong token, size, region, network and Vault raw device calls deny",
+        "exact full endpoint and operation enforced; replacement and revocation compare current generation",
+        "bound rights-zero application uses broker; separately installed unbound caller cannot discover it or access entropy",
+        "per-caller operation revocation leaves separately approved Launcher operation usable",
+        "same-slot restart clears native data, bottom of guarded stack and both near/far private arena markers",
+        "role-wide revocation fails closed; process teardown and same-package slot reuse require fresh explicit binding"
+      ],
+      "command": [
+        "/home/sreekumaar/Desktop/LemmaTrix/lt",
+        "run",
+        "--backend",
+        "qemu",
+        "--image",
+        "/home/sreekumaar/Desktop/LemmaTrix/build/campaign007-bindings-qemu-markers/guest.bin",
+        "--socket",
+        "/home/sreekumaar/Desktop/LemmaTrix/build/campaign007-bindings-qemu-markers/portal.sock"
+      ],
+      "limits": {
+        "process_slots": 12,
+        "installed_slots": 5,
+        "roles": 4,
+        "operation_grants": 32,
+        "entropy_bytes": 32,
+        "private_arena_bytes": 2097152
+      },
+      "limitations": [
+        "controlled installed native probe; not Messenger, retained keys or native protocol evidence",
+        "assembly backends share RV64 guest but interpret it; AArch64 is emulated on this host",
+        "policy proofs cover Boolean predicates; source-to-binary compiler and complete kernel are not verified"
+      ]
+    },
+    {
+      "schema": 1,
+      "result": "passed",
+      "backend": "x86_64",
+      "image_sha256": "f51e73f7eb8d14b69f6cab2d652a88467028c71c6bd0b401b3c2fa79b02439fd",
+      "packages": {
+        "binding-service": {
+          "instance": 15682957237486092551,
+          "release": "e050e317ee2893bb52fc15a31c6cee3831845b491bd2097dbaf2f20fe95589df",
+          "rights": 0
+        },
+        "binding-network-service": {
+          "instance": 15682957237486092552,
+          "release": "57bf1c0d2def2d1430f230480c1014cb8e99e4ac90283acf3456ff79af33331a",
+          "rights": 1024
+        },
+        "binding-client": {
+          "instance": 15682957237486092553,
+          "release": "e5faf436f6c1a90b5435e709a9db4ac3563affe0aaf89be9571a2d722621b07e",
+          "rights": 0
+        },
+        "binding-other-client": {
+          "instance": 15682957237486092554,
+          "release": "653f834c862114eb1a475ddc9a12aed8db97bfdb6cbd164ba2c097ac3971dcc4",
+          "rights": 0
+        }
+      },
+      "checks": [
+        "role1 requires installed rights-zero service, exact admitted service/caller releases and typed operation400..409",
+        "actual registered signer gets fresh32-byte private-arena entropy; wrong token, size, region, network and Vault raw device calls deny",
+        "exact full endpoint and operation enforced; replacement and revocation compare current generation",
+        "bound rights-zero application uses broker; separately installed unbound caller cannot discover it or access entropy",
+        "per-caller operation revocation leaves separately approved Launcher operation usable",
+        "same-slot restart clears native data, bottom of guarded stack and both near/far private arena markers",
+        "role-wide revocation fails closed; process teardown and same-package slot reuse require fresh explicit binding"
+      ],
+      "command": [
+        "/home/sreekumaar/Desktop/LemmaTrix/lt",
+        "run",
+        "--backend",
+        "x86_64",
+        "--image",
+        "/home/sreekumaar/Desktop/LemmaTrix/build/campaign007-bindings-x86-markers/guest.bin",
+        "--socket",
+        "/home/sreekumaar/Desktop/LemmaTrix/build/campaign007-bindings-x86-markers/portal.sock"
+      ],
+      "limits": {
+        "process_slots": 12,
+        "installed_slots": 5,
+        "roles": 4,
+        "operation_grants": 32,
+        "entropy_bytes": 32,
+        "private_arena_bytes": 2097152
+      },
+      "limitations": [
+        "controlled installed native probe; not Messenger, retained keys or native protocol evidence",
+        "assembly backends share RV64 guest but interpret it; AArch64 is emulated on this host",
+        "policy proofs cover Boolean predicates; source-to-binary compiler and complete kernel are not verified"
+      ]
+    },
+    {
+      "schema": 1,
+      "result": "passed",
+      "backend": "aarch64",
+      "image_sha256": "f51e73f7eb8d14b69f6cab2d652a88467028c71c6bd0b401b3c2fa79b02439fd",
+      "packages": {
+        "binding-service": {
+          "instance": 16147804636013658375,
+          "release": "969bdd880793c6de4625d47d9db5fdaed4c1ee386dcbb86a05746aec3293237b",
+          "rights": 0
+        },
+        "binding-network-service": {
+          "instance": 16147804636013658376,
+          "release": "57bf1c0d2def2d1430f230480c1014cb8e99e4ac90283acf3456ff79af33331a",
+          "rights": 1024
+        },
+        "binding-client": {
+          "instance": 16147804636013658377,
+          "release": "e5faf436f6c1a90b5435e709a9db4ac3563affe0aaf89be9571a2d722621b07e",
+          "rights": 0
+        },
+        "binding-other-client": {
+          "instance": 16147804636013658378,
+          "release": "653f834c862114eb1a475ddc9a12aed8db97bfdb6cbd164ba2c097ac3971dcc4",
+          "rights": 0
+        }
+      },
+      "checks": [
+        "role1 requires installed rights-zero service, exact admitted service/caller releases and typed operation400..409",
+        "actual registered signer gets fresh32-byte private-arena entropy; wrong token, size, region, network and Vault raw device calls deny",
+        "exact full endpoint and operation enforced; replacement and revocation compare current generation",
+        "bound rights-zero application uses broker; separately installed unbound caller cannot discover it or access entropy",
+        "per-caller operation revocation leaves separately approved Launcher operation usable",
+        "role-wide revocation fails closed; process teardown and same-package slot reuse require fresh explicit binding"
+      ],
+      "command": [
+        "/home/sreekumaar/Desktop/LemmaTrix/lt",
+        "run",
+        "--backend",
+        "aarch64",
+        "--image",
+        "/home/sreekumaar/Desktop/LemmaTrix/build/campaign007-bindings-arm/guest.bin",
+        "--socket",
+        "/home/sreekumaar/Desktop/LemmaTrix/build/campaign007-bindings-arm/portal.sock"
+      ],
+      "limits": {
+        "process_slots": 12,
+        "installed_slots": 5,
+        "roles": 4,
+        "operation_grants": 32,
+        "entropy_bytes": 32,
+        "private_arena_bytes": 2097152
+      },
+      "limitations": [
+        "controlled installed native probe; not Messenger, retained keys or native protocol evidence",
+        "assembly backends share RV64 guest but interpret it; AArch64 is emulated on this host",
+        "policy proofs cover Boolean predicates; source-to-binary compiler and complete kernel are not verified"
+      ]
+    }
+  ]
+}
