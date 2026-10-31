@@ -3,9 +3,15 @@ import argparse,hashlib,json,os,re,subprocess,sys
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/'tools'))
 import driver,live_build
+# Mailbox stagingProgressAllowed is called by live append; its named expiry,
+# zero-progress and renewal-limit proofs are inventoried with every module theorem.
 MODULES=('ServiceBindingPolicy','IdentityPolicy','MessengerStoragePolicy','NodeStoragePolicy',
          'MessengerPolicy','MessengerRetentionPolicy','MessengerContactBinding','NetworkSDK','TorPolicy','NodeEnrollmentPolicy',
          'MessengerDelivery','Mailbox','VaultPolicy','ServiceJobs')
+REQUIRED_STAGING_THEOREMS = tuple('Guest.Mailbox.'+name for name in (
+ 'staging_expired_progress_denied', 'staging_zero_progress_denied',
+ 'staging_renewal_limit_denied', 'staging_renewals_bounded',
+ 'staging_positive_progress_within_bounds'))
 
 def main():
  p=argparse.ArgumentParser();p.add_argument('--output',type=Path,default=ROOT/'build/campaign008-policy-evidence.json');a=p.parse_args()
@@ -16,6 +22,7 @@ def main():
   live_build.compile_module('Guest.'+module)
   sources[str(path.relative_to(ROOT))]=hashlib.sha256(path.read_bytes()).hexdigest()
   names+=['Guest.'+module+'.'+n for n in re.findall(r'^theorem\s+(\w+)',text,re.M)]
+ if not set(REQUIRED_STAGING_THEOREMS).issubset(names):raise ValueError('missing live staging lease proof')
  source=a.output.with_suffix('.lean');source.parent.mkdir(parents=True,exist_ok=True)
  source.write_text(''.join('import Guest.'+m+'\n' for m in MODULES)+''.join('#print axioms '+n+'\n' for n in names))
  env=dict(os.environ,LEAN_PATH=str(ROOT),PATH=str(Path(driver.tool('lean')).parent)+':'+os.environ['PATH'])

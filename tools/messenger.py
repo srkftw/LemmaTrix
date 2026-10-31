@@ -61,6 +61,7 @@ def main(argv=None):
     q=sub.add_parser('mailbox-authority');q.add_argument('--output',type=Path,required=True)
     q=sub.add_parser('select-mailbox');q.add_argument('--fingerprint',required=True)
     sub.add_parser('status')
+    sub.add_parser('delivery-status')
     q=sub.add_parser('authorize-retention');q.add_argument('--owner',type=int,required=True)
     q=sub.add_parser('unlock');q.add_argument('--key',type=Path,required=True);q.add_argument('--mode',choices=['create','recover','history-import'],required=True);q.add_argument('--retain-history',action='store_true')
     for name in ['lock','forget']:sub.add_parser(name)
@@ -164,6 +165,10 @@ def main(argv=None):
             except BaseException:
                 client.request(26,struct.pack('<Q',delivery));raise
             result=dict(owner=owner,ui=a.ui,delivery=delivery,delivery_release=did.hex(),route_configured=False,exact_grant_count=32)
+        elif a.command=='delivery-status':
+            f,_=invoke(client,4,464,a=1)
+            result=dict(status=list(f),publication_phase=f[1],publication_reason=f[2],
+                        prekeys_published=f[1]==5 and f[2]==0)
         elif a.command=='unlock':
             key=a.key.read_bytes()
             if len(key)!=32:raise ValueError('explicit Messenger credential must be32 high-entropy bytes')

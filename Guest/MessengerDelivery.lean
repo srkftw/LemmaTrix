@@ -655,6 +655,10 @@ def dispatch (caller rights token length t : UInt64) : UInt64 :=
       64+header 0 (load64 (st+24) t) (load64 (st+112) t)
         (load64 attachment t) (load64 (attachment+64) t)
         (load64 attachmentHint t) (load64 (attachmentHint+48) t) t
+    else if load64 (command+16) t == 4 && length == 64 then
+      64+header 0 (load64 (st+96) t) (load64 (st+24) t)
+        (load64 (st+48) t) (load64 (st+56) t)
+        (load64 (st+72) t) (load64 (st+232) t) t
     else configure token length t
   else
   if op == 460 then if load64 (command+48) t == 3 then queuePreflight caller length t else

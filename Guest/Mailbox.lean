@@ -259,12 +259,51 @@ def enroll (length t : UInt64) : UInt64 :=
   let t := store64 (p+144) attempts t
   let r := preparePublication 0 t
   if r == error then response 5 0 0 0 0 r else response 6 0 0 0 0 r
+-- An inactivity lease is renewed only by authenticated positive byte
+-- progress. The existing1000-tick interval and8192-byte limit stay fixed;
+-- the volatile renewal count atst312 independently enforces the work bound.
+def stagingProgressAllowed (now deadline total offset count renewals : UInt64) : Bool :=
+  now < deadline && count > 0 && count <= 512 && total <= 8192 && offset <= total &&
+    count <= total-offset && renewals < 8192
+theorem staging_expired_progress_denied (now deadline total offset count renewals : UInt64)
+    (expired : (now < deadline) = false) :
+    stagingProgressAllowed now deadline total offset count renewals = false := by
+  simp [stagingProgressAllowed,expired]
+theorem staging_zero_progress_denied (now deadline total offset renewals : UInt64) :
+    stagingProgressAllowed now deadline total offset 0 renewals = false := by
+  simp [stagingProgressAllowed]
+theorem staging_renewal_limit_denied (now deadline total offset count : UInt64) :
+    stagingProgressAllowed now deadline total offset count 8192 = false := by
+  simp [stagingProgressAllowed]
+theorem staging_renewals_bounded (now deadline total offset count renewals : UInt64)
+    (allowed : stagingProgressAllowed now deadline total offset count renewals = true) :
+    renewals.toNat+1 <= 8192 := by
+  have bounds := allowed
+  simp only [stagingProgressAllowed, Bool.and_eq_true, decide_eq_true_eq] at bounds
+  have small : renewals < 8192 := bounds.2
+  exact Nat.succ_le_of_lt (UInt64.lt_iff_toNat_lt.mp small)
+theorem staging_positive_progress_within_bounds :
+    stagingProgressAllowed 999 1000 8192 0 512 0 = true := by decide
+-- Volatile public expiry diagnostics use six previously unused words in the
+--512-byte service state. They carry no mailbox identifiers or capabilities.
+def expireStaging (now t : UInt64) : UInt64 :=
+  if load64 (st+48) t == 0 || pending t || now < load64 (st+224) t then t else
+  let count := load64 (st+264) t
+  let t := store64 (st+264) (if count == error then count else count+1) t
+  let t := store64 (st+272) (load64 (st+56) t) t
+  let t := store64 (st+280) (load64 (st+64) t) t
+  let t := store64 (st+288) (load64 (st+72) t) t
+  let t := store64 (st+296) (load64 (st+224) t) t
+  let t := store64 (st+304) now t
+  store64 (st+48) 0 (zero staged 1024 t)
 def begin (caller length t : UInt64) : UInt64 :=
   let count := load64 (command+16) t
   let fresh := load64 (command+24) t
   if length != 192 || count == 0 || count > 8192 || fresh > 1 || zeros (command+128) 32 t then response 2 0 0 0 0 t else
   let rp := authorize (command+64) (command+96) 0 t
   if rp == error then response 1 0 0 0 0 t else
+  let now := Guest.WaitSDK.now t
+  let t := expireStaging now now
   let existing := findRequest (command+128) (command+64) 0 t
   if existing != error then
     if load64 (existing+128) t != count || !eq (existing+96) (command+160) 32 t then response 12 (handle existing t) count 0 (load64 (active+16) t) t else
@@ -286,7 +325,7 @@ def begin (caller length t : UInt64) : UInt64 :=
   let t := store64 (st+48) caller t
   let t := store64 (st+56) serial t
   let t := store64 (st+64) count t
-  let t := store64 (st+72) 0 t
+  let t := store64 (st+72) 0 (store64 (st+312) 0 t)
   let t := store64 (st+80) slot t
   let t := store64 (st+88) ((rp-active-512)/256) t
   let t := store64 (st+224) (Guest.WaitSDK.now t+1000) t
@@ -301,12 +340,20 @@ def append (caller length t : UInt64) : UInt64 :=
     length <= 128 || length > 640 || offset != load64 (st+72) t ||
     !eq (command+64) (st+128) 32 t || authorize (command+64) (command+96) 0 t == error ||
     count > load64 (st+64) t-offset then response 2 h 0 0 0 t else
-  response 0 h (offset+count) 0 0 (store64 (st+72) (offset+count) (copy (command+128) (staged+offset) count t))
+  let now := Guest.WaitSDK.now t
+  let renewals := load64 (st+312) now
+  if !stagingProgressAllowed now (load64 (st+224) now) (load64 (st+64) now) offset count renewals then
+    response 2 h 0 0 0 (expireStaging now now) else
+  let t := store64 (st+312) (renewals+1) now
+  response 0 h (offset+count) 0 0 (store64 (st+224) (now+1000)
+    (store64 (st+72) (offset+count) (copy (command+128) (staged+offset) count t)))
 def commit (caller t : UInt64) : UInt64 :=
   let h := load64 (command+16) t
   if pending t then response 6 h 0 0 0 t else
   if load64 (st+48) t != caller || load64 (st+56) t != h || h == 0 || load64 (st+72) t != load64 (st+64) t ||
     !eq (command+64) (st+128) 32 t || authorize (command+64) (command+96) 0 t == error then response 2 h 0 0 0 t else
+  let now := Guest.WaitSDK.now t
+  if now >= load64 (st+224) now then response 2 h 0 0 0 (expireStaging now now) else
   let t := hash staged (load64 (st+64) t) t
   if !eq hashed (st+192) 32 t then response 5 h 0 0 0 t else
   let slot := load64 (st+80) t
@@ -440,6 +487,13 @@ def admin (length t : UInt64) : UInt64 :=
     -- the first ciphertext publication and signed acceptance are distinct.
     64+header 0 (handle p t) (load64 p t) (load64 (p+128) t) (load64 (active+16) t)
       (load64 (p+224) t) (load64 (p+216) t) t
+  else if action == 6 && length == 64 then
+    let now := Guest.WaitSDK.now t
+    64+header 0 (if load64 (st+48) now == 0 then 0 else 1) (load64 (st+56) now)
+      (load64 (st+64) now) (load64 (st+72) now) (load64 (st+224) now) now now
+  else if action == 7 && length == 64 then
+    64+header 0 (load64 (st+264) t) (load64 (st+272) t) (load64 (st+280) t)
+      (load64 (st+288) t) (load64 (st+296) t) (load64 (st+304) t) t
   else if pending t || load64 (st+48) t != 0 then response 6 0 0 0 0 t else
   if action == 4 && length == 480 then
     if load64 (active+48) t != 1 && liveRows 0 t then response 4 0 0 0 0 t else
@@ -503,8 +557,7 @@ partial def loop (t : UInt64) : UInt64 :=
   else n
   let t := receiptQuantum (pump t)
   let now := Guest.WaitSDK.now t
-  let t := if load64 (st+48) now != 0 && !pending now && now >= load64 (st+224) now then
-    store64 (st+48) 0 (zero staged 1024 now) else now
+  let t := expireStaging now now
   let t := zero scratch 80 (zero hashed 4 (zero command 124 (zero wire 128 t)))
   loop (Guest.WaitSDK.deadline (Guest.WaitSDK.now t+(if pending t || Guest.MailboxReceipt.pending t then 1 else 100)) t)
 def main (t : UInt64) : UInt64 := loop (Guest.MailboxReceipt.clear (zero st 64 (zero active (bytes/8) (zero candidate (bytes/8) t))))
