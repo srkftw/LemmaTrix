@@ -83,7 +83,7 @@ def source(vectors,full=False):
   s+=f"""  let t := Guest.SHA512.sha512At Guest.Ed25519.hashScratch 0x651000 {n} 0x660000 t
   if Guest.Ed25519.difference 0x653000 0x660000 64 0 t != 0 then 97 else
 """
- s+='  Guest.Ed25519.clear t\nend build.NativeEd25519\n' 
+ s+='  Guest.Ed25519.clear t\nend build.NativeEd25519\n'
  return s
 
 def build(vectors,full=False):
