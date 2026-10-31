@@ -196,14 +196,70 @@ def run(backend, directory, signer_package, probe_package):
         assert f[1] != key
         denied(lambda: identity.invoke(c, 401, h=key))
         passed('independent new guest owns a new key and cannot recover unretained old authority')
-    return {'backend':backend, 'checks':checks, 'public':public, 'limits':{'identity_keys':8,'one_use_approvals':16,'private_arena_bytes':2097152}}
+    report = {'backend':backend, 'checks':checks, 'public':public, 'limits':{'identity_keys':8,'one_use_approvals':16,'private_arena_bytes':2097152}}
+    (directory/'backend-result.json').write_text(json.dumps(report, indent=2)+'\n')
+    return report
+
+
+def fresh_only(backend, directory, signer, timeout):
+    """One exact repeated failure case, with a real old key from a separate guest.
+
+    The old guest uses QEMU to avoid repeating unrelated expensive ARM checks.
+    Both execute the same identified image and admitted signer package.
+    """
+    federation = hashlib.sha256(b'qualification selected federation').digest()
+    scope = hashlib.sha256(b'qualification contact approval').digest()
+    observations = []
+    old_key = old_public = None
+    for label, selected in (('old','qemu'), ('fresh',backend)):
+        with accept.Session(selected, directory/label) as c:
+            c.timeout = timeout
+            service = identity.start(c, signer, ROOT/'tests/keys/development-rsa-public.pem')
+            if old_key is not None:
+                try:
+                    identity.invoke(c,401,h=old_key)
+                except ValueError as error:
+                    assert 'stale or revoked' in str(error)
+                else:
+                    raise AssertionError('old key accepted before fresh allocation')
+            began = time.monotonic()
+            f, public = identity.invoke(c,400,a=2,data=federation+scope)
+            elapsed = time.monotonic()-began
+            decoded = identity.decode_public(public)
+            verify(public[96:128],public[:192],public[192:256],directory/label/'verify')
+            if old_key is not None:
+                assert f[1] != old_key and public[96:128] != old_public
+                try:
+                    identity.invoke(c,401,h=old_key)
+                except ValueError as error:
+                    assert 'stale or revoked' in str(error)
+                else:
+                    raise AssertionError('old key aliases a fresh allocation')
+            old_key, old_public = f[1], public[96:128]
+            observations.append(dict(phase=label,backend=selected,service=service['service'],key=f[1],
+                                     public=decoded,creation_seconds=elapsed))
+            print(selected,'PASS',label,'native identity',elapsed,flush=True)
+    result = dict(schema=1,result='passed',image_sha256=hashlib.sha256((ROOT/'build/live/guest.bin').read_bytes()).hexdigest(),
+                  signer_sha256=hashlib.sha256((ROOT/'build/live/apps/identity.bin').read_bytes()).hexdigest(),
+                  signer_release=releases.inspect(signer.read_bytes())['release_id'],portal_timeout_seconds=timeout,
+                  guest_authority_limits='unchanged',observations=observations,
+                  checks=['old key denied before allocation','independently generated new key and handle',
+                          'old key still denied after allocation','both native descriptor signatures independently verified'])
+    (directory/'fresh-only-evidence.json').write_text(json.dumps(result,indent=2)+'\n')
+    return result
 
 
 def main():
     p = argparse.ArgumentParser(); p.add_argument('--backend', choices=['qemu','x86_64','aarch64','all'], default='qemu')
+    p.add_argument('--fresh-only', action='store_true')
+    p.add_argument('--timeout', type=float, default=600)
     p.add_argument('--output', type=Path, default=ROOT/'build/campaign007/native-identity')
     args = p.parse_args(); args.output.mkdir(parents=True, exist_ok=True)
     signer = package('Guest.Identity','Guest.Identity.main','identity',args.output)
+    if args.fresh_only:
+        assert args.backend != 'all' and 30 <= args.timeout <= 900
+        print(json.dumps(fresh_only(args.backend,args.output,signer,args.timeout),indent=2))
+        return
     probe = package('tests.fixtures.IdentityClientProbe','Guest.IdentityClientProbe.main','identity-client-probe',args.output)
     backends = ['qemu','x86_64','aarch64'] if args.backend == 'all' else [args.backend]
     results = [run(b, args.output/b, signer, probe) for b in backends]

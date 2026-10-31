@@ -117,6 +117,8 @@ def decode_public(payload):
 def main(argv=None):
     parser = argparse.ArgumentParser(description='Native scoped identities; no host identity secrets')
     parser.add_argument('--socket', type=Path, required=True)
+    parser.add_argument('--timeout', type=float, default=180,
+                        help='bounded host portal wait in seconds,30..900; guest limits stay unchanged')
     sub = parser.add_subparsers(dest='command', required=True)
     p = sub.add_parser('start'); p.add_argument('--release', required=True, type=Path); p.add_argument('--public', required=True, type=Path)
     p = sub.add_parser('bind'); p.add_argument('--service', required=True, type=int); p.add_argument('--service-release', required=True)
@@ -131,7 +133,9 @@ def main(argv=None):
     sub.add_parser('lock'); sub.add_parser('status')
     p = sub.add_parser('revoke-binding'); p.add_argument('--caller', default=0, type=int); p.add_argument('--operation', default=0, type=int); p.add_argument('--generation', default=0, type=int)
     args = parser.parse_args(argv)
-    client = live.Client(args.socket, timeout=180)
+    if not 30 <= args.timeout <= 900:
+        raise ValueError('portal timeout must be30..900 seconds')
+    client = live.Client(args.socket, timeout=args.timeout)
     try:
         if args.command == 'start':
             result = start(client, args.release, args.public)
