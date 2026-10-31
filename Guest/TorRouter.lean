@@ -68,6 +68,17 @@ def accountRecord (i wireBytes t : UInt64) : UInt64 :=
   else
     let t := store64 (p+128) (used+wireBytes) t
     store64 (p+136) (work+1) t
+-- A connect is admitted per channel, then queued only after the one immutable
+-- adapter frame and pending closes drain. Busy control output is backpressure,
+-- not failed route authority. The existing setup deadline bounds this wait.
+def connectPending (i t : UInt64) : UInt64 :=
+  let c := channel i
+  if load64 (c+144) t != 1 || !Guest.Transport.controlAvailable t then t else
+  let role := load64 (c+8) t
+  let p := if role == 2 then localDescription t else Guest.NodeEnrollment.peer (load64 (c+16) t)
+  if (role == 1 && !peerValid p t) || (role == 2 && load64 p t != 1) then stop 52 t else
+  let r := Guest.Transport.connect i role (p+376) (load64 (p+368) t) t
+  if r == error then stop 47 r else store64 (c+144) 0 r
 -- Listeners use the exact local installed declaration; initiators use an
 -- explicitly approved responder descriptor. Channel state is banked separately.
 def openChannel (i role peerIndex t : UInt64) : UInt64 :=
@@ -81,7 +92,7 @@ def openChannel (i role peerIndex t : UInt64) : UInt64 :=
     let t := store64 (channel i) 1 t
     let clock := syscall 110 0 0 0 0 t
     let t := store64 (channel i+88) (clock+100000) clock
-    Guest.Transport.connect i role (p+376) (load64 (p+368) t) t
+    connectPending i (store64 (channel i+144) 1 t)
 -- Queue a48-byte Noise handshake. At most one immutable record is buffered.
 def queueHandshake (i t : UInt64) : UInt64 :=
   let t := accountRecord i 50 t
@@ -472,6 +483,8 @@ def pumpChannel (i t : UInt64) : UInt64 :=
     let clock := syscall 110 0 0 0 0 t
     let t := clock
     if load64 p t < 4 && clock >= load64 (p+88) t then stop 51 t else
+    let t := connectPending i t
+    if !enabled t || load64 (p+144) t == 1 then t else
     if load64 p t == 4 && load64 (p+8) t == 1 &&
       (!peerValid (Guest.NodeEnrollment.peer (load64 (p+16) t)) t ||
        !Guest.NodeEnrollment.eq (p+850) (Guest.NodeEnrollment.peer (load64 (p+16) t)+512) 32 t) then stop 52 t else

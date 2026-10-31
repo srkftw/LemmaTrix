@@ -2,8 +2,9 @@ import Guest.NodeEnrollment
 import Guest.VaultCrypto
 namespace Guest.NodeStore
 open Guest.LiveSDK
--- Explicit protected operator retention. Only static DH keys and the already
--- signed public certificate survive. Live Noise/ntor/circuit state never does.
+-- Explicit protected operator retention: static DH keys, the already signed
+-- public certificate and an optional opaque Identity-owned sealed seed blob.
+-- Network cannot unwrap that blob. Live Noise/ntor/circuit state never survives.
 -- Two three-sector records in purpose2's dedicated credential extent1..6.
 def st : UInt64 := 0x720000
 def key : UInt64 := st+32
@@ -23,7 +24,7 @@ def derive (credential t : UInt64) : UInt64 :=
   Guest.ServiceHash.sha256At (scratch+512) scratch 46 key t
 
 def headerValid (p t : UInt64) : Bool :=
-  load64 p t == magic && load64 (p+8) t == 2 && load64 (p+16) t > 0 &&
+  load64 p t == magic && (load64 (p+8) t == 2 || load64 (p+8) t == 3) && load64 (p+16) t > 0 &&
   load64 (p+16) t <= 65535 && load64 (p+24) t == 768 &&
   Guest.Identity.zeros (p+44) 468 t && Guest.Identity.zeros (p+1296) 240 t
 
@@ -33,7 +34,10 @@ def openRecord (p t : UInt64) : UInt64 :=
   if r == error then error else
   if load64 plain r != magic || load64 (plain+8) r != 1 ||
       !Guest.NodeEnrollment.certificateValid (plain+96) r ||
-      !Guest.Identity.zeros (plain+576) 192 r then error else
+      (load64 (p+8) r == 2 && !Guest.Identity.zeros (plain+576) 192 r) ||
+      (load64 (p+8) r == 3 && !Guest.Identity.zeros (plain+576) 192 r &&
+       (load64 (plain+576) r != Guest.ReceiptSDK.sealMagic || load64 (plain+584) r != 1 ||
+        !Guest.Identity.zeros (plain+604) 4 r)) then error else
   -- The authenticated public keys must actually belong to these retained
   -- private scalars; signatures alone are never possession evidence.
   let t := zero scratch 4 r
@@ -62,9 +66,11 @@ def recover (credential t : UInt64) : UInt64 :=
   let r := if attempt == error then openRecord other attempt else attempt
   if r == error then response 9 0 (clear r) else
   let generation := load64 (selected+16) r
-  response 0 generation (clear (restore r))
+  let t := restore r
+  let t := header 0 generation 192 (if Guest.Identity.zeros (plain+576) 192 t then 0 else 1) 0 0 0 t
+  256+clear (copy (plain+576) (wire+64) 192 t)
 
-def retain (credential t : UInt64) : UInt64 :=
+def retain (credential sealed t : UInt64) : UInt64 :=
   if load64 Guest.NodeEnrollment.localNode t != 1 || load64 (Guest.NodeEnrollment.keys+160) t != 1 then response 3 0 t else
   let t := derive credential t
   let a := disk 141 0 record 1536 t
@@ -81,9 +87,13 @@ def retain (credential t : UInt64) : UInt64 :=
   let t := store64 (plain+8) 1 t
   let t := copy Guest.NodeEnrollment.keys (plain+32) 64 t
   let t := copy (Guest.NodeEnrollment.localNode+32) (plain+96) 480 t
+  let t := if sealed == 0 then t else copy sealed (plain+576) 192 t
+  if !Guest.Identity.zeros (plain+576) 192 t &&
+      (load64 (plain+576) t != Guest.ReceiptSDK.sealMagic || load64 (plain+584) t != 1 ||
+       !Guest.Identity.zeros (plain+604) 4 t) then response 2 0 (clear t) else
   let t := zero record 256 t
   let t := store64 record magic t
-  let t := store64 (record+8) 2 t
+  let t := store64 (record+8) 3 t
   let t := store64 (record+16) (old+1) t
   let t := store64 (record+24) 768 t
   let r := syscall 104 0 scratch 32 0 t

@@ -107,6 +107,16 @@ def session(backend,path,vault=None,readonly=False,graphics=None,display="none",
   server_store=server_store.resolve()
   if not server_store.is_file():raise ValueError('server backing must be an explicitly supplied existing image')
   if vault and os.path.samefile(vault,server_store):raise ValueError('personal and server purposes require distinct backing devices')
+ # A sparse personal backing can place authorized domains above the shell's
+ # default 2-GiB file-size limit. The opaque block adapter must be able to write
+ # every byte of the explicitly selected existing backing after a restart too.
+ import resource
+ writable=[p.stat().st_size for p,ro in ((vault,readonly),(server_store,server_readonly)) if p and not ro]
+ if writable:
+  wanted=max(writable);soft,hard=resource.getrlimit(resource.RLIMIT_FSIZE)
+  if soft!=resource.RLIM_INFINITY and soft<wanted:
+   if hard!=resource.RLIM_INFINITY and hard<wanted:raise ValueError('writable backing exceeds the process hard file-size limit')
+   resource.setrlimit(resource.RLIMIT_FSIZE,(wanted,hard))
  if path.exists():raise ValueError('socket path exists; refusing to replace it')
  server=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM)
  input_path=None;input_fd=None;created_input=False

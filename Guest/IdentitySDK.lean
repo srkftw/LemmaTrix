@@ -27,4 +27,15 @@ def revokeKey (key t : UInt64) : UInt64 := invoke 403 64 (header 403 key 0 0 0 0
 def lock (t : UInt64) : UInt64 := invoke 404 64 (header 404 0 0 0 0 0 0 t)
 def inspect (t : UInt64) : UInt64 := invoke 406 64 (header 406 0 0 0 0 0 0 t)
 def cancelApproval (permit t : UInt64) : UInt64 := invoke 407 64 (header 407 permit 0 0 0 0 0 t)
+-- Operator-only sealed retention: blob192 contains encrypted role3/4 seeds.
+def sealOperator (node receipt credential t : UInt64) : UInt64 :=
+  invoke 408 96 (copy credential (wire+64) 32 (header 408 0 node receipt 0 0 0 t))
+def recoverOperator (credential nodePublic sealed t : UInt64) : UInt64 :=
+  let t := copy credential (wire+64) 32 (header 408 1 0 0 0 0 0 t)
+  let t := copy nodePublic (wire+96) 32 t
+  invoke 408 320 (copy sealed (wire+128) 192 t)
+def authorizeReceipt (receipt service limit context t : UInt64) : UInt64 :=
+  invoke 409 128 (copy context (wire+64) 64 (header 409 0 receipt service limit 0 0 t))
+def signReceipt (grant body t : UInt64) : UInt64 :=
+  invoke 409 256 (copy body (wire+64) 192 (header 409 grant 0 0 0 0 0 t))
 end Guest.IdentitySDK

@@ -15,9 +15,12 @@ def currentGrant (caller target operation generation expectedCaller expectedTarg
   operation == expectedOperation && generation == expectedGeneration
 
 def builtInAsyncAllowed (caller service operation generation : UInt64) : Bool :=
-  caller == 1 && service == 6 && operation >= 20 && operation <= 46 && generation == 0
+  caller == 1 && service == 6 && operation >= 20 && operation <= 47 && generation == 0
 def terminalRegistryRead (caller service operation generation : UInt64) : Bool :=
   caller == 6 && service != 0 && (operation == 6 || operation == 7) && generation == 0
+def receiptConsumer (role rights : UInt64) : Bool := role == 3 && rights == 2048
+theorem graphical_cannot_receive_receipt_authority : receiptConsumer 3 799 = false := by decide
+theorem network_cannot_receive_receipt_authority : receiptConsumer 4 1024 = false := by decide
 theorem terminal_cannot_admit (service generation : UInt64) : terminalRegistryRead 6 service 2 generation = false := by
   have denied : ((2 : UInt64) == 6 || (2 : UInt64) == 7) = false := by decide
   simp only [terminalRegistryRead, denied, Bool.and_false, Bool.false_and]

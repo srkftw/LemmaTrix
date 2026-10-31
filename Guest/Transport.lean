@@ -35,12 +35,19 @@ def queue (op slot epoch value source n t : UInt64) : UInt64 :=
     let t := store64 (st+24) 0 t
     store64 (st+16) (16+n) t
 
+partial def closesPending (i t : UInt64) : Bool :=
+  if i == 4 then false else load64 (channel i+48) t != 0 || closesPending (i+1) t
+def controlAvailable (t : UInt64) : Bool := load64 (st+16) t == 0 && !closesPending 0 t
+
 def connect (slot role endpoint n t : UInt64) : UInt64 :=
   if slot >= 4 || n == 0 || n > 96 || (role != 1 && role != 2) || load64 (st+16) t != 0 then error else
     let t := store64 st 1 t
     let p := channel slot
+    let epoch := load64 p t
     let t := zero p 256 t
-    let t := store64 (p+24) 1 t
+    -- Retain the last observed adapter epoch across a fresh command. Delayed
+    -- events from the closed connection must not reopen it after this reset.
+    let t := store64 p epoch (store64 (p+24) 1 t)
     -- The value requests byte-credit flow control. Legacy guests request zero.
     queue role slot 0 1008 endpoint n t
 

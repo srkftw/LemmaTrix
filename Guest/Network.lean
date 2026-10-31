@@ -449,14 +449,15 @@ def dispatchSelected (caller rights length t : UInt64) : UInt64 :=
   let admin := (rights &&& 0x100000000) != 0
   let t := store64 (control+96) (load64 (control+96) t+1) t
   if length < 64 || load64 (command+56) t != 1 then failure 2 t else
-  if op == 43 && admin && length == 96 then Guest.NodeStore.retain (command+64) t else
+  if op == 43 && admin && (length == 96 || length == 288) then
+    Guest.NodeStore.retain (command+64) (if length == 288 then command+96 else 0) t else
   if op == 44 && admin && length == 96 then Guest.NodeStore.recover (command+64) t else
   if op == 45 && admin && length == 64 then
     let t := Guest.TorRouter.stop 0 (Guest.OnionTerminal.clear t)
     let t := zero Guest.NodeEnrollment.keys 32 (zero Guest.NodeEnrollment.localNode 68 t)
     let t := syscall 145 0 0 0 2 (Guest.NodeStore.clear t)
     failure 0 t
-  else if (op >= 38 && op <= 42) || op == 46 then Guest.OnionTerminal.dispatch caller (if admin then 1 else 0) op length t else
+  else if (op >= 38 && op <= 42) || op == 46 || op == 47 then Guest.OnionTerminal.dispatch caller (if admin then 1 else 0) op length t else
   if op >= 30 && op <= 37 && admin then Guest.TorRouter.dispatch op handle length t else
   if op >= 20 && op <= 25 && admin then Guest.NodeEnrollment.dispatch op handle length t else
   if op == 13 && (admin || (rights &&& 1024) != 0) && length == 64 then

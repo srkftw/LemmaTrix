@@ -176,6 +176,7 @@ def serverQuantum (t : UInt64) : UInt64 :=
 
 def pump (t : UInt64) : UInt64 :=
   let p := Guest.NodeEnrollment.peer (load64 (st+16) t)
+  let t := if active t && !Guest.TorRouter.enabled t then fail 26 t else t
   let t := if load64 st t == 1 && (!Guest.TorRouter.peerValid p t || !Guest.NodeEnrollment.eq (p+512) (st+192) 32 t) then fail 24 t else t
   let t := processInput t
   let t := if load64 st t == 1 && load64 (st+8) t == 1 && load64 (Guest.TorRouter.state+112) t == 1 && Guest.TorRouter.idleOutput 0 t then handshakeFirst t else t
@@ -210,7 +211,13 @@ def statusResponse (t : UInt64) : UInt64 :=
   96+copy (st+192) (wire+64) 32 t
 
 def dispatch (caller admin op length t : UInt64) : UInt64 :=
-  if op == 46 && admin == 1 && length == 96 && !active t then
+  if op == 47 && length == 64 then
+    let p := Guest.NodeEnrollment.peer (load64 (st+16) t)
+    if load64 st t != 1 || (admin != 1 && caller != load64 (st+128) t) ||
+      !Guest.TorRouter.peerValid p t || !Guest.NodeEnrollment.eq (p+512) (st+192) 32 t then response 8 0 t else
+    let t := header 0 (load64 (p+352) t) 480 1 0 0 0 t
+    544+copy (p+32) (wire+64) 480 t
+  else if op == 46 && admin == 1 && length == 96 && !active t then
     let target := syscall 113 0 0 0 0 t
     if target == error || target != load64 (command+8) target ||
       Guest.Identity.zeros (command+64) 32 target then response 8 0 target else

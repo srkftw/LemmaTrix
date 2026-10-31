@@ -3,6 +3,8 @@ import Guest.IdentityPolicy
 import Guest.Ed25519
 import Guest.ServiceHash
 import Guest.LiveMemory
+import Guest.VaultCrypto
+import Guest.ReceiptSDK
 namespace Guest.Identity
 open Guest.LiveSDK
 -- Installed profile2, rights EXACTLY zero. Kernel role1 grants narrow entropy;
@@ -98,8 +100,8 @@ def create (token t : UInt64) : UInt64 :=
   if load64 wire r != 0 then 64+zero k 32 r else r
 
 -- Exact canonical typed bodies. Contact approval certifies declared key
--- material, not a person's identity. New messaging sessions remain unavailable.
--- A node declaration has no measured-attestation or network-enrollment meaning.
+-- material, not a person's identity. It is distinct from X3DH messaging keys.
+-- Public node declarations support explicit enrollment, not measured attestation.
 partial def decimal (p n i digits value limit t : UInt64) : UInt64 :=
   let c := if i < n then load8 (p+i) t else 0
   if c < 48 || c > 57 then
@@ -120,7 +122,7 @@ def validBody (role purpose p n t : UInt64) : Bool :=
     n == 128 && load64 p t == contactMagic && load64 (p+8) t == 1 &&
     load64 (p+16) t > 0 && load64 (p+24) t <= 7 &&
     !zeros (p+32) 32 t && !zeros (p+64) 32 t && !zeros (p+96) 32 t
-  else
+  else if purpose == 3 then n == 128 && Guest.ReceiptSDK.declarationBody p t else
     let endpointLength := load64 (p+176) t
     let legacy := load64 (p+8) t == 1 && load64 (p+16) t >= 1 &&
       load64 (p+16) t <= 6 && load64 (p+24) t == 3
@@ -143,7 +145,7 @@ def authorize (token t : UInt64) : UInt64 :=
   let bindingGeneration := syscall 132 recipient 402 0 0 t
   if k == error then fail 3 t else
   if recipient == 0 || !Guest.IdentityPolicy.purposeAllowed (load64 (k+16) t) purpose ||
-    length != (if purpose == 1 then 128 else 256) || zeros (command+64) 32 t then fail 2 t else
+    length != (if purpose == 1 || purpose == 3 then 128 else 256) || zeros (command+64) 32 t then fail 2 t else
   if bindingGeneration == error || bindingGeneration == 0 then fail 3 t else
   if slot == error || handle == error then fail 4 t else
   let g := grantAt slot
@@ -205,13 +207,124 @@ def lock (t : UInt64) : UInt64 :=
 partial def countKeys (i count t : UInt64) : UInt64 :=
   if i == 8 then count else countKeys (i+1) (count+(if load64 (keyAt i) t == 1 then 1 else 0)) t
 partial def countGrants (i count t : UInt64) : UInt64 :=
-  if i == 16 then count else countGrants (i+1) (count+(if load64 (grantAt i) t == 1 then 1 else 0)) t
+  if i == 16 then count else countGrants (i+1) (count+(if load64 (grantAt i) t != 0 then 1 else 0)) t
 partial def cancelApproval (handle caller admin i t : UInt64) : UInt64 :=
   if i == 16 then fail 3 t else
   let g := grantAt i
-  if load64 g t == 1 && load64 (g+8) t == handle && (admin == 1 || load64 (g+24) t == caller) then
+  if load64 g t != 0 && load64 (g+8) t == handle && (admin == 1 || load64 (g+24) t == caller) then
     response 0 handle 0 0 (zero g 16 t)
   else cancelApproval handle caller admin (i+1) t
+-- Sealed operator retention never exports an unwrapped seed. This private
+-- workspace is disjoint from key/grant tables and relocatedEd25519 scratch.
+def receiptWork : UInt64 := 0x660000
+def clearReceipt (t : UInt64) : UInt64 := zero receiptWork 512 t
+def receiptFail (code t : UInt64) : UInt64 := fail code (clearReceipt t)
+def retentionKey (credential t : UInt64) : UInt64 :=
+  let t := copy credential (receiptWork+512) 32 t
+  let t := store64 (receiptWork+544) 0x746e6564492d544c t
+  let t := store64 (receiptWork+552) 0x336c616553797469 t
+  hash (receiptWork+512) 48 (receiptWork+768) t
+def sealKeys (token t : UInt64) : UInt64 :=
+  let node := findKey (load64 (command+16) t) 0 t
+  let receipt := findKey (load64 (command+24) t) 0 t
+  if node == error || receipt == error || load64 (node+16) t != 3 ||
+    load64 (receipt+16) t != 4 || !eq (node+32) (receipt+32) 64 t then receiptFail 2 t else
+  let p := receiptWork
+  let b := receiptWork+256
+  let t := zero p 18 t
+  let t := copy (node+96) p 32 t
+  let t := copy (receipt+96) (p+32) 32 t
+  let t := copy (node+32) (p+64) 64 t
+  let t := store64 (p+128) (load64 (node+24) t) t
+  let t := store64 (p+136) (load64 (receipt+24) t) t
+  let t := retentionKey (command+64) t
+  let r := syscall 130 0 (receiptWork+1024) 32 0 t
+  if r != 0 || !current token r then receiptFail 6 r else
+  let t := zero b 24 r
+  let t := store64 b Guest.ReceiptSDK.sealMagic t
+  let t := store64 (b+8) 1 t
+  let t := copy (receiptWork+1024) (b+16) 12 t
+  let t := Guest.VaultCrypto.encrypt (receiptWork+768) (b+16) b 32 p 144 (b+32) t
+  if t == error || !current token t then receiptFail 3 t else
+  let t := header 0 (load64 (node+8) t) (load64 (receipt+8) t) 192 0 0 0 t
+  256+clearReceipt (copy b (wire+64) 192 t)
+partial def freeOtherKey (excluded i t : UInt64) : UInt64 :=
+  if i == 8 then error else
+  if i != excluded && load64 (keyAt i) t == 0 then i else freeOtherKey excluded (i+1) t
+def recoveredKey (slot role seed generation scope t : UInt64) : UInt64 :=
+  let p := keyAt slot
+  let handle := serial t
+  if handle == error then error else
+  let t := zero p 32 (takeSerial t)
+  let t := copy seed (p+96) 32 t
+  let t := copy scope (p+32) 64 t
+  let t := Guest.Ed25519.publicKey (p+96) (p+128) t
+  let t := store64 (p+8) handle t
+  let t := store64 (p+16) role t
+  let t := store64 (p+24) generation t
+  store64 p 1 t
+def recoverKeys (token t : UInt64) : UInt64 :=
+  let b := command+128
+  let first := freeKey 0 t
+  let second := freeOtherKey first 0 t
+  if first == error || second == error || load64 b t != Guest.ReceiptSDK.sealMagic ||
+    load64 (b+8) t != 1 || !zeros (b+28) 4 t || zeros (command+96) 32 t then receiptFail 2 t else
+  let t := retentionKey (command+64) t
+  let r := Guest.VaultCrypto.decrypt (receiptWork+768) (b+16) b 32 (b+32) 144 receiptWork t
+  if r == error || zeros (receiptWork+64) 32 r || zeros (receiptWork+96) 32 r ||
+    load64 (receiptWork+128) r == 0 || load64 (receiptWork+136) r == 0 then receiptFail 9 r else
+  let t := Guest.Ed25519.publicKey receiptWork (receiptWork+1024) r
+  if !eq (receiptWork+1024) (command+96) 32 t || !current token t then receiptFail 8 t else
+  let t := recoveredKey first 3 receiptWork (load64 (receiptWork+128) t) (receiptWork+64) t
+  if t == error then receiptFail 4 t else
+  let t := recoveredKey second 4 (receiptWork+32) (load64 (receiptWork+136) t) (receiptWork+64) t
+  if t == error || !current token t then receiptFail 3 (zero (keyAt first) 32 (zero (keyAt second) 32 t)) else
+  let t := header 0 (load64 (keyAt first+8) t) (load64 (keyAt second+8) t) 1 0 0 0 t
+  64+clearReceipt t
+def authorizeReceipt (token t : UInt64) : UInt64 :=
+  let k := findKey (load64 (command+16) t) 0 t
+  let recipient := load64 (command+24) t
+  let limit := load64 (command+32) t
+  let slot := freeGrant 0 t
+  let handle := serial t
+  let generation := syscall 132 recipient 409 3 0 t
+  if k == error || load64 (k+16) t != 4 || recipient == 0 || limit == 0 || limit > 65536 ||
+    zeros (command+64) 32 t || zeros (command+96) 32 t then receiptFail 2 t else
+  if generation == error || generation == 0 then receiptFail 3 t else
+  if slot == error || handle == error then receiptFail 4 t else
+  let g := grantAt slot
+  let t := zero g 16 (takeSerial t)
+  let t := store64 g 2 t
+  let t := store64 (g+8) handle t
+  let t := store64 (g+16) (load64 (k+8) t) t
+  let t := store64 (g+24) recipient t
+  let t := store64 (g+48) (load64 (k+24) t) t
+  let t := store64 (g+56) limit t
+  let t := hash (command+64) 64 (g+64) t
+  let t := store64 (g+96) generation t
+  if !current token t then receiptFail 3 (zero g 16 t) else
+  response 0 handle limit generation (clearReceipt t)
+partial def findReceipt (handle caller i t : UInt64) : UInt64 :=
+  if i == 16 then error else
+  let g := grantAt i
+  if load64 g t == 2 && load64 (g+8) t == handle && load64 (g+24) t == caller then g else findReceipt handle caller (i+1) t
+def signReceipt (caller token t : UInt64) : UInt64 :=
+  let g := findReceipt (load64 (command+8) t) caller 0 t
+  if g == error then receiptFail 3 t else
+  let k := findKey (load64 (g+16) t) 0 t
+  let generation := syscall 132 caller 409 3 0 t
+  if k == error || generation == error then receiptFail 3 t else
+  if !Guest.ReceiptSDK.bodyValid (command+64) caller t then receiptFail 2 t else
+  let t := hash (command+160) 64 hashed t
+  let context := eq hashed (g+64) 32 t
+  if !Guest.IdentityPolicy.receiptPermits (load64 (g+56) t) (load64 (g+48) t)
+      (load64 (k+24) t) (load64 (g+96) t) generation context then receiptFail (if context then 3 else 1) t else
+  let t := store64 (g+56) (load64 (g+56) t-1) t
+  if !current token t then receiptFail 3 t else
+  let t := Guest.Ed25519.sign (k+96) (k+128) (command+64) 192 signature t
+  if t == error || !current token t then receiptFail 3 t else
+  let t := header 0 (load64 (g+8) t) (load64 (g+56) t) (load64 (k+24) t) 1 0 0 t
+  128+clearReceipt (clearScratch (copy signature (wire+64) 64 t))
 def dispatch (caller rights token length t : UInt64) : UInt64 :=
   let op := load64 command t
   let admin := Guest.IdentityPolicy.administrative rights
@@ -229,6 +342,12 @@ def dispatch (caller rights token length t : UInt64) : UInt64 :=
     64+header 0 1 8 16 (countKeys 0 0 t) (countGrants 0 0 t) 0 t else fail 2 t
   else if op == 407 then if length == 64 then
     cancelApproval (load64 (command+8) t) caller (if admin then 1 else 0) 0 t else fail 2 t
+  else if op == 408 && admin then
+    if load64 (command+8) t == 0 && length == 96 then sealKeys token t else
+    if load64 (command+8) t == 1 && length == 320 then recoverKeys token t else receiptFail 2 t
+  else if op == 409 then
+    if admin && load64 (command+8) t == 0 && length == 128 then authorizeReceipt token t else
+    if !admin && length == 256 then signReceipt caller token t else receiptFail 2 t
   else fail 7 t
 partial def serve (t : UInt64) : UInt64 :=
   let n := receive (self t) t
@@ -239,6 +358,6 @@ partial def serve (t : UInt64) : UInt64 :=
   let t := reply token result result
   -- Command and response windows retain no private seeds; erase public request
   -- data as well so cancelled callers leave no stale certificate body behind.
-  serve (zero incoming 128 (zero wire 128 (clearScratch t)))
+  serve (zero incoming 128 (zero wire 128 (clearReceipt (clearScratch t))))
 def main (t : UInt64) : UInt64 := serve (zero st 1 (lock t))
 end Guest.Identity

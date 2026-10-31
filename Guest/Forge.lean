@@ -8,6 +8,7 @@ import Guest.RemoteIngest
 import Guest.ForgeFederation
 import Guest.ForgeSubscription
 import Guest.ForgeCache
+import Guest.ForgeRouted
 namespace Guest.Forge
 open Guest.LiveSDK
 open Guest.ProjectSDK
@@ -453,6 +454,7 @@ def archiveInspection (t : UInt64) : UInt64 :=
 -- Keeping bounded operations separate also avoids inflating the freestanding
 -- register frame merely by adding another public inspection operation.
 def controlRead (op t : UInt64) : UInt64 :=
+  if op == 67 then Guest.ForgeRouted.inspect t else
   if op == 64 then Guest.RemoteBuild.inspectArtifact t else
   if op == 58 then Guest.ForgeFederation.inspect t else
   if op == 59 then Guest.ForgeFederation.inspectLocal t else
@@ -464,7 +466,10 @@ def controlRead (op t : UInt64) : UInt64 :=
   if op == 2 then 320+copy st (wire+64) 256 (zero wire 8 t) else error
 
 def controlAdmin (op n t : UInt64) : UInt64 :=
-  if op == 1 then configure (n-32) t else
+  if op == 66 && n == 128 then
+    let r := Guest.ForgeRouted.begin (command+64) (load64 (command+8) t) (load64 (command+16) t) t
+    if r == error then error else 64+zero wire 8 r
+  else if op == 1 then configure (n-32) t else
   if op == 50 && n == 160 then
     let r := Guest.RemoteBuild.configure (load64 (command+16) t) (command+64) (command+96) pins t
     if r == error then error else
@@ -492,7 +497,7 @@ def pollControl (t : UInt64) : UInt64 :=
     let token := load64 (incoming+8) n
     let op := load64 command n
     let admin := (load64 incoming n &&& 255) == 1
-    let r := if op == 1 || op == 50 || op == 54 || op == 57 || op == 61 || op == 65 then
+    let r := if op == 1 || op == 50 || op == 54 || op == 57 || op == 61 || op == 65 || op == 66 then
       if admin then controlAdmin op n n else error
       else if n == 96 then controlRead op n else error
     let t := if r == error then store64 wire 1 (zero wire 8 r) else r
@@ -1113,6 +1118,11 @@ def key (code value t : UInt64) : UInt64 :=
   if code == 1 then cancel t else t
 partial def loop (surface count t : UInt64) : UInt64 :=
   let t := pollControl t
+  let before := Guest.ForgeRouted.phase t
+  let t := Guest.ForgeRouted.pump t
+  let t := if before == 3 || Guest.ForgeRouted.phase t != 3 then t else
+    let t := copy Guest.ForgeRouted.root remoteHead 32 t
+    store64 (st+248) 1 (store64 (st+144) 0 (store64 (st+128) 0 t))
   let t := if count%32 != 0 || load64 st t == 0 then t else
     let t := archiveTick t
     let t := store64 (st+400) count t
@@ -1134,8 +1144,8 @@ partial def loop (surface count t : UInt64) : UInt64 :=
   let t := if surface != 0 && load64 (st+248) t != 0 then draw surface t else t
   loop surface (count+1) (syscall 9 0 0 0 0 t)
 def main (initial : UInt64) : UInt64 :=
-  let t := Guest.RemoteIngest.init (Guest.ForgeSubscription.disable (Guest.ForgeArchive.init (Guest.ForgeFederation.init (Guest.ForgeCache.init (zero st 128 initial)))))
+  let t := Guest.ForgeRouted.init (Guest.RemoteIngest.init (Guest.ForgeSubscription.disable (Guest.ForgeArchive.init (Guest.ForgeFederation.init (Guest.ForgeCache.init (zero st 128 initial))))))
   let surface := syscall 80 0 0 0 0 t
   if surface == error then syscall 10 1 0 0 0 surface else loop surface 0 (draw surface surface)
-def serverMain (initial : UInt64) : UInt64 := loop 0 0 (Guest.RemoteIngest.init (Guest.ForgeSubscription.disable (Guest.ForgeArchive.init (Guest.ForgeFederation.init (Guest.ForgeCache.init (zero st 128 initial))))))
+def serverMain (initial : UInt64) : UInt64 := loop 0 0 (Guest.ForgeRouted.init (Guest.RemoteIngest.init (Guest.ForgeSubscription.disable (Guest.ForgeArchive.init (Guest.ForgeFederation.init (Guest.ForgeCache.init (zero st 128 initial)))))))
 end Guest.Forge

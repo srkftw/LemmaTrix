@@ -42,12 +42,12 @@ def say0 (id x y fg bg t : UInt64) : UInt64 :=
   if id == 4 then
     let t := store64 (0x414000+0) 4706900758732755013 t
     let t := store64 (0x414000+8) 5713189219406651468 t
-    let t := store64 (0x414000+16) 4707463729538474062 t
-    let t := store64 (0x414000+24) 2330978181359619657 t
-    let t := store64 (0x414000+32) 2326187639265445972 t
-    let t := store64 (0x414000+40) 2329298080182714959 t
-    let t := store64 (0x414000+48) 362057908566 t
-    Guest.Raster.text 0x414000 53 x y fg bg t
+    let t := store64 (0x414000+16) 4995694105690185806 t
+    let t := store64 (0x414000+24) 4993964557510202446 t
+    let t := store64 (0x414000+32) 4705504339690734661 t
+    let t := store64 (0x414000+40) 4995422514019585609 t
+    let t := store64 (0x414000+48) 21582 t
+    Guest.Raster.text 0x414000 50 x y fg bg t
   else
   if id == 5 then
     let t := store64 (0x414000+0) 5773689786745702739 t

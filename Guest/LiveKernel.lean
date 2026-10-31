@@ -93,7 +93,7 @@ def asyncAt (p : UInt64) : UInt64 := 0x80b20000+p*2048
 def networkAsyncAllowed (p operation generation t : UInt64) : Bool :=
   Guest.ServiceBindingPolicy.builtInAsyncAllowed p 6 operation generation ||
   (p >= 7 && (Guest.load64 (proc p+16) t &&& 1024) != 0 &&
-    operation >= 39 && operation <= 42 && generation == 0)
+    ((operation >= 39 && operation <= 42) || operation == 47) && generation == 0)
 
 -- A terminal may read the explicitly selected native Registry. This grants
 -- neither its admission operation nor its signing/configuration operations.
@@ -892,11 +892,14 @@ def dispatch (p op h ptr n v t : UInt64) : UInt64 :=
     if Guest.load64 (proc p+272) t == 0 || h == 0 ||
         !activeServiceRequest (identity p t) h 1 t then err else t
   else if op == 132 then
-    -- A scoped signer permit must follow the current IPC402 grant generation.
+    -- A scoped signer permit follows its exact IPC operation generation.
     -- Revoking and rebinding the same live recipient cannot revive old consent.
     if Guest.load64 (bindingRole 1) t != identity p t || Guest.load64 (proc p+272) t != 1 ||
-        Guest.load64 (proc p+16) t != 0 || ptr != 402 || n != 0 || v != 0 || !live h t then err else
-    let grant := findGrant h (identity p t) 402 0 t
+        Guest.load64 (proc p+16) t != 0 || (ptr != 402 && ptr != 409) || v != 0 || !live h t then err else
+    let recipient := h &&& 255
+    if (ptr == 402 && n != 0) || (ptr == 409 && (n != 3 || Guest.load64 (bindingRole 3) t != h ||
+      !Guest.ServiceBindingPolicy.receiptConsumer (Guest.load64 (proc recipient+272) t) (Guest.load64 (proc recipient+16) t))) then err else
+    let grant := findGrant h (identity p t) ptr 0 t
     if grant != 0 && grantLive grant t then Guest.load64 (grant+40) t else err
   else if op == 116 then Guest.load64 (state+16) t
   else if op == 117 then

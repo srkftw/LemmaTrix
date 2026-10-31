@@ -169,6 +169,16 @@ def main():
     if len(sys.argv)>1 and sys.argv[1]=='network':
         import network
         sys.exit(network.main(sys.argv[2:]))
+    if len(sys.argv)>1 and sys.argv[1]=='messenger':
+        import messenger
+        try:sys.exit(messenger.main(sys.argv[2:]))
+        except (ValueError,OSError,TimeoutError,EOFError) as error:
+            print('lt messenger:',error,file=sys.stderr);sys.exit(1)
+    if len(sys.argv)>1 and sys.argv[1]=='onion':
+        import onion
+        try:sys.exit(onion.main(sys.argv[2:]))
+        except (ValueError,OSError,TimeoutError,EOFError) as error:
+            print('lt onion:',error,file=sys.stderr);sys.exit(1)
     if len(sys.argv)>1 and sys.argv[1]=='identity':
         import identity
         try:sys.exit(identity.main(sys.argv[2:]))
