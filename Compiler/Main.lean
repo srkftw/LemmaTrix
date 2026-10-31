@@ -161,7 +161,7 @@ def epilogue (c : FnContext) : EmitM Unit := do
   -- fixed-size frame before releasing it, including on error returns. Preserve
   -- only a0 (the result), ra and sp; temporary/argument registers are cleared.
   -- This is an explicit namespace policy, not inferred binary constant time.
-  let sensitive := ["Guest.Ed25519.", "Guest.Noise25519.", "Guest.SHA512."].any
+  let sensitive := ["Guest.Ed25519.", "Guest.Noise25519.", "Guest.SHA512.", "Guest.SignerEntropy."].any
     (fun namespaceName => c.fn.toString.startsWith namespaceName)
   if sensitive then
     let loop ← fresh "secret_frame_clear"

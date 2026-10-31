@@ -3,6 +3,7 @@ import Guest.Devices
 import Guest.GraphicsDevice
 import Guest.AudioDevice
 import Guest.ServiceBindingPolicy
+import Guest.SignerEntropy
 namespace Guest.Live
 open Guest.LiveMemory
 @[never_extract, extern "lt_idle_pc"] opaque idlePC : UInt64 → UInt64
@@ -743,7 +744,7 @@ def dispatch (p op h ptr n v t : UInt64) : UInt64 :=
     let t := zero (physical p ptr) 4 t
     let t := zero Devices.randomBuffer 32 t
     let result := Devices.random Devices.randomBuffer 32 t
-    let t := if result == 0 then copy Devices.randomBuffer (physical p ptr) 32 result else result
+    let t := if result == 0 then Guest.SignerEntropy.copy32 Devices.randomBuffer (physical p ptr) result else result
     let t := zero Devices.randomBuffer 32 t
     if result == 0 then t else err
   else if op == 131 then
