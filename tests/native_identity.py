@@ -65,7 +65,13 @@ def run(backend, directory, signer_package, probe_package):
     with accept.Session(backend, directory) as c:
         service = identity.start(c, signer_package, ROOT/'tests/keys/development-rsa-public.pem')
         before = {r[0] for r in identity.instances(c) if 0 < r[1] < 5}
-        denied(lambda: identity.start(c, signer_package, ROOT/'tests/keys/development-rsa-public.pem'))
+        # A valid newer admission reaches start/bind; reinstalling the identical
+        # version would be rejected earlier and would not test compensation.
+        duplicate = directory/'identity-duplicate.ltrel'
+        newer, _ = releases.make(ROOT/'build/live/apps/identity.bin', 'identity', '1.0.1', 0,
+                                 ROOT/'tests/keys/development-rsa.pem', parent=service['release'], profile=2)
+        duplicate.write_bytes(newer)
+        denied(lambda: identity.start(c, duplicate, ROOT/'tests/keys/development-rsa-public.pem'))
         after = {r[0] for r in identity.instances(c) if 0 < r[1] < 5}
         assert before == after
         passed('failed duplicate provisioning reclaims its process and preserves the current signer')
