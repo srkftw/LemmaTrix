@@ -467,10 +467,21 @@ def label1 (id x y color t : UInt64) : UInt64 :=
     text labelBuffer 9 x y color bg t
   else
   if id == 45 then
-    let t := store64 (labelBuffer+0) 2336936577129475669 t
-    let t := store64 (labelBuffer+8) 8751168585183552868 t
-    let t := store64 (labelBuffer+16) 111550525633312 t
-    text labelBuffer 22 x y color bg t
+    if load64 (st+32) t == 0 && load64 (transfer+56) t == 0 then
+      let t := store64 (labelBuffer+0) 7594585633987784526 t
+      let t := store64 (labelBuffer+8) 7669474516340598134 t
+      let t := store64 (labelBuffer+16) 7308327840455615333 t
+      let t := store64 (labelBuffer+24) 7161040321955329123 t
+      let t := store64 (labelBuffer+32) 7020677651269380468 t
+      let t := store64 (labelBuffer+40) 7308324465885667702 t
+      let t := store64 (labelBuffer+48) 46 t
+      text labelBuffer 49 x y color bg t
+    else
+      let t := store64 (labelBuffer+0) 8439867126481969985 t
+      let t := store64 (labelBuffer+8) 7089066488320385390 t
+      let t := store64 (labelBuffer+16) 7526676535825163628 t
+      let t := store64 (labelBuffer+24) 3348256351601062761 t
+      text labelBuffer 32 x y color bg t
   else
   if id == 46 then
     let t := store64 (labelBuffer+0) 6998721855778483529 t
