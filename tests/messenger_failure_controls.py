@@ -21,8 +21,9 @@ ORIGINAL=(420,421,422,429,431,432,433,434)
 TEMPORARY=(420,427,435,429,431,432,433,434)
 
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--campaign',required=True,type=Path);p.add_argument('--output',required=True,type=Path);p.add_argument('--sender',default='bob',choices=('alice','bob'));p.add_argument('--broken-relay',default='relay2',choices=('relay1','relay2','relay3'));p.add_argument('--bindings',type=Path,help='actual public171 return records; defaults to campaign/personal.bindings.json');p.add_argument('--actor-packages',type=Path,help='public per-actor exact package path mapping; defaults to campaign/actor-packages.json when present');p.add_argument('--acceptance-cut',action='store_true',help='require opt-in opaque Mailbox TX pause and real retained Sender crash/recovery');p.add_argument('--fault-control',type=Path);p.add_argument('--ready-packages',type=Path,help='exact Owner/UI/Delivery releases for actual retained sender recovery');p.add_argument('--stalled-attachment',action='store_true',help='new small useful native project retrieval with paused outgoing bytes and actual text/cancel input');p.add_argument('--only-stalled-attachment',action='store_true');p.add_argument('--resume-upload',action='store_true',help='reselect the exact existing canonical project for native committed partial-transfer retry after authorized recovery');p.add_argument('--received-fixture',type=Path,help='public completed fixture record for retrying only the preserved recipient retrieval; no new upload or sender key');p.add_argument('--reconcile-attachment',action='store_true',help='exercise one explicit graphical may-duplicate reconciliation confirmation only after native error11');p.add_argument('--expected-inbox-serial',type=int,help='minimum actual authenticated inbox serial for historical multi-manifest continuation');p.add_argument('--staging-diagnostics',action='store_true',help='bounded read-only native mailbox440/6,7 and delivery464/4 observer; requires diagnostic-capable packages');a=p.parse_args()
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--campaign',required=True,type=Path);p.add_argument('--output',required=True,type=Path);p.add_argument('--sender',default='bob',choices=('alice','bob'));p.add_argument('--broken-relay',default='relay2',choices=('relay1','relay2','relay3'));p.add_argument('--bindings',type=Path,help='actual public171 return records; defaults to campaign/personal.bindings.json');p.add_argument('--actor-packages',type=Path,help='public per-actor exact package path mapping; defaults to campaign/actor-packages.json when present');p.add_argument('--acceptance-cut',action='store_true',help='require opt-in opaque Mailbox TX pause and real retained Sender crash/recovery');p.add_argument('--fault-control',type=Path);p.add_argument('--ready-packages',type=Path,help='exact Owner/UI/Delivery releases for actual retained sender recovery');p.add_argument('--stalled-attachment',action='store_true',help='new small useful native project retrieval with paused outgoing bytes and actual text/cancel input');p.add_argument('--only-stalled-attachment',action='store_true');p.add_argument('--continue-upload',action='store_true',help='continue only a currently failed native11 exact batch on its unchanged healthy three-hop terminal; requires resume/reconcile');p.add_argument('--resume-upload',action='store_true',help='reselect the exact existing canonical project for native committed partial-transfer retry after authorized recovery');p.add_argument('--received-fixture',type=Path,help='public completed fixture record for retrying only the preserved recipient retrieval; no new upload or sender key');p.add_argument('--reconcile-attachment',action='store_true',help='exercise one explicit graphical may-duplicate reconciliation confirmation only after native error11');p.add_argument('--expected-inbox-serial',type=int,help='minimum actual authenticated inbox serial for historical multi-manifest continuation');p.add_argument('--staging-diagnostics',action='store_true',help='at most128 periodic read-only native mailbox440/6,7 and delivery464/4 samples plus one terminal error sample; requires diagnostic-capable packages');a=p.parse_args()
  if a.acceptance_cut and not a.ready_packages:p.error('--acceptance-cut requires --ready-packages with the native retained-outbox recovery UI')
+ if a.continue_upload and not(a.resume_upload and a.reconcile_attachment):p.error('--continue-upload requires --resume-upload and --reconcile-attachment')
  if a.only_stalled_attachment:a.stalled_attachment=True
  campaign=a.campaign.resolve();out=a.output.resolve();out.mkdir(parents=True,exist_ok=False);image=campaign/'guest.bin';actors=[];checks=[];grants=[];current_generations={};sender=None;broken=None;restored_contract=False;began=time.monotonic()
  packages={n:(campaign/(n+'.ltrel'),releases.inspect((campaign/(n+'.ltrel')).read_bytes()))for n in ('identity','mailbox','owner')}
@@ -205,31 +206,49 @@ def main():
     peer=attach('alice'if a.sender=='bob'else'bob',True)
     state=role(peer,2,420)[0]
     if state[1]!=1 or state[5]!=1:unlock_ui(peer,hashlib.sha256(('Campaign008 disclosed '+peer.name.capitalize()+' vault-unlock fixture').encode()).digest(),1)
+    if a.continue_upload and inspect(peer)[0][2]==7:
+     assert role(peer,4,464,a=3)[0][1:5]==(7,11,7,11)
+     peer.device.press(1,delay=.1);wait(lambda:inspect(peer)[0][2]==0 and transfer_state(peer)[1]==9,30,'Escape preserves the earlier unconfirmed reconciliation warning')
+     record('Escape closes the earlier unconfirmed graphical warning without fresh admission',native_transfer=list(transfer_state(peer)),native_broker=list(role(peer,4,464,a=3)[0]))
     wait(lambda:inspect(peer)[0][2]==0,120,'native peer credential form closed before project selection')
     if transfer_state(peer)[1]==10 and not a.resume_upload:raise RuntimeError('explicitly finish or natively forget the prior outgoing attachment before creating this fixture')
-    for g in (sender,peer):net(g,42);net(g,35)
+    if a.continue_upload:
+     current=transfer_state(peer);details=role(peer,4,464,a=3)[0];circuit=net(peer,32)[0];terminal,pin=net(peer,41)
+     assert current[1]==9 and details[1:5]==(7,11,7,11) and circuit[2:4]==(3,0) and terminal[2:4]==(3,0) and pin==mailbox.pin,('continuation requires the current exact native reconciliation batch and authenticated route',current,details,circuit,terminal)
+     record('continue the currently failed exact native11 batch on its unchanged approved three-hop authenticated terminal',native_transfer=list(current),native_broker=list(details),circuit=list(circuit),terminal=list(terminal),mailbox_pin=pin.hex(),owner=peer.owner,coordinator=peer.delivery)
+    else:
+     for g in (sender,peer):net(g,42);net(g,35)
     # The native terminal owner admits one authenticated client context. Upload
     # first, then hand the operator route to the recipient through native reset;
     # simultaneous independent terminal contexts are outside this finite profile.
-    reset_operators(relays,mailbox);route(peer,[g.certificate for g in relays],mailbox)
+    if not a.continue_upload:reset_operators(relays,mailbox);route(peer,[g.certificate for g in relays],mailbox)
     records=[];entries=[];files={}
     for name in ('Guest/NetworkSDK.lean','Guest/ContentSDK.lean'):
      raw=(ROOT/name).read_bytes();identifier=projects.canonical_node(10,raw);files[name]=raw;entries.append((name,10,identifier));records.append(dict(kind=10,id=identifier,payload=raw))
     body=projects.manifest(entries);head=projects.canonical_node(11,body);records.insert(0,dict(kind=11,id=head,payload=body))
     resume=None
     if a.resume_upload:
-     wait(lambda:transfer_state(peer)[1]==10,120,'native recovered partial transfer is explicitly retryable before F11')
+     wait(lambda:transfer_state(peer)[1]==(9 if a.continue_upload else 10),120,'native current exact failed batch'if a.continue_upload else'native recovered partial transfer is explicitly retryable before F11')
      old_slots=[role(peer,2,434,h=i,a=21,allow=(3,))[0]for i in range(2)]
      latest=next(row for row in reversed(old_slots)if row[0]==0 and row[2]==1)
      assert latest[4]==9142 and latest[5]>=14 and latest[6]>=14
      _,cached=role(peer,2,434,h=latest[1],a=18,b=13)
      resume=dict(handle=latest[1],local_before=list(latest),slots_before=[list(row)for row in old_slots],cached_chunk13_sha256=hashlib.sha256(cached).hexdigest(),message_before=role(peer,2,434,h=1,a=15)[0][4])
-    cap=projects.import_records(peer.client,[dict(name='messenger-stalled-sdk-'+head[:12],head=head)],records)[0]['cap']
-    compositor=next(row[0]for row in identity.instances(peer.client)if row[0]&255==4);peer.client.objects(27,cap,compositor,31)
+    existing=next((row for row in projects.roots(peer.client)if row['head']==head),None)
+    if existing:
+     verified_head,verified_files=projects.snapshot(peer.client,existing['cap'])
+     assert verified_head==head and verified_files==files,'existing native project root differs from the selected useful fixture'
+     cap=existing['cap']
+     record('reuse the existing owned native immutable project root after verifying both source objects',canonical_root=head,capability=cap,source_files={name:dict(bytes=len(raw),sha256=hashlib.sha256(raw).hexdigest())for name,raw in verified_files.items()},new_objects_import=False)
+    else:cap=projects.import_records(peer.client,[dict(name='messenger-stalled-sdk-'+head[:12],head=head)],records)[0]['cap']
+    compositor=next(row[0]for row in identity.instances(peer.client)if row[0]&255==4)
+    if not a.continue_upload:peer.client.objects(27,cap,compositor,31)
     position=next(i for i,row in enumerate(projects.roots(peer.client))if row['cap']==cap)
-    baseline=role(sender,2,420)[0][4];peer.device.press(87,delay=.15);wait(lambda:transfer_state(peer)[1]==1,120,'actual F11 small project picker')
-    for _ in range(position):peer.device.press(108,delay=.1)
-    peer.device.press(28,delay=.15)
+    baseline=role(sender,2,420)[0][4]
+    if not a.continue_upload:
+     peer.device.press(87,delay=.15);wait(lambda:transfer_state(peer)[1]==1,120,'actual F11 small project picker')
+     for _ in range(position):peer.device.press(108,delay=.1)
+     peer.device.press(28,delay=.15)
     last_upload=[None];reconciled=[False];observations=[];next_observation=[0.0]
     def staging_observation(force=False):
      if not a.staging_diagnostics or (not force and (len(observations)>=128 or time.monotonic()<next_observation[0])):return None
@@ -242,7 +261,7 @@ def main():
      if f[1] in (6,7,9):staging_observation()
      if f[1]==9:
       detail=role(peer,4,464,a=3)[0]if a.reconcile_attachment else None
-      if a.reconcile_attachment and not reconciled[0]and detail[1:3]==(7,11)and inspect(peer)[0][4]==26:
+      if a.reconcile_attachment and not reconciled[0]and detail[1:3]==(7,11):
        assert resume is not None
        _,before_cipher=role(peer,2,434,h=resume['handle'],a=18,b=13)
        _,fingerprint=role(peer,2,434,h=1,a=15)
@@ -251,11 +270,12 @@ def main():
        assert inspect(peer)[1]==fingerprint
        warning=screenshot(peer,'attachment-reconciliation-warning')
        peer.device.press(1,delay=.1)
-       wait(lambda:inspect(peer)[0][2]==0 and inspect(peer)[0][4]==26,30,'actual Escape preserves uncertain attachment')
+       wait(lambda:inspect(peer)[0][2]==0 and transfer_state(peer)[1]==9,30,'actual Escape preserves uncertain attachment')
+       assert role(peer,4,464,a=3)[0][1:5]==(7,11,7,11)
        _,cancelled_cipher=role(peer,2,434,h=resume['handle'],a=18,b=13);assert cancelled_cipher==before_cipher
        peer.device.press(65,delay=.1);wait(lambda:inspect(peer)[0][2]==7,30,'actual F7 reopens the same reconciliation warning')
        peer.device.press(28,delay=.1);reconciled[0]=True
-       record('native exact replay reports reconciliation11 after bounded tombstone eviction; actual F7 warning shows the approved fingerprint, Escape preserves it and a separate Enter explicitly confirms possibly duplicate fresh admission',native_failure=list(detail),warning_frame_sha256=warning,handle=resume['handle'],cached_chunk13_sha256=hashlib.sha256(before_cipher).hexdigest(),fingerprint=fingerprint.hex(),host_fresh_flag_override=False)
+       record('native exact replay reports reconciliation11 after bounded tombstone eviction; actual F7 warning shows the approved fingerprint, Escape preserves it and a separate Enter explicitly confirms possibly duplicate fresh admission',native_failure=list(detail),warning_frame_sha256=warning,handle=resume['handle'],cached_chunk13_sha256=hashlib.sha256(before_cipher).hexdigest(),fingerprint=fingerprint.hex(),host_fresh_flag_override=False,modal_warning_authority='Native mode7 and approved fingerprint; unrelated background notices are not modal authority')
        return None
       failure=dict(transfer=list(f),ui=list(inspect(peer)[0]),broker_state=list(detail)if detail else None,broker_pending=list(role(peer,4,464,a=2)[0]),staging=staging_observation(True),circuit=list(net(peer,32)[0]),terminal=list(net(peer,41)[0]),mailbox_inventory=[list(role(mailbox,3,440,h=2,a=i)[0])for i in range(16)])
       (out/'native-upload-failure.json').write_text(json.dumps(failure,indent=2)+'\n')
@@ -269,7 +289,7 @@ def main():
      assert role(peer,2,434,h=1,a=15)[0][4]==resume['message_before'],'F11 created another manifest'
      _,retry=role(peer,2,434,h=resume['handle'],a=18,b=13)
      assert hashlib.sha256(retry).hexdigest()==resume['cached_chunk13_sha256']
-     record('actual F11 reselects the same canonical partial transfer, preserves both native handles and manifest identity, and retains exact cached ciphertext across completion',**resume,local_after=[list(row)for row in new_slots])
+     record('continued exact batch preserves both native handles, manifest identity and cached ciphertext across completion'if a.continue_upload else'actual F11 reselects the same canonical partial transfer, preserves both native handles and manifest identity, and retains exact cached ciphertext across completion',**resume,local_after=[list(row)for row in new_slots],F11_performed_this_controller=not a.continue_upload)
     outgoing=[role(peer,2,434,h=i,a=21,allow=(3,))for i in range(2)]
     latest_fields,latest_metadata=next((f,b)for f,b in reversed(outgoing)if f[0]==0 and f[2]==1)
     expected_object=latest_metadata[:32].hex();assert latest_metadata[32:64].hex()==head

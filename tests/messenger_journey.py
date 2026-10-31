@@ -368,7 +368,10 @@ def send_ui(g,text):
 
 def import_useful_project(g):
  records=[];entries=[];files={}
- for name in ('Guest/Messenger.lean','Guest/MessengerSDK.lean'):
+ # Whole useful source files stay within the existing per-node64KiB bound.
+ # The UI source has grown beyond that bound; use actual Forge source plus
+ # the Messenger SDK, with no padding or changed guest storage limits.
+ for name in ('Guest/Forge.lean','Guest/MessengerSDK.lean'):
   payload=(ROOT/name).read_bytes();assert 0<len(payload)<=65536
   identifier=projects.canonical_node(10,payload)
   records.append(dict(kind=10,id=identifier,payload=payload));entries.append((name,10,identifier));files[name]=payload

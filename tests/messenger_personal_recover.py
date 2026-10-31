@@ -36,6 +36,16 @@ def main():
    if a.domain_only:
     current=json.loads((campaign/'actor-packages.json').read_text())[name]
     assert all(releases.inspect(Path(current[k]).read_bytes())['release_id']==packages[k][1]['release_id']for k in('owner','ui','delivery'))
+    binding_path=campaign/(name+'.bindings.json');binding_bytes=binding_path.read_bytes();bindings=json.loads(binding_bytes)
+    owner_binding=bindings[f'2:{g.ui}:420'];delivery_binding=bindings[f'4:{g.ui}:460']
+    assert owner_binding['service']==g.owner and owner_binding['caller']==g.ui and owner_binding['service_release']==packages['owner'][1]['release_id']and owner_binding['caller_release']==packages['ui'][1]['release_id']
+    assert delivery_binding['service']==g.delivery and delivery_binding['caller']==g.ui and delivery_binding['service_release']==packages['delivery'][1]['release_id']and delivery_binding['caller_release']==packages['ui'][1]['release_id']
+    native_heads={}
+    for k in('owner','ui','delivery'):
+     head=g.client.request(14,bytes.fromhex(packages[k][1]['project_id']))
+     assert len(head)==128 and head[64:96].hex()==packages[k][1]['release_id'],'current native admitted release differs from selected package'
+     native_heads[k]=head[64:96].hex()
+    provenance=dict(native_catalog_release_ids=native_heads,prior_native171_records_sha256=hashlib.sha256(binding_bytes).hexdigest(),exact_current_instances=dict(owner=g.owner,ui=g.ui,delivery=g.delivery),scope='Native admitted heads and exact current full-instance IDs match the recorded native171 package bindings; this is no new hardware attestation.')
     lock_ui(g);unlock_ui(g,credential,1);_,restored=role(g,2,434,a=27)
    else:
     g.stop();g.start();restored=prepare_personal(g,packages,pin,credential,recover=True)
@@ -43,6 +53,7 @@ def main():
    after=role(g,2,420)[0];newslots=[role(g,2,434,h=i,a=21,allow=(3,))[0]for i in range(2)]
    assert slots==newslots and before[2:5]==after[2:5]
    result=dict(actor=name,result='pass',before=list(before),after=list(after),local_slots=[list(row)for row in slots],packages={k:packages[k][1]for k in('owner','ui','delivery')})
+   if a.domain_only:result['package_provenance']=provenance
    if cached is not None:
     _,again=role(g,2,434,h=latest[1],a=18,b=13);assert again==cached
     state=wait(lambda:(f if f[1]==10 else None)if(f:=transfer_state(g))else None,120,'actual GUI restores the exact partial transfer as retryable')

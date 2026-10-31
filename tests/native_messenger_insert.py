@@ -29,13 +29,14 @@ def main():
     parser.add_argument('--image', type=Path, required=True)
     parser.add_argument('--packages', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--backend', choices=('qemu', 'x86_64', 'aarch64'), default='qemu')
     args = parser.parse_args()
     out = args.output.resolve()
     out.mkdir(parents=True, exist_ok=False)
     ready = json.loads(args.packages.read_text())
     socket, graphics = out/'isolated.sock', out/'isolated.qmp'
     log = (out/'guest.log').open('wb')
-    process = subprocess.Popen([str(ROOT/'lt'), 'run', '--backend', 'qemu',
+    process = subprocess.Popen([str(ROOT/'lt'), 'run', '--backend', args.backend,
         '--image', str(args.image.resolve()), '--socket', str(socket),
         '--graphics', str(graphics)], cwd=ROOT, stdout=log, stderr=log,
         start_new_session=True)
@@ -68,7 +69,7 @@ def main():
                         raise
                     time.sleep(.1)
 
-        with DeviceInput('qemu', graphics, timeout=120) as device:
+        with DeviceInput(args.backend, graphics, timeout=120) as device:
             time.sleep(1)
             device.chord(56, 15)
             time.sleep(.4)
@@ -87,11 +88,12 @@ def main():
             frame = device.frame()
             (out/'insert-unavailable.ppm').write_bytes(frame.ppm())
         report = dict(schema=1, result='passed-isolated-keyboard-control',
-            backend='qemu', image_sha256=hashlib.sha256(args.image.read_bytes()).hexdigest(),
+            backend=args.backend, emulated_arm=args.backend=='aarch64',
+            image_sha256=hashlib.sha256(args.image.read_bytes()).hexdigest(),
             owner_release=sid.hex(), ui_release=uid.hex(),
             ui_package_sha256=hashlib.sha256(Path(ready['ui']).read_bytes()).hexdigest(),
             ui_code_bytes=releases.inspect(Path(ready['ui']).read_bytes())['size'],
-            input=dict(source='raw QMP keyboard', scan_code=110, key='Insert'),
+            input=dict(source='raw QMP keyboard' if args.backend=='qemu' else 'raw evdev FIFO', scan_code=110, key='Insert'),
             before=list(before), after=list(after), elapsed_seconds=time.monotonic()-began,
             limits='No received attachment exists. This verifies keyboard dispatch and fail-closed selection, not decryption, project import, networking or retention.')
         (out/'evidence.json').write_text(json.dumps(report, indent=2)+'\n')

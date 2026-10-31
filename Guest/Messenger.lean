@@ -42,7 +42,7 @@ def attachmentLabel (id x y color t : UInt64) : UInt64 :=
   else
   if id == 70 then
     let t := store64 (labelBuffer+0) 7308612546338255937 t
-    let t := store64 (labelBuffer+8) 2319970935307400302 t
+    let t := store64 (labelBuffer+8) 2338333891887789166 t
     let t := store64 (labelBuffer+16) 2338603393841589865 t
     let t := store64 (labelBuffer+24) 8030038433884040801 t
     let t := store64 (labelBuffer+32) 2337214749187535986 t
