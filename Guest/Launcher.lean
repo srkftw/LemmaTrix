@@ -673,6 +673,27 @@ def retainGameSave (handle t : UInt64) : UInt64 :=
       let r := Guest.syscall 129 (Guest.load64 buf t) (Guest.load64 (buf+8) t)
         (Guest.load64 (buf+16) t) (Guest.load64 (buf+24) t) t
       if r == err then err else 8+Guest.store64 buf 0 r
+  else if op == 174 then
+    if len != 16 then err else
+    let r := Guest.syscall 139 (Guest.load64 buf t) 2 (Guest.load64 (buf+8) t) 0 t
+    if r == err then err else 8+Guest.store64 buf 0 r
+  else if op == 175 then
+    if len < 72 || len > 1024 then err else
+    let r := Guest.syscall 133 (Guest.load64 buf t) (buf+8) (len-8) 1016 t
+    let t := zero buf 128 r
+    if r == err then err else 8+Guest.store64 buf r t
+  else if op == 176 then
+    if len != 8 then err else
+    let r := Guest.syscall 134 (Guest.load64 buf t) buf 1024 0 t
+    if r == err then err else if r == 0 then 8+Guest.store64 buf 0 r else r
+  else if op == 177 then
+    if len != 8 then err else
+    let r := Guest.syscall 135 (Guest.load64 buf t) 0 0 0 t
+    if r == err then err else 8+Guest.store64 buf 0 r
+  else if op == 178 then
+    if len != 16 then err else
+    let r := Guest.syscall 144 (Guest.load64 buf t) 1 (Guest.load64 (buf+8) t) 2 t
+    if r == err then err else 8+Guest.store64 buf 0 r
   else if op == 180 then if len == 8 then stageProject (Guest.load64 buf t) t else err
   else if op == 181 then
     if len != 8 then err else

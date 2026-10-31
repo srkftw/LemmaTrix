@@ -42,10 +42,13 @@ def disk (op sector p t : UInt64) : UInt64 :=
 -- These are admitted work-quanta leases, not absolute wall-clock leases.
 -- Absolute expiry cannot be established from boot uptime after a restart.
 -- flags2 explicitly authorizes this basis; flags1 permits retained resumption.
+def modeAllowed (mode : UInt64) : Bool := mode == 1 || mode == 3
+theorem delayed_mode_denied : modeAllowed 2 = false := by decide
+theorem cluster_mode_denied : modeAllowed 4 = false := by decide
 def validTerms (p t : UInt64) : Bool :=
   !zeroBytes p 32 t && !zeroBytes (p+32) 32 t && !zeroBytes (p+64) 32 t &&
   !zeroBytes (p+96) 32 t && load64 (p+128) t > 0 && load64 (p+128) t <= 4 &&
-  load64 (p+136) t > 0 && load64 (p+144) t == 3 &&
+  load64 (p+136) t > 0 && modeAllowed (load64 (p+144) t) &&
   load64 (p+152) t > 0 && load64 (p+152) t <= 1073741824 &&
   load64 (p+160) t > 0 && load64 (p+160) t <= 256 &&
   load64 (p+168) t > 0 && load64 (p+168) t <= 1000000000 &&

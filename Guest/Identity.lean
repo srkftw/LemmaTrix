@@ -122,13 +122,15 @@ def validBody (role purpose p n t : UInt64) : Bool :=
     !zeros (p+32) 32 t && !zeros (p+64) 32 t && !zeros (p+96) 32 t
   else
     let endpointLength := load64 (p+176) t
-    n == 256 && load64 p t == nodeMagic && load64 (p+8) t == 1 &&
-    load64 (p+16) t >= 1 && load64 (p+16) t <= 6 &&
-    load64 (p+24) t == 3 && load64 (p+32) t == 1 &&
+    let legacy := load64 (p+8) t == 1 && load64 (p+16) t >= 1 &&
+      load64 (p+16) t <= 6 && load64 (p+24) t == 3
+    let publicNode := load64 (p+8) t == 2 &&
+      (load64 (p+16) t == 7 || load64 (p+16) t == 8) && load64 (p+24) t == 1
+    n == 256 && load64 p t == nodeMagic && (legacy || publicNode) && load64 (p+32) t == 1 &&
     load64 (p+40) t > 0 && load64 (p+40) t <= 1073741824 &&
     load64 (p+48) t > 0 && load64 (p+48) t <= 1000000000 &&
     load64 (p+56) t == 1 && !zeros (p+64) 32 t && !zeros (p+96) 32 t &&
-    !zeros (p+128) 32 t && load64 (p+160) t > 0 && load64 (p+168) t == 0 &&
+    !zeros (p+128) 32 t && load64 (p+160) t > 0 && (load64 (p+168) t == 0 || (publicNode && load64 (p+168) t == 1)) &&
     endpointLength > 0 && endpointLength <= 64 && ipv4 (p+184) endpointLength 0 0 t &&
     zeros (p+184+endpointLength) (64-endpointLength) t && zeros (p+248) 8 t
 def authorize (token t : UInt64) : UInt64 :=

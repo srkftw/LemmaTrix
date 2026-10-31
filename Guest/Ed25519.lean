@@ -5,29 +5,29 @@ namespace Guest.Ed25519
 -- RFC8032 pure Ed25519; canonical purpose framing is the caller's responsibility.
 -- Secret arithmetic has fixed iteration counts, mask selection, and no secret
 -- indexed tables. This source discipline is not a compiler/constant-time proof.
--- Serialized private scratch 0x640000..0x646fff, plus Noise25519 multiplication
+-- Serialized private scratch 0x6b0000..0x6b6fff, plus Noise25519 multiplication
 -- scratch 0x632000..0x6320ff. Caller checks all pointer extents and non-overlap.
 def err : UInt64 := 0xffffffffffffffff
-def pointP : UInt64 := 0x640000
-def pointQ : UInt64 := 0x640200
-def pointR : UInt64 := 0x640400
-def pointA : UInt64 := 0x640600
-def pointB : UInt64 := 0x640800
-def ft (i : UInt64) : UInt64 := 0x641000+i*128
-def fc (i : UInt64) : UInt64 := 0x642000+i*128
-def expanded : UInt64 := 0x643000
-def digestR : UInt64 := 0x643040
-def digestK : UInt64 := 0x643080
-def reducedR : UInt64 := 0x6430c0
-def reducedK : UInt64 := 0x6430e0
-def remainder : UInt64 := 0x643100
-def subtraction : UInt64 := 0x643200
-def wide : UInt64 := 0x643400
-def rawWide : UInt64 := 0x643800
-def encoded : UInt64 := 0x643900
-def encoded2 : UInt64 := 0x643920
-def hashScratch : UInt64 := 0x644000
-def concat : UInt64 := 0x645000
+def pointP : UInt64 := 0x6b0000
+def pointQ : UInt64 := 0x6b0200
+def pointR : UInt64 := 0x6b0400
+def pointA : UInt64 := 0x6b0600
+def pointB : UInt64 := 0x6b0800
+def ft (i : UInt64) : UInt64 := 0x6b1000+i*128
+def fc (i : UInt64) : UInt64 := 0x6b2000+i*128
+def expanded : UInt64 := 0x6b3000
+def digestR : UInt64 := 0x6b3040
+def digestK : UInt64 := 0x6b3080
+def reducedR : UInt64 := 0x6b30c0
+def reducedK : UInt64 := 0x6b30e0
+def remainder : UInt64 := 0x6b3100
+def subtraction : UInt64 := 0x6b3200
+def wide : UInt64 := 0x6b3400
+def rawWide : UInt64 := 0x6b3800
+def encoded : UInt64 := 0x6b3900
+def encoded2 : UInt64 := 0x6b3920
+def hashScratch : UInt64 := 0x6b4000
+def concat : UInt64 := 0x6b5000
 open Guest.Noise25519 (add sub mul sq normalize pack unpack swap)
 partial def zeroWords (p n t : UInt64) : UInt64 :=
   if n == 0 then t else zeroWords (p+8) (n-1) (store64 p 0 t)
@@ -42,7 +42,7 @@ partial def nonzero (a n v t : UInt64) : UInt64 :=
 -- Every success and failure exit clears expanded scalars, nonce material,
 -- scalar accumulators, point coordinates, SHA state, and concatenation buffers.
 def clear (t : UInt64) : UInt64 :=
-  zeroWords 0x640000 3584 (zeroWords 0x632000 32 t)
+  zeroWords 0x6b0000 3584 (zeroWords 0x632000 32 t)
 def identity (out t : UInt64) : UInt64 :=
   let t := zeroWords out 64 t
   let t := store64 (out+128) 1 t

@@ -161,23 +161,35 @@ def epilogue (c : FnContext) : EmitM Unit := do
   -- fixed-size frame before releasing it, including on error returns. Preserve
   -- only a0 (the result), ra and sp; temporary/argument registers are cleared.
   -- This is an explicit namespace policy, not inferred binary constant time.
-  let sensitive := ["Guest.Ed25519.", "Guest.Noise25519.", "Guest.SHA512.", "Guest.SignerEntropy."].any
+  let sensitive := ["Guest.Ed25519.", "Guest.Noise25519.", "Guest.SHA512.", "Guest.SignerEntropy.",
+    "Guest.NoiseNK.", "Guest.Noise.", "Guest.VaultCrypto.",
+    "Guest.Mailbox.", "Guest.MessengerDelivery.", "Guest.Messenger.", "Guest.MessengerVault.", "Guest.MessengerAttachment.", "Guest.LiveSDK.copy", "Guest.XEdDSA.", "Guest.MessengerCrypto.",
+    "Guest.MessengerSession.", "Guest.MessengerRatchet.", "Guest.TorNtor.",
+    "Guest.NodeStore.", "Guest.ServiceHash.", "Guest.OnionTerminal.", "Guest.TorRouter.", "Guest.TorCells.", "Guest.AES.", "Guest.SHA1.", "Guest.SHA3."].any
     (fun namespaceName => c.fn.toString.startsWith namespaceName)
   if sensitive then
-    let loop ← fresh "secret_frame_clear"
-    emit "  mv t4, sp"
+    -- One generated return block avoids duplicating the same erasure loop at
+    -- every branch exit. t6 is public frame length; a0/ra remain live results.
     emit s!"  li t6, {c.frame}"
-    emit s!"{loop}:"
-    emit "  sd zero, 0(t4)"
-    emit "  addi t4, t4, 8"
-    emit "  addi t6, t6, -8"
-    emit s!"  bnez t6, {loop}"
-  emit s!"  li t6, {c.frame}"
-  emit "  add sp, sp, t6"
-  if sensitive then
-    for r in ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "t0", "t1", "t2", "t3", "t4", "t5", "t6"] do
-      emit s!"  li {r}, 0"
-  emit "  ret"
+    emit "  j lt_secret_frame_clear_return"
+  else
+    emit s!"  li t6, {c.frame}"
+    emit "  j lt_frame_return"
+
+-- Emitted once in each self-contained native artifact. This is compiler output,
+-- not a host helper or foreign runtime call. All sensitive returns tail-jump.
+def secretReturn : Array String := #[
+  ".section .text.lt_secret_frame_clear_return,\"ax\",@progbits",
+  ".balign 4", ".type lt_secret_frame_clear_return, @function",
+  "lt_secret_frame_clear_return:", "  mv t4, sp", "  mv t5, t6",
+  ".Lsecret_frame_clear:", "  sd zero, 0(t4)", "  addi t4, t4, 8",
+  "  addi t5, t5, -8", "  bnez t5, .Lsecret_frame_clear", "  add sp, sp, t6",
+  "  li a1, 0", "  li a2, 0", "  li a3, 0", "  li a4, 0", "  li a5, 0", "  li a6, 0", "  li a7, 0",
+  "  li t0, 0", "  li t1, 0", "  li t2, 0", "  li t3, 0", "  li t4, 0", "  li t5, 0", "  li t6, 0", "  ret",
+  ".size lt_secret_frame_clear_return, .-lt_secret_frame_clear_return",
+  ".section .text.lt_frame_return,\"ax\",@progbits", ".balign 4",
+  ".type lt_frame_return, @function", "lt_frame_return:",
+  "  add sp, sp, t6", "  ret", ".size lt_frame_return, .-lt_frame_return"]
 
 def externSymbol (env : Environment) (f : Name) : Except String String := do
   let some (.standard _ s) := (getExternAttrData? env f).bind (getExternEntryFor · `all)
@@ -305,9 +317,17 @@ partial def emitBody (env : Environment) (c : FnContext) (b : FnBody) : EmitM Un
     else
       emitExpr env ty (.fap f ys)
       narrow "t0" ty
+      if x == y then emit "  mv a0, t0" else
+        store "t0" x
+        arg "a0" (.var y)
+      epilogue c
+  | .vdecl x ty e (.ret (.var y)) =>
+    emitExpr env ty e
+    narrow "t0" ty
+    if x == y then emit "  mv a0, t0" else
       store "t0" x
       arg "a0" (.var y)
-      epilogue c
+    epilogue c
   | .vdecl x ty e b =>
     emitExpr env ty e
     narrow "t0" ty
@@ -463,6 +483,7 @@ unsafe def run (args : List String) : IO Unit := do
     match emitDecl env d with
     | .ok ls => lines := lines ++ ls
     | .error e => throw (IO.userError s!"freestanding compiler: {e}")
+  lines := lines ++ secretReturn
   IO.FS.writeFile output (String.intercalate "\n" lines.toList ++ "\n")
   IO.println s!"Lean IR → RV64IM: {declarations.size} definitions → {output}"
 
