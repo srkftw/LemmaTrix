@@ -740,7 +740,7 @@ def dispatch (p op h ptr n v t : UInt64) : UInt64 :=
     -- arena. No stream/device authority or application RNG right is granted.
     if Guest.load64 (bindingRole 1) t != identity p t || Guest.load64 (proc p+272) t != 1 ||
         Guest.load64 (proc p+16) t != 0 || n != 32 || h != 0 || v != 0 ||
-        ptr < 0x600000 || ptr > 0x7fffe0 then err else
+        ptr < 0x600000 || ptr > 0x7fffe0 || ptr % 8 != 0 then err else
     let t := zero (physical p ptr) 4 t
     let t := zero Devices.randomBuffer 32 t
     let result := Devices.random Devices.randomBuffer 32 t
