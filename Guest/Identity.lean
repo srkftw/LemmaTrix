@@ -36,7 +36,8 @@ def serial (t : UInt64) : UInt64 :=
   -- Include the full incarnation, including the randomized high boot epoch.
   -- A low32-only token deterministically aliases a new boot's same-slot key.
   -- Handles remain finite ephemeral names, not a rollback/freshness anchor.
-  (self t) ^^^ ((next <<< 32) ||| next)
+  let value := (self t) ^^^ ((next <<< 32) ||| next)
+  if value == 0 || value == error then error else value
 def takeSerial (t : UInt64) : UInt64 := store64 st (load64 st t+1) t
 partial def freeKey (i t : UInt64) : UInt64 :=
   if i == 8 then error else if load64 (keyAt i) t == 0 then i else freeKey (i+1) t
