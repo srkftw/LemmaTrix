@@ -154,8 +154,8 @@ open Guest Guest.LiveSDK
   if load64 (Guest.TorRouter.channel 10) t != 1 || Guest.TorRouter.freeChannel 0 t != 11 ||
     load64 (Guest.TorRouter.channel 9) t != 4 then 25 else
   let t := store64 (Guest.TorRouter.channel 10+144) 0 t
-  let t := store64 Guest.Transport.input (Guest.Transport.magic ||| (6 <<< 32) ||| (10 <<< 40))
-    (store64 (Guest.Transport.input+8) (98 <<< 32) t)
+  let t := store64 Guest.Transport.input (Guest.Transport.magic ||| ((6 : UInt64) <<< 32) ||| ((10 : UInt64) <<< 40))
+    (store64 (Guest.Transport.input+8) ((98 : UInt64) <<< 32) t)
   let t := Guest.Transport.event t
   if load64 (Guest.Transport.channel 10+1104) t != 6 || !Guest.TorRouter.listenerLost 10 t then 31 else
   let t := Guest.TorRouter.listenerFailure 10 1000000 t
