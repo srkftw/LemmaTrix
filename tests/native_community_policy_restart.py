@@ -21,6 +21,7 @@ from types import SimpleNamespace as NS
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / 'tools'), str(ROOT / 'tests')]
 import feed
+import feed_project_controls as project
 import identity
 import messenger
 import onion
@@ -41,7 +42,7 @@ APPEAL = 'I appeal the local visibility decision on my own reply and request an 
 
 def rows(guest, private=False):
     result, cursor = [], 0
-    for _ in range(64):
+    for _ in range(65):
         fields, record = feed.invoke(guest.client, 490 if private else 491,
                                      action=1 if private else 5, handle=cursor, allowed=(0, 6))
         if fields[0] == 6:
@@ -74,18 +75,98 @@ def find(guest, *, event_id=None, author=None, kind=None, text=None, target=None
 
 def select(guest, event_id):
     focus_application(guest, 'feed')
-    guest.device.press(104)
-    for _ in range(64):
-        wait(lambda: feed_ui(guest)[0][4] in (15, 16, 26, 40), 300,
-             'native checked event or explicit visibility marker')
-        _, selected = feed_ui(guest, 795)
-        if selected[:32] == event_id:
-            return feed_ui(guest)[0]
-        previous = selected[:32]
-        guest.device.press(28)
-        wait(lambda: feed_ui(guest, 795)[1][:32] != previous, 300,
-             'native next chronological event')
-    raise RuntimeError('native selected event was not found')
+    if feed_ui(guest, 795)[1][:32] == event_id and project.complete_read(guest, guest.feed_ui):
+        return feed_ui(guest)[0]
+    # PgUp first scrolls an existing long body. Its maximum16384 bytes require
+    # at most19 bounded900-byte scroll steps before the ordinary Home query.
+    # Observe the known first original event instead of assuming one gesture
+    # reset a previous project/long-post view or a followed-only filter.
+    for _ in range(4):
+        guest.device.press(15)
+        choice = wait(lambda: (lambda f: f if f[4] in (27, 28) else None)(feed_ui(guest)[0]),
+                      30, 'native explicit chronological filter choice')
+        if choice[4] == 27:
+            break
+    else:
+        raise RuntimeError('native chronological filter choice was not observed')
+    first = guest.policy_first_event
+    for _ in range(20):
+        guest.device.press(104, delay=.1)
+        wait(lambda: project.complete_read(guest, guest.feed_ui), 300,
+             'native complete row while returning to chronological start')
+        if feed_ui(guest, 795)[1][:32] == first:
+            break
+    else:
+        raise RuntimeError('native chronological start was not reached within the body bound')
+    selected = project.select_event(guest, guest.feed_ui, event_id)
+    assert selected[:32] == event_id
+    return feed_ui(guest)[0]
+
+
+def explicit_preferences(guest):
+    """Inspect a public native export approved through the visible controls."""
+    focus_application(guest, 'feed')
+    guest.device.press(59)
+    wait(lambda: feed_ui(guest)[0][2] == 5, 120, 'native portable-state panel')
+    if feed_ui(guest, 793)[0][5] != 1:
+        guest.device.press(62)
+    wait(lambda: feed_ui(guest, 793)[0][5] == 1, 120,
+         'explicit native export of local preferences')
+    guest.device.press(66)
+    wait(lambda: feed_ui(guest)[0][4] == 45 and project.complete_read(guest, guest.feed_ui),
+         180, 'native approved immutable public profile export')
+    shared, _ = project.ui_call(guest, guest.feed_ui, 794)
+    profile = guest.client.read_object(shared[1])
+    assert len(profile) == 2048 and struct.unpack_from('<3Q', profile) == (0x3154524f5046544c, 1, 1)
+    guest.device.press(1)
+    return profile
+
+
+def blocked_marker(guest, operator, target, author):
+    """Prove suppression at the known next row without revealing its body.
+
+    A local block intentionally returns a marker without the blocked event's
+    UI795 identity. The signed predecessor and ordinary Enter cursor establish
+    exactly which row was requested; no blocked identifier is fabricated.
+    """
+    profile = explicit_preferences(guest)
+    bits = next((struct.unpack_from('<Q', profile, offset+8)[0]
+                 for offset in range(256, 1792, 48)
+                 if struct.unpack_from('<Q', profile, offset)[0] == 1
+                 and profile[offset+16:offset+48] == author), 0)
+    assert bits & 2, 'explicit native profile must retain the selected local block'
+    public = rows(operator)
+    index = next(i for i, (_, event) in enumerate(public) if event[:32] == target)
+    assert index > 0, 'this connected case blocks its third chronological reply'
+    fields, previous = public[index-1]
+    assert previous[144:176] != author, 'the predecessor must remain locally readable'
+    following, event = feed.invoke(operator.client, 491, action=5, handle=fields[2])
+    assert event[:32] == target and following[5] == 1
+    select(guest, previous[:32])
+    assert feed_ui(guest, 795)[1] == previous
+    guest.device.press(28)
+    retries = [0, time.monotonic()]
+    def suppressed():
+        status = feed_ui(guest)[0]
+        complete = project.complete_read(guest, guest.feed_ui)
+        if status[4] == 16 and complete:
+            return status
+        if complete and status[6] == 4 and time.monotonic()-retries[1] >= 3:
+            if retries[0] == 8:
+                raise RuntimeError(('native blocked-row query remained busy', list(status)))
+            assert feed_ui(guest, 795)[1] == previous
+            guest.device.press(28)
+            retries[:] = [retries[0]+1, time.monotonic()]
+        return None
+    wait(suppressed, 300, 'native local block suppresses the exact next chronological row')
+    selected = feed_ui(guest, 795)[1]
+    assert selected[:32] != target
+    assert selected == previous or not any(selected)
+    return dict(author=author.hex(), target=target.hex(), predecessor=previous[:32].hex(),
+                next_cursor=fields[2], block_bits=bits,
+                approved_profile_sha256=hashlib.sha256(profile).hexdigest(),
+                native_notice=feed_ui(guest)[0][4], blocked_body_displayed=False,
+                disclosure='native private export confirms the local block; the signed predecessor and ordinary Enter select its exact blocked successor; the filtered marker does not expose that successor as a selected body')
 
 
 def compose(guest, text, key=61):
@@ -306,6 +387,8 @@ def main():
         actors = campaign.actors
         alpha, beta = actors['alpha'], actors.get('beta')
         alice, bob = actors['alice'], actors['bob']
+        for reader in (alice, bob):
+            reader.policy_first_event = bytes.fromhex(campaign.state['events']['ordinary']['id'])
         relays = [actors['relay'+str(i)] for i in (1, 2, 3)]
         author = bytes.fromhex(campaign.state['personal']['alice']['feed_public'])
         target = bytes.fromhex(campaign.state['events']['reply']['id'])
@@ -385,12 +468,12 @@ def main():
                 assert reversal[224:256] == hidden
                 select(alice, reversed_id)
                 assert feed_ui(alice, 795)[1] == reversal
-                assert select(bob, target)[4] == 16
+                state['block_after_reversal'] = blocked_marker(bob, alpha, target, author)
                 assert find(alpha, event_id=target)[1] == original[1]
                 state['reversal'] = reversed_id.hex()
                 state['original'] = original[1].hex()
                 state['frames'] = {g.name: screenshot(g, 'native-policy-result') for g in (alice, bob)}
-                record('moderation', 'requester inspects authorized superseding appeal reversal; original author bytes, independent Alpha policy and private local block remain intact', event=state['reversal'])
+                record('moderation', 'requester inspects authorized superseding appeal reversal; original author bytes, independent Alpha policy and private local block remain intact', event=state['reversal'], local_block=state['block_after_reversal'])
                 if not state['done'].get('refusals'):
                     home = find(beta, author=author, kind=1, text=HOME_NOTE)
                     if home is None:
@@ -566,7 +649,7 @@ def main():
                     assert alpha_after[2] == state['alpha_budget'][2] and alpha_after[5] == state['alpha_budget'][5]
                 else:
                     assert alpha_after[3] == state['alpha_budget'][3]
-                assert select(bob, target)[4] == 16
+                state['block_after_restart'] = blocked_marker(bob, alpha, target, author)
                 select_feed_route(alice, beta, relays)
                 alice.device.press(63 if feed_ui(alice)[0][5] == 8 else 19)
                 wait(lambda: feed_ui(alice)[0][5] == 7, 600, 'author obtains actual replication evidence for its original accepted event through a fresh selected route')
@@ -580,7 +663,7 @@ def main():
                         assert later['reserved_work'] == earlier['reserved_work']
                         assert earlier['attempts'] <= later['attempts'] <= 9
                     state['beta_final_replication_ledger'] = final_ledger
-                record('restart', 'both final-image peers automatically resume original signed pending events without operator peer reset or renewed event budget; persisted appeal reversal and local block survive')
+                record('restart', 'both final-image peers automatically resume original signed pending events without operator peer reset or renewed event budget; persisted appeal reversal and local block survive', local_block=state['block_after_restart'])
             state.update(result='pass-'+args.stage, elapsed_seconds=time.monotonic()-began)
             save()
             (out/('policy-'+args.stage+'.json')).write_text(json.dumps(state, indent=2)+'\n')
