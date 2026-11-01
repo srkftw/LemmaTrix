@@ -44,9 +44,9 @@ def allowedScope (event t : UInt64) : Bool :=
   let home := eq (body+112) (active+64) 32 t
   let peer := eq (body+112) (active+96) 32 t && eq (body+144) (active+64) 32 t
   let kind := load64 (body+16) t
-  (home || peer) && (home || (kind != 6 && kind != 7 && kind != 8)) &&
-  (Guest.FeedEvent.zeroed (body+144) 32 t ||
-   (home && eq (body+144) (active+96) 32 t) || peer)
+  let audience := Guest.FeedEvent.zeroed (body+144) 32 t || eq (body+144) (active+96) 32 t
+  Guest.FeedEvent.scopePermits home peer audience true &&
+  (home || (kind != 6 && kind != 7 && kind != 8))
 partial def authorCheck (event i greatest generation t : UInt64) : UInt64 :=
   if i == count t then
     if load64 (event+32) t < generation then 15 else
@@ -57,6 +57,17 @@ partial def authorCheck (event i greatest generation t : UInt64) : UInt64 :=
     authorCheck event (i+1) (if load64 (old+184) t > greatest then load64 (old+184) t else greatest)
       (if load64 (old+32) t > generation then load64 (old+32) t else generation) t
   else authorCheck event (i+1) greatest generation t
+
+partial def authorUsage (event i records bytes t : UInt64) : UInt64 :=
+  if i == count t then (bytes <<< 32) ||| records else
+  let p := row active i
+  if eq (event+112) (p+176) 32 t then
+    authorUsage event (i+1) (records+1) (bytes+load64 (p+24) t) t
+  else authorUsage event (i+1) records bytes t
+def authorWithinBudget (event t : UInt64) : Bool :=
+  let usage := authorUsage event 0 0 0 t
+  (usage &&& 0xffffffff) < 16 && (usage >>> 32) <= 262144 &&
+  load64 (event+256) t <= (262144 : UInt64)-(usage >>> 32)
 
 def referencesValid (event t : UInt64) : Bool :=
   let kind := load64 (event+176) t
@@ -77,7 +88,7 @@ def begin (caller origin length t : UInt64) : UInt64 :=
   let conflict := authorCheck event 0 0 0 t
   if conflict != 0 then response conflict 0 0 0 0 0 t else
   if !referencesValid event t then response 14 0 0 0 0 0 t else
-  if count t >= load64 (active+40) t || load64 (event+256) t > load64 (active+48) t-load64 (active+32) t then response 4 0 0 0 0 0 t else
+  if !authorWithinBudget event t || count t >= load64 (active+40) t || load64 (event+256) t > load64 (active+48) t-load64 (active+32) t then response 4 0 0 0 0 0 t else
   let slot := freeStage 0 t
   if slot == error then response 6 0 0 0 0 0 t else
   let p := stage slot
@@ -175,7 +186,7 @@ def startWriter (i t : UInt64) : UInt64 :=
   let n := (load64 (p+352) t+511)/512*512
   let target := segmentFor n 0 t
   let conflict := authorCheck (p+96) 0 0 0 t
-  if target == error || conflict != 0 || count t >= load64 (active+40) t ||
+  if target == error || conflict != 0 || !authorWithinBudget (p+96) t || count t >= load64 (active+40) t ||
     load64 (p+352) t > load64 (active+48) t-load64 (active+32) t then
     store64 p 5 (store64 (p+48) (if conflict != 0 then conflict else 4) (store64 (p+40) (Guest.WaitSDK.now t+30000) t))
   else
@@ -250,7 +261,7 @@ partial def validIndex (i t : UInt64) : Bool :=
   load64 p t == i+1 && load64 (p+8) t < 7 && load64 (p+24) t <= 16384 &&
   load64 (p+16) t%512 == 0 && load64 (p+16) t <= segmentBytes &&
   load64 (p+24) t <= segmentBytes-load64 (p+16) t &&
-  Guest.FeedEvent.framingValid (p+64) t && allowedScope (p+64) t && validIndex (i+1) t
+  Guest.FeedEvent.valid (p+64) t && allowedScope (p+64) t && validIndex (i+1) t
 
 def configure (length t : UInt64) : UInt64 :=
   if length != 256 || load64 (st+16) t != 0 then response 2 0 0 0 0 0 t else
@@ -269,7 +280,7 @@ def configure (length t : UInt64) : UInt64 :=
     let budget := load64 (command+232) t
     let policy := load64 (command+240) t
     if maximum == 0 || maximum > 64 || budget == 0 || budget > 917504 || policy == 0 ||
-      !Guest.FeedEvent.nonzero (command+128) 32 t || !Guest.FeedEvent.nonzero (command+160) 32 t ||
+      !Guest.FeedEvent.nonzero (command+128) 32 t || !Guest.FeedEvent.nonzero (command+160) 32 t || eq (command+128) (command+160) 32 t ||
       !Guest.FeedEvent.nonzero (command+192) 32 t then response 2 0 0 0 0 0 t else
     let t := store64 active magic (store64 (active+8) 1 t)
     let t := store64 (active+40) maximum (store64 (active+48) budget (store64 (active+56) policy t))
@@ -308,12 +319,29 @@ partial def latestDecision (target i latest t : UInt64) : UInt64 :=
   let p := row active i
   latestDecision target (i+1) (if load64 (p+240) t == 8 && eq (p+432) target 32 t then i else latest) t
 
+-- Durable operator retry uses exact application scope/content. A repeated
+-- decision with the same moderator, policy, target, action and reason returns
+-- its original signed event. A new intentional decision needs a new reason or
+-- policy version; reconnect never revives a consumed Identity approval.
+partial def matchingDecision (target action reason i t : UInt64) : UInt64 :=
+  if i == count t then error else
+  let p := row active i
+  if load64 (p+240) t == 8 && load64 (p+464) t == action &&
+      load64 (p+328) t == load64 (active+56) t && eq (p+432) target 32 t &&
+      eq (p+288) reason 32 t && eq (p+176) (moderatorPublic+96) 32 t then i
+  else matchingDecision target action reason (i+1) t
+
 def moderate (length t : UInt64) : UInt64 :=
   let action := load64 (command+16) t
   let n := length-96
   if moderatorPending t || load64 (st+384) t == 0 || load64 st t != 1 then response 6 0 0 0 0 0 t else
   if length < 97 || length > 608 || action < 1 || action > 3 || find (command+64) 0 t == error ||
     !eq (moderatorPublic+96) (active+128) 32 t || !Guest.FeedEvent.utf8 (command+96) n 0 0 0 0 t then response 2 0 0 0 0 0 t else
+  let t := Guest.ServiceHash.sha256At scratch (command+96) n hashed t
+  let old := matchingDecision (command+64) action hashed 0 t
+  if old != error then
+    response 6 0 0 0 0 0 (copy (row active old+32) (moderationBody+512) 32 (store64 (st+400) 4 t))
+  else
   let previous := latestDecision (command+64) 0 error t
   let report := relatedPolicy 6 (command+64) 0 t
   let appeal := relatedPolicy 7 (command+64) 0 t
@@ -414,6 +442,7 @@ def dispatch (caller rights token length t : UInt64) : UInt64 :=
       let t := header 0 (count t) (load64 (active+32) t) (load64 (active+40) t)
         (load64 (active+48) t) (load64 (active+56) t) (load64 (active+16) t) t
       160+copy (active+64) (wire+64) 96 t
+    else if action == 10 then read length 1 t
     else if action == 1 && length == 64 then timeline (load64 (command+16) t) 1 t else
     if action == 2 && length == 184 && load64 (command+16) t < 4 then
       -- The exact native service acquires its own finite grant. The operator

@@ -14,15 +14,16 @@ from graphical_devices import DeviceInput
 import onion_route as route
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--image',type=Path,default=ROOT/'build/live/guest.bin');p.add_argument('--output',type=Path,default=ROOT/'build/native-feed-journey');p.add_argument('--keep',action='store_true');a=p.parse_args()
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--image',type=Path,default=ROOT/'build/live/guest.bin');p.add_argument('--output',type=Path,default=ROOT/'build/native-feed-journey');p.add_argument('--keep',action='store_true');p.add_argument('--packages',type=Path,required=True);a=p.parse_args()
     out=a.output.resolve();out.mkdir(parents=True,exist_ok=True)
     image=out/'guest.bin';image.write_bytes(a.image.read_bytes())
     packages={}
-    for name,binary,rights in [('identity','feed-identity',0),('feed-account','feed-account',1024),('feed','feed',799),('feed-federation','feed-federation',3072)]:
-        source=ROOT/'build/live/apps'/(binary+'.bin')
-        raw,_=releases.make(source,name,'0.9.0',rights,SIGN,profile=2,license='NOASSERTION');path=out/(name+'.ltrel');path.write_bytes(raw);packages[name]=path
+    for name,rights in [('identity',0),('feed-account',1024),('feed',799),('feed-federation',3072)]:
+        path=(a.packages/(name+'.ltrel')).resolve();raw=path.read_bytes();info=releases.inspect(raw)
+        if info['rights']!=rights or struct.unpack_from('<Q',raw,400)[0]!=2:raise ValueError('wrong native signed Feed bundle package '+name)
+        packages[name]=path
     feds=[hashlib.sha256(b'Campaign009 federation alpha').digest(),hashlib.sha256(b'Campaign009 federation beta').digest()]
-    actors=[];checks=[];timings={};started=time.monotonic()
+    actors=[];checks=[];timings={};observed_ui=[];started=time.monotonic()
     try:
         for i in range(6):
             store=None
@@ -30,7 +31,7 @@ def main():
                 store=out/f'operator{i}.img'
                 if store.exists():store.unlink()
                 server_store.provision(store)
-            backend='qemu' if i!=3 else 'x86_64'
+            backend='qemu'
             actor=Guest(f'node{i}',backend,out,image,graphical=(i==0),store=store).start();actors.append(actor)
             if i!=0:identity.start(actor.client,packages['identity'],PUB)
         certs=[]
@@ -50,8 +51,9 @@ def main():
         for actor in actors[1:]:route.route(actor.client,30)
         # Listener setup precedes explicit bulk selection on both federations.
         scope=hashlib.sha256(b'Campaign009 explicitly approved Feed replication scope').hexdigest()
+        probe=socket.socket();probe.bind(('127.0.0.1',0));bulk_endpoint=f'127.0.0.1:{probe.getsockname()[1]}';probe.close()
         for index,(i,side) in enumerate(((4,'server'),(5,'client'))):
-            info=feed.replication(actors[i].client,SimpleNamespace(peer=0,side=side,slot=0,scope=scope,bytes=16777216,rate=65536,lifetime=100000))
+            info=feed.replication(actors[i].client,SimpleNamespace(peer=0,side=side,slot=0,scope=scope,endpoint=bulk_endpoint,bytes=16777216,rate=65536,lifetime=100000))
             print('native replication relationship',i,info,flush=True)
         route.route(actors[0].client,31)
         wait(lambda:route.route(actors[0].client,32)[0][2]==3,300,'native Feed three-hop circuit')
@@ -61,13 +63,16 @@ def main():
         checks.append('native Feed client uses selected three-hop route and authenticated role16 terminal; native mode3 replica separately approved')
         c=actors[0].client;device=actors[0].device
         def ui_status():
-            raw=c.request(150,struct.pack('<Q8Q',ui,791,0,0,0,0,0,0,1));return struct.unpack_from('<8Q',raw),raw[64:]
+            raw=c.request(150,struct.pack('<Q8Q',ui,791,0,0,0,0,0,0,1));f=struct.unpack_from('<8Q',raw);observed_ui.append(dict(seconds=time.monotonic()-started,status=list(f)));del observed_ui[:-64];return f,raw[64:]
         device.click(400,140);device.press(60);time.sleep(.2)
         wait(lambda:ui_status()[0][1]!=0,120,'native Feed scoped identity creation')
         device.press(30);time.sleep(.2) # Explicit home+selected peer audience.
-        device.press(61);device.textASCII('Our group is testing the native Feed release. The approved peer federation may receive this post.',delay=.015)
+        body='Our group is testing the native Feed release. The approved peer federation may receive this post.'
+        device.press(61);device.textASCII(body,delay=.035)
+        wait(lambda:ui_status()[0][3]==len(body),120,'native draft input complete')
         device.press(62);time.sleep(.2);device.press(63)
         def accepted():
+            ui_status()
             f,_=feed.invoke(actors[4].client,491,action=8)
             return f if f[1]>=1 else None
         state=wait(accepted,300,'native Feed UI publication committed');timings['first_ui_commit_seconds']=time.monotonic()-started
@@ -83,7 +88,7 @@ def main():
         report=dict(schema=1,result='pass',image_sha256=hashlib.sha256(image.read_bytes()).hexdigest(),packages={name:releases.inspect(path.read_bytes()) for name,path in packages.items()},checks=checks,timings=timings,services=services,first_event_id=ar[:32].hex(),original_signed_bytes_preserved=True,backend_roles=[g.backend for g in actors],total_seconds=time.monotonic()-started,limitations='Initial connected Feed checkpoint; full multiuser Messenger/Forge/moderation/retention campaign remains separate pending work.')
         (out/'evidence.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2))
     except BaseException as error:
-        (out/'failure.json').write_text(json.dumps(dict(schema=1,error=repr(error),checks_completed=checks,timings=timings,image_sha256=hashlib.sha256(image.read_bytes()).hexdigest()),indent=2)+'\n');raise
+        (out/'failure.json').write_text(json.dumps(dict(schema=1,error=repr(error),checks_completed=checks,timings=timings,observed_ui=observed_ui,image_sha256=hashlib.sha256(image.read_bytes()).hexdigest()),indent=2)+'\n');raise
     finally:
         if not a.keep:
             for actor in reversed(actors):actor.stop()
