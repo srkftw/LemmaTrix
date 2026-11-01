@@ -391,7 +391,11 @@ partial def followedProject (project i t : UInt64) : Bool :=
   -- A local block is independent of a federation appeal/reversal. Return a
   -- visible filtered marker and pagination, never another author's text.
   if load64 (st+144) t == 5 && n == 576 && blocked (answer+96+112) 0 t then
-    response 15 (load64 (answer+8) t) (load64 (answer+16) t) 0 t else
+    -- This public author alone lets the user explicitly undo their block.
+    -- No event identity, signed envelope, body or preference list is returned.
+    let t := header 15 (load64 (answer+8) t) (load64 (answer+16) t) 0
+      (load64 (st+32) t) (load64 (st+40) t) (load64 (st+56) t) t
+    96+copy (answer+96+112) (wire+64) 32 t else
   if load64 (st+144) t == 5 && n == 576 && load64 (st+184) t == 1 && !followed (answer+96+112) 0 t &&
       !(load64 (answer+96+176) t == 3 && followedProject (answer+96+368) 0 t) then
     response 15 (load64 (answer+8) t) (load64 (answer+16) t) 1 t else

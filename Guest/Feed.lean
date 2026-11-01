@@ -160,16 +160,16 @@ def notice (n t : UInt64) : UInt64 := dirty (store64 (st+32) n t)
     text labels 32 x y color bg t
   else t
 @[noinline] def label1 (id x y color t : UInt64) : UInt64 :=
-  -- 16: Locally blocked; federation reversal cannot unblock
+  -- 16: Locally blocked; F8 unblocks; federation cannot unblock
   if id == 16 then
     let t := store64 (labels+0) 2340020694141857612 t
     let t := store64 (labels+8) 4279657057812966498 t
-    let t := store64 (labels+16) 8386109760942204448 t
-    let t := store64 (labels+24) 7311142585927364457 t
-    let t := store64 (labels+32) 7953747407821435762 t
-    let t := store64 (labels+40) 7809926153148591982 t
-    let t := store64 (labels+48) 7037807 t
-    text labels 51 x y color bg t
+    let t := store64 (labels+16) 7809926153144649248 t
+    let t := store64 (labels+24) 7306562885166785391 t
+    let t := store64 (labels+32) 7957695015158965604 t
+    let t := store64 (labels+40) 2338616626601091872 t
+    let t := store64 (labels+48) 30227152718950005 t
+    text labels 55 x y color bg t
   -- 17: Following author locally
   else if id == 17 then
     let t := store64 (labels+0) 7956021537170812742 t
@@ -913,12 +913,25 @@ partial def readPortable (object offset t : UInt64) : UInt64 :=
   if r != 96 || status r != 0 || load64 (wire+16) r != 2048 || load64 (wire+32) r != 6 then notice 12 r else
   let r := readPortable object 0 r
   if r == error then notice 12 r else submit 13 0 0 0 0 portable 512 (store64 (st+264) 0 r)
+ def hideSelection (keepAuthor t : UInt64) : UInt64 :=
+  -- A filtered row must not leave old text, an event reference or a project
+  -- action selected. Keep only its public author when F8 can undo a block.
+  let a := if keepAuthor == 1 then load64 (selected+112) t else 0
+  let b := if keepAuthor == 1 then load64 (selected+120) t else 0
+  let c := if keepAuthor == 1 then load64 (selected+128) t else 0
+  let d := if keepAuthor == 1 then load64 (selected+136) t else 0
+  let t := zero content 2048 (zero selected 60 (zero eventId 4
+    (store64 (st+176) 0 (store64 (st+72) 0 (store64 (st+80) 0 (store64 (st+200) 0 t))))))
+  store64 (selected+112) a (store64 (selected+120) b
+    (store64 (selected+128) c (store64 (selected+136) d t)))
  def completed (action n t : UInt64) : UInt64 :=
   let code := status t
   let t := store64 (st+8) 0 t
   let t := if action == 0 then t else store64 (st+96) code t
   if code == 15 && action == 16 then
-    let t := store64 (st+200) 0 t
+    let t := hideSelection 0 t
+    let t := store64 (st+56) (result t) (store64 (st+64) (load64 (wire+16) t) t)
+    let t := if load64 (wire+24) t == 0 && n == 96 then copy (wire+64) (selected+112) 32 t else t
     if load64 (wire+24) t == 1 && load64 (wire+16) t != 0 then timeline (load64 (wire+16) t) t else notice 16 t
   else if code != 0 && code != 6 then
     let t := if action == 16 then
@@ -951,6 +964,7 @@ partial def readPortable (object offset t : UInt64) : UInt64 :=
   else if action == 7 then
     let kind := load64 (wire+8) t
     let enabled := load64 (wire+16) t != 0
+    let t := if kind == 2 && enabled then hideSelection 1 t else t
     notice (if kind == 4 then (if enabled then 68 else 69) else
       if kind == 1 then (if enabled then 17 else 70) else if enabled then 18 else 51) t
   else if action == 9 then notice 36 (store64 (st+344) 0 (store64 (st+168) 0 t))
