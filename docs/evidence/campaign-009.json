@@ -132,7 +132,20 @@
       "others": "QEMU RV64"
     },
     "reproduction_command": "PYTHONPATH=tools python3 tests/native_community_campaign.py --image build/campaign009-final-v4.bin --feed-packages build/campaign009-final-v6-feed --messenger-ready build/campaign009-final-v3-messenger/ready.json --registry build/live/apps/campaign009-registry-final-v3.bin --public-graph tests/fixtures/campaign008-existing-forge-closure.json --publisher tests/fixtures/campaign008-existing-forge-publisher.pub --output build/campaign009-connected-v3 --mixed --replication-auto-renew",
-    "rolling_policy": "Explicit192-byte native policy variant2; mode3 inter-operator transport, never unavailable transportmode2."
+    "rolling_policy": "Explicit192-byte native policy variant2; mode3 inter-operator transport, never unavailable transportmode2.",
+    "first_infrastructure_checkpoint": "pass: three independent clients phase3, two shareAlpha, same relays, nooperatorstop/listen",
+    "first_product_checkpoint": {
+      "id": "93a31e5989107957984a9c198b9adfe7979175f04634c3a865b1564b1eab5cc0",
+      "author": "79a16199fc801972703b4bb729c43b610cdc6c923b8cd600246bfdcbc5616951",
+      "kind": 1,
+      "bytes": 126,
+      "content_sha256": "541c88ecfd5e37d6e433746b0e38ce252c25c94a6874966ab975cee0c2cbb22b",
+      "signed_sha256": "93a31e5989107957984a9c198b9adfe7979175f04634c3a865b1564b1eab5cc0"
+    },
+    "observed_checkpoints": {
+      "three-feed": true,
+      "replication": true
+    }
   },
   "component_record": "campaign-009-components.json",
   "capacity": {
@@ -164,7 +177,7 @@
     "replication_allocation_bytes_max": 1048576,
     "replication_attempts_per_event": 9,
     "polls_per_attempt": 128,
-    "actual_concurrent_clients_in_common_run": 0,
+    "actual_concurrent_clients_in_common_run": 3,
     "mailbox_progress_ticks": 10000,
     "mailbox_absolute_stage_ticks": 60000,
     "relay_setup_ticks": 100000,
@@ -521,6 +534,16 @@
       "conversion": "lossless PPM to PNG; original native 640x400 pixels",
       "event": "00880c2c3701b12e583eae9d5731f51003452364b56129dc0d16a6d32b296fd8",
       "scope": "Native graphical reader, useful1330-byte event after complete checked body retrieval; screenshot shows one body page."
+    },
+    {
+      "path": "campaign-009-frames/bob-native-long-review-final.png",
+      "sha256": "042515b6519ffaeeefe59ad90053b4c4b3f5ab1e2436c4eb772e809ab03c5bd8",
+      "source": "build/campaign009-connected-v3/bob-native-long-review.ppm",
+      "source_sha256": "6a3e3b20d78a5ae703bc6e234409f6337f909552a495867c83868264606cef4a",
+      "conversion": "lossless PPM to PNG; original native640x400 pixels; visually inspected",
+      "event": "194c3c53daaf158134cd0ff4f7470d89bcc8d1cfef3b1be5fe970c2ea098c04d",
+      "image_sha256": "90fdde98b45bd9828b1d53a8d7c22e5d361480116ccef08ded5bf1c2f8f668a3",
+      "scope": "Actual final-image NativeFeed reader after full checked1330B content retrieval. Screenshot shows one body page; earlier screenshot remains attributed to prior582f trial."
     }
   ],
   "focused_native_refusals": {
@@ -2325,5 +2348,11 @@
     "sha256": "261908913644e8d4ff36e9a8ccb5ba984974e84778da546dcd061da1ec854bd6",
     "result": "pass",
     "scope": "Actual installed ordinary rights799 probe on90fd image; QEMU and emulatedAArch64, aggregate and ordinary limits, native profile commit/read and reclamation. Uncommitted graph reservations are not project evidence."
+  },
+  "shared_mailbox_final": {
+    "record": "campaign-009-shared-mailbox-final.json",
+    "sha256": "0792747be09823a3be52ecdb6da8cae886d6be3b7a75f49269083a2ae6a722a8",
+    "result": "pass",
+    "scope": "Exact final90fd image, actual installed Native3clients/same3relays/Mailbox; correct-bearer foreign unfinished append/poll/cancel refused, owned cancel+stage reuse, concurrent commit/read, dead-context fresh replacement. Public ciphertext/cap fixtures, no Messenger UI or Feed social history in this boundary probe; CPU overlap with common setup recorded."
   }
 }

@@ -886,6 +886,13 @@
       "sha256": "261908913644e8d4ff36e9a8ccb5ba984974e84778da546dcd061da1ec854bd6",
       "scope": "Actual installed final90fd image rights799 client on QEMU/emulatedAArch64. Uncommitted graph reservations are not a real project Fork.",
       "result": "pass"
+    },
+    {
+      "name": "installed-final-shared-mailbox-ownership",
+      "record": "campaign-009-shared-mailbox-final.json",
+      "sha256": "0792747be09823a3be52ecdb6da8cae886d6be3b7a75f49269083a2ae6a722a8",
+      "result": "pass",
+      "scope": "Exact final90fd image, actual installed Native3clients/same3relays/Mailbox; correct-bearer foreign unfinished append/poll/cancel refused, owned cancel+stage reuse, concurrent commit/read, dead-context fresh replacement. Public ciphertext/cap fixtures, no Messenger UI or Feed social history in this boundary probe; CPU overlap with common setup recorded."
     }
   ],
   "assurance": "Local one-host execution. AArch64 is qemu-aarch64 emulation. No physical hardware, independent operators, Tor interoperability, post-quantum security or whole-store external freshness claim."
