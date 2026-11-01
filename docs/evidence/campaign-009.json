@@ -157,7 +157,24 @@
         "beta_original_bytes_match": true,
         "audience": "explicit home and selected peer"
       }
-    ]
+    ],
+    "native_long_frame": {
+      "record": "build/campaign009-connected-v7/native-long-frame.json",
+      "record_sha256": "bb8621b5a68382a5511950ebbd2f601800c2afe81481a619d9d8b25b82955e80",
+      "schema": 1,
+      "image_sha256": "2e5147c4198cf7ec39ab053f2ea8895cfdceb1c9b9dcf79e1b7bb7627314bcdf",
+      "source": "build/campaign009-connected-v7/bob-native-long-review.ppm",
+      "source_ppm_sha256": "b8116c113c9cb9b1ffa83177c4f6ca2bd9c99d290565b7410f662c13327a8e77",
+      "png": "build/campaign009-connected-v7/bob-native-long-review.png",
+      "png_sha256": "7476b652f631d1b0e0e7e8d5e5c431433c068d77a141cc4b7f855ce654d290cf",
+      "width": 640,
+      "height": 400,
+      "mode": "RGB8",
+      "pixel_sha256": "5fc91707c9d536e8083321d7a3c28e30758b432b1a6ef0d5bd58f80d8b21a66b",
+      "lossless_pixels_verified": true,
+      "method": "Native compositor PPM already captured by core after Bob verified/paginated long read. Standard-library PNG RGB8/filter0/zlib encoding; CRCs/decompressed exact pixel equality verified. No new UI input, crop, annotation or synthesis.",
+      "documentation_png": "docs/evidence/campaign-009-frames/bob-native-long-review-2e514.png"
+    }
   },
   "component_record": "campaign-009-components.json",
   "capacity": {
