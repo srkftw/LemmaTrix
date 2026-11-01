@@ -180,7 +180,17 @@
       "bytes": 21872,
       "sha256": "c6ee1ace6b738b5bf1b30185c0bacf034b919c3f675b92c76c3be9084136acc6"
     },
-    "core_elapsed_seconds": 2767.131
+    "core_elapsed_seconds": 2767.131,
+    "active_forge": {
+      "record": "build/campaign009-connected-v7/active-forge.json",
+      "sha256": "230ab8566afb5716d484ffb8f75f43d2bca3a67c48f252fa9f9f68a96ba49bfa",
+      "result": "pass",
+      "elapsed_seconds": 6.226,
+      "stalled_terminal_phase": 3,
+      "stalled_epoch": 6,
+      "stalled_pending_bytes": 532,
+      "unrelated_mailbox_sessions_preserved": true
+    }
   },
   "component_record": "campaign-009-components.json",
   "capacity": {
@@ -1177,5 +1187,31 @@
     "record": "campaign-009-final-feed-reproduction.json",
     "installed_successor_workflow": "pending connected retained upgrade"
   },
-  "final_clean_feed_reproduction": "campaign-009-final-feed-reproduction.json"
+  "final_clean_feed_reproduction": "campaign-009-final-feed-reproduction.json",
+  "common_initial_source": {
+    "network": "e2dee0a",
+    "feed_service": "a900493",
+    "feed_ui_account": "b706c104c2c36d8caf1b96e887c6276d2a302a61",
+    "signer": "a380be67481f9fb1068c6230dcc51b6b90e5a6a0",
+    "namespace_reclamation": "def8a34b3310656d5a57fd49bf4149937e67e0c0",
+    "feed_ui": "05ca3c4",
+    "objects_quota": "624ee19",
+    "registry_revocation": "983f523",
+    "terminal_service_pin": "8b4e26f",
+    "late_listener_acceptance": "f2f1a97",
+    "messenger_delivery": "40e0930"
+  },
+  "shipping_source": {
+    "network": "e2dee0a",
+    "feed_service": "a900493",
+    "feed_ui_account": "4b78702dd2ed6a5a59372992937775645185d692",
+    "signer": "a380be67481f9fb1068c6230dcc51b6b90e5a6a0",
+    "namespace_reclamation": "def8a34b3310656d5a57fd49bf4149937e67e0c0",
+    "feed_ui": "4b78702dd2ed6a5a59372992937775645185d692",
+    "objects_quota": "624ee19",
+    "registry_revocation": "983f523",
+    "terminal_service_pin": "8b4e26f",
+    "late_listener_acceptance": "f2f1a97",
+    "messenger_delivery": "40e0930"
+  }
 }
