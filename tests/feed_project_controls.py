@@ -35,6 +35,16 @@ def complete_read(g,ui):
                  or struct.unpack_from('<Q',diagnostic,96)[0]==0))
 
 
+def wait_native(g,predicate,timeout,label):
+    """Keep existing bounded waits observable through the owned controller."""
+    def ready():
+        result=predicate()
+        observer=getattr(g,'project_observer',None)
+        if not result and observer is not None:observer(label)
+        return result
+    return wait(ready,timeout,label)
+
+
 def select_event(g,ui,event_id):
     """Read actual native timeline rows, including every checked body chunk."""
     # A completed selected row survives ordinary retention/picker panels.
@@ -330,10 +340,28 @@ def revoke_and_refuse(g,ui,record):
     journal=json.loads(path.read_text())if path.exists()else dict(instance=record['registry'],original_sequence=record['registry_sequence'],root=record['root']['head'])
     assert journal['instance']==record['registry']and journal['root']==record['root']['head']
     current,descriptor=federation.call(g.client,record['registry'],6)
+    publisher=hashlib.sha256(releases.public_modulus(Path(record['fork_publisher']))).hexdigest()
     if struct.unpack_from('<Q',descriptor,16)[0]==3:
         assert descriptor[320:352].hex()==record['root']['head']and current[1]>record['registry_sequence']
+        if 'result'in journal:return journal['result']
+        if not journal.get('approval_form')or ui_call(g,ui,791)[0][2]!=10:
+            raise ValueError('revocation already committed without the recorded open Fork approval; no cached refusal is claimed as a new action')
         signed=dict(sequence=current[1],listing=3,root=record['root']['head'],resumed_committed_decision=True)
     else:
+        # Open an actual normal Fork approval while this exact release remains
+        # admitted. Submit only after policy changes, so the final request must
+        # revalidate instead of merely observing an earlier C refusal.
+        wait_native(g,lambda:complete_read(g,ui),180,'previous native request completed before changed-admission check')
+        g.device.press(1)
+        wait_native(g,lambda:ui_call(g,ui,791)[0][2]==0,60,'ordinary Feed timeline before changed-admission check')
+        g.device.press(46)
+        wait_native(g,lambda:ui_call(g,ui,791)[0][2]==8 and ui_call(g,ui,791)[0][4]==47 and complete_read(g,ui),120,'valid original project inspection before policy change')
+        g.device.press(33)
+        wait_native(g,lambda:ui_call(g,ui,791)[0][2]==10,60,'actual native Fork publisher approval before policy change')
+        g.device.textASCII(publisher,delay=.04)
+        wait_native(g,lambda:ui_call(g,ui,793)[0][3]==64,60,'complete explicit public Fork publisher before policy change')
+        journal['approval_form']=dict(publisher=publisher,opened_at_sequence=current[1],entered_public_digits=64,submitted=False)
+        write_record(path,journal)
         try:_,pending=federation.call(g.client,record['registry'],4)
         except ValueError as error:
             if str(error)!='native registry status6':raise
@@ -345,16 +373,19 @@ def revoke_and_refuse(g,ui,record):
     journal['decision']=signed;write_record(path,journal)
     assert signed['listing']==3 and signed['root']==record['root']['head']
     assert signed['sequence']>record['registry_sequence'],('revocation must supersede the verified original',signed)
-    # C rechecks the exact old descriptor against current native Registry state.
+    assert ui_call(g,ui,791)[0][2]==10
+    journal['approval_form']['submitted']=True;write_record(path,journal)
+    g.device.press(28)
+    wait_native(g,lambda:ui_call(g,ui,791)[0][2]==8 and ui_call(g,ui,791)[0][4]==65 and ui_call(g,ui,791)[0][6]==11 and complete_read(g,ui),90,'submitted native Fork approval revalidates the changed original admission')
+    fork_refusal=list(ui_call(g,ui,791)[0])
+    # Clear the old notice through ordinary input before C. Its new65/11 must
+    # come from a fresh inspection request, not the preceding action's result.
+    g.device.press(1)
+    wait_native(g,lambda:ui_call(g,ui,791)[0][2]==0 and ui_call(g,ui,791)[0][4]==5,60,'clear prior action notice before fresh revoked inspection')
     g.device.press(46)
-    wait(lambda:ui_call(g,ui,791)[0][6]==11 and complete_read(g,ui),90,'native Feed card refuses known revoked project')
-    # F may show the ordinary publisher form, but its action-time verify must
-    # refuse before any trusted picker or graph Fork can acquire authority.
-    g.device.press(33)
-    if ui_call(g,ui,791)[0][2]==10:
-        publisher=hashlib.sha256(releases.public_modulus(Path(record['fork_publisher']))).hexdigest()
-        g.device.textASCII(publisher,delay=.04);g.device.press(28)
-    wait(lambda:ui_call(g,ui,791)[0][6]==11 and complete_read(g,ui),90,'native Fork action revalidates revoked original release')
+    wait_native(g,lambda:ui_call(g,ui,791)[0][4]==65 and ui_call(g,ui,791)[0][6]==11 and complete_read(g,ui),90,'fresh native Feed inspection refuses the known revoked project')
+    inspection_refusal=list(ui_call(g,ui,791)[0])
     assert projects.roots(g.client)==before
-    result=dict(revocation=signed,feed_card_still_original=True,additional_forks=0,execution_consent=False)
+    result=dict(revocation=signed,feed_card_still_original=True,additional_forks=0,execution_consent=False,
+                fork_approval_opened_before_policy_change=journal['approval_form'],fresh_fork_refusal=fork_refusal,fresh_inspection_refusal=inspection_refusal)
     journal['result']=result;write_record(path,journal);return result
