@@ -130,6 +130,22 @@ def main():
   os.killpg(processes[0].pid,signal.SIGTERM);processes[0].wait(timeout=10);clients[0].close()
   for i in (1,2):assert rpc(i,4)[0][0]==0
   checks.append('dropping stalled client leaves both unrelated terminal sessions usable')
+  # A separately started guest arrives after disconnect, with no operator
+  # listener intervention or reuse of a dead client's transport generation.
+  base=a.output/'replacement';base.mkdir(exist_ok=True);path=base/'portal.sock';path.unlink(missing_ok=True)
+  log=(base/'guest.log').open('wb');logs.append(log)
+  command=[ROOT/'lt','run','--backend',a.backend,'--image',image,'--socket',path,'--network-mux']
+  processes.append(subprocess.Popen(list(map(str,command)),cwd=ROOT,stdout=log,stderr=subprocess.STDOUT,start_new_session=True))
+  route.wait(path.exists,90);replacement=live.Client(path,timeout=600);replacement.request(1);clients[0]=replacement;serials[0]=0
+  for slot,cert in enumerate(certs):route.enroll(replacement,slot,cert)
+  route.route(replacement,31);route.wait(lambda:route.route(replacement,32)[0][2]==3,300)
+  route.route(replacement,38,h=3,a=29,b=messenger.launcher(replacement),c=1048576,d=1024)
+  route.wait(lambda:route.route(replacement,41)[0][2]==3,240)
+  assert rpc(0,4)[0][0]==0
+  recipient,deposit,_=capabilities[0]
+  assert rpc(0,2,handles[0],512,data=recipient+deposit+payloads[0][512:1024])[0][0]in(2,3)
+  for i in (1,2):assert rpc(i,4)[0][0]==0
+  checks.append('independently arriving replacement client admitted by same running operators; dead context cannot resume staging and unrelated clients remain usable')
   report=dict(schema=1,result='pass',image_sha256=hashlib.sha256(image.read_bytes()).hexdigest(),network_sha256=hashlib.sha256(network).hexdigest(),network_bytes=len(network),mailbox_sha256=hashlib.sha256(a.mailbox.read_bytes()).hexdigest(),backend=a.backend,clients=3,relay_link_slots=12,bulk_link_slots=4,terminal_contexts=16,mailbox_stages=4,stage_bytes=8192,checks=checks,timings=timings,rpc_timings=rpc_timings,total_seconds=time.monotonic()-started,limitations='Native infrastructure component evidence. Public capability/ciphertext fixtures; this does not exercise Messenger UI, Feed, signed receipts, Forge, independent operators or hostile-network assurance.')
   (a.output/'evidence.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2),flush=True)
  except BaseException as error:

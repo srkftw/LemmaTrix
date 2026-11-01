@@ -192,6 +192,11 @@ def main():
         for label,length in [(b'IK',32),(b'SPK',32),(b'OPK',32),(b'XEd-signature',64),(b'fed',32),(b'device',32)]:
             bundle.extend(hashlib.shake_256(b'public mailbox prekey fixture '+label).digest(length))
         assert len(bundle)==256
+        staged_payload=hashlib.shake_256(b'bounded incomplete upload during prekey work').digest(512)
+        staged_request=hashlib.sha256(b'independent incomplete staging operation').digest()
+        admission=call(441,1,len(staged_payload),1,data=recipient+deposit+staged_request+hashlib.sha256(staged_payload).digest())
+        assert admission[0]==0,admission
+        staged_handle=admission[1]
         assert call(441,8,data=recipient+deposit+bundle)[0]==1
         assert call(441,8,data=recipient+fetch+bundle)[0]==6
         published()
@@ -216,6 +221,9 @@ def main():
         assert call(441,8,data=recipient+fetch+depleted)[0]==0
         _,depleted_claim=raw_call(441,9,data=recipient+deposit+claim)
         assert depleted_claim==depleted
+        assert call(440,6)[1]==1,'prekey publication/claim cleared another admitted upload'
+        assert call(441,7,staged_handle)[0]==0
+        check('native prekey publication and one-time claim commit while an admitted upload is incomplete; cancellation remains owned')
         stop();start()
         assert call(441,8,data=recipient+fetch+bundle)[0]==12
         _,depleted_claim=raw_call(441,9,data=recipient+deposit+claim)

@@ -28,7 +28,7 @@ def main(argv=None):
     q=sub.add_parser('approve');q.add_argument('--peer',type=int,choices=range(4),required=True);q.add_argument('--fingerprint',required=True)
     q=sub.add_parser('revoke');q.add_argument('--peer',type=int,choices=range(4),required=True)
     q=sub.add_parser('listen');q.add_argument('--channel',type=int,choices=range(12),default=0)
-    q=sub.add_parser('bulk');q.add_argument('--peer',type=int,choices=range(4),required=True);q.add_argument('--role',choices=['client','server'],required=True);q.add_argument('--slot',type=int,choices=range(4),default=0)
+    q=sub.add_parser('bulk');q.add_argument('--peer',type=int,choices=range(4),required=True);q.add_argument('--role',choices=['client','server'],required=True);q.add_argument('--slot',type=int,choices=range(4),default=0);q.add_argument('--endpoint',help='separately approved numeric bulk server endpoint, identical on both operators')
     sub.add_parser('route');sub.add_parser('status');sub.add_parser('stop');sub.add_parser('lock')
     for name in ('retain','recover'):
         q=sub.add_parser(name);q.add_argument('--key',required=True,type=Path)
@@ -82,7 +82,8 @@ def main(argv=None):
         elif a.command in ('listen','route','stop'):
             f,_=call(c,{'listen':30,'route':31,'stop':35}[a.command],h=getattr(a,'channel',0));result=dict(status=list(f),application_fallback=False)
         elif a.command=='bulk':
-            f,_=network.call(c,48,h=a.peer,a=1 if a.role=='client' else 2,slot=a.slot)
+            endpoint=a.endpoint.encode('ascii') if a.endpoint else b''
+            f,_=network.call(c,48,h=a.peer,a=1 if a.role=='client' else 2,b=len(endpoint),data=endpoint,slot=a.slot)
             result=dict(approved_native_peer=a.peer,slot=a.slot,role=a.role,mode=3,status=list(f),private_keys_exported=False,authentication='native Ed25519 enrollment and X25519 pair possession')
         elif a.command=='terminal':
             f,_=call(c,38,h=a.peer,a=a.stream,b=a.owner,c=a.bytes,d=a.attempts);result=dict(queued=True,owner=a.owner,status=list(f))

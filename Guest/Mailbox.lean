@@ -268,7 +268,7 @@ partial def recover (offset t : UInt64) : UInt64 :=
   let r := Guest.ServerSDK.read (load64 st t) offset 512 t
   if r != 576 || status r != 0 then error else recover (offset+512) (copy (wire+64) (serialized+offset) 512 r)
 def configure (grant t : UInt64) : UInt64 :=
-  if pending t || load64 (st+48) t != 0 then response 4 0 0 0 0 t else
+  if pending t || stageWord 0 48 t != 0 || stageWord 1 48 t != 0 || stageWord 2 48 t != 0 || stageWord 3 48 t != 0 then response 4 0 0 0 0 t else
   let r := Guest.ServerSDK.describe grant t
   if r != 576 || status r != 0 then response 1 0 0 0 0 r else
   let present := load64 (wire+64) r != 0
@@ -469,7 +469,7 @@ def acknowledge (_caller length t : UInt64) : UInt64 :=
   let q := candidate+(p-active)
   let t := store64 q 2 (zero (q+256) 1024 t)
   let r := preparePublication h t
-  if r == error then response 5 h 0 0 0 (store64 (st+48) 0 r) else response 6 h 0 0 0 r
+  if r == error then response 5 h 0 0 0 r else response 6 h 0 0 0 r
 def poll (caller t : UInt64) : UInt64 :=
   let h := load64 (command+16) t
   let p := findHandle h 0 t
@@ -477,6 +477,9 @@ def poll (caller t : UInt64) : UInt64 :=
   if h != 0 && ((!eq (command+64) identity 32 t) ||
     (authorize (command+64) (command+96) 0 t == error && authorize (command+64) (command+96) 1 t == error) ||
     (p == error && (!ownsStage caller t || load64 (st+56) t != h))) then response 1 h 0 0 0 t else
+  -- A pending deletion/receipt publication for this exact handle must commit
+  -- before its poll settles. Unrelated already accepted rows remain readable.
+  if pending t && (h == 0 || load64 (st+32) t == h) then response 6 h (if p == error then 0 else load64 p t) (load64 (st+24) t) (load64 (active+16) t) t else
   if p != error && load64 p t != 0 then
     if load64 (active+48) t != 0 && Guest.MailboxReceipt.failed t then response (if Guest.MailboxReceipt.reason t == 0 then 5 else Guest.MailboxReceipt.reason t) h 0 0 0 t else
     acceptance p h (load64 p t) 0 (load64 (active+16) t) t
@@ -514,7 +517,7 @@ def publishPrekey (length t : UInt64) : UInt64 :=
   if eq old bundle 256 t then response 0 0 0 0 (load64 (active+16) t) t else
   let depleted := oneWayDepletion old bundle t
   if !prekeyGenerationAllowed (load64 (old+16) t) (load64 (bundle+16) t) depleted then response 12 0 0 0 0 t else
-  if pending t || load64 (st+48) t != 0 then response 6 0 0 0 0 t else
+  if pending t then response 6 0 0 0 0 t else
   let t := copy active candidate bytes t
   let t := copy bundle (prekey candidate slot) 256 t
   let t := if depleted then t else zero (recipient candidate slot+160) 4 t
@@ -529,7 +532,7 @@ def claimPrekey (length t : UInt64) : UInt64 :=
   if load64 bundle t == 0 then response 6 0 0 0 0 t else
   if load64 (bundle+24) t == 0 then bundleResponse bundle 0 t else
   if !zeros (p+160) 32 t then bundleResponse bundle (if eq (p+160) (command+128) 32 t then 1 else 0) t else
-  if pending t || load64 (st+48) t != 0 then response 6 0 0 0 0 t else
+  if pending t then response 6 0 0 0 0 t else
   let t := copy active candidate bytes t
   let t := copy (command+128) (recipient candidate slot+160) 32 t
   let r := preparePublication 0 t
@@ -553,7 +556,7 @@ def admin (length t : UInt64) : UInt64 :=
   else if action == 7 && length == 64 then
     64+header 0 (load64 (st+264) t) (load64 (st+272) t) (load64 (st+280) t)
       (load64 (st+288) t) (load64 (st+296) t) (load64 (st+304) t) t
-  else if pending t || load64 (st+48) t != 0 then response 6 0 0 0 0 t else
+  else if pending t then response 6 0 0 0 0 t else
   if action == 4 && length == 480 then
     if load64 (active+48) t != 1 && liveRows 0 t then response 4 0 0 0 0 t else
     let t := Guest.MailboxSDK.receiptTerms (receiptBody+256) t
