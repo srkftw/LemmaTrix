@@ -45,7 +45,16 @@ def feed_ui(g,operation=791):
 
 def circuit_ready(g):
  fields,_=net(g,32)
+ if fields!=getattr(g,'community_circuit_status',None):
+  print('Native Feed circuit',g.name,list(fields),flush=True);g.community_circuit_status=fields
  if fields[1]==0 and fields[3]!=0:raise RuntimeError((g.name,'native route failed',list(fields)))
+ return fields[2]==3
+
+def terminal_ready(g):
+ fields,_=net(g,41)
+ if fields!=getattr(g,'community_terminal_status',None):
+  print('Native Feed terminal',g.name,list(fields),flush=True);g.community_terminal_status=fields
+ if fields[2]==4:raise RuntimeError((g.name,'native terminal failed',list(fields)))
  return fields[2]==3
 
 def focus_application(g,which):
@@ -211,6 +220,15 @@ def main():
   s=socket.socket(socket.AF_UNIX);s.settimeout(10);s.connect(str(out/'charlie-fault.sock'));s.sendall(json.dumps(c).encode()+b'\n');raw=b''
   while b'\n'not in raw:raw+=s.recv(4096)
   s.close();v=json.loads(raw);assert v['ok'],v;return v
+ def observe_stall(label,require_paused=False):
+  channel=fault('status')['channel'];terminal=list(net(charlie,41)[0]);expected=state['stall']['epoch']
+  paused=channel['epoch']==expected and channel['connected']and channel['tx_paused']
+  alive=paused and terminal[2]==3
+  observation=dict(stage=label,elapsed_seconds=time.monotonic()-state['stall']['began_monotonic'],channel=channel,terminal=terminal,original_epoch_transport_paused=paused,original_epoch_still_paused=alive)
+  state.setdefault('stall_observations',[]).append(observation);save()
+  print('Native stalled Feed',label,json.dumps(observation),flush=True)
+  if require_paused and not alive:raise RuntimeError(('finite native cleanup ended the stalled context before this contention checkpoint; work remains preserved',observation))
+  return observation
  def match(g,pub,kind,text,parent=None):
   digest=hashlib.sha256(text.encode()).digest();cursor=0
   for _ in range(64):
@@ -229,7 +247,13 @@ def main():
   pub=feed_ui(g)[1][:32]
   existing=match((alpha,beta)[home],pub,kind,text,parent)
   if not existing:
-   focus(g,'feed');wait(lambda:feed_ui(g)[0][5]in(0,6,7),600,'native previous Feed publication settled')
+   last=[None]
+   def publication_state():
+    fields=feed_ui(g)[0]
+    if fields!=last[0]:print('Native Feed publication',g.name,key,list(fields),flush=True);last[0]=fields
+    if fields[5]==8:raise RuntimeError((g.name,key,'native publication requires exact reconciliation',list(fields)))
+    return fields
+   focus(g,'feed');wait(lambda:publication_state()[5]in(0,6,7),600,'native previous Feed publication settled')
    g.device.press(61 if kind==1 else 64);wait(lambda:feed_ui(g)[0][2]in(1,6,7),120,'native Feed compose')
    g.device.textASCII(text,delay=.035);wait(lambda:feed_ui(g)[0][3]==len(text),300,'native complete Feed input')
    g.device.press(62);wait(lambda:feed_ui(g)[0][2]==9,120,'native exact content preview');g.device.press(63)
@@ -237,7 +261,7 @@ def main():
    def committed():
     row=match((alpha,beta)[home],pub,kind,text,parent)
     if row:return row
-    current=feed_ui(g)[0]
+    current=publication_state()
     if current[2]==9 and current[4]in(12,14)and current[5]in(0,6,7)and current[3]==len(text)and retries[0]<8 and time.monotonic()-retries[1]>=3:
      g.device.press(63);retries[:]=[retries[0]+1,time.monotonic()]
     return None
@@ -331,7 +355,7 @@ def main():
    if not state['done'].get('feed-route-'+g.name):
     for slot,certificate in enumerate([*certs,(alpha,beta)[home].certificate]):enroll(g,slot,certificate)
     net(g,31);wait(lambda g=g:circuit_ready(g),900,g.name+' native Feed circuit')
-    net(g,38,h=3,a=21,b=g.feed_owner,cword=8388608,d=65536);wait(lambda g=g:net(g,41)[0][2]==3,600,g.name+' authenticated Feed terminal')
+    net(g,38,h=3,a=21,b=g.feed_owner,cword=8388608,d=65536);wait(lambda g=g:terminal_ready(g),600,g.name+' authenticated Feed terminal')
     state['done']['feed-route-'+g.name]=True;save()
    if not feed_ui(g)[0][1]:
     focus(g,'feed');g.device.press(60);wait(lambda g=g:feed_ui(g)[0][1]!=0,300,g.name+' scoped Feed identity')
@@ -391,9 +415,10 @@ def main():
    focus(charlie,'feed');paused=fault('status')['channel'];fault('pause',paused['epoch']);charlie.device.press(104)
    wait(lambda:fault('status')['channel']['pending_bytes']>0,120,'opaque stalled native Feed backfill request')
    state['stall']=dict(epoch=paused['epoch'],began_monotonic=time.monotonic(),ui=list(feed_ui(charlie)[0]));record('stalled','native Feed backfill waits on one exact paused opaque transport epoch while two independent Messenger clients share mailbox')
-  assert fault('status')['channel']['tx_paused']
+  observe_stall('before Messenger',True)
   stage='native Messenger text and reply during Feed stall'
   send_once(alice,bob,'message',MSG);send_once(bob,alice,'reply',ANSWER)
+  observe_stall('Messenger text and reply completed',True)
   if not state['done'].get('messenger'):
    record('messenger','native graphical text and reply decrypt through shared Mailbox while Feed transport remains paused',text=state.get('message'),reply=state.get('reply'),stalled_feed_ui=list(feed_ui(charlie)[0]))
   stage='actual routed Forge during Feed stall'
@@ -419,12 +444,20 @@ def main():
     return f
    result=wait(verified,900,'native existing routed Forge signature/admission');assert projects.roots(bob.client)==roots_before
    state['forge_verified_fields']=list(result)
+   observe_stall('routed Forge completed',True)
    record('forge','actual received reference completes existing routed Forge inspection while independent Feed link remains paused',verified_fields=list(result),execution_approved=False)
   stage='native cancellation and independent cleanup'
   if not state['done'].get('cancel'):
+   before_cancel=observe_stall('before native input cancellation')
    charlie.device.press(1);wait(lambda:feed_ui(charlie)[0][2]==0,120,'native Feed input cancellation while link paused')
-   before=[list(net(g,41)[0])for g in(alice,bob)];fault('resume',state['stall']['epoch']);net(charlie,42);net(charlie,35)
-   assert all(net(g,41)[0][2]==3 for g in(alice,bob));record('cancel','native Feed cancellation and circuit disconnect preserve both unrelated authenticated Messenger sessions',other_sessions=before,stalled_seconds=time.monotonic()-state['stall']['began_monotonic'])
+   before=[list(net(g,41)[0])for g in(alice,bob)];cleanup=observe_stall('owned cleanup')
+   if cleanup['original_epoch_transport_paused']:fault('resume',state['stall']['epoch'])
+   else:
+    channel=cleanup['channel']
+    assert not channel['connected'],('unexpected replacement or unpaused connection; preserve it instead of resuming or stopping a stale epoch',cleanup)
+    state['stall']['ended_before_cleanup']=dict(before_input_cancel=before_cancel,after_input_cancel=cleanup);save()
+   net(charlie,42);net(charlie,35)
+   assert all(net(g,41)[0][2]==3 for g in(alice,bob));record('cancel','native Feed cancellation and circuit disconnect preserve both unrelated authenticated Messenger sessions',other_sessions=before,stalled_seconds=time.monotonic()-state['stall']['began_monotonic'],before_input_cancel=before_cancel,cleanup=cleanup)
   continuation()
   replication_runtime={}
   if a.replication_auto_renew:
