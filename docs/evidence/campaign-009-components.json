@@ -1,0 +1,529 @@
+{
+  "schema": 1,
+  "campaign": "009",
+  "status": "identified-development-components",
+  "claim": "These records identify actual component/development executions. They do not substitute for the final common-image connected run or assert full MVP gates.",
+  "records": [
+    {
+      "name": "shared-mailbox",
+      "local_record": "build/native-shared-terminal-qemu-fixed-banks/evidence.json",
+      "record_sha256": "d367d834c79d619452751b10a276840b59bb636cecad399fc920e9d133703f49",
+      "schema": 1,
+      "result": "pass",
+      "backend": "qemu",
+      "image_sha256": "312707cd042f64259edc3f8b304e758439b25e99908090ebdd5f1ea82e846993",
+      "checks": [
+        "three independent native clients concurrently admitted through same3relays and mailbox; no stop/listen handoff",
+        "three distinct native upload stages coexist; firstclient deliberately stalls after512bytes",
+        "cross-client append with correct recipient bearer but foreign terminal context is denied",
+        "two otherclients durably commit, retry exact request without duplicate, and fetch checked ciphertext while firstupload stalls",
+        "dropping stalled client leaves both unrelated terminal sessions usable"
+      ],
+      "timings": {
+        "three_client_setup_seconds": 254.46547662599914,
+        "two_clients_commit_and_read_while_other_stalled_seconds": 34.70418032499583
+      },
+      "limitations": "Native infrastructure component evidence. Public capability/ciphertext fixtures; this does not exercise Messenger UI, Feed, signed receipts, Forge, independent operators or hostile-network assurance.",
+      "network_bytes": 376644,
+      "network_sha256": "e713f137eedeab24608e92df3495d382034b02175d3b91154747aa44cdd05574",
+      "mailbox_sha256": "41a29975a4f7457a707120afe5c63a2580fae8d7a5132c4afe347ff2060c8ae0"
+    },
+    {
+      "name": "messenger-forge-contention",
+      "local_record": "build/native-messenger-contention-forge-finish/evidence.json",
+      "record_sha256": "ae98e14d5257d6401830b80c9a50049646b46036fd3cdb619e7f8b9a2dcba27a",
+      "schema": 1,
+      "result": "pass",
+      "image_sha256": "312707cd042f64259edc3f8b304e758439b25e99908090ebdd5f1ea82e846993",
+      "checks": [
+        {
+          "check": "same native Mailbox backing and three existing circuits remain running",
+          "result": "pass",
+          "mailbox_previously_recovered": true,
+          "prior_instance": 15750872889617810184,
+          "current_instance": 15750872889617810184,
+          "prior_router_states": {
+            "mailbox": [
+              0,
+              1,
+              0,
+              38,
+              4,
+              4,
+              0,
+              1
+            ],
+            "relay1": [
+              0,
+              1,
+              0,
+              38,
+              4,
+              4,
+              0,
+              1
+            ],
+            "relay2": [
+              0,
+              1,
+              0,
+              38,
+              4,
+              4,
+              0,
+              1
+            ],
+            "relay3": [
+              0,
+              1,
+              0,
+              38,
+              4,
+              4,
+              0,
+              1
+            ],
+            "alice": [
+              0,
+              1,
+              3,
+              0,
+              4,
+              0,
+              0,
+              1
+            ],
+            "bob": [
+              0,
+              1,
+              3,
+              0,
+              4,
+              0,
+              0,
+              1
+            ],
+            "stall": [
+              0,
+              1,
+              3,
+              0,
+              4,
+              0,
+              0,
+              1
+            ]
+          }
+        },
+        {
+          "check": "personal ciphertext coordinators replaced and reauthorized while retained native session owners, UI and operators remain running",
+          "result": "pass",
+          "delivery": {
+            "project": "campaign009-shared-delivery",
+            "version": "0.9.1",
+            "release_id": "26c400ac5f211a1a0443dfc92c83f797059f36c97e4eb6c78d6456b155e247de",
+            "publisher_key_id": "6d20cd4935fc2907c3be78b6d4dacbb284ac5390848c40217a03f3bafacf9fbc",
+            "project_id": "4d11201855a681dc5e113d70c61e6d0714d4866ecbabd82dbe0dc06b376df19e",
+            "rights": 1024,
+            "executable_sha256": "d19da5ae78cba937a836f558a2c3fee8d272523f4da624dcfb53e5959098c8a3",
+            "source_root": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "manifest_root": "f6d42e74562f601323761acc67cd9aef182cb46cdf03107a6e7b319d8ae3e5eb",
+            "parent": "0000000000000000000000000000000000000000000000000000000000000000",
+            "size": 207976,
+            "signature_verified": false,
+            "manifest_checked": false,
+            "identity_scheme": 0,
+            "logical_project_id": null
+          }
+        },
+        {
+          "check": "third independent client re-admitted without operator reset; exact opaque epoch paused with incomplete native upload",
+          "result": "pass",
+          "epoch": 8,
+          "handle": 2
+        },
+        {
+          "check": "actual graphical Messenger text exact retry and reply complete while third client remains stalled",
+          "result": "pass",
+          "original_serial": 1,
+          "reply_serial": 1,
+          "reply_seconds": 42.996921581005154
+        },
+        {
+          "check": "conversation F1 completes existing routed Forge signature and current native admission inspection while independent client remains stalled",
+          "result": "pass",
+          "displayed": [
+            0,
+            6,
+            2,
+            0,
+            1,
+            0,
+            1,
+            1
+          ],
+          "execution_approved": false,
+          "continuation_seconds": 0.8513049370012595
+        },
+        {
+          "check": "cancel and disconnect third client preserve both unrelated authenticated Messenger sessions",
+          "result": "pass"
+        }
+      ],
+      "elapsed_seconds": 552.7314586299981,
+      "limits": "Onehost local integration, classical native crypto. Existing project/Registry RSA bootstrap only; no host messaging keys or protocol-state authority.",
+      "source_failure_sha256": "93b030a90c5e3fff8a01e1aff4eaa6fb173ac27cec851404e8d095205fffc3ee"
+    },
+    {
+      "name": "native-signing",
+      "local_record": "build/feed-signer-exact-consumer/evidence.json",
+      "record_sha256": "e508e9dfbc70f5a89566578bc73a37e3aee48177d4071e9bf4111f993b6e2fd4",
+      "schema": 1,
+      "backend": "qemu",
+      "aarch64_emulated": false,
+      "image_sha256": "087d11081648c9eaf845432147559ef23a41ff39a8afdc40322858bce8eb0c1a",
+      "checks": [
+        {
+          "check": "legacy administrative create cannot mint Feed author or moderator authority outside the typed current consumer",
+          "result": "passed"
+        },
+        {
+          "check": "current native Feed account creates scoped Ed25519 key; descriptor independently verifies",
+          "result": "passed",
+          "public": "092a9927f2f1758df27ad506127c162e87c1852b7ff9192269945b3574c2db94",
+          "generation": 1
+        },
+        {
+          "check": "legacy administrative approval cannot bypass current Feed owner approval",
+          "result": "passed"
+        },
+        {
+          "check": "one-use approval binds exact audience, body commitment and event kind; original480-byte envelope independently verifies",
+          "result": "passed",
+          "event_id": "7406bb0fb89da35f088ee2a542dfd1ec8e03f32310d57b13e04a90cb58970c83"
+        },
+        {
+          "check": "consumed publication approval cannot sign twice",
+          "result": "passed"
+        },
+        {
+          "check": "Feed author cannot sign federation moderation decisions",
+          "result": "passed"
+        },
+        {
+          "check": "typed signer rejects body federation outside key scope",
+          "result": "passed"
+        },
+        {
+          "check": "typed seal returns ciphertext only; lock invalidates owned keys and approvals",
+          "result": "passed"
+        },
+        {
+          "check": "explicit native sealed recovery creates fresh handle and key generation without old grants",
+          "result": "passed",
+          "generation": 2
+        }
+      ],
+      "limits": [
+        "Boundary probe is not the graphical federated journey.",
+        "Whole backing replacement lacks an external freshness anchor."
+      ]
+    },
+    {
+      "name": "store-reader-isolation-qemu",
+      "local_record": "build/feed-store-role6-restart-qemu/evidence.json",
+      "record_sha256": "3450d8ef62f5d34d58950f6a67f341ac776f3d88e07913cdcf1ddb4afa53df83",
+      "schema": 1,
+      "backend": "qemu",
+      "aarch64_emulated": false,
+      "image_sha256": "f5b78e78c5bb46081709f985349aac27edbab57da1019e433836c92386bf730e",
+      "checks": [
+        "same and independent namespace reads preserve partial writer page, page hashes, commit and exact bytes",
+        "other namespace committed generation remains unchanged",
+        "role6 namespaces recover after operator restart with fresh grants and exact committed bytes"
+      ],
+      "committed_bytes": 13422,
+      "generation": 2
+    },
+    {
+      "name": "store-reader-isolation-aarch64",
+      "local_record": "build/feed-store-read-aarch64/evidence.json",
+      "record_sha256": "baff51fe6cfe4ef61cbdae6e6f3bf350140065620c1e18fccf665888ef313187",
+      "schema": 1,
+      "backend": "aarch64",
+      "aarch64_emulated": true,
+      "image_sha256": "312707cd042f64259edc3f8b304e758439b25e99908090ebdd5f1ea82e846993",
+      "checks": [
+        "same and independent namespace reads preserve partial writer page, page hashes, commit and exact bytes",
+        "other namespace committed generation remains unchanged"
+      ],
+      "committed_bytes": 13422,
+      "generation": 2
+    },
+    {
+      "name": "store-owner-replacement",
+      "local_record": "build/feed-empty-owner-replacement-fixed/evidence.json",
+      "record_sha256": "f894a9993e73a45a0e8a741d695dec14c8790d221e18c08c492ff97f5a4cfbca",
+      "schema": 1,
+      "result": "pass",
+      "image_sha256": "087d11081648c9eaf845432147559ef23a41ff39a8afdc40322858bce8eb0c1a",
+      "checks": [
+        "all eight uncommitted namespaces can be repermitted without consuming extra slots; every handle is fresh",
+        "superseded handles cannot revoke renewed grants",
+        "dead exact consumer grants are reclaimed and replacement receives fresh handles for all eight namespaces",
+        "ninth distinct live namespace is refused at finite capacity",
+        "empty namespace slots are reusable after consumer death without restarting storage"
+      ]
+    },
+    {
+      "name": "final-installed-aarch64",
+      "local_record": "build/campaign009-final-aarch64-storage/evidence.json",
+      "record_sha256": "124988f3bfb5b302606bd8f51dfc71dbaa3b886bb693a20dd531a41f29f13c55",
+      "schema": 1,
+      "result": "pass",
+      "backend": "aarch64",
+      "emulated": true,
+      "image_sha256": "8c67bb7303a39c7711699cc2ed6e26961376cf88c85da9dda008b918573f6ba9",
+      "checks": [
+        "actual purpose2 backing mounts; all eight role6 namespaces renew without occupying extra slots",
+        "old native handles are denied after fresh generation through actual installed IPC"
+      ],
+      "elapsed_seconds": 61.40281066999887,
+      "scope": "native installed kernel/Launcher/Vault and opaque block adapter; no claim of full installed Feed or Messenger"
+    },
+    {
+      "name": "retained-outbox-repair",
+      "local_record": "build/native-feed-retained-outbox-repair/evidence.json",
+      "record_sha256": "8235abec4770adcca005e3c6a114281cc0be23d3cdff9dd52b4c4d7001242fca",
+      "schema": 1,
+      "result": "pass",
+      "image_sha256": "8c67bb7303a39c7711699cc2ed6e26961376cf88c85da9dda008b918573f6ba9",
+      "checks": [
+        {
+          "check": "preserved failing actor has original two committed encrypted roots",
+          "result": "pass",
+          "roots": [
+            {
+              "slot": 0,
+              "magic": "0x315243455246544c",
+              "version": 1,
+              "domain": 3,
+              "generation": 2,
+              "bytes": 19456,
+              "header_sha256": "e9be40a6058ea3ac7f8105a64e122d730d2c88834210fc34c3e034dfb9167965",
+              "cipher_commitment_valid": true
+            },
+            {
+              "slot": 1,
+              "magic": "0x315243455246544c",
+              "version": 1,
+              "domain": 3,
+              "generation": 1,
+              "bytes": 19456,
+              "header_sha256": "a0733ec58d4732be0764920e694194c716e725062aefe94368ccede5f8a7c821",
+              "cipher_commitment_valid": true
+            }
+          ]
+        },
+        {
+          "check": "native recovery preserves exact signed pending event and creates fresh identity authority",
+          "result": "pass",
+          "cycle": 1,
+          "sequence": 1,
+          "public": "6761342ab6e95cba331cca6ca91ba5230ddb38315960ce754f66d15344a6bbbd",
+          "event": "c41fb8ce044aea6c0e2301026dd16f9184eadfde29ccb3789d3f47a7170b8a83",
+          "generation": 2,
+          "sha256": "18cfd7c19cb136f655468c4d1a96b518ce2beea3cd8d34a91df649e25760caec",
+          "roots": [
+            {
+              "slot": 0,
+              "magic": "0x315243455246544c",
+              "version": 1,
+              "domain": 3,
+              "generation": 2,
+              "bytes": 19456,
+              "header_sha256": "e9be40a6058ea3ac7f8105a64e122d730d2c88834210fc34c3e034dfb9167965",
+              "cipher_commitment_valid": true
+            },
+            {
+              "slot": 1,
+              "magic": "0x315243455246544c",
+              "version": 1,
+              "domain": 3,
+              "generation": 3,
+              "bytes": 19456,
+              "header_sha256": "b051defdd1834e740a710537137f6497523520fabba299921d89be1dc7440a77",
+              "cipher_commitment_valid": true
+            }
+          ]
+        },
+        {
+          "check": "native recovery preserves exact signed pending event and creates fresh identity authority",
+          "result": "pass",
+          "cycle": 2,
+          "sequence": 1,
+          "public": "6761342ab6e95cba331cca6ca91ba5230ddb38315960ce754f66d15344a6bbbd",
+          "event": "c41fb8ce044aea6c0e2301026dd16f9184eadfde29ccb3789d3f47a7170b8a83",
+          "generation": 3,
+          "sha256": "92e9ed370c2ea061d6c72d2495dd57485f458d69be6ac7eda476378481d6e14f",
+          "roots": [
+            {
+              "slot": 0,
+              "magic": "0x315243455246544c",
+              "version": 1,
+              "domain": 3,
+              "generation": 4,
+              "bytes": 19456,
+              "header_sha256": "0074c22ca8c242a94f54a34be6b061c201c5ad7907dab8088d3629b60821aeea",
+              "cipher_commitment_valid": true
+            },
+            {
+              "slot": 1,
+              "magic": "0x315243455246544c",
+              "version": 1,
+              "domain": 3,
+              "generation": 3,
+              "bytes": 19456,
+              "header_sha256": "b051defdd1834e740a710537137f6497523520fabba299921d89be1dc7440a77",
+              "cipher_commitment_valid": true
+            }
+          ]
+        }
+      ],
+      "elapsed_seconds": 94.92606104600418,
+      "packages": {
+        "identity": {
+          "release_id": "f1c5934089942fbbd2fee060c10a257d6937022ffc076c354f3db77f2b2d05c2",
+          "package_sha256": "01a013c3b5a16b987876304b7685ca6307ae81644cd834b8a040ecb3c8bbf0fc"
+        },
+        "feed-account": {
+          "release_id": "65af2d5583d8e56dff60b51c26ed0735ede8c9e397f508ab75f8f95c359c4a53",
+          "package_sha256": "2a646046337301dd27cd0b2892851c72f9899fb5a748f6457090f187c448a9fd"
+        },
+        "feed": {
+          "release_id": "66f502b9c0f5bf418d2a77dc4a208c667c78f4a84ea9d602c463b8b29669861d",
+          "package_sha256": "fdc8b10a663288b0f38b483c2870e5c45b55a37bd56ac8c945d45c814ecb0c69"
+        }
+      }
+    },
+    {
+      "name": "initial-feed-post",
+      "local_record": "build/native-feed-checkpoint-v2/checkpoint.json",
+      "record_sha256": "230eb4ebfce424b4e220d9d44d4dfbe4a33027714484d4507c6e07c87ce380f5",
+      "schema": 1,
+      "result": "pass",
+      "image_sha256": "f5b78e78c5bb46081709f985349aac27edbab57da1019e433836c92386bf730e",
+      "limits": "One UI author, one post, native selected peer replication; larger connected acceptance remains separate.",
+      "event_id": "7ec303bd218eb34c84ee2ea7a8da0350dad263bba2a1de079bf7433bab6b38c0"
+    },
+    {
+      "name": "moderation",
+      "local_record": "build/native-feed-checkpoint-v2/moderation.json",
+      "record_sha256": "dc856b8a6ae148f02bb30c470b4a3377a649b11bf625add1a08175674e7c1081",
+      "schema": 1,
+      "result": "pass",
+      "checks": [
+        "Alpha user blocks Beta reply author in private local preferences",
+        "Real native report accepted without creating moderator authority or cross federation replication",
+        "Authorized native moderator decision hides exact event and ordinary direct read is refused",
+        "Author appeal receives explicit authorized signed reversal and original author event is unchanged",
+        "Federation reversal preserves Alpha personal local block",
+        "Alpha independently retains permitted original reply; Beta policy never rewrites it or expands private report audience"
+      ],
+      "seconds": 77.95729576000303,
+      "scope": "Local native all-QEMU selected-federation workflow; remote-home private appeals are unsupported in this profile.",
+      "frames": {
+        "node0": "ac65501cb39bcd99bad2ed7b94ca65e983c3a5dc8492e2a39a24d8dc6c7381ac",
+        "node6": "a8fbae699bcb1793bc638cad724977494be2eea09aebb1ffe7902c3ea6a34db0"
+      },
+      "report_id": "d612b66a262b8ebfc614702b60af8035e209ed7f063e3d166c5e9737bf3e8534",
+      "appeal_id": "e178a75029a120086bb901fa3facbc0a8e95a76efb62890626ea0228d12760a4",
+      "hidden_decision": "4b65a64f680502a56f0a8497873e44b54026cd96c65be088ea660433c6438138",
+      "reversal_decision": "ac0fd9dd481bdf9701f518ce7f8b9c090e0a51c3115e28a6463bdcd332e410e5"
+    },
+    {
+      "name": "public-portability",
+      "local_record": "build/feed-offline-portable/evidence.json",
+      "record_sha256": "ab4240da1ef3c16382e0535905a801f1886ecbd11a2c38c30a9b1cbe67d496f6",
+      "schema": 1,
+      "backend": "qemu",
+      "aarch64_emulated": false,
+      "image_sha256": "f5b78e78c5bb46081709f985349aac27edbab57da1019e433836c92386bf730e",
+      "checks": [
+        {
+          "check": "native graphical gesture creates separately scoped Feed identity",
+          "result": "pass",
+          "public_key": "b99326ed7983a16232b8885e9ee7c895a0709c5638adadbd51cd6a684c6d70d6"
+        },
+        {
+          "check": "native Feed retention explicitly commits typed identity metadata with sealed key in Objects domain3",
+          "result": "pass"
+        },
+        {
+          "check": "native lock rejects recovery until fresh explicit storage authorization",
+          "result": "pass",
+          "state": [
+            0,
+            0,
+            5,
+            0,
+            54,
+            0,
+            13,
+            1
+          ]
+        },
+        {
+          "check": "fresh explicit native recovery preserves Feed public identity after lock and new storage consent",
+          "result": "pass",
+          "public_key": "b99326ed7983a16232b8885e9ee7c895a0709c5638adadbd51cd6a684c6d70d6"
+        },
+        {
+          "check": "explicit native public portable export creates scoped immutable Objects object without keys or sealed private identity",
+          "result": "pass",
+          "sha256": "77c35d14257c0d1e94af663af2ead50010d544b7b2397485ada6ff9f721ee739",
+          "bytes": 2048
+        },
+        {
+          "check": "with original personal guest offline, approved public Objects state imports under a freshly authorized destination-scoped identity",
+          "result": "pass",
+          "source_public": "b99326ed7983a16232b8885e9ee7c895a0709c5638adadbd51cd6a684c6d70d6",
+          "destination_public": "15e7df6348d75220432bf19bdcd148ab2f88fc70859070cbdedea299d30ab3bb",
+          "linked_identity_claim": false
+        },
+        {
+          "check": "native destination accepts all ordinary compose input while bounded surface transfers progress",
+          "result": "pass",
+          "bytes": 131
+        }
+      ],
+      "limitations": [
+        "No connected federation or successful publication is claimed by this focused refusal check.",
+        "Retention and public portability are qualified only when --retention is selected.",
+        "Whole backing replacement lacks an external freshness anchor.",
+        "Source UI package154760B and destination UI157456B differ; common image and owner code were retained. This focused record is not a clean final common-package campaign.",
+        "Public profile import does not assert a verifiable identity-continuity link or successful federation hosting migration."
+      ],
+      "packages": {
+        "identity": {
+          "sha256": "cdf827f726171831707a5fdb0b4a6a9c8c760a2bca7a7aef5ea2876403189c56",
+          "release_id": "4ddfed3b69a9cf9b11e9609d4b008b476175ccafcb429cf2064cc230507f2634"
+        },
+        "feed-account": {
+          "sha256": "afc12756c639ae8c89ac519756ca527bd0108592014fb2e34024acdd4c3e6cba",
+          "release_id": "894b9ce324a75963170f11206bc2ab4846e746318a4e9301034d81c4a33c5962"
+        },
+        "feed": {
+          "sha256": "16c878d966db97d68b2721afee65409be13cd9a54cd26ee462655ab66c5fdde4",
+          "release_id": "1dc20747207da8b73d35aa34c288a91cc735049a65ac8882b044a0b50c27c2d4"
+        }
+      }
+    },
+    {
+      "name": "signed-card-replication",
+      "local_record": "build/feed-retained-alpha/card-replica.json",
+      "record_sha256": "a5b282b928c5210af19df36eb3e3e48436b29a26e287a8f435fee7ae0f060d4d"
+    }
+  ],
+  "assurance": "Local one-host execution. AArch64 is qemu-aarch64 emulation. No physical hardware, independent operators, Tor interoperability, post-quantum security or whole-store external freshness claim."
+}
