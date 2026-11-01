@@ -33,17 +33,23 @@ def prepare(g,ui,output,*,archive_path=ROOT/'build/signed-forge-journey-2/publis
     registry,_=messenger.install(g.client,package,PUB,2175)
     fedkey,fedpub=output/'federation.pem',output/'federation.pub';capsule.generate_key(fedkey,fedpub)
     config=federation.configure(g.client,registry,fedpub,'portable')
+    # A Fork chooses a new local project publisher explicitly. This public
+    # project bootstrap does not confer upstream-maintainer or Feed authority.
+    forkkey,forkpub=output/'fork-publisher.pem',output/'fork-publisher.pub'
+    capsule.generate_key(forkkey,forkpub)
     modulus=releases.public_modulus(publisher)
     publication=releases.publication(actual,hashlib.sha256(modulus).hexdigest())
     federation.call(g.client,registry,3,data=publication+modulus)
     delegated=g.client.objects(27,root['cap'],registry,25)[0][1]
     federation.call(g.client,registry,2,h=delegated)
     signed=wait(lambda:federation.sign_once(g.client,registry,fedkey,'portable'),180,'original Registry evaluated signed project')
-    _,descriptor=federation.call(g.client,registry,6)
+    catalog,descriptor=federation.call(g.client,registry,6)
     assert signed['listing']==2 and signed['root']==root['head'] and descriptor[320:352].hex()==root['head']
     record=dict(root=root,registry=registry,descriptor_sha256=hashlib.sha256(descriptor).hexdigest(),project_id=actual,
                 publication_id=publication.hex(),release_id=descriptor[128:160].hex(),federation=config['federation_id'],
                 original_graph=str(archive_path),original_graph_sha256=hashlib.sha256(archive_path.read_bytes()).hexdigest(),publisher=str(publisher),
+                fork_publisher=str(forkpub),registry_slot=catalog[2],registry_sequence=catalog[1],
+                admission_key=str(fedkey),
                 signature='unchanged original RSA Project Release; existing native Registry policy plus disclosed RSA admission bootstrap',execution_consent=False)
     (output/'project.json').write_text(json.dumps(record,indent=2)+'\n')
     return record
@@ -60,21 +66,35 @@ def publish_and_fork(g,ui,record,*,publish_wait,card_text='This card links the e
     device.press(104)
     def selected_card():
         fields,payload=ui_call(g,ui,795)
-        return payload if len(payload)==512 and struct.unpack_from('<Q',payload,32+176)[0]==3 and payload[32+336:32+368].hex()==record['root']['head'] else None
+        if len(payload)!=512 or struct.unpack_from('<Q',payload,32+176)[0]!=3 or payload[32+336:32+368].hex()!=record['root']['head']:
+            return None
+        return payload
+    def fully_read():
+        _,diagnostic=ui_call(g,ui,791)
+        return len(diagnostic)>=160 and struct.unpack_from('<Q',diagnostic,128)[0]==0
     for _ in range(64):
         try:chosen=wait(selected_card,3,'native timeline card')
-        except TimeoutError:device.press(109);continue
+        except TimeoutError:
+            wait(fully_read,180,'native row content check before pagination')
+            device.press(109);continue
         break
     else:raise AssertionError('published card did not appear in native paginated timeline')
+    wait(fully_read,180,'native card original metadata content commitment checked')
+    return inspect_and_fork(g,ui,record,chosen)
+
+
+def inspect_and_fork(g,ui,record,chosen):
+    device=g.device
     device.press(46) # C uses original Registry consumer.
     wait(lambda:ui_call(g,ui,791)[0][2]==8,90,'native original release inspection')
     device.press(33) # F opens an explicit new publisher identity form.
     wait(lambda:ui_call(g,ui,791)[0][2]==10,30,'native Fork publisher approval')
-    publisher=hashlib.sha256(releases.public_modulus(Path(record['publisher']))).hexdigest()
+    publisher=hashlib.sha256(releases.public_modulus(Path(record['fork_publisher']))).hexdigest()
     device.textASCII(publisher,delay=.04);device.press(28)
     # The trusted picker is the normal Compositor flow; only the exact source
     # root that matches the card is eligible when the owner rechecks admission.
-    time.sleep(.5);device.press(28)
+    wait(lambda:ui_call(g,ui,791)[0][4]==49,90,'native trusted project picker is open')
+    device.press(28)
     def forked():
         return next((row for row in projects.roots(g.client)if row['name'].startswith('feedfork')),None)
     fork=wait(forked,120,'existing Objects graph Fork commits independent source')
@@ -83,3 +103,23 @@ def publish_and_fork(g,ui,record,*,publish_wait,card_text='This card links the e
     assert lineage!=record['project_id']
     return dict(event_id=chosen[:32].hex(),upstream_root=record['root']['head'],fork=fork,project_id=lineage,publisher=publisher,
                 action='existing Objects.forkProject; independent local lineage, no install or execution consent')
+
+
+def revoke_and_refuse(g,ui,record):
+    """Known native Registry revocation must win over a valid old Feed card."""
+    before=projects.roots(g.client)
+    f,_=federation.call(g.client,record['registry'],8,h=record['registry_slot'],a=record['registry_sequence'])
+    signed=wait(lambda:federation.sign_once(g.client,record['registry'],Path(record['admission_key']),'portable'),180,'native revocation admission signed through original bootstrap')
+    assert signed['listing']==3 and signed['root']==record['root']['head']
+    # C rechecks the exact old descriptor against current native Registry state.
+    g.device.press(46)
+    wait(lambda:ui_call(g,ui,791)[0][6]==11,90,'native Feed card refuses known revoked project')
+    # F may show the ordinary publisher form, but its action-time verify must
+    # refuse before any trusted picker or graph Fork can acquire authority.
+    g.device.press(33)
+    if ui_call(g,ui,791)[0][2]==10:
+        publisher=hashlib.sha256(releases.public_modulus(Path(record['fork_publisher']))).hexdigest()
+        g.device.textASCII(publisher,delay=.04);g.device.press(28)
+    wait(lambda:ui_call(g,ui,791)[0][6]==11,90,'native Fork action revalidates revoked original release')
+    assert projects.roots(g.client)==before
+    return dict(revocation=signed,feed_card_still_original=True,additional_forks=0,execution_consent=False)

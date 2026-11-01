@@ -180,7 +180,9 @@ def complete (bytes purpose t : UInt64) : UInt64 :=
   if code != 0 && code != 6 && code != 10 then failed code t else
   if purpose == 1 then
     if bytes != 64 then failed 9 t else
-    if code == 6 then failed 4 t else
+    if code == 6 then
+      if result t == 0 then failed 4 t else store64 (st+32) 5 (store64 (st+40) 0 t)
+    else
     if load64 (wire+16) t >= 2 then store64 (st+32) 6 (store64 (st+40) 0 t) else
     appendUpload (store64 (st+96) (result t) (store64 (st+104) 0 t))
   else if purpose == 2 then

@@ -723,6 +723,7 @@ def paintPump (surface t : UInt64) : UInt64 :=
   if action == 0 then t else notice 6 t
  def inspect (t : UInt64) : UInt64 := submit 0 0 0 0 0 0 0 t
  def timeline (cursor t : UInt64) : UInt64 :=
+  if load64 (st+8) t != 0 && load64 (st+16) t != 0 then notice 6 t else
   submit 5 cursor (load64 (st+160) t) 0 0 0 0 (store64 (st+24) 0 (store64 (st+72) 0 t))
  def createIdentity (t : UInt64) : UInt64 :=
   if load64 (st+168) t != 0 then notice 21 (store64 (st+24) 3 t) else
@@ -730,7 +731,9 @@ def paintPump (surface t : UInt64) : UInt64 :=
  def beginCompose (kind t : UInt64) : UInt64 :=
   if load64 (st+168) t == 0 then notice 4 t else
   if load64 (st+192) t == 8 then notice 13 t else
-  let t := zero compose 2048 (zero references 12 t)
+  -- Card encoding reuses the checked body scratch. Hide the previous body
+  -- before composing so new bytes never appear beneath its old authorship.
+  let t := store64 (st+72) 0 (zero compose 2048 (zero references 12 t))
   let t := if kind == 2 || kind == 4 || kind == 5 then copy eventId references 32 t else t
   let t := if kind == 4 || kind == 5 || kind == 6 || kind == 7 then copy eventId (references+64) 32 t else t
   notice (if kind == 6 then 19 else if kind == 7 then 20 else 7)
@@ -1087,6 +1090,7 @@ partial def loop (surface t : UInt64) : UInt64 :=
   loop surface (Guest.WaitSDK.deadline (Guest.WaitSDK.now t+1) t)
 def main (t : UInt64) : UInt64 :=
   let t := notice 4 (zero st 48 (zero accountScope 8 (zero identity 12 (zero eventId 4 t))))
+  let t := store64 (st+112) 320 (store64 (st+120) 200 t)
   let surface := syscall 80 0 0 0 0 t
   if surface == error then error else loop surface (draw surface surface)
 end Guest.Feed
