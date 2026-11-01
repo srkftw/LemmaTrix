@@ -19,7 +19,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT/'tools'), str(ROOT/'tests')]
 import feed
 import messenger
-from messenger_journey import Guest, enroll, net, wait
+import releases
+from messenger_journey import Guest, enroll, net, role, wait
 from native_community_campaign import attach_campaign, select_destination
 
 
@@ -46,6 +47,33 @@ def main():
         relays = [actors['relay'+str(i)] for i in (1, 2, 3)]
         alpha = actors['alpha']
         original = {}
+        def delivery_observation(require_healthy=True):
+            """Only the admitted0.8.2 release defines read-only464/action5.
+
+            Older releases treat this subaction as configuration. Verify the
+            selected public successor and current native catalog before it.
+            """
+            package = out/'delivery-recovery-0.8.2.ltrel'
+            info = releases.inspect(package.read_bytes())
+            assert info['version'] == '0.8.2' and info['rights'] == 1024
+            runtime = campaign.state['current_runtime_packages']['messenger_by_person']
+            result = {}
+            for g in (alice, bob):
+                assert runtime[g.name]['delivery'] == info['release_id']
+                active = g.client.request(14, bytes.fromhex(info['project_id']))
+                assert active[64:96].hex() == info['release_id']
+                assert messenger.endpoint(g.client, 4, 464) == g.delivery
+                fields, _ = role(g, 4, 464, a=5)
+                assert fields[0] == 0, (g.name, list(fields))
+                terminal = net(g, 41)[0]
+                if require_healthy:
+                    assert fields[1] <= 512 and fields[4] != 7, (g.name, list(fields))
+                    assert terminal[1:3] == (1, 3), (g.name, list(terminal))
+                result[g.name] = dict(instance=g.delivery, release=info['release_id'],
+                    raw=list(fields), workflow_rpc_guard=fields[1], rpc_serial=fields[2],
+                    current_rpc=fields[3], receive_phase=fields[4], receive_reason=fields[5],
+                    completed_empty_probes=fields[6], parent_terminal=list(terminal))
+            return result
         def replication_observation():
             """Read finite native authority; this controller never renews it."""
             result = {}
@@ -114,6 +142,9 @@ def main():
             # No relay, terminal operator or shared service receives stop/listen.
             net(g, 42);net(g, 35)
         try:
+            before_delivery = delivery_observation()
+            (evidence/'delivery-before.json').write_text(json.dumps(before_delivery, indent=2)+'\n')
+            print('Native0.8.2 finite workflow and empty-probe counters at capacity takeover', json.dumps(before_delivery), flush=True)
             before_replication = replication_observation()
             (evidence/'replication-before.json').write_text(json.dumps(before_replication, indent=2)+'\n')
             print('Native finite replication authority at capacity takeover', json.dumps(before_replication), flush=True)
@@ -210,6 +241,21 @@ def main():
                     assert earlier['fields'][3] <= later['fields'][3] <= 9
                     if earlier['fields'][4]:assert later['fields'][4:6] == earlier['fields'][4:6]
             (evidence/'replication-after.json').write_text(json.dumps(after_replication, indent=2)+'\n')
+            after_delivery = delivery_observation()
+            for name, before in before_delivery.items():
+                after = after_delivery[name]
+                assert after['instance'] == before['instance'] and after['release'] == before['release']
+                assert after['rpc_serial'] >= before['rpc_serial']
+                assert after['completed_empty_probes'] >= before['completed_empty_probes']
+                assert after['parent_terminal'][4] <= before['parent_terminal'][4]
+                assert after['parent_terminal'][5] <= before['parent_terminal'][5]
+                if after['completed_empty_probes'] > before['completed_empty_probes']:
+                    assert after['parent_terminal'][4] < before['parent_terminal'][4]
+                    assert after['parent_terminal'][5] < before['parent_terminal'][5]
+                if after['completed_empty_probes'] >= 513:
+                    passed('native empty mailbox probes continue beyond512 without replacing the coordinator or renewing its finite parent allowance',
+                           person=name, before=before, after=after, additional_idle_wait=False)
+            (evidence/'delivery-after.json').write_text(json.dumps(after_delivery, indent=2)+'\n')
             report = dict(schema=1, result='pass', image_sha256=hashlib.sha256((out/'guest.bin').read_bytes()).hexdigest(),
                           selected_public_certificates={g.name:hashlib.sha256(g.certificate).hexdigest() for g in (*relays, alpha)},
                           checks=checks, elapsed_seconds=time.monotonic()-started,
@@ -217,12 +263,16 @@ def main():
                                                  independent_extra_native_guests=4, terminal_bytes=1048576, terminal_requests=256),
                           private_keys_exported=False, host_data_plane=False, operator_stop_listen_handoffs=False,
                           replication_before=before_replication, replication_after=after_replication,
+                          delivery_before=before_delivery, delivery_after=after_delivery,
                           host_replication_authority_renewals=0,
                           limits=['Local common-image continuation; relay2 may use the RV64 interpreter on native-x86.',
                                   'Headless clients explicitly use native Launcher-owned read-only typed Feed transport contexts; they are not new graphical Feed authors.',
                                   'Native32 lacks a full per-channel census; exact pairing is evidenced by six independently authenticated three-hop terminals and the implementation resource contract.'])
             (out/'relay-capacity.json').write_text(json.dumps(report, indent=2)+'\n')
         except BaseException as error:
+            with contextlib.suppress(Exception):
+                failed_delivery = delivery_observation(require_healthy=False)
+                (evidence/'delivery-failure.json').write_text(json.dumps(failed_delivery, indent=2)+'\n')
             (out/'relay-capacity-failure.json').write_text(json.dumps(dict(schema=1, result='failed',
                 error=repr(error), checks=checks, elapsed_seconds=time.monotonic()-started), indent=2)+'\n')
             raise
