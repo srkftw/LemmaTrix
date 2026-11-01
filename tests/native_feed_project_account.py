@@ -287,8 +287,14 @@ def select_local_block_marker(g,author):
             fields,payload=feed_ui(g,795)
             observer=getattr(g,'project_observer',None)
             if observer is not None:observer('native local-block pagination',selected=payload[:32].hex())
-            return payload if project.complete_read(g,g.feed_ui)and(any(payload[:32])or payload[144:176]==author)else None
+            complete=project.complete_read(g,g.feed_ui)
+            status=feed_ui(g)[0]
+            if complete and not any(payload[:32])and payload[144:176]!=author and status[6]in(4,9,12,14):return dict(unavailable=list(status))
+            return payload if complete and(any(payload[:32])or payload[144:176]==author)else None
         row=wait(ready,300,'native chronological signed row or author-only local block marker')
+        if isinstance(row,dict):
+            if getattr(g,'project_observer',None):g.project_observer('native unavailable row; ordinary Next',status=row['unavailable'])
+            project.advance_row(g,g.feed_ui,bytes(512));continue
         if row[144:176]==author:
             assert not any(row[:144])and not any(row[176:]),'blocked marker must contain only its public author'
             assert feed_ui(g)[0][4]==16
@@ -323,7 +329,9 @@ def check_upgraded_local_block(g,state,approved,checkpoint,save,observed):
         profile=export_public(g,True);assert profile[256:1792]==approved[256:1792]
         record.update(restored=True,restored_preference_sha256=hashlib.sha256(profile[256:1792]).hexdigest());save()
     if not record.get('next_progress'):
-        select_local_block_marker(g,author)
+        marker=feed_ui(g,795)[1]
+        if not(marker[144:176]==author and not any(marker[:144])and not any(marker[176:])and project.complete_read(g,g.feed_ui)):
+            select_local_block_marker(g,author)
         record['marker_frame']=screenshot(g,'upgraded-local-block-marker');save()
         marker=feed_ui(g,795)[1]
         project.advance_row(g,g.feed_ui,marker)
