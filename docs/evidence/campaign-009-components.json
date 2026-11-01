@@ -523,6 +523,192 @@
       "name": "signed-card-replication",
       "local_record": "build/feed-retained-alpha/card-replica.json",
       "record_sha256": "a5b282b928c5210af19df36eb3e3e48436b29a26e287a8f435fee7ae0f060d4d"
+    },
+    {
+      "name": "native-operator-cold-recovery",
+      "local_record": "build/native-feed-checkpoint-v2/restart.json",
+      "record_sha256": "49ecd7998694aff70bee4ccab56c0b0c8d8f8dca25d5a27a7071b601734e9784",
+      "record": {
+        "schema": 1,
+        "result": "pass",
+        "image_sha256": "8c67bb7303a39c7711699cc2ed6e26961376cf88c85da9dda008b918573f6ba9",
+        "package_ids": {
+          "identity": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+          "feed-federation": "5bb8adb18e7161203a9eec7d6ffebf7ac1e7a0c510f8d74b652642f91c7b9686"
+        },
+        "baseline": {
+          "moderator_generation": 4,
+          "event_count": 8,
+          "content_bytes": 3502,
+          "checkpoint": 3,
+          "recovered_checked_content": [
+            {
+              "event_id": "6a77bbcb2a6aa9e5072ffc0527422252027829ed500ac9c86d18ae260ed51695",
+              "body_bytes": 1245,
+              "body_sha256": "8303f4024fd889a7c6451ca695829fec377f679b2aeecbf63728489a2a73c734",
+              "visible": 1
+            },
+            {
+              "event_id": "6c88e5bfdf96e8b628874e65ff66507467bf2d005c5c667d9016ba1a7775465c",
+              "body_bytes": 134,
+              "body_sha256": "b7c70da3cf8fc47af30eba4ed33b5ef8228072a94aaef3ce555b3bca286c022a",
+              "visible": 1
+            }
+          ],
+          "budget": [
+            0,
+            16777216,
+            0,
+            2097152,
+            262144,
+            0,
+            1,
+            1
+          ],
+          "policy_hash": "5119612e9933d8a6f3f3620578c58d996aff155bd400997747f116973ad651c7"
+        },
+        "runs": [
+          {
+            "moderator_generation": 5,
+            "event_count": 8,
+            "content_bytes": 3502,
+            "checkpoint": 3,
+            "recovered_checked_content": [
+              {
+                "event_id": "6a77bbcb2a6aa9e5072ffc0527422252027829ed500ac9c86d18ae260ed51695",
+                "body_bytes": 1245,
+                "body_sha256": "8303f4024fd889a7c6451ca695829fec377f679b2aeecbf63728489a2a73c734",
+                "visible": 1
+              },
+              {
+                "event_id": "6c88e5bfdf96e8b628874e65ff66507467bf2d005c5c667d9016ba1a7775465c",
+                "body_bytes": 134,
+                "body_sha256": "b7c70da3cf8fc47af30eba4ed33b5ef8228072a94aaef3ce555b3bca286c022a",
+                "visible": 1
+              }
+            ],
+            "budget": [
+              0,
+              16777216,
+              0,
+              3145728,
+              262144,
+              0,
+              1,
+              1
+            ],
+            "policy_hash": "5119612e9933d8a6f3f3620578c58d996aff155bd400997747f116973ad651c7",
+            "iteration": 1,
+            "service": {
+              "instance": 2297628325914345736,
+              "release_id": "5bb8adb18e7161203a9eec7d6ffebf7ac1e7a0c510f8d74b652642f91c7b9686",
+              "federation": "ebf82367699c1109e66cef1a8b897bf7f4516738491c585e3fd84b1f3a46c31b",
+              "peer": "6178718ac0d56770df1206fe4297623036255a78adadbfa975defe94ad8ab8d9",
+              "moderator_public": "d50e8e5c5e2deb65a511b2818acf334c73351fa6b692dc276449653274b32053",
+              "namespace": "a9985ab76a0af8fe4a22f2424a0989e0b480c821e5cbe53ff93261e3fe00eb4a",
+              "status": [
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1
+              ],
+              "storage_grants": [
+                2297628330209313025,
+                2297628330209313282,
+                2297628330209313539,
+                2297628330209313796,
+                2297628330209314053,
+                2297628330209314310,
+                2297628330209314567,
+                2297628330209314824
+              ],
+              "storage_grants_are_live_session_handles": true,
+              "capacity": {
+                "events": 64,
+                "content_bytes": 917504,
+                "stages": 4,
+                "content_max": 16384,
+                "segments": 7,
+                "per_author_events": 16,
+                "per_author_content_bytes": 262144
+              },
+              "persistence": "native purpose2 ServerStore; index commit follows immutable content segment commit",
+              "lifecycle": "long-running native listener; no per-client handoff or host replication loop"
+            },
+            "node_recovered": [
+              0,
+              1,
+              192,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            "same_certificate": true,
+            "repeated_configuration_unchanged": true,
+            "seconds": 175.2502854869963
+          }
+        ],
+        "private_keys_exported": false,
+        "host_backing_edits": false,
+        "limits": "Only Beta restarted; Alpha remains on historical image4. Unused transport allocations are conservatively burned. No live grants are restored."
+      }
+    },
+    {
+      "name": "final-v2-installed-aarch64",
+      "local_record": "build/campaign009-final-v2-aarch64-storage/evidence.json",
+      "record_sha256": "6bea9dd3c04c9e5afb1c724da563dbf0f52519994425d3fe6240e33b117fbb87",
+      "record": {
+        "schema": 1,
+        "result": "pass",
+        "backend": "aarch64",
+        "emulated": true,
+        "image_sha256": "582f4d24d94874898e0bba18c98ef04d91e969f14aaf1ca0678c5152f50ae6f2",
+        "checks": [
+          "actual purpose2 backing mounts; all eight role6 namespaces renew without occupying extra slots",
+          "old native handles are denied after fresh generation through actual installed IPC"
+        ],
+        "elapsed_seconds": 17.651234625001962,
+        "scope": "native installed kernel/Launcher/Vault and opaque block adapter; no claim of full installed Feed or Messenger"
+      }
+    },
+    {
+      "name": "scoped-context-and-listener-regression",
+      "local_record": "build/native-shared-contexts/evidence.json",
+      "record_sha256": "b66d22787d5d39865b8b38f133226c7e061700ae2faa1792642aab188fc7d583",
+      "record": {
+        "schema": 1,
+        "result": "pass",
+        "image_sha256": "55dcafb1a5e2be275490ad6c0ec691f010a453cc5bd7f8ae37248e4273ed8f01",
+        "checks": [
+          {
+            "backend": "qemu",
+            "seconds": 0.06725113300490193,
+            "result": "pass"
+          },
+          {
+            "backend": "aarch64",
+            "seconds": 0.6639605079981266,
+            "result": "pass"
+          }
+        ],
+        "boundaries": [
+          "relay integrity failure closes only dependent incoming/outgoing pair",
+          "expired idle listener gets a finite setup window only when accepted; outbound and ongoing handshake deadlines do not renew",
+          "failed LISTEN retires only that listener, backs off within32 failures, and explicit operator listen renews its allowance",
+          "terminal keys/buffers banked by channel, stream and epoch; stale epoch rejects",
+          "mailbox sameNetworkcaller different terminalorigin cannot append or collect foreignstaging",
+          "adapterv3 accepts slot15 and rejects slot16",
+          "bulk reconnect attempts remain context-private, finite32 and pending admission does not renew them",
+          "current native Feed relationship preserves exact used allowance and expiry only on link loss; lost jobs and inbox cleared, expired/pin-changed or explicit-stop grants cannot revive"
+        ],
+        "limitations": "Focused compiled RV64 state transitions, including provisioned predicate inputs for bulk reconnect; no native certificate-admission claim from this fixture. AArch64 assembly emulator runs under qemu-aarch64; no physical hardware or full native Messenger qualification."
+      }
     }
   ],
   "assurance": "Local one-host execution. AArch64 is qemu-aarch64 emulation. No physical hardware, independent operators, Tor interoperability, post-quantum security or whole-store external freshness claim."
