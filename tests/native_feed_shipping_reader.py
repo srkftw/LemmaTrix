@@ -44,6 +44,10 @@ def checked_read(g,target,observed):
    observed(dict(check='visible shipping reader refusal clears content before ordinary First retry',**selected))
    retries+=1
    if retries>4:raise RuntimeError('bounded native reader retry allowance exhausted')
+   # Busy is a completed refusal; it is not evidence that a subsequent key
+   # has already been processed. Give the finite in-flight owner operation
+   # time to finish instead of counting the same sticky notice repeatedly.
+   time.sleep(3)
    g.device.press(104);continue
   if selected[:32]==target:return selected
   project.advance_row(g,g.feed_ui,selected)
