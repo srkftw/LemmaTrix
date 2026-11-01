@@ -147,10 +147,12 @@ def check_replication_lease(guest, operator, endpoint):
         if before_phase[3] != 3:
             raise RuntimeError(('native replication stopped for a reason other than lease expiry/stale authority', guest.name, before_phase))
         previous = operator['replication']
-        feed.replication(guest.client, NS(
+        refreshed = feed.replication(guest.client, NS(
             peer=0, side='server' if guest.name == 'alpha' else 'client', slot=0,
             scope=previous['scope'], endpoint=endpoint,
             bytes=previous['bytes'], rate=previous['rate'], lifetime=previous['lifetime']))
+        operator['replication'] = refreshed
+        result['current_grant'] = refreshed['grant']
         after, after_policy = feed.invoke(guest.client, 490, action=12)
         assert after_policy == policy
         assert after[1] == before[1] and after[4:7] == before[4:7]
@@ -208,6 +210,15 @@ def main():
                     lease_checks.append(check_replication_lease(
                         actors[name], campaign.state['actors'][name], campaign.state['bulk_endpoint']))
             state.setdefault('lease_checks', []).append(dict(stage=args.stage, operators=lease_checks))
+            if any(check['renewed'] for check in lease_checks):
+                (out/'native-actors.json').write_text(json.dumps(campaign.state, indent=2)+'\n')
+                continuation_path = out/'continuations.json'
+                if continuation_path.exists():
+                    continuation = json.loads(continuation_path.read_text())
+                    for check in lease_checks:
+                        if check['renewed']:
+                            continuation['actors'][check['operator']] = campaign.state['actors'][check['operator']]
+                    continuation_path.write_text(json.dumps(continuation, indent=2)+'\n')
             save()
             print('Native finite lease stage checks', json.dumps(lease_checks), flush=True)
             if args.stage == 'moderation':
