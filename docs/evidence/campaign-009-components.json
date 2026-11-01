@@ -679,7 +679,7 @@
     },
     {
       "name": "scoped-context-and-listener-regression",
-      "local_record": "build/native-shared-contexts/evidence.json",
+      "local_record": "build/native-shared-contexts/evidence-listener-admission-55dcafb.json",
       "record_sha256": "b66d22787d5d39865b8b38f133226c7e061700ae2faa1792642aab188fc7d583",
       "record": {
         "schema": 1,
@@ -836,6 +836,56 @@
       ],
       "elapsed_seconds": 95.62428155700036,
       "limitations": "Installed exact-role native signer authority gate and actual Feed service conflict/quota refusals on isolated purpose2 backing. No valid wrong-federation moderator signature admission is claimed."
+    },
+    {
+      "name": "bounded-terminal-failure-scope-and-deadlines",
+      "local_record": "build/native-shared-contexts/evidence.json",
+      "record_sha256": "3cfc22467d8c1c5b0e93ed9208d47ca512893944f9e05df630e5258fb1bdead4",
+      "source_commit": "32088778c2369b1e5390ad61cda08514f18a9120",
+      "scope": "Compiled native state-transition fixture; mocked clock/cancellation trap, separate from installed common-image wire execution",
+      "schema": 1,
+      "result": "pass",
+      "image_sha256": "8178a94f3973226722043239772ccd0a5fac8a5356a49d3a16c48f8ee373fbe3",
+      "checks": [
+        {
+          "backend": "qemu",
+          "seconds": 0.16923873400082812,
+          "result": "pass"
+        },
+        {
+          "backend": "aarch64",
+          "seconds": 2.8913156900016475,
+          "result": "pass"
+        }
+      ],
+      "boundaries": [
+        "terminal output link quota exhaustion closes the actual charged pair even when another pair was last pumped",
+        "partial terminal frames and pending typed IPC expire independently; exact cancellation frees the dispatch lane and wipes only the selected key/buffer snapshot",
+        "healthy idle terminal contexts do not expire; deadline addition saturates instead of disabling near clock exhaustion",
+        "relay integrity failure closes only dependent incoming/outgoing pair",
+        "expired idle listener gets a finite setup window only when accepted; outbound and ongoing handshake deadlines do not renew",
+        "failed LISTEN retires only that listener, backs off within32 failures, and explicit operator listen renews its allowance",
+        "terminal keys/buffers banked by channel, stream and epoch; stale epoch rejects",
+        "mailbox sameNetworkcaller different terminalorigin cannot append or collect foreignstaging",
+        "adapterv3 accepts slot15 and rejects slot16",
+        "bulk reconnect attempts remain context-private, finite32 and pending admission does not renew them",
+        "current native Feed relationship preserves exact used allowance and expiry only on link loss; lost jobs and inbox cleared, expired/pin-changed or explicit-stop grants cannot revive"
+      ],
+      "limitations": "Focused compiled RV64 state transitions, including provisioned predicate inputs for bulk reconnect; no native certificate-admission claim from this fixture. AArch64 assembly emulator runs under qemu-aarch64; no physical hardware or full native Messenger qualification."
+    },
+    {
+      "name": "native-two-operator-finite-rolling",
+      "published_record": "campaign-009-native-rolling.json",
+      "sha256": "52f787bd4c8dd19302db7a703248eb48629fcd00d37b01a5795afe0f7f946ed0",
+      "scope": "Actual two native operators, exact final federation code; identified earlier static image, not the final connected community.",
+      "result": "pass"
+    },
+    {
+      "name": "installed-objects-class-subquota",
+      "published_record": "campaign-009-object-quota.json",
+      "sha256": "261908913644e8d4ff36e9a8ccb5ba984974e84778da546dcd061da1ec854bd6",
+      "scope": "Actual installed final90fd image rights799 client on QEMU/emulatedAArch64. Uncommitted graph reservations are not a real project Fork.",
+      "result": "pass"
     }
   ],
   "assurance": "Local one-host execution. AArch64 is qemu-aarch64 emulation. No physical hardware, independent operators, Tor interoperability, post-quantum security or whole-store external freshness claim."
