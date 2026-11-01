@@ -118,7 +118,7 @@
     }
   ],
   "common_run": {
-    "result": "Infrastructure, saturation/reuse, post512 useful Messenger and strict project workflow passed with earlier explicit personal recovery. Genuine signed card crossed both federations; actual Library Fork and fresh action-time revocation refusal passed. Native moderation/appeal, operator restart and offline migration remain pending.",
+    "result": "Infrastructure, saturation/reuse, post512 useful Messenger, strict signed-project workflow, private report/appeal reversal and cold federation recovery passed with the disclosed earlier personal recovery. Offline retained migration is the remaining active continuation.",
     "output": "build/campaign009-connected-v7",
     "configuration": {
       "image_sha256": "2e5147c4198cf7ec39ab053f2ea8895cfdceb1c9b9dcf79e1b7bb7627314bcdf",
@@ -541,6 +541,303 @@
         "sealed_private_key_included": false
       },
       "native_bundle": "baseline account0.9.1/UI0.9.2; later approved successor recovery remains separate"
+    },
+    "moderation_restart": {
+      "record": "docs/evidence/campaign-009-policy-restart-2e514.json",
+      "sha256": "a99cb5a839990c06c0616aff99c437402cdbfc6ab24a51e2061f593d14fe4572",
+      "result": "pass",
+      "moderation": {
+        "successful_resume_seconds": 573.1955352540099,
+        "author": "3f87a78f0610986febe095dfa0e036922559e3cb74de9a7cd257c6c52bd9d35a",
+        "original_event": "c301623010b29b84e772914f6ee76a8095db20ab0727a1be6955e3c5c9b04e06",
+        "report": "6b36f28ae899d86718898cadcdcd93a1aace1a4f25fc42f27d45c6dc867209d5",
+        "hide": "5c18685ef764a81dc8f0d25648524478bafd01ed091fcb313e2918ea1380011b",
+        "appeal": "6220eaddd453da2d0b83422b1a37ffa69810bc614cf6863809db41a6ff71aaaa",
+        "result_event": "251bb30e958761645ebdfefc27a17e48c472833b1a17cf9f39d4182bee5eab13",
+        "result": "authorized reversed decision with the original hide as causal parent; requester UI inspects exact signed kind8 event",
+        "reporter_scope": "Alice reports her own signed reply. This is a real private report and author appeal, not evidence of an independent reporter.",
+        "visibility": "Beta hides and refuses ordinary body reads; Alpha retains its permitted original view. Reversal restores Beta visibility without rewriting original signed bytes.",
+        "private_routing": "Native report and appeal are accepted only at intended Beta and are absent from Alpha; they grant no moderator authority.",
+        "local_block_after_reversal": {
+          "author": "3f87a78f0610986febe095dfa0e036922559e3cb74de9a7cd257c6c52bd9d35a",
+          "target": "c301623010b29b84e772914f6ee76a8095db20ab0727a1be6955e3c5c9b04e06",
+          "predecessor": "1ed503591deb1fd6b2f953b9aabe138fd9444bc720ee42dbd085a22acff7a489",
+          "next_cursor": 2,
+          "block_bits": 2,
+          "approved_profile_sha256": "49090440e1f24041a53657ee77ff020ca2abad9c8a83c7ac1f4f375dbf4b4253",
+          "native_notice": 16,
+          "blocked_body_displayed": false,
+          "disclosure": "native private export confirms the local block; the signed predecessor and ordinary Enter select its exact blocked successor; the filtered marker does not expose that successor as a selected body"
+        },
+        "exact_outbox_reconciliation": [
+          {
+            "person": "alice",
+            "check": "query/route uncertainty observed before native exact retry",
+            "status": [
+              0,
+              1,
+              0,
+              147,
+              5,
+              8,
+              0,
+              1
+            ],
+            "event_id": "20c13784f3af81f6f373b1b8bd234592af69b9bda91c6e5bbc4876df5459821d",
+            "native_signature_duplicate": [
+              0,
+              8,
+              2,
+              1,
+              0,
+              0,
+              0,
+              1
+            ],
+            "committed_usage": [
+              0,
+              13,
+              5518,
+              64,
+              917504,
+              1,
+              30,
+              1
+            ],
+            "before_budget": [
+              0,
+              16777216,
+              1034676,
+              11534336,
+              262144,
+              3537,
+              1,
+              1
+            ],
+            "after_budget": [
+              0,
+              16777216,
+              1034676,
+              11534336,
+              262144,
+              3537,
+              1,
+              1
+            ],
+            "original_signed_sha256": "20c13784f3af81f6f373b1b8bd234592af69b9bda91c6e5bbc4876df5459821d"
+          },
+          {
+            "person": "alice",
+            "check": "native exact retry reconciles original commitment after query/route uncertainty",
+            "event_id": "20c13784f3af81f6f373b1b8bd234592af69b9bda91c6e5bbc4876df5459821d",
+            "status": [
+              0,
+              1,
+              0,
+              147,
+              5,
+              6,
+              0,
+              1
+            ],
+            "duplicate_publication": false,
+            "visible_copies": 1
+          }
+        ],
+        "focused_refusals": {
+          "check": "actual native home-only signed event is refused by Alpha with11; altered signature is refused with10; exact retry preserves event count, storage and finite replica allowance",
+          "result": "pass",
+          "wrong_audience": 11,
+          "altered_signature": 10,
+          "exact_duplicate": [
+            0,
+            18,
+            2,
+            0,
+            0,
+            0,
+            0,
+            1
+          ],
+          "event": "ced3d6d8ec2c5229e369775bd50ab091d24a41562efd2a22642d7e04839589fc"
+        },
+        "home_only_event": "ced3d6d8ec2c5229e369775bd50ab091d24a41562efd2a22642d7e04839589fc"
+      },
+      "restart": {
+        "final_checks_resume_seconds": 195.45786108300672,
+        "preceding_recovery_attempt_seconds": 371.7289307089959,
+        "timing_disclosure": "Final elapsed value covers the final-check resume, not the complete wall time of all attempts. Recovery had already succeeded before the preserved Alpha budget snapshot assertion.",
+        "beta_pending_event": "57e2d736f55063c16386d24ba3917da2e4b4ff28392a34c16c5d57cd867b868e",
+        "alpha_pending_event": "ec5a50b55824e0347e60d1802e2e046e31df2c028f7b714ca7dff46ac9c20f47",
+        "availability": "Alpha is temporarily unavailable while Beta commits and reserves its pending event; Beta then stops normally. Alpha accepts another author while Beta is offline. Cold Beta uses its own backing and the same Native image and exact Feed packages.",
+        "native_key_recovery": {
+          "node": {
+            "origin": "existing explicit native public_node retention; the original operator-name unlock fixture is reused only by native cold recovery",
+            "initial_public_configuration": "beta.initial-public-configuration.json",
+            "initial_public_configuration_sha256": "59fd2a954ce52808806129e875238d103db14eda957eb43ae4586f85b88b66ca",
+            "certificate_sha256": "abb57e1d0ba712e823a587cb9a9fde21e03223399ed51a1135424d3cc4250943",
+            "receipt_public": "082136bb28ca2f47c9c59bf740183ddf17bbfdfc7904a532300baf38c46741eb",
+            "paired_identity_seal_preserved": true,
+            "new_unlock_or_seed_created": false
+          },
+          "recovered_receipt_public": "082136bb28ca2f47c9c59bf740183ddf17bbfdfc7904a532300baf38c46741eb",
+          "moderator_before": {
+            "generation": 1,
+            "public": "62c34c09688b5c3d2d4201a990a17db29fe360e929c7f4d2cb4aba433cc8d1a8"
+          },
+          "moderator_after": {
+            "generation": 2,
+            "public": "62c34c09688b5c3d2d4201a990a17db29fe360e929c7f4d2cb4aba433cc8d1a8"
+          }
+        },
+        "opaque_adapter_transition": {
+          "initial_sha256": "82a3820f98b70b8ccae002b5c0fd6265c830e95aa75a2459e28705c137670038",
+          "initial_provenance": "preserved startup adapter identity of the original nine long-lived actors; supplied by the integrator",
+          "restarted_sha256": "684f9a9507b39c3a4af7e9b1fb2c3287c6e849cdc787a687624072e2b557f0c7",
+          "restarted_process": 616440,
+          "restarted_at_utc": "2026-11-01T20:31:51Z",
+          "native_image_sha256": "2e5147c4198cf7ec39ab053f2ea8895cfdceb1c9b9dcf79e1b7bb7627314bcdf",
+          "initial_configuration_unchanged": true,
+          "scope": "fresh Beta opaque byte adapter only; no Native image, signed package, policy, event or private identity substitution",
+          "qualification": "the earlier Alice route loss remains unexplained; this adapter transition is not claimed as its causal repair"
+        },
+        "checkpoint_before_recovery": 8,
+        "policy_variant": 2,
+        "policy_hash_before": "f4e26aed85f86fee00a69f4161ae6e12dcdd56d3ba2ba289c76bd70b6cb5be45",
+        "policy_hash_after": "f4e26aed85f86fee00a69f4161ae6e12dcdd56d3ba2ba289c76bd70b6cb5be45",
+        "beta_budget_before_shutdown": [
+          0,
+          16777216,
+          1380402,
+          13631488,
+          262144,
+          4716,
+          1,
+          1
+        ],
+        "beta_budget_after_recovery_before_fresh_grant": [
+          0,
+          16777216,
+          1380402,
+          13631488,
+          262144,
+          4716,
+          1,
+          1
+        ],
+        "beta_budget_final": [
+          0,
+          16777216,
+          1380402,
+          14680064,
+          262144,
+          4716,
+          1,
+          1
+        ],
+        "alpha_budget_after_its_new_event_reservation": [
+          0,
+          16777216,
+          3842856,
+          14680064,
+          262144,
+          13023,
+          1,
+          1
+        ],
+        "alpha_snapshot_reconciliation": {
+          "before_budget": [
+            0,
+            16777216,
+            3497130,
+            14680064,
+            262144,
+            11844,
+            1,
+            1
+          ],
+          "after_budget": [
+            0,
+            16777216,
+            3842856,
+            14680064,
+            262144,
+            13023,
+            1,
+            1
+          ],
+          "exact_pending_reservation": {
+            "event": "ec5a50b55824e0347e60d1802e2e046e31df2c028f7b714ca7dff46ac9c20f47",
+            "flags": 3,
+            "attempts": 2,
+            "reserved_bytes": 345726,
+            "reserved_work": 1179
+          },
+          "prior_rows_unchanged": 13,
+          "disclosure": "the preserved controller sampled immediately after acceptance; native reservation committed later without changing any prior row or policy"
+        },
+        "replication": "Both original pending signed records reach the opposite peer and their complete immutable body hashes are checked. Original event reservations/work persist; durable attempts remain charged and increase within9. Fresh current grants consume at most1MiB from the same finite16MiB approved policy.",
+        "host_lease_renewals_or_refills": 0,
+        "changed_policy_or_reset_event_budget": false,
+        "local_block_after_restart": {
+          "author": "3f87a78f0610986febe095dfa0e036922559e3cb74de9a7cd257c6c52bd9d35a",
+          "target": "c301623010b29b84e772914f6ee76a8095db20ab0727a1be6955e3c5c9b04e06",
+          "predecessor": "1ed503591deb1fd6b2f953b9aabe138fd9444bc720ee42dbd085a22acff7a489",
+          "next_cursor": 2,
+          "block_bits": 2,
+          "approved_profile_sha256": "88f007b2bfe7c7dab8fdd5caffa21edc927101625b78032b1217989659870cb2",
+          "native_notice": 16,
+          "blocked_body_displayed": false,
+          "disclosure": "native private export confirms the local block; the signed predecessor and ordinary Enter select its exact blocked successor; the filtered marker does not expose that successor as a selected body"
+        },
+        "requester_result": "After only Alice rebuilds her selected personal Beta route, the native UI reaches publication phase7 with actual replication evidence."
+      },
+      "native_changes_for_continuations": false,
+      "preserved_controller_failures": [
+        {
+          "kind": "first prior-outbox composition wait",
+          "raw": {
+            "path": "build/campaign009-connected-v7/policy-restart-failure-moderation-first-failure.json",
+            "sha256": "d7ff5b8096ae56fe607841d75d4517f7b522e5ecf3296361d92cd983a9be6576"
+          },
+          "controller": {
+            "path": "build/campaign009-connected-v7/policy-controller-moderation-first.py",
+            "sha256": "f16984d8627ac17f4b7d13eb72801c4122c946f1282d09dbaa944132d27f0828"
+          },
+          "seconds": 708.6222418570105,
+          "resolution": "Previous publication was visible phase8 uncertainty. Native verification/duplicate check authorized ordinary F5 of the same exact event20c13784..., reconciling8 to6 with one visible copy and no new reservation. No report was composed until settled."
+        },
+        {
+          "kind": "new operator unlock credential refused9 before shutdown",
+          "raw": {
+            "path": "build/campaign009-connected-v7/policy-restart-failure-node-retention-refusal9.json",
+            "sha256": "6a456bb9f68bd8877cd415b1726fe9d98fcb4fe7e1c257273534aa2c978babbe"
+          },
+          "controller": {
+            "path": "build/campaign009-connected-v7/policy-controller-node-retention-before.py",
+            "sha256": "0620f979e5f7a90eb5d985381b97edb0c36930a50dbf565291d08f497418166f"
+          },
+          "seconds": 3.6601185689942213,
+          "resolution": "Native NodeStore correctly refused a different credential against existing protected retention. Controller reused its original approved public_node retention and native recovery of the paired Identity seal. No keys or backing were overwritten. Unlock material is excluded from this record."
+        },
+        {
+          "kind": "Alpha reservation baseline sampled before asynchronous reservation",
+          "raw": {
+            "path": "build/campaign009-connected-v7/policy-restart-failure-alpha-reservation-snapshot-race.json",
+            "sha256": "73e7a23e6e0e59f4f7d6067abaeb6343566fb48561499e158ecf1c4ae95f004e"
+          },
+          "controller": {
+            "path": "build/campaign009-connected-v7/policy-controller-alpha-snapshot-before.py",
+            "sha256": "76b13e4fd05d7acf2602eacdc19eebf006b78e954eb7b1addc2289c4a3694d7e"
+          },
+          "seconds": 371.7289307089959,
+          "diagnostic": {
+            "path": "build/campaign009-connected-v7/restart-reservation-diagnostic.json",
+            "sha256": "7f4fb4ce28836344cf10e474cbccc1dd474102b8d670c483e24045655b8fc303"
+          },
+          "resolution": "Exact new Alpha event reservation345726bytes/1179work explains the delta; all13 prior rows retain their reservations. Controller now waits for a durable reservation and resumed only final checks, without repeating operator restart."
+        }
+      ]
     }
   },
   "component_record": "campaign-009-components.json",
@@ -985,7 +1282,7 @@
     "scope": "Installed exact-role native signer authority gate and actual Feed service conflict/quota refusals on isolated purpose2 backing. No valid wrong-federation moderator signature admission is claimed."
   },
   "connected_continuations": {
-    "result": "Current2e514 infrastructure/capacity/post512Messenger and strict project passed. Moderation/restart now owns all nine portals; approved offline migration follows."
+    "result": "Infrastructure, saturation/reuse, post512 useful Messenger, strict signed-project workflow, private report/appeal reversal and cold federation recovery passed with the disclosed earlier personal recovery. Offline retained migration is the remaining active continuation."
   },
   "operator_interrupt_ownership": {
     "source_commit": "63fc11bcfe7a9f7c94f06b680d6e8b3e085478ed",
@@ -1197,7 +1494,7 @@
     "network_limit_bytes": 425984,
     "image_sha256": "2e5147c4198cf7ec39ab053f2ea8895cfdceb1c9b9dcf79e1b7bb7627314bcdf"
   },
-  "current_integration_work": "Federation moderation and restart controller owns all nine after strict project released them. Same image and Native sources unchanged; only fresh-shipping controller compatibility is being repaired offline.",
+  "current_integration_work": "Bob retained account migration owns the personal/control portals; Alpha explicitly offline, shipping account/UI admitted, fresh Beta route/recovery ongoing. Moderation/restart completed; no Native changes or policy refills for those continuations.",
   "prior_690_active_forge": {
     "result": "pass",
     "raw_record": "build/campaign009-connected-v6/active-forge.json",
