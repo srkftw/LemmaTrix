@@ -1,0 +1,721 @@
+{
+  "schema": 1,
+  "result": "retired-partial-connected-trial",
+  "image": {
+    "path": "build/campaign009-final-v8.bin",
+    "bytes": 6291456,
+    "sha256": "690e8959d79a42d3e61aa6f69df14b4e0c485ad58b015f451685abf014c275ee",
+    "build": "./lt build --clean after c5147de; all9signed ordinary packages freshlycompiled and byte-identical; Registry freshlycompiled and byte-identical; image identical to installed AArch64 candidate.",
+    "clean_build_log": "build/campaign009-final-v8-clean-build.log",
+    "clean_build_log_sha256": "4181cfe32a1cee2650f31789bd50327daa4992b05f7f8d769db8d3124890f10d"
+  },
+  "source": {
+    "network": "c5147de",
+    "feed_service": "a900493",
+    "feed_ui_account": "b706c104c2c36d8caf1b96e887c6276d2a302a61",
+    "signer": "a380be67481f9fb1068c6230dcc51b6b90e5a6a0",
+    "namespace_reclamation": "def8a34b3310656d5a57fd49bf4149937e67e0c0",
+    "feed_ui": "05ca3c4",
+    "objects_quota": "624ee19",
+    "registry_revocation": "983f523",
+    "terminal_service_pin": "8b4e26f",
+    "late_listener_acceptance": "f2f1a97"
+  },
+  "feed_packages": [
+    {
+      "name": "identity",
+      "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v7-feed/identity.ltrel",
+      "rights": 0,
+      "code_bytes": 115952,
+      "code_sha256": "1437162555de9c55c72806039df49d07ead2ed36a267de5bfc7a3f886028bca7",
+      "release_id": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+      "package_sha256": "d6467b6bf812768f4e25a466c4ce0c425635444f78b4b34fc85c50e1579ea5aa"
+    },
+    {
+      "name": "feed-account",
+      "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v7-feed/feed-account.ltrel",
+      "rights": 1024,
+      "code_bytes": 145376,
+      "code_sha256": "fb1f2e8e34a47263d3450898a6f800d3f72a79081644413180b44b574951ccd8",
+      "release_id": "f50eaa12d7dc69c962584ce34a12d53d9b064970c640d23d594e930d7fc4bc07",
+      "package_sha256": "9d9be1ad2238d6e5063ac5664786939c2c186a08b4f613ed8912e2f9eb985b50"
+    },
+    {
+      "name": "feed",
+      "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v7-feed/feed.ltrel",
+      "rights": 799,
+      "code_bytes": 176848,
+      "code_sha256": "fbe5f9cf983464432ae4781bb7533a7182341d796d16e4bd20f4603cf3d2706f",
+      "release_id": "bfd1a9584b654f8ee4f0c3f1b3703608b452da7a9ad472683821aa8f4f13a635",
+      "package_sha256": "964a4a92a901520a151a7e7eb9f56c33733302fd8672b9109dd707eb51a4313d"
+    },
+    {
+      "name": "feed-federation",
+      "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v7-feed/feed-federation.ltrel",
+      "rights": 3072,
+      "code_bytes": 167516,
+      "code_sha256": "59b107b5702c4d231551da67a053543c94e012bd3d70bae4eeb1e2edd26f49e3",
+      "release_id": "02041c0eeca13f17a62a8913954558d9dc5be7e52f55d5db915dc76b14241526",
+      "package_sha256": "6cf3b1c142b5e076337575dfd22280760d1c75d95d2e3756c2ade7bbd38df35f"
+    }
+  ],
+  "messenger_packages": [
+    {
+      "name": "identity",
+      "path": "build/campaign009-final-v3-messenger/identity.ltrel",
+      "rights": 0,
+      "code_bytes": 115952,
+      "code_sha256": "1437162555de9c55c72806039df49d07ead2ed36a267de5bfc7a3f886028bca7",
+      "package_sha256": "01a013c3b5a16b987876304b7685ca6307ae81644cd834b8a040ecb3c8bbf0fc",
+      "release_id": "f1c5934089942fbbd2fee060c10a257d6937022ffc076c354f3db77f2b2d05c2"
+    },
+    {
+      "name": "messenger-session",
+      "path": "build/campaign009-final-v3-messenger/messenger-session.ltrel",
+      "rights": 0,
+      "code_bytes": 242348,
+      "code_sha256": "42060352065337832b7974b6873cd70820f6ae2849814504d2db6507c7f1b472",
+      "package_sha256": "58985ad54e62aafd6cdbff0b8ed563d28b3de2c16d2330d259d521fd37613f10",
+      "release_id": "50f3e3ccb8d3faeaf29c50d6aec24bbc654a30754f26c15dd7585a4a8e64a5b3"
+    },
+    {
+      "name": "messenger",
+      "path": "build/campaign009-final-v3-messenger/messenger.ltrel",
+      "rights": 799,
+      "code_bytes": 254852,
+      "code_sha256": "3c1aeb82ccea52f4778424a2be800d29d179878aae9f606e7d6032d75f9ee462",
+      "package_sha256": "e90ae124b8ec5fbf58463878e9610758945507dac4775d9b904af6bbbc675430",
+      "release_id": "a0b4294d2331e6704acd69093936339f7c0b8559dd9990d4967a22216f84e6c7"
+    },
+    {
+      "name": "messenger-delivery",
+      "path": "build/campaign009-final-v3-messenger/messenger-delivery.ltrel",
+      "rights": 1024,
+      "code_bytes": 207976,
+      "code_sha256": "d19da5ae78cba937a836f558a2c3fee8d272523f4da624dcfb53e5959098c8a3",
+      "package_sha256": "8c6c4a4d0cd534d8d1e69637c485346ffec8aabcd2b117c02fa3200ba5512372",
+      "release_id": "f8f9a0c572e691398008ab13e3aa852a12eeec06344715f593bf8a921d07c20b"
+    },
+    {
+      "name": "mailbox",
+      "path": "build/campaign009-final-v3-messenger/mailbox.ltrel",
+      "rights": 2048,
+      "code_bytes": 97756,
+      "code_sha256": "41a29975a4f7457a707120afe5c63a2580fae8d7a5132c4afe347ff2060c8ae0",
+      "package_sha256": "9cebf4928c05e08f1688ee5437f52ffddf6e1f19393394d7889855c944d8fac8",
+      "release_id": "24e249a218f52813953b8d204f1c7b3d1129e1b675a9ed8500731cf842049135"
+    }
+  ],
+  "common_run": {
+    "result": "core, active-terminal Forge, full reconnect/ephemerality and exact durable duplicate ledger pass; capacity and application continuations in progress",
+    "output": "build/campaign009-connected-v6",
+    "raw_evidence": "build/campaign009-connected-v6/evidence.json",
+    "raw_sha256": "b0e461169889663ebdf4eaf967f0abb4663a6b786abfaf870fe055e38403f5f6",
+    "configuration": {
+      "image_sha256": "690e8959d79a42d3e61aa6f69df14b4e0c485ad58b015f451685abf014c275ee",
+      "feed": {
+        "identity": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+        "feed-account": "f50eaa12d7dc69c962584ce34a12d53d9b064970c640d23d594e930d7fc4bc07",
+        "feed": "bfd1a9584b654f8ee4f0c3f1b3703608b452da7a9ad472683821aa8f4f13a635",
+        "feed-federation": "02041c0eeca13f17a62a8913954558d9dc5be7e52f55d5db915dc76b14241526"
+      },
+      "messenger": {
+        "identity": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+        "owner": "50f3e3ccb8d3faeaf29c50d6aec24bbc654a30754f26c15dd7585a4a8e64a5b3",
+        "ui": "a0b4294d2331e6704acd69093936339f7c0b8559dd9990d4967a22216f84e6c7",
+        "delivery": "f8f9a0c572e691398008ab13e3aa852a12eeec06344715f593bf8a921d07c20b",
+        "mailbox": "24e249a218f52813953b8d204f1c7b3d1129e1b675a9ed8500731cf842049135"
+      },
+      "mixed": true,
+      "history_events": 17,
+      "replication_auto_renew": true
+    },
+    "checks": [
+      {
+        "check": "native durable Mailbox and receipt authority configured",
+        "result": "pass"
+      },
+      {
+        "check": "public approved relay and destination policies configured independently",
+        "result": "pass"
+      },
+      {
+        "check": "native federation alpha owns its independent backing, policy and moderator",
+        "result": "pass"
+      },
+      {
+        "check": "native federation beta owns its independent backing, policy and moderator",
+        "result": "pass"
+      },
+      {
+        "check": "two native graphical Messenger identities retain separate domain2 state and approve certified contacts",
+        "result": "pass"
+      },
+      {
+        "check": "actual existing signed project admitted through native Registry with disclosed existing RSA bootstrap",
+        "result": "pass"
+      },
+      {
+        "check": "native operators listen once and replenish their own bounded admission",
+        "result": "pass"
+      },
+      {
+        "check": "three independent Feed clients concurrently admitted; two share alpha and all share relays without operator handoff",
+        "result": "pass"
+      },
+      {
+        "check": "native signed enrollment derives separately approved inter-operator mode3 relationship; personal traffic still requires mode1",
+        "result": "pass"
+      },
+      {
+        "check": "independent native Feed reader paginates chronologically and validates the useful multi-payload long post before displaying it",
+        "result": "pass",
+        "event": "71f2a5ff2dd58408939c9dfcde612b9dbc82c0aae165deccdc6adad71a44f178",
+        "bytes": 1330
+      },
+      {
+        "check": "native ordinary and useful long post preserve original signed bytes across two operators; independent reader follows locally and replies across permitted scope",
+        "result": "pass",
+        "events": {
+          "ordinary": {
+            "id": "f21897947ce1845fa3fc0f4ea5361391dc3960f61f78f93c94d897e2d75499e2",
+            "author": "16a50e5fedf4e6f6fa18fce942c5d1b12ad4f08a3343a988684135d333646757",
+            "kind": 1,
+            "bytes": 126,
+            "content_sha256": "541c88ecfd5e37d6e433746b0e38ce252c25c94a6874966ab975cee0c2cbb22b",
+            "signed_sha256": "f21897947ce1845fa3fc0f4ea5361391dc3960f61f78f93c94d897e2d75499e2"
+          },
+          "long": {
+            "id": "71f2a5ff2dd58408939c9dfcde612b9dbc82c0aae165deccdc6adad71a44f178",
+            "author": "16a50e5fedf4e6f6fa18fce942c5d1b12ad4f08a3343a988684135d333646757",
+            "kind": 1,
+            "bytes": 1330,
+            "content_sha256": "da933b261f757e2e3556bd30c008f04fbdd90ce29e277d65883d4e3c0ca9e557",
+            "signed_sha256": "71f2a5ff2dd58408939c9dfcde612b9dbc82c0aae165deccdc6adad71a44f178"
+          },
+          "reply": {
+            "id": "633152b55e73a1cfec9b6dd5e424e701433675f32bb33db367d5460da1f1b2cf",
+            "author": "9005b69771a5651fe395967eff7b3d8a6379bf27e9dca218f0741e82be1a4aad",
+            "kind": 2,
+            "bytes": 142,
+            "content_sha256": "c3b55f0ac6d9e6debdb353279f57693aa8ebf54b34411829709e63efb183235a",
+            "signed_sha256": "633152b55e73a1cfec9b6dd5e424e701433675f32bb33db367d5460da1f1b2cf"
+          },
+          "review-0": {
+            "id": "db5b4d422edf771787a2ba782231779e964f5c7596a89a8640457d1232065add",
+            "author": "16a50e5fedf4e6f6fa18fce942c5d1b12ad4f08a3343a988684135d333646757",
+            "kind": 1,
+            "bytes": 135,
+            "content_sha256": "4ca22c1ff9a33c74c8e2e918c7b8be5ea1382b0703951397ced9aded8eed69c9",
+            "signed_sha256": "db5b4d422edf771787a2ba782231779e964f5c7596a89a8640457d1232065add"
+          },
+          "review-1": {
+            "id": "c98454cc2304a2c01ce8879e37dca91604f1cf13969c847c04f4f6ab2c3e25fc",
+            "author": "9005b69771a5651fe395967eff7b3d8a6379bf27e9dca218f0741e82be1a4aad",
+            "kind": 1,
+            "bytes": 147,
+            "content_sha256": "7478de5c67a7b4b76250e7afe14a88be663b9ef070a95e5357e1604df5048d12",
+            "signed_sha256": "c98454cc2304a2c01ce8879e37dca91604f1cf13969c847c04f4f6ab2c3e25fc"
+          },
+          "review-2": {
+            "id": "38fa00bd17532d34b0c06bec494912e7d6736e4f0c44acffbca41a72f8aa3ae9",
+            "author": "c2123300a3daccccfc4b2219d273684ed1d281a887dd985d639e7a68bf579be2",
+            "kind": 1,
+            "bytes": 149,
+            "content_sha256": "6232aff56fca73d062dd25c9c17cb783935dac3ce41b9e33a9596dc4f1fd81c4",
+            "signed_sha256": "38fa00bd17532d34b0c06bec494912e7d6736e4f0c44acffbca41a72f8aa3ae9"
+          },
+          "review-3": {
+            "id": "b75cd3f002140bdf08ef9951d7b6da946b8e099420869f7ef858ebab43f664ea",
+            "author": "16a50e5fedf4e6f6fa18fce942c5d1b12ad4f08a3343a988684135d333646757",
+            "kind": 1,
+            "bytes": 145,
+            "content_sha256": "e1ab90a478d350a70c33be1a9c31ac7b4f871b83b970ee2e8d23f01570bf8f22",
+            "signed_sha256": "b75cd3f002140bdf08ef9951d7b6da946b8e099420869f7ef858ebab43f664ea"
+          },
+          "review-4": {
+            "id": "69e5dc712afe53da0b011b02041adfc61e8568888353b53bac8110ac8eb55121",
+            "author": "9005b69771a5651fe395967eff7b3d8a6379bf27e9dca218f0741e82be1a4aad",
+            "kind": 1,
+            "bytes": 147,
+            "content_sha256": "82d52ac7efdcbc0bf777772c06cfee2f6c25bbecdcc540c00a20ddbdfb701dce",
+            "signed_sha256": "69e5dc712afe53da0b011b02041adfc61e8568888353b53bac8110ac8eb55121"
+          },
+          "review-5": {
+            "id": "0d9d2b9fe9dbf6f4d92991e01e0e0acb9d691eecd70135076b6df6fdd209d46d",
+            "author": "c2123300a3daccccfc4b2219d273684ed1d281a887dd985d639e7a68bf579be2",
+            "kind": 1,
+            "bytes": 150,
+            "content_sha256": "5989cfb675f726ba1aadef1d4544e2f09ffe5ac35319dff8da53ce4ccfbf7805",
+            "signed_sha256": "0d9d2b9fe9dbf6f4d92991e01e0e0acb9d691eecd70135076b6df6fdd209d46d"
+          },
+          "review-6": {
+            "id": "63a8e53f1caa1c2ec2d4e5fa68e8cd691e9b4b7dd1f37a2d2df0f6ccbbcd2209",
+            "author": "16a50e5fedf4e6f6fa18fce942c5d1b12ad4f08a3343a988684135d333646757",
+            "kind": 1,
+            "bytes": 149,
+            "content_sha256": "8d3d1e68804c17c3b8cc5a3397236c38bc0f0693fa743345f31883cd3b14df9e",
+            "signed_sha256": "63a8e53f1caa1c2ec2d4e5fa68e8cd691e9b4b7dd1f37a2d2df0f6ccbbcd2209"
+          },
+          "review-7": {
+            "id": "3c21caa1a198f0f1e760655de3559a53d23d3fd6f22e3d5468a1f126110ee0f1",
+            "author": "9005b69771a5651fe395967eff7b3d8a6379bf27e9dca218f0741e82be1a4aad",
+            "kind": 1,
+            "bytes": 141,
+            "content_sha256": "9471edd884fd2d80f32aaa6afda65f74155c0e57f91c83395c98f1a9772be2ff",
+            "signed_sha256": "3c21caa1a198f0f1e760655de3559a53d23d3fd6f22e3d5468a1f126110ee0f1"
+          },
+          "review-8": {
+            "id": "11f8e1a3789678a8fc407975f0683bb154299ee41a768645e993578e2514341b",
+            "author": "c2123300a3daccccfc4b2219d273684ed1d281a887dd985d639e7a68bf579be2",
+            "kind": 1,
+            "bytes": 133,
+            "content_sha256": "e0612bb1c8801583d2c4164ab2a944917a7d00c07599dd1c1fbac5e2f86f806c",
+            "signed_sha256": "11f8e1a3789678a8fc407975f0683bb154299ee41a768645e993578e2514341b"
+          },
+          "review-9": {
+            "id": "4d514ffe55b992ca21aa4803a8b716111b5d01895247b56aac10ce9922dc969c",
+            "author": "16a50e5fedf4e6f6fa18fce942c5d1b12ad4f08a3343a988684135d333646757",
+            "kind": 1,
+            "bytes": 148,
+            "content_sha256": "132737f451305100ffe91d6277e380c001e722ffe2ffc81c40a0e0ae8b72a297",
+            "signed_sha256": "4d514ffe55b992ca21aa4803a8b716111b5d01895247b56aac10ce9922dc969c"
+          },
+          "review-10": {
+            "id": "94eeff6770d85bb19092084f079a172ef72a6ac4dae4e39ad86122bf35c84626",
+            "author": "9005b69771a5651fe395967eff7b3d8a6379bf27e9dca218f0741e82be1a4aad",
+            "kind": 1,
+            "bytes": 162,
+            "content_sha256": "ecceb580c0af69d0117ec0ed4a65985cf827031f74a92ddf694bf344b3a9155b",
+            "signed_sha256": "94eeff6770d85bb19092084f079a172ef72a6ac4dae4e39ad86122bf35c84626"
+          },
+          "review-11": {
+            "id": "4b69ff7b3dc3a60342d904fc9b1b303c439074646f1a8c05e13c059e22141f3b",
+            "author": "c2123300a3daccccfc4b2219d273684ed1d281a887dd985d639e7a68bf579be2",
+            "kind": 1,
+            "bytes": 140,
+            "content_sha256": "da0d294baade36211e6d6ddcf0f12bb0324a3d5128a20aac4c93480bb59bcb55",
+            "signed_sha256": "4b69ff7b3dc3a60342d904fc9b1b303c439074646f1a8c05e13c059e22141f3b"
+          },
+          "review-12": {
+            "id": "9c83fa1f2f5713e65172e4699ae45582c514e6f044dfcc89dda9b436e582d5dc",
+            "author": "16a50e5fedf4e6f6fa18fce942c5d1b12ad4f08a3343a988684135d333646757",
+            "kind": 1,
+            "bytes": 150,
+            "content_sha256": "8d31d627d3066dbf6c3caee7e50ffa080c4f6856ec16dc19a3c8395e055ab569",
+            "signed_sha256": "9c83fa1f2f5713e65172e4699ae45582c514e6f044dfcc89dda9b436e582d5dc"
+          },
+          "review-13": {
+            "id": "60bda9c376294e405046bfcc7e73f6a5b0a3c9166fdd810877342c1dd1869f77",
+            "author": "9005b69771a5651fe395967eff7b3d8a6379bf27e9dca218f0741e82be1a4aad",
+            "kind": 1,
+            "bytes": 151,
+            "content_sha256": "3bbe1c686aff6139a4d2b193cf996d42d4b4bb0713bc22d33ec539ba0eac4ec4",
+            "signed_sha256": "60bda9c376294e405046bfcc7e73f6a5b0a3c9166fdd810877342c1dd1869f77"
+          }
+        }
+      },
+      {
+        "check": "meaningful discussion continues beyond the native UI single resident row; original history remains paginated and body commitments remain readable",
+        "result": "pass",
+        "events": 17,
+        "ui_resident_events": 1,
+        "service_committed_index_bound": 64,
+        "body_segment_cache_bytes": 131072
+      },
+      {
+        "check": "native Feed backfill waits on one exact paused opaque transport epoch while two independent Messenger clients share mailbox",
+        "result": "pass"
+      },
+      {
+        "check": "native graphical text and reply decrypt through shared Mailbox while Feed transport remains paused",
+        "result": "pass",
+        "text": {
+          "serial": 1,
+          "seconds": 46.5367094460089
+        },
+        "reply": {
+          "serial": 1,
+          "seconds": 31.609880107003846
+        },
+        "stalled_feed_ui": [
+          0,
+          1,
+          0,
+          150,
+          6,
+          7,
+          6,
+          1
+        ]
+      },
+      {
+        "check": "actual received reference completes existing routed Forge inspection while the independent Feed transfer remains paused, including after its terminal was reclaimed",
+        "result": "pass",
+        "verified_fields": [
+          0,
+          6,
+          2,
+          0,
+          1,
+          0,
+          1,
+          1
+        ],
+        "execution_approved": false,
+        "stall": {
+          "stage": "routed Forge completion observed",
+          "elapsed_seconds": 139.30581568198977,
+          "channel": {
+            "slot": 0,
+            "epoch": 2,
+            "connected": true,
+            "connecting": false,
+            "tx_paused": true,
+            "pending_bytes": 532,
+            "tx_bytes": 46866,
+            "rx_bytes": 41546
+          },
+          "terminal": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1
+          ],
+          "original_epoch_transport_paused": true,
+          "original_epoch_still_paused": false
+        },
+        "interpretation": {
+          "original_paused_transport_remains_pending": true,
+          "terminal_active_at_observation": false,
+          "terminal_reclamation_cause": "not directly observed; elapsed native deadline or owner cancellation is inferred",
+          "predicate": "Messenger requires the original authenticated terminal at completion; Forge requires the same paused transport epoch and pending bytes, and permits the independent terminal to have been reclaimed (user G stalled/disconnected work)."
+        }
+      },
+      {
+        "check": "native Feed cancellation and circuit disconnect preserve both unrelated authenticated Messenger sessions",
+        "result": "pass",
+        "other_sessions": [
+          [
+            0,
+            1,
+            3,
+            0,
+            8377522,
+            65459,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            3,
+            0,
+            8379600,
+            65472,
+            0,
+            1
+          ]
+        ],
+        "stalled_seconds": 139.81294563999109,
+        "before_input_cancel": {
+          "stage": "before native input cancellation",
+          "elapsed_seconds": 139.31973459899018,
+          "channel": {
+            "slot": 0,
+            "epoch": 2,
+            "connected": true,
+            "connecting": false,
+            "tx_paused": true,
+            "pending_bytes": 532,
+            "tx_bytes": 46866,
+            "rx_bytes": 41546
+          },
+          "terminal": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1
+          ],
+          "original_epoch_transport_paused": true,
+          "original_epoch_still_paused": false
+        },
+        "cleanup": {
+          "stage": "owned cleanup",
+          "elapsed_seconds": 139.41788226198696,
+          "channel": {
+            "slot": 0,
+            "epoch": 2,
+            "connected": true,
+            "connecting": false,
+            "tx_paused": true,
+            "pending_bytes": 532,
+            "tx_bytes": 46866,
+            "rx_bytes": 41546
+          },
+          "terminal": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1
+          ],
+          "original_epoch_transport_paused": true,
+          "original_epoch_still_paused": false
+        }
+      }
+    ],
+    "elapsed_seconds": 3315.918975085995,
+    "scope": "One identified common image. Messenger finished while the independent Feed terminal was authenticated and paused. At the later core Forge observation its terminal was reclaimed while its original transport epoch stayed paused. The separate fresh active-terminal Forge case passed on these same live actors."
+  },
+  "active_forge": {
+    "result": "pass",
+    "raw_record": "build/campaign009-connected-v6/active-forge.json",
+    "raw_sha256": "fab4939f0768cdf60a28bf223fb7e998d463c737f43c5281ae70bbfd3236493c",
+    "configuration": {
+      "image_sha256": "690e8959d79a42d3e61aa6f69df14b4e0c485ad58b015f451685abf014c275ee",
+      "feed": {
+        "identity": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+        "feed-account": "f50eaa12d7dc69c962584ce34a12d53d9b064970c640d23d594e930d7fc4bc07",
+        "feed": "bfd1a9584b654f8ee4f0c3f1b3703608b452da7a9ad472683821aa8f4f13a635",
+        "feed-federation": "02041c0eeca13f17a62a8913954558d9dc5be7e52f55d5db915dc76b14241526"
+      },
+      "messenger": {
+        "identity": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+        "owner": "50f3e3ccb8d3faeaf29c50d6aec24bbc654a30754f26c15dd7585a4a8e64a5b3",
+        "ui": "a0b4294d2331e6704acd69093936339f7c0b8559dd9990d4967a22216f84e6c7",
+        "delivery": "f8f9a0c572e691398008ab13e3aa852a12eeec06344715f593bf8a921d07c20b",
+        "mailbox": "24e249a218f52813953b8d204f1c7b3d1129e1b675a9ed8500731cf842049135"
+      },
+      "mixed": true,
+      "history_events": 17,
+      "replication_auto_renew": true
+    },
+    "checks": [
+      "ordinary native F1 exposed fresh in-flight Forge work before its verified completion",
+      "native terminal byte and request allowances both decreased while exact original release/admission fields were returned",
+      "same fresh Feed transport epoch remained paused with pending bytes and authenticated terminal phase3 at Forge completion",
+      "native cancellation and only Charlie route teardown preserved unrelated Alice/Bob phase3"
+    ],
+    "elapsed_seconds": 6.209440205988358,
+    "verified": {
+      "fields": [
+        0,
+        6,
+        2,
+        0,
+        1,
+        0,
+        1,
+        1
+      ],
+      "bob_after": [
+        0,
+        1,
+        3,
+        0,
+        8374000,
+        65428,
+        0,
+        1
+      ],
+      "reference": "92daee22b2b8ed1f4de2b1354701a07742de03065c36ecc716c0a5e60624a7c2eca69a0fbc36a60c601594528cd39253adecff887616c8cc04509e99b5881c41"
+    },
+    "stall_after": {
+      "channel": {
+        "slot": 0,
+        "epoch": 6,
+        "connected": true,
+        "connecting": false,
+        "tx_paused": true,
+        "pending_bytes": 532,
+        "tx_bytes": 2710,
+        "rx_bytes": 2710
+      },
+      "terminal": [
+        0,
+        1,
+        3,
+        0,
+        8388544,
+        65535,
+        0,
+        1
+      ]
+    },
+    "unrelated_after": [
+      [
+        0,
+        1,
+        3,
+        0,
+        8371762,
+        65414,
+        0,
+        1
+      ],
+      [
+        0,
+        1,
+        3,
+        0,
+        8374000,
+        65428,
+        0,
+        1
+      ]
+    ],
+    "limits": [
+      "One-host mixed QEMU/native-x86 integration; x86 executes the RV64 guest through its native interpreter.",
+      "Budget consumption plus UI busy-to-complete and exact reference evidence establish a fresh existing consumer request; this does not decrypt captured transport.",
+      "The original longer episode separately records terminal reclamation, without asserting it remained active there."
+    ]
+  },
+  "connected_infrastructure": {
+    "path": "docs/evidence/campaign-009-community-690e.json",
+    "sha256": "82b079a2d95150859beda2c7c23025e86ca2d74369633fcbb726d4f411fdc371",
+    "result": "pass-for-recorded-infrastructure-and-product-segments",
+    "reconnect": {
+      "seconds": 1084.6993846360128,
+      "passed_steps": [
+        "history-read",
+        "ready",
+        "unavailable",
+        "reconnected",
+        "allowance",
+        "allowance-reconciled",
+        "cut",
+        "retry",
+        "ephemeral"
+      ],
+      "history_events": 17,
+      "padded_history_bytes": 9728,
+      "committed_read_page_bytes": 4096,
+      "segment_writer_workspace_bytes": 131072,
+      "required_mode1_failure": "Signed sequence8 remained absent from both federations until a fresh approved route retried the exact event; no direct fallback.",
+      "limited_terminal": "One byte/one request refused its own read; fresh context reused resources; unrelated Messenger terminals stayed phase3.",
+      "lost_receipt": {
+        "event": "98283045421cc9a8bfaa193ed180bb71d3f5c83cd5e20a95ae6dd48d1e6d15da",
+        "author": "16a50e5fedf4e6f6fa18fce942c5d1b12ad4f08a3343a988684135d333646757",
+        "sequence": 9,
+        "content_bytes": 989,
+        "ui_phase_when_fault_cut": 4,
+        "durable_acceptance_before_final_receipt": true,
+        "copies_per_federation_after_exact_retry": 1,
+        "author_usage_before_and_after": {
+          "author_events": 9,
+          "author_content_bytes": 3352
+        }
+      },
+      "no_vault": {
+        "historical_feed_public": "16a50e5fedf4e6f6fa18fce942c5d1b12ad4f08a3343a988684135d333646757",
+        "current_feed_identity_present": false,
+        "current_feed_public": null,
+        "current_feed_owner": 11924251543655678472,
+        "current_feed_ui": 11924251543655678473,
+        "published_replica_persists": true,
+        "private_key_exported": false
+      }
+    },
+    "positive_duplicate_budget": {
+      "seconds": 9.530123327000183,
+      "event": "98283045421cc9a8bfaa193ed180bb71d3f5c83cd5e20a95ae6dd48d1e6d15da",
+      "before": [
+        0,
+        16777216,
+        4509684,
+        3145728,
+        262144,
+        15354,
+        1,
+        1
+      ],
+      "after": [
+        0,
+        16777216,
+        4509684,
+        3145728,
+        262144,
+        15354,
+        1,
+        1
+      ],
+      "per_event_before": {
+        "available": true,
+        "event": "98283045421cc9a8bfaa193ed180bb71d3f5c83cd5e20a95ae6dd48d1e6d15da",
+        "fields": [
+          0,
+          19,
+          3,
+          1,
+          355077,
+          1188,
+          0,
+          1
+        ],
+        "flags": 3,
+        "attempts": 1,
+        "reserved_bytes": 355077,
+        "reserved_work": 1188
+      },
+      "per_event_after": {
+        "available": true,
+        "event": "98283045421cc9a8bfaa193ed180bb71d3f5c83cd5e20a95ae6dd48d1e6d15da",
+        "fields": [
+          0,
+          19,
+          3,
+          1,
+          355077,
+          1188,
+          0,
+          1
+        ],
+        "flags": 3,
+        "attempts": 1,
+        "reserved_bytes": 355077,
+        "reserved_work": 1188
+      },
+      "native_transport_allocation": {
+        "state": "unchanged",
+        "before_bytes": 3145728,
+        "after_bytes": 3145728,
+        "additional_bytes": 0,
+        "finite_ceiling": 16777216,
+        "attribution": "Transport allocations may roll independently under existing consent; this probe does not attribute a roll to the duplicate event."
+      },
+      "copies_per_federation": 1
+    },
+    "controllers_released": {
+      "all_controllers_exited_zero": true,
+      "all_management_and_graphical_clients_closed": true,
+      "operators_left_running": true,
+      "next_owner": "Root coordinates service capacity, then project/moderation/restart/portability continuations."
+    }
+  },
+  "capacity_attempts": [
+    {
+      "path": "docs/evidence/campaign-009-capacity-attempt-1.json",
+      "sha256": "35c98c36104026b9fc3db8b9d290b04eb741c8221caee030258fecfdbb77925f",
+      "result": "failed before six-pair saturation; three personal clients initially admitted, Bob later terminal28; diagnostics found abandoned Messenger background reads; no operator reset"
+    }
+  ],
+  "application_partial": "docs/evidence/campaign-009-feed-project-690e-partial.json",
+  "replication_stall": "docs/evidence/campaign-009-replication-stall-690.json",
+  "retirement": {
+    "path": "build/campaign009-connected-v6/retired-trial.json",
+    "sha256": "76b3e891971b1ddc0cde713f9a72e7f1d9d6e6d986a0ac08527c4654d9e4c25b"
+  },
+  "qualification": "Core, active Forge, reconnect and no-vault checks passed. Capacity stopped before six pairs after abandoned Messenger reads; later Feed edit was durably accepted but replication stalled. All nine guests retired through native operation70 without reset/reinitialization of backing. No full campaign completion claim."
+}
