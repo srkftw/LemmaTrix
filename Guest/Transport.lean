@@ -113,13 +113,13 @@ def event (t : UInt64) : UInt64 :=
     let t := zero (p+32) 252 t
     let t := store64 p epoch t
     let t := store64 (p+1080) (load64 (input+8) t >>> 32) t
-    store64 (p+8) 1 t
+    store64 (p+8) 1 (store64 (p+24) 0 t)
   else if op == 5 || op == 6 then
     if epoch < load64 p t then t else
     let t := zero (p+32) 252 t
     let t := store64 p epoch t
     let t := store64 (p+16) (load64 (input+8) t >>> 32) t
-    store64 (p+8) 0 t
+    store64 (p+8) 0 (store64 (p+24) 0 t)
   else if op == 9 then store64 (p+24) 2 t else
   if op == 10 && epoch == load64 p t && load64 (p+8) t == 1 then
     let credit := load64 (input+8) t >>> 32

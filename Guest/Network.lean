@@ -49,7 +49,7 @@ def localId (kind counter t : UInt64) : UInt64 :=
 def saveContext (i t : UInt64) : UInt64 :=
   let b := bank i
   let t := copy 0x600000 b 416 t
-  let t := copy st (b+512) 136 t
+  let t := copy st (b+512) 144 t
   let t := copy tx (b+1024) 1024 t
   let t := copy rx (b+2048) 1024 t
   let t := copy pins (b+4096) 128 t
@@ -60,7 +60,7 @@ def saveContext (i t : UInt64) : UInt64 :=
 def loadContext (i t : UInt64) : UInt64 :=
   let b := bank i
   let t := copy b 0x600000 416 t
-  let t := copy (b+512) st 136 t
+  let t := copy (b+512) st 144 t
   let t := copy (b+1024) tx 1024 t
   let t := copy (b+2048) rx 1024 t
   let t := copy (b+4096) pins 128 t
@@ -122,9 +122,26 @@ partial def failJobs (i t : UInt64) : UInt64 :=
     let j := jobAt i
     let t := if load64 j t == 1 || load64 j t == 2 then store64 j 5 t else t
     failJobs (i+1) t
+def nativePeerCurrent (t : UInt64) : Bool :=
+  let stamp := Guest.PeerDescription.st
+  let selected := load64 (stamp+8) t
+  if selected == 0 then true else
+  let own := Guest.NodeEnrollment.localNode
+  let peer := Guest.NodeEnrollment.peer (selected-1)
+  selected <= 4 && load64 own t == 1 && Guest.TorRouter.peerValid peer t &&
+    Guest.NodeEnrollment.eq (own+512) (stamp+32) 32 t &&
+    Guest.NodeEnrollment.eq (peer+512) (stamp+64) 32 t
+def nativeFeedRelationship (t : UInt64) : Bool :=
+  load64 (Guest.PeerDescription.st+8) t != 0 && Guest.PeerDescription.verified t &&
+    load64 (Guest.PeerDescription.description+16) t == 7 &&
+    load64 (Guest.PeerDescription.description+24) t == 3 && protocol2 t
 -- Session loss invalidates ciphertext and jobs. Validated application chunks may
--- be reused only after a new session and a new application authorization.
+-- be retried only under a current application authorization. Native Feed grants
+-- bind the selected relationship, broker incarnation and caller, not a Noise
+-- epoch: pure link loss preserves their exact consumed allowances and expiry.
+-- Revocation, changed pins, protocol/configuration and explicit stop erase them.
 def disconnect (reason t : UInt64) : UInt64 :=
+  let preserve := reason == 10 && nativeFeedRelationship t && nativePeerCurrent t
   let t := Guest.Noise.disconnect t
   let t := zero tx 256 t
   let t := zero rx 256 t
@@ -132,7 +149,7 @@ def disconnect (reason t : UInt64) : UInt64 :=
   let t := zero 0x60b000 512 t
   let t := store64 (st+120) 0 t
   let t := failJobs 0 t
-  let t := zero 0x608000 128 t
+  let t := if preserve then t else zero 0x608000 128 t
   let t := store64 (st+32) 0 t
   let t := store64 (st+40) 0 t
   let t := store64 (st+48) 0 t
@@ -314,15 +331,25 @@ partial def expireGrants (i t : UInt64) : UInt64 :=
     let t := if load64 g alive == 1 && (now alive >= load64 (g+56) alive || alive == error) then store64 g 0 alive else alive
     expireGrants (i+1) t
 
-def nativePeerCurrent (t : UInt64) : Bool :=
-  let stamp := Guest.PeerDescription.st
-  let selected := load64 (stamp+8) t
-  if selected == 0 then true else
-  let own := Guest.NodeEnrollment.localNode
-  let peer := Guest.NodeEnrollment.peer (selected-1)
-  selected <= 4 && load64 own t == 1 && Guest.TorRouter.peerValid peer t &&
-    Guest.NodeEnrollment.eq (own+512) (stamp+32) 32 t &&
-    Guest.NodeEnrollment.eq (peer+512) (stamp+64) 32 t
+-- Only the explicitly selected native Feed bulk relationship may reconnect.
+-- Its exact descriptor/pins and finite grants remain current. No consumed
+-- bytes/work/expiry are restored and a new Noise session owns fresh counters.
+-- A listener command admits one socket; native recovery replenishes it after
+-- disconnect. Thirty-two attempts last until deliberate configure/connect.
+@[noinline] def reconnectBulk (t : UInt64) : UInt64 :=
+  let slot := transportSlot (activeSlot t) t
+  let p := Guest.Transport.channel slot
+  if !Guest.Transport.enabled t || !nativeFeedRelationship t ||
+    !nativePeerCurrent t || load64 (st+8) t == 0 ||
+    session t != 0 || load64 (st+136) t >= 32 || load64 (p+24) t != 0 ||
+    now t < load64 (st+88) t || !Guest.Transport.controlAvailable t then t else
+  let attempt := load64 (st+136) t
+  let delay := if attempt == 0 then 200 else if attempt == 1 then 400 else
+    if attempt == 2 then 800 else if attempt == 3 then 1600 else 3000
+  let r := Guest.Transport.connect slot (load64 (st+8) t)
+    (Guest.PeerDescription.description+168) (load64 (Guest.PeerDescription.description+160) t) t
+  let t := store64 (st+88) (now r+delay) r
+  if r == error then t else store64 (st+136) (load64 (st+136) t+1) t
 
 def pump (initial : UInt64) : UInt64 :=
   let t := store64 st (syscall 110 0 0 0 0 initial) initial
@@ -332,7 +359,8 @@ def pump (initial : UInt64) : UInt64 :=
   let t := reclaimInbox 0 t
   let device := networkStatus t
   if device == error || (device &&& 3) != 3 then
-    if session device == 0 && load64 (st+80) device == 10 then device else disconnect 10 device
+    let t := if session device == 0 && load64 (st+80) device == 10 then device else disconnect 10 device
+    reconnectBulk t
   else
     let epoch := device >>> 32
     let t := if epoch != load64 (st+24) device then store64 (st+24) epoch (disconnect 10 device) else device
@@ -361,7 +389,7 @@ def configure (role length t : UInt64) : UInt64 :=
     let t := disconnect 0 t
     let t := zero 0x608000 2048 t
     let t := copy (command+64) pins 128 t
-    let t := store64 (st+8) role t
+    let t := store64 (st+8) role (store64 (st+136) 0 t)
     failure 0 t
 
 -- Native inter-federation mode3 enrollment uses already approved Ed25519
@@ -543,6 +571,9 @@ def dispatchSelected (caller rights length t : UInt64) : UInt64 :=
   if op == 48 && admin && length >= 64 && length <= 128 then configureFeedPeer (load64 (command+16) t) handle length t else
   if op == 13 && (admin || (rights &&& 1024) != 0) && length == 64 then
     if !Guest.PeerDescription.verified t || load64 (st+8) t == 0 then failure 1 t else
+    if !admin && load64 (Guest.PeerDescription.st+8) t != 0 then
+      failure (if load64 (st+136) t >= 32 then 4 else 0) (reconnectBulk t) else
+      let t := if admin then store64 (st+136) 0 t else t
       let r := Guest.Transport.connect (transportSlot (activeSlot t) t) (load64 (st+8) t) (Guest.PeerDescription.description+168) (load64 (Guest.PeerDescription.description+160) t) t
       if r == error then failure 6 r else failure 0 r
   else if op == 14 && (admin || caller == syscall 119 0 0 0 0 t) && length == 64 then

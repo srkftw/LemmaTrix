@@ -118,7 +118,7 @@ def main():
   bob.device.press(59,delay=.15)
   def verified():
    f,chosen=ui_public(bob,785)
-   if f[1]!=6:return None
+   if f[1]!=6 or f[5]!=0:return None
    assert f[2]==2 and f[3]==0 and f[4]==signed['sequence']and chosen==root+fed,(f,chosen)
    return f
   fields=wait(verified,900,'actual routed existing Forge inspection')
