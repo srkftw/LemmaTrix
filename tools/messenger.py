@@ -1,6 +1,6 @@
 """Install and invoke native Messenger owners; host handles public adapter bytes."""
 from __future__ import annotations
-import argparse,hashlib,json,struct,time,os,resource
+import argparse,hashlib,json,struct,time,os,resource,signal
 from pathlib import Path
 import live,nodes,releases,server_store
 
@@ -26,9 +26,16 @@ def endpoint(client,role,operation):
 def invoke(client,role,operation,h=0,a=0,b=0,c=0,data=b'',timeout=600,allowed_status=(0,)):
     who=endpoint(client,role,operation)
     request=struct.pack('<Q8Q',who,operation,h,a,b,c,0,0,1)+data
-    token=struct.unpack('<Q',client.request(175,request))[0]
-    until=time.monotonic()+timeout
+    # Preserve ownership across Ctrl-C during the submit response. Deliver the
+    # signal only after its exact native token can enter the cancellation path.
+    # These host tools run on POSIX; this does not alter native IPC or authority.
+    prior_mask=signal.pthread_sigmask(signal.SIG_BLOCK,{signal.SIGINT})
+    token=None
     try:
+        token=struct.unpack('<Q',client.request(175,request))[0]
+        signal.pthread_sigmask(signal.SIG_SETMASK,prior_mask)
+        prior_mask=None
+        until=time.monotonic()+timeout
         while time.monotonic()<until:
             raw=client.request(176,struct.pack('<Q',token))
             if len(raw)==8:time.sleep(.05);continue
@@ -37,9 +44,12 @@ def invoke(client,role,operation,h=0,a=0,b=0,c=0,data=b'',timeout=600,allowed_st
             return f,raw[64:]
         raise TimeoutError('bounded native completion wait; operation remains separately committed if already accepted')
     except BaseException:
-        try:client.request(177,struct.pack('<Q',token))
-        except (ValueError,OSError,EOFError):pass
+        if token is not None:
+            try:client.request(177,struct.pack('<Q',token))
+            except (ValueError,OSError,EOFError):pass
         raise
+    finally:
+        if prior_mask is not None:signal.pthread_sigmask(signal.SIG_SETMASK,prior_mask)
 
 def install(client,path,public,rights):
     raw=path.read_bytes();info=releases.inspect(raw)
