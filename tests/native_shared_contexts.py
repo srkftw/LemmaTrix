@@ -120,6 +120,46 @@ open Guest Guest.LiveSDK
   if load64 Guest.OnionTerminal.st t != 0 || load64 (Guest.TorRouter.channel 0) t != 4 ||
     load64 (Guest.OnionTerminal.control+32) t != 456 || load64 (Guest.OnionTerminal.bank 1+512) t != 0xee then 45 else
   0
+@[noinline] def clientRequestChecks (t : UInt64) : UInt64 :=
+  let t := zero Guest.OnionTerminal.control 64 (zero Guest.OnionTerminal.st 4096 (zero 0x770000 8192 t))
+  let t := store64 (Guest.OnionTerminal.bank 1+512) 0xee t
+  -- A fresh authenticated38 relationship with the same long-lived owner is
+  -- represented by its post-handshake state; no handshake/wire claim follows.
+  -- Its new request22 must survive delayed polling/cancellation for request21.
+  let t := store64 Guest.OnionTerminal.st 1 (store64 (Guest.OnionTerminal.st+8) 3
+    (store64 (Guest.OnionTerminal.st+128) 900 (store64 (Guest.OnionTerminal.st+64) 22
+    (store64 Guest.OnionTerminal.noiseBank 0xaa t))))
+  let t := store64 (command+8) 21 t
+  let r := Guest.OnionTerminal.dispatch 900 0 40 64 t
+  if load64 wire r != 3 || load64 Guest.OnionTerminal.noiseBank r != 0xaa ||
+    load64 (Guest.OnionTerminal.st+64) r != 22 then 46 else
+  let r := Guest.OnionTerminal.dispatch 900 0 42 64 r
+  if load64 wire r != 3 || load64 Guest.OnionTerminal.st r != 1 ||
+    load64 Guest.OnionTerminal.noiseBank r != 0xaa || load64 (Guest.OnionTerminal.bank 1+512) r != 0xee then 47 else
+  let t := store64 (command+8) 22 r
+  let r := Guest.OnionTerminal.dispatch 4294968196 0 42 64 t
+  if load64 wire r != 8 || load64 Guest.OnionTerminal.st r != 1 then 48 else
+  let r := Guest.OnionTerminal.dispatch 900 0 40 64 r
+  if load64 wire r != 6 || load64 Guest.OnionTerminal.noiseBank r != 0xaa then 49 else
+  let t := store64 (Guest.OnionTerminal.st+40) 22 (store64 (Guest.OnionTerminal.st+48) 64
+    (store64 (Guest.OnionTerminal.st+56) 64 (store64 Guest.OnionTerminal.received 0x1122 r)))
+  let t := store64 (command+8) 21 t
+  let r := Guest.OnionTerminal.dispatch 900 0 40 64 t
+  if load64 wire r != 3 || load64 (Guest.OnionTerminal.st+48) r != 64 then 50 else
+  let r := Guest.OnionTerminal.dispatch 900 0 40 64 (store64 (command+8) 22 r)
+  if r != 128 || load64 wire r != 0 || load64 (wire+64) r != 0x1122 ||
+    load64 (Guest.OnionTerminal.st+48) r != 0 || load64 Guest.OnionTerminal.noiseBank r != 0xaa then 51 else
+  let r := Guest.OnionTerminal.dispatch 900 0 42 64 r
+  if load64 wire r != 0 || load64 Guest.OnionTerminal.st r != 0 ||
+    load64 Guest.OnionTerminal.noiseBank r != 0 || load64 (Guest.OnionTerminal.bank 1+512) r != 0xee then 52 else
+  -- Existing Messenger uses an explicit owner-wide0 close. Keep that contract
+  -- while refusing nonzero stale operation handles and foreign owners above.
+  let t := store64 Guest.OnionTerminal.st 1 (store64 (Guest.OnionTerminal.st+8) 3
+    (store64 (Guest.OnionTerminal.st+128) 900 (store64 (Guest.OnionTerminal.st+64) 33
+    (store64 Guest.OnionTerminal.noiseBank 0xbb r))))
+  let r := Guest.OnionTerminal.dispatch 900 0 42 64 (store64 (command+8) 0 t)
+  if load64 wire r != 0 || load64 Guest.OnionTerminal.st r != 0 ||
+    load64 Guest.OnionTerminal.noiseBank r != 0 || load64 (Guest.OnionTerminal.bank 1+512) r != 0xee then 53 else 0
 @[noinline] def bulkChecks (t : UInt64) : UInt64 :=
   let t := zero Guest.Network.control 512 (zero Guest.Network.st 64
     (zero Guest.Noise.state 52 (zero Guest.Transport.st 4096 t)))
@@ -286,15 +326,22 @@ def check (t : UInt64) : UInt64 :=
   if checked != 0 then checked else
   let checked := primaryPinChecks checked
   if checked != 0 then checked else
+  let checked := clientRequestChecks checked
+  if checked != 0 then checked else
   let checked := contextChecks checked
   if checked != 0 then checked else bulkChecks checked
 end build.NativeSharedContexts
 '''
 def main():
- p=argparse.ArgumentParser();p.add_argument('--backend',action='append',choices=('qemu','x86_64','aarch64'));a=p.parse_args()
- native.B=ROOT/'build/native-shared-contexts'
- for module in ('Guest.Network','Guest.Mailbox'):live_build.compile_module(module)
- binary=native.build(SOURCE,'NativeSharedContexts')
+ p=argparse.ArgumentParser();p.add_argument('--backend',action='append',choices=('qemu','x86_64','aarch64'));p.add_argument('--output',type=Path,default=ROOT/'build/native-shared-contexts');p.add_argument('--modules-ready',action='store_true',help='use the already compiled production modules without rebuilding them');p.add_argument('--client-requests-only',action='store_true',help='run only the Network terminal request ownership checks; no Mailbox dependency');a=p.parse_args()
+ native.B=a.output.resolve()
+ if not a.modules_ready:
+  for module in (('Guest.Network',)if a.client_requests_only else('Guest.Network','Guest.Mailbox')):live_build.compile_module(module)
+ fixture_source=SOURCE
+ if a.client_requests_only:
+  selected=SOURCE[SOURCE.index('@[noinline] def clientRequestChecks'):SOURCE.index('@[noinline] def bulkChecks')]
+  fixture_source='import Guest.Network\nnamespace build.NativeSharedContexts\nopen Guest Guest.LiveSDK\n'+selected+'def check (t : UInt64) : UInt64 := clientRequestChecks t\nend build.NativeSharedContexts\n'
+ binary=native.build(fixture_source,'NativeSharedContexts')
  # Replenishing a reclaimed pair creates a real native setup deadline. This
  # bounded oracle supplies monotonic tick100 and records exact IPC cancellation;
  # it is not a kernel cancellation implementation. Other traps fail.
@@ -338,6 +385,11 @@ fixtureReturn:
  driver.asm(boot,native.B/'1.o')
  driver.run([driver.tool('ld.lld'),'-m','elf64lriscv','--no-relax','-T',ROOT/'runtime/kernel.ld',*(native.B/f'{i}.o'for i in range(3)),'-o',native.B/'check.elf'])
  driver.run([driver.tool('llvm-objcopy'),'-O','binary',native.B/'check.elf',binary])
- report=dict(schema=1,result='pass',image_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),checks=[native.execute(binary,b) for b in a.backend or ['qemu','aarch64']],boundaries=['saved terminal primary target pins survive context switching; changed target retires only the selected epoch-owned pair before dispatch133, leaving unrelated bank/Registry pin intact; stale epochs cannot close a reused channel','terminal output link quota exhaustion closes the actual charged pair even when another pair was last pumped','partial terminal frames and pending typed IPC expire independently; exact cancellation frees the dispatch lane and wipes only the selected key/buffer snapshot','healthy idle terminal contexts do not expire; deadline addition saturates instead of disabling near clock exhaustion','relay integrity failure closes only dependent incoming/outgoing pair','expired idle listener gets a finite setup window only when accepted; outbound and ongoing handshake deadlines do not renew','failed LISTEN retires only that listener, backs off within32 failures, and explicit operator listen renews its allowance','terminal keys/buffers banked by channel, stream and epoch; stale epoch rejects','mailbox sameNetworkcaller different terminalorigin cannot append or collect foreignstaging','adapterv3 accepts slot15 and rejects slot16','bulk reconnect attempts remain context-private, finite32 and pending admission does not renew them','current native Feed relationship preserves exact used allowance and expiry only on link loss; lost jobs and inbox cleared, expired/pin-changed or explicit-stop grants cannot revive'],limitations='Focused compiled RV64 state transitions, including provisioned predicate inputs for bulk reconnect and a declared128 target-result oracle plus133 dispatch counter; no claim that this oracle implements kernel binding/replacement; no native certificate-admission claim from this fixture. AArch64 assembly emulator runs under qemu-aarch64; no physical hardware or full native Messenger qualification.')
+ report=dict(schema=1,result='pass',image_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),checks=[native.execute(binary,b) for b in a.backend or ['qemu','aarch64']],boundaries=['same owner old request cannot poll or cancel a newer request, before or after response availability; current request and explicit owner-wide0 close work without altering an unrelated key bank','saved terminal primary target pins survive context switching; changed target retires only the selected epoch-owned pair before dispatch133, leaving unrelated bank/Registry pin intact; stale epochs cannot close a reused channel','terminal output link quota exhaustion closes the actual charged pair even when another pair was last pumped','partial terminal frames and pending typed IPC expire independently; exact cancellation frees the dispatch lane and wipes only the selected key/buffer snapshot','healthy idle terminal contexts do not expire; deadline addition saturates instead of disabling near clock exhaustion','relay integrity failure closes only dependent incoming/outgoing pair','expired idle listener gets a finite setup window only when accepted; outbound and ongoing handshake deadlines do not renew','failed LISTEN retires only that listener, backs off within32 failures, and explicit operator listen renews its allowance','terminal keys/buffers banked by channel, stream and epoch; stale epoch rejects','mailbox sameNetworkcaller different terminalorigin cannot append or collect foreignstaging','adapterv3 accepts slot15 and rejects slot16','bulk reconnect attempts remain context-private, finite32 and pending admission does not renew them','current native Feed relationship preserves exact used allowance and expiry only on link loss; lost jobs and inbox cleared, expired/pin-changed or explicit-stop grants cannot revive'],limitations='Focused compiled RV64 state transitions, including a modeled authenticated client38 state (not a handshake/wire exchange), provisioned predicate inputs for bulk reconnect and a declared128 target-result oracle plus133 dispatch counter; no claim that this oracle implements kernel binding/replacement; no native certificate-admission claim from this fixture. AArch64 assembly emulator runs under qemu-aarch64; no physical hardware or full native Messenger qualification.')
+ if a.client_requests_only:
+  report['boundaries']=report['boundaries'][:1]
+  report['limitations']='Focused compiled RV64 execution of actual OnionTerminal dispatch40/42 over a modeled authenticated client38 state, with public sentinel key-bank words; no handshake, wire exchange, kernel grant, service replacement or full connected campaign claim. AArch64 assembly backend executes under qemu-aarch64, not physical hardware.'
+ report['fixture_source_sha256']=hashlib.sha256(fixture_source.encode()).hexdigest()
+ report['production_source_sha256']={str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest()for p in(ROOT/'Guest/OnionTerminal.lean',ROOT/'Guest/Network.lean')}
  (native.B/'evidence.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2))
 if __name__=='__main__':main()
