@@ -1,0 +1,116 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "image_sha256": "582f4d24d94874898e0bba18c98ef04d91e969f14aaf1ca0678c5152f50ae6f2",
+  "packages": {
+    "identity": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+    "feed-federation": "5bb8adb18e7161203a9eec7d6ffebf7ac1e7a0c510f8d74b652642f91c7b9686"
+  },
+  "probe_release": "e7c4559d82aef6218b7e81d79b50d033386cb2f851a25f99b16a9c8fc1094ec7",
+  "service": {
+    "instance": 1212050624313557256,
+    "release_id": "5bb8adb18e7161203a9eec7d6ffebf7ac1e7a0c510f8d74b652642f91c7b9686",
+    "federation": "b57d45f1f77aaacee74c9ae426720fcd2879e061d2dc50fccc2dac2faeb6e03a",
+    "peer": "912c3647037891d0fc3bb78b32d5b66b57d8a6842f1c3c8f06758d2af55fb106",
+    "moderator_public": "931cec271ef9607832973be1de632531d519b11a731093b72c4fc570ebf62ac8",
+    "namespace": "267770413a86ecd8ffc46cf9bbe657f4661047aa84c6ae79268c882f1f3e5725",
+    "status": [
+      0,
+      0,
+      0,
+      64,
+      4,
+      16384,
+      0,
+      1
+    ],
+    "storage_grants": [
+      1212050628608524545,
+      1212050628608524802,
+      1212050628608525059,
+      1212050628608525316,
+      1212050628608525573,
+      1212050628608525830,
+      1212050628608526087,
+      1212050628608526344
+    ],
+    "storage_grants_are_live_session_handles": true,
+    "capacity": {
+      "events": 1,
+      "content_bytes": 16384,
+      "stages": 4,
+      "content_max": 16384,
+      "segments": 7,
+      "per_author_events": 16,
+      "per_author_content_bytes": 262144
+    },
+    "persistence": "native purpose2 ServerStore; index commit follows immutable content segment commit",
+    "lifecycle": "long-running native listener; no per-client handoff or host replication loop"
+  },
+  "native_public_key": "d73bc0a55f668e47e762a72c2a46e7a87bda17e8c3a3b724b45345fcd73e4d26",
+  "checks": [
+    {
+      "check": "current exact role5 consumer creates a native entropy Ed25519 key",
+      "result": "pass",
+      "public": "d73bc0a55f668e47e762a72c2a46e7a87bda17e8c3a3b724b45345fcd73e4d26"
+    },
+    {
+      "check": "three canonical valid events receive independent one-use native approvals and native signatures",
+      "result": "pass",
+      "same_author": true,
+      "first_sequence": 1,
+      "conflicting_sequence": 1,
+      "next_sequence": 2
+    },
+    {
+      "check": "exact duplicate reconciles committed acceptance before exhausted quota without new event, bytes or reservation",
+      "result": "pass",
+      "event": "793b7425d48c7d139f19bca0af94f85ae3b5050bd8692698e87a1285d470f199",
+      "usage": [
+        0,
+        1,
+        72,
+        1,
+        16384,
+        1,
+        1,
+        1
+      ],
+      "budget": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "check": "current author consumer cannot forge moderator authority: an approved canonical kind8 body is refused by native signer with1 before any policy signature exists",
+      "result": "pass",
+      "refusal": 1,
+      "typed_consumer_role": 5,
+      "requested_event_kind": 8,
+      "signature_created": false
+    },
+    {
+      "check": "actual native service refuses a valid different same-author sequence commitment with12 and valid next sequence at finite quota with4",
+      "result": "pass",
+      "conflict": 12,
+      "quota": 4
+    },
+    {
+      "check": "original signed event and checked immutable content remain readable after both refusals",
+      "result": "pass"
+    }
+  ],
+  "seconds": 95.62428155700036,
+  "host_private_keys": false,
+  "authoritative_host_feed_database": false,
+  "limits": "Isolated all-QEMU native application refusal probe. Canonical boundary inputs are explicit test data; this is not UI-authored connected community history.",
+  "source": "tests/native_feed_conflict.py",
+  "runtime_record": "build/campaign009-native-conflict-authority/evidence.json",
+  "evidence_scope": "Installed exact-role native signer authority gate and actual Feed service conflict/quota refusals on isolated purpose2 backing. No valid wrong-federation moderator signature admission is claimed."
+}

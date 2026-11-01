@@ -113,6 +113,24 @@ def main():
         assert feed.invoke(guest.client, 490, action=9)[0] == usage
         assert feed.invoke(guest.client, 490, action=12)[0] == budget
         passed('exact duplicate reconciles committed acceptance before exhausted quota without new event, bytes or reservation', event=event_id.hex(), usage=list(usage), budget=list(budget))
+        # This is a genuine attempted authority escalation, not a damaged
+        # signature. The canonical kind8 body is individually approved by the
+        # current author consumer, but that consumer has no moderator purpose.
+        reason = b'Unauthorized author attempts to issue a federation visibility decision.'
+        forged = bytearray(256)
+        struct.pack_into('<4Q', forged, 0, 0x3144564546544c, 1, 8, 3)
+        forged[64:96] = hashlib.sha256(reason).digest()
+        struct.pack_into('<2Q', forged, 96, len(reason), 1)
+        forged[112:144] = bytes.fromhex(home)
+        forged[208:240] = event_id
+        struct.pack_into('<Q', forged, 240, 1)
+        approval, _ = request(accept.command(410, h=1, a=key, data=hashlib.sha256(forged).digest()))
+        assert approval[0] == 0
+        refused_authority, signature = request(accept.command(402, h=approval[1], data=forged))
+        assert refused_authority[0] == 1 and not signature
+        assert feed.invoke(guest.client, 490, action=9)[0] == usage
+        passed('current author consumer cannot forge moderator authority: an approved canonical kind8 body is refused by native signer with1 before any policy signature exists', refusal=refused_authority[0], typed_consumer_role=5, requested_event_kind=8, signature_created=False)
+
         refused, _ = feed.invoke(guest.client, 491, action=1, data=conflict, allowed=(12,))
         assert refused[0] == 12
         quota, _ = feed.invoke(guest.client, 491, action=1, data=next_event, allowed=(4,))
