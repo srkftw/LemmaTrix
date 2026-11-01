@@ -26,24 +26,31 @@ def wait(check,seconds=600,label='native condition'):
  raise TimeoutError(label)
 
 def async_call(c,target,op,h=0,a=0,b=0,cword=0,d=0,e=0,data=b'',version=1,allow=()):
- token=struct.unpack('<Q',c.request(175,struct.pack('<Q8Q',target,op,h,a,b,cword,d,e,version)+data))[0]
- if token==ERR:raise ValueError(f'async admission denied target{target} operation{op}')
- trace=getattr(c,'journey_trace',None)
- if trace:trace.write_text(json.dumps({'scope':'host management adapter request only; no Messenger protocol or key state','target':target,'operation':op,'token':token,'pending':True})+'\n')
- def collect():
-  raw=c.request(176,struct.pack('<Q',token))
-  if len(raw)==8:return None
-  if len(raw)<64:raise ValueError('short native completion')
-  f=struct.unpack_from('<8Q',raw)
-  if f[0] and f[0] not in allow:raise ValueError(f'native operation{op} status{f[0]} fields{f}')
-  return f,raw[64:]
+ prior_mask=signal.pthread_sigmask(signal.SIG_BLOCK,{signal.SIGINT})
+ token=None
  try:
+  token=struct.unpack('<Q',c.request(175,struct.pack('<Q8Q',target,op,h,a,b,cword,d,e,version)+data))[0]
+  signal.pthread_sigmask(signal.SIG_SETMASK,prior_mask)
+  prior_mask=None
+  if token==ERR:raise ValueError(f'async admission denied target{target} operation{op}')
+  trace=getattr(c,'journey_trace',None)
+  if trace:trace.write_text(json.dumps({'scope':'host management adapter request only; no Messenger protocol or key state','target':target,'operation':op,'token':token,'pending':True})+'\n')
+  def collect():
+   raw=c.request(176,struct.pack('<Q',token))
+   if len(raw)==8:return None
+   if len(raw)<64:raise ValueError('short native completion')
+   f=struct.unpack_from('<8Q',raw)
+   if f[0] and f[0] not in allow:raise ValueError(f'native operation{op} status{f[0]} fields{f}')
+   return f,raw[64:]
   answer=wait(collect,900,f'native operation{op} completion')
   if trace:trace.write_text(json.dumps({'target':target,'operation':op,'token':token,'pending':False,'response_fields':list(answer[0])})+'\n')
   return answer
  except BaseException:
-  with contextlib.suppress(Exception):c.request(177,struct.pack('<Q',token))
+  if token is not None:
+   with contextlib.suppress(Exception):c.request(177,struct.pack('<Q',token))
   raise
+ finally:
+  if prior_mask is not None:signal.pthread_sigmask(signal.SIG_SETMASK,prior_mask)
 
 def role(g,number,op,**kwargs):return async_call(g.client,messenger.endpoint(g.client,number,op),op,**kwargs)
 def net(g,op,**kwargs):return async_call(g.client,g.network,op,version=2,**kwargs)

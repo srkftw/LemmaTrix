@@ -1,5 +1,5 @@
 """Public-only enrollment adapter; node and certification keys stay in guests."""
-import argparse, hashlib, json, struct
+import argparse, hashlib, json, struct, signal
 from pathlib import Path
 import live, identity, network
 
@@ -7,15 +7,27 @@ def call(client,op,h=0,data=b'',a=0,b=0,c=0,d=0,e=0):
     if 20 <= op <= 48:
         import messenger,time
         target=next(row[0] for row in identity.instances(client) if row[0]&255==6)
-        token=struct.unpack('<Q',client.request(175,struct.pack('<Q8Q',target,op,h,a,b,c,d,e,2)+data))[0]
-        deadline=time.monotonic()+600
-        while time.monotonic()<deadline:
-            raw=client.request(176,struct.pack('<Q',token))
-            if len(raw)==8:time.sleep(.05);continue
-            f=struct.unpack_from('<8Q',raw)
-            if f[0]:raise ValueError(f'native enrollment status{f[0]}')
-            return f,raw[64:]
-        client.request(177,struct.pack('<Q',token));raise TimeoutError('native enrollment completion')
+        prior_mask=signal.pthread_sigmask(signal.SIG_BLOCK,{signal.SIGINT})
+        token=None
+        try:
+            token=struct.unpack('<Q',client.request(175,struct.pack('<Q8Q',target,op,h,a,b,c,d,e,2)+data))[0]
+            signal.pthread_sigmask(signal.SIG_SETMASK,prior_mask)
+            prior_mask=None
+            deadline=time.monotonic()+600
+            while time.monotonic()<deadline:
+                raw=client.request(176,struct.pack('<Q',token))
+                if len(raw)==8:time.sleep(.05);continue
+                f=struct.unpack_from('<8Q',raw)
+                if f[0]:raise ValueError(f'native enrollment status{f[0]}')
+                return f,raw[64:]
+            raise TimeoutError('native enrollment completion')
+        except BaseException:
+            if token is not None:
+                try:client.request(177,struct.pack('<Q',token))
+                except (ValueError,OSError,EOFError):pass
+            raise
+        finally:
+            if prior_mask is not None:signal.pthread_sigmask(signal.SIG_SETMASK,prior_mask)
     return network.call(client,op,h=h,a=a,b=b,c=c,d=d,e=e,data=data,slot=0)
 
 def main(argv=None):

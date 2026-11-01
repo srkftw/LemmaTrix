@@ -2,22 +2,36 @@
 Opaque ciphertext is carried by this test; routed product acceptance is separate.
 """
 from __future__ import annotations
-import argparse,hashlib,json,os,resource,shutil,struct,subprocess,sys,time
+import argparse,hashlib,json,os,resource,shutil,struct,subprocess,sys,time,signal
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 sys.path[:0]=[str(ROOT/'tools'),str(ROOT/'tests')]
 import driver,live_build,messenger,releases,live_acceptance as accept
 PUB=ROOT/'tests/keys/development-rsa-public.pem'
 def invoke(c,op,h=0,a=0,b=0,data=b'',expected=0):
- endpoint=messenger.endpoint(c,2,op);token=struct.unpack('<Q',c.request(175,struct.pack('<Q8Q',endpoint,op,h,a,b,0,0,0,1)+data))[0]
- deadline=time.monotonic()+600
- while time.monotonic()<deadline:
-  raw=c.request(176,struct.pack('<Q',token))
-  if len(raw)==8:time.sleep(.025);continue
-  f=struct.unpack_from('<8Q',raw)
-  if f[0]!=expected:raise AssertionError(f'operation{op}: status{f[0]} expected{expected}, fields{f}')
-  return f,raw[64:]
- raise TimeoutError(f'native operation{op} failed to complete')
+ endpoint=messenger.endpoint(c,2,op)
+ prior_mask=signal.pthread_sigmask(signal.SIG_BLOCK,{signal.SIGINT})
+ token=None
+ try:
+  token=struct.unpack('<Q',c.request(175,struct.pack('<Q8Q',endpoint,op,h,a,b,0,0,0,1)+data))[0]
+  signal.pthread_sigmask(signal.SIG_SETMASK,prior_mask)
+  prior_mask=None
+  deadline=time.monotonic()+600
+  while time.monotonic()<deadline:
+   raw=c.request(176,struct.pack('<Q',token))
+   if len(raw)==8:time.sleep(.025);continue
+   f=struct.unpack_from('<8Q',raw)
+   if f[0]!=expected:raise AssertionError(f'operation{op}: status{f[0]} expected{expected}, fields{f}')
+   return f,raw[64:]
+  raise TimeoutError(f'native operation{op} failed to complete')
+ except BaseException:
+  if token is not None:
+   try:c.request(177,struct.pack('<Q',token))
+   except (ValueError,OSError,EOFError):pass
+  raise
+ finally:
+  if prior_mask is not None:signal.pthread_sigmask(signal.SIG_SETMASK,prior_mask)
+
 def start(c,package):
  owner,sid=messenger.install(c,package,PUB,0);who=messenger.launcher(c)
  for op in range(420,436):messenger.bind(c,2,owner,who,op,sid)

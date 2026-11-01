@@ -72,19 +72,26 @@ def endpoint(client, operation):
 def invoke(client, op, h=0, a=0, b=0, c=0, data=b''):
     target = endpoint(client, op)
     if op in (408,409,410):
-        import time
-        token=struct.unpack('<Q',client.request(175,struct.pack('<Q8Q',target,op,h,a,b,c,0,0,1)+data))[0]
-        deadline=time.monotonic()+600
+        import time,signal
+        prior_mask=signal.pthread_sigmask(signal.SIG_BLOCK,{signal.SIGINT})
+        token=None
         try:
+            token=struct.unpack('<Q',client.request(175,struct.pack('<Q8Q',target,op,h,a,b,c,0,0,1)+data))[0]
+            signal.pthread_sigmask(signal.SIG_SETMASK,prior_mask)
+            prior_mask=None
+            deadline=time.monotonic()+600
             while time.monotonic()<deadline:
                 raw=client.request(176,struct.pack('<Q',token))
                 if len(raw)==8:time.sleep(.025);continue
                 return fields(raw)
             raise TimeoutError('bounded native Identity completion')
         except BaseException:
-            try:client.request(177,struct.pack('<Q',token))
-            except (ValueError,OSError,EOFError):pass
+            if token is not None:
+                try:client.request(177,struct.pack('<Q',token))
+                except (ValueError,OSError,EOFError):pass
             raise
+        finally:
+            if prior_mask is not None:signal.pthread_sigmask(signal.SIG_SETMASK,prior_mask)
     raw = client.request(150, struct.pack('<Q8Q', target, op, h, a, b, c, 0, 0, 1) + data)
     return fields(raw)
 
