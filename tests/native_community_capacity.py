@@ -51,7 +51,7 @@ def main():
                 f, pin = net(g, 41)
                 assert f[1] == 1 and f[2] == 3, (g.name, f)
                 if g.name in original:
-                    assert pin == original[g.name]['pin'], (g.name, 'terminal pin changed')
+                    assert pin.hex() == original[g.name]['pin'], (g.name, 'terminal pin changed')
                 current[g.name] = dict(terminal=list(f), pin=pin.hex())
             return current
         def observe():
