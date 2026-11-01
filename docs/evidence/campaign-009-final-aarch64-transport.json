@@ -1,0 +1,49 @@
+{
+  "image": "690e8959d79a42d3e61aa6f69df14b4e0c485ad58b015f451685abf014c275ee",
+  "client_backend": "aarch64",
+  "server_backend": "qemu",
+  "connections": 2,
+  "service_operation": 1,
+  "public_description_schema": 1,
+  "separate_endpoints": true,
+  "bytes_per_connection": 4097,
+  "payload_sha256": [
+    "5be9a3ec29fc6fdc4e4d6c5d8494b9afe2b8265b81d81f7c9a75ba99e217dbad",
+    "812a3cfdb8bb3b3cd077e30b78347b9a9ff0fa8b47ad6b30a3e7f3be6d88a114"
+  ],
+  "paused_consumer_independent_progress": true,
+  "stalled_records": 8,
+  "stalled_records_stage": "provider device accepted; paused consumer not drained, not client integrity acceptance",
+  "surviving_sessions": [
+    1
+  ],
+  "stale_epoch_grant": "denied",
+  "request_binding": "authenticated",
+  "duplicate_receive_scope": "denied",
+  "fresh_boot_authority": "not requested",
+  "consumer_admission": "not tested by this transport component check",
+  "schema": 1,
+  "result": "pass",
+  "native_source_commit": "c5147de",
+  "attempts": 1,
+  "transport_scope": "Generic legacy mode3 broker/opaque adapter fixture only. Host temporary RSA service descriptions and ordered Noise pairwise PSKs; no Feed-author, moderator, or native replication identity is generated or authorized by this case.",
+  "private_fixture_files": "Existing runner TemporaryDirectory removed all fixture credentials after both native guests stopped.",
+  "feed_authority_qualified": false,
+  "native_feed_replication_qualified": false,
+  "aarch64_emulated": true,
+  "guest_build_performed": false,
+  "ordinary_package_build_performed": false,
+  "restart_check": false,
+  "restart_coverage": "Separate installed image690 Network32/Launcher33 probe: docs/evidence/campaign-009-final-aarch64-storage.json",
+  "raw_record": {
+    "path": "build/campaign009-final-v8-aa-transport.json",
+    "sha256": "bb919f723974f0d98198158ef864e9ef96c717c24da93e52dfc4574126f25d22"
+  },
+  "logfile": {
+    "path": "build/campaign009-final-v8-aa-transport.log",
+    "sha256": "78ab487e04db79ed23529aa67374a2dfdecb20879bd5c59b68c11a9a7cb6cea5"
+  },
+  "command": "PYTHONPATH=tools python3 tests/network_multiplex.py --client-backend aarch64 --server-backend qemu --image build/campaign009-final-v8.bin --connections 2 --bytes 4097 --output build/campaign009-final-v8-aa-transport.json",
+  "controller_elapsed_seconds_approx": 568.973,
+  "timing_scope": "Controller logfile creation to completed result write, including setup/data/cleanup; creation timestamp is rounded to one second, not an operation benchmark."
+}
