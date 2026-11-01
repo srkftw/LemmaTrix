@@ -1,0 +1,663 @@
+{
+  "schema": 1,
+  "result": "failed",
+  "error": "AssertionError(('bob', (0, 0, 0, 28, 0, 0, 0, 1)))",
+  "checks": [
+    {
+      "check": "three existing personal guests remain concurrently admitted on the selected relays",
+      "result": "pass",
+      "restored_only_charlie_transport": true,
+      "charlie_terminal": [
+        0,
+        1,
+        3,
+        0,
+        1048576,
+        256,
+        0,
+        1
+      ],
+      "observed": {
+        "personal": {
+          "alice": {
+            "terminal": [
+              0,
+              1,
+              3,
+              0,
+              8328498,
+              65076,
+              0,
+              1
+            ],
+            "pin": "e676f42f3dee72654a5ed806e0bec0d4482c7d9e5bf2df26e6a7c19057d9a84e"
+          },
+          "bob": {
+            "terminal": [
+              0,
+              1,
+              3,
+              0,
+              8362352,
+              65337,
+              0,
+              1
+            ],
+            "pin": "e676f42f3dee72654a5ed806e0bec0d4482c7d9e5bf2df26e6a7c19057d9a84e"
+          }
+        },
+        "relays": {
+          "relay1": [
+            0,
+            1,
+            0,
+            38,
+            1,
+            4,
+            0,
+            1
+          ],
+          "relay2": [
+            0,
+            1,
+            0,
+            38,
+            1,
+            4,
+            0,
+            1
+          ],
+          "relay3": [
+            0,
+            1,
+            0,
+            38,
+            1,
+            4,
+            0,
+            1
+          ]
+        }
+      }
+    }
+  ],
+  "elapsed_seconds": 310.20249553601025,
+  "image_sha256": "690e8959d79a42d3e61aa6f69df14b4e0c485ad58b015f451685abf014c275ee",
+  "native_source_commit": "c5147de",
+  "stage": "first independent extra client route; six-pair capacity not reached",
+  "raw_records": {
+    "build/campaign009-connected-v6/relay-capacity-failure.json": "2fe3dd24763164e0c123482cea30b0b9f16afcf5addbf865bde5504d441bfbf0",
+    "build/campaign009-connected-v6/relay-capacity-diagnostic.json": "2dbec4187ec495a65e744a6ad068894458a2726aa0c89f4498d7952e5a70c0e2",
+    "build/campaign009-connected-v6/relay-capacity/replication-before.json": "47f8ac4b5b46a46ee0b9ed7c95403c23afabdae315f9c1e61f999ef9e24d1af3",
+    "build/campaign009-connected-v6-capacity.log": "67c922cf702026b7235e97cc1a0daf3a6bf86be6c0f3cdbe6b32552da7cb18dd"
+  },
+  "diagnostic": {
+    "schema": 1,
+    "scope": "Read-only native public diagnostics after capacity failure; no resets, route changes, cancellation or service/operator state mutation requested.",
+    "samples": [
+      {
+        "mailbox": {
+          "network": 14015485963485053190,
+          "router": [
+            0,
+            1,
+            0,
+            38,
+            4,
+            0,
+            0,
+            1
+          ]
+        },
+        "relay1": {
+          "network": 13053973937032003846,
+          "router": [
+            0,
+            1,
+            0,
+            38,
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        "relay2": {
+          "network": 11618096671249924358,
+          "router": [
+            0,
+            1,
+            0,
+            38,
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        "relay3": {
+          "network": 14991808969909993734,
+          "router": [
+            0,
+            1,
+            0,
+            38,
+            0,
+            1,
+            0,
+            1
+          ]
+        },
+        "alpha": {
+          "network": 17536424337983144198,
+          "router": [
+            0,
+            1,
+            0,
+            38,
+            1,
+            4,
+            0,
+            1
+          ]
+        },
+        "beta": {
+          "network": 7174966949296734470,
+          "router": [
+            0,
+            1,
+            0,
+            38,
+            0,
+            1,
+            0,
+            1
+          ]
+        },
+        "alice": {
+          "network": 8254103179206066438,
+          "router": [
+            0,
+            1,
+            3,
+            0,
+            4,
+            0,
+            0,
+            1
+          ],
+          "terminal": [
+            0,
+            1,
+            3,
+            0,
+            8313394,
+            64958,
+            0,
+            1
+          ],
+          "delivery": {
+            "1": [
+              0,
+              5,
+              0,
+              0,
+              0,
+              2,
+              0,
+              1
+            ],
+            "2": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              11,
+              7,
+              1
+            ],
+            "3": [
+              0,
+              11,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            "4": [
+              0,
+              10,
+              11,
+              351,
+              351,
+              3,
+              521314,
+              1
+            ]
+          },
+          "messenger_ui": [
+            0,
+            1,
+            0,
+            0,
+            21,
+            1,
+            2,
+            1
+          ],
+          "messenger_ui_async": [
+            0,
+            0,
+            0,
+            1,
+            463,
+            0,
+            0,
+            1
+          ]
+        },
+        "bob": {
+          "network": 5386664127701713158,
+          "router": [
+            0,
+            0,
+            0,
+            59,
+            0,
+            0,
+            0,
+            1
+          ],
+          "terminal": [
+            0,
+            0,
+            0,
+            28,
+            0,
+            0,
+            0,
+            1
+          ],
+          "delivery": {
+            "1": [
+              0,
+              5,
+              0,
+              0,
+              0,
+              2,
+              0,
+              1
+            ],
+            "2": [
+              0,
+              3,
+              0,
+              0,
+              0,
+              11,
+              7,
+              1
+            ],
+            "3": [
+              0,
+              11,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            "4": [
+              0,
+              10,
+              11,
+              272,
+              272,
+              2,
+              406358,
+              1
+            ]
+          },
+          "messenger_ui": [
+            0,
+            1,
+            6,
+            0,
+            21,
+            1,
+            1,
+            1
+          ],
+          "messenger_ui_async": [
+            0,
+            0,
+            0,
+            1,
+            463,
+            0,
+            0,
+            1
+          ]
+        },
+        "charlie": {
+          "network": 11924251543655678214,
+          "router": [
+            0,
+            1,
+            3,
+            0,
+            4,
+            0,
+            0,
+            1
+          ],
+          "terminal": [
+            0,
+            1,
+            3,
+            0,
+            1048576,
+            256,
+            0,
+            1
+          ]
+        }
+      },
+      {
+        "mailbox": {
+          "network": 14015485963485053190,
+          "router": [
+            0,
+            1,
+            0,
+            38,
+            4,
+            0,
+            0,
+            1
+          ]
+        },
+        "relay1": {
+          "network": 13053973937032003846,
+          "router": [
+            0,
+            1,
+            0,
+            38,
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        "relay2": {
+          "network": 11618096671249924358,
+          "router": [
+            0,
+            1,
+            0,
+            38,
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        "relay3": {
+          "network": 14991808969909993734,
+          "router": [
+            0,
+            1,
+            0,
+            38,
+            0,
+            1,
+            0,
+            1
+          ]
+        },
+        "alpha": {
+          "network": 17536424337983144198,
+          "router": [
+            0,
+            1,
+            0,
+            38,
+            1,
+            4,
+            0,
+            1
+          ]
+        },
+        "beta": {
+          "network": 7174966949296734470,
+          "router": [
+            0,
+            1,
+            0,
+            38,
+            0,
+            1,
+            0,
+            1
+          ]
+        },
+        "alice": {
+          "network": 8254103179206066438,
+          "router": [
+            0,
+            1,
+            3,
+            0,
+            4,
+            0,
+            0,
+            1
+          ],
+          "terminal": [
+            0,
+            1,
+            3,
+            0,
+            8313394,
+            64958,
+            0,
+            1
+          ],
+          "delivery": {
+            "1": [
+              0,
+              5,
+              0,
+              0,
+              0,
+              2,
+              0,
+              1
+            ],
+            "2": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              11,
+              7,
+              1
+            ],
+            "3": [
+              0,
+              11,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            "4": [
+              0,
+              10,
+              11,
+              351,
+              351,
+              3,
+              521314,
+              1
+            ]
+          },
+          "messenger_ui": [
+            0,
+            1,
+            0,
+            0,
+            21,
+            1,
+            2,
+            1
+          ],
+          "messenger_ui_async": [
+            0,
+            0,
+            0,
+            1,
+            463,
+            0,
+            0,
+            1
+          ]
+        },
+        "bob": {
+          "network": 5386664127701713158,
+          "router": [
+            0,
+            0,
+            0,
+            59,
+            0,
+            0,
+            0,
+            1
+          ],
+          "terminal": [
+            0,
+            0,
+            0,
+            28,
+            0,
+            0,
+            0,
+            1
+          ],
+          "delivery": {
+            "1": [
+              0,
+              5,
+              0,
+              0,
+              0,
+              2,
+              0,
+              1
+            ],
+            "2": [
+              0,
+              3,
+              0,
+              0,
+              0,
+              11,
+              7,
+              1
+            ],
+            "3": [
+              0,
+              11,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            "4": [
+              0,
+              10,
+              11,
+              272,
+              272,
+              2,
+              406358,
+              1
+            ]
+          },
+          "messenger_ui": [
+            0,
+            1,
+            6,
+            0,
+            21,
+            1,
+            1,
+            1
+          ],
+          "messenger_ui_async": [
+            0,
+            0,
+            0,
+            1,
+            463,
+            0,
+            0,
+            1
+          ]
+        },
+        "charlie": {
+          "network": 11924251543655678214,
+          "router": [
+            0,
+            1,
+            3,
+            0,
+            4,
+            0,
+            0,
+            1
+          ],
+          "terminal": [
+            0,
+            1,
+            3,
+            0,
+            1048576,
+            256,
+            0,
+            1
+          ]
+        }
+      }
+    ]
+  },
+  "operator_stop_listen_handoffs": 0,
+  "host_replication_authority_renewals": 0,
+  "extra_native_clients_started": 1,
+  "extra_native_clients_stopped": 1,
+  "common_nine_guests_stopped": false,
+  "all_management_clients_closed": true,
+  "capacity_qualified": false,
+  "seventh_client_refusal_qualified": false,
+  "reuse_qualified": false,
+  "state_observation": "Bob terminal expired with28; both Alice and Bob delivery coordinators report failed background receivephase7 with local RPCpending0 and lastpurpose10. Alice terminal remained3. Native terminal old deadline fields were erased on expiry and are not directly observed.",
+  "source_assessment": "MessengerDelivery.collectRPC drops its local request ID on5000-tick timeout without collecting/cancelling the terminal response; OnionTerminal whole-request deadline100000 then remains. Actual diagnostics are consistent with abandoned background reads; they do not establish a cross-client context collision.",
+  "incomplete": [
+    "six simultaneous authenticated paired routes",
+    "native seventh-client saturation refusal",
+    "released-pair reuse",
+    "post-capacity finite-budget snapshot"
+  ]
+}
