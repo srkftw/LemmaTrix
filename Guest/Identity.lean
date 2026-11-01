@@ -185,7 +185,8 @@ def certify (caller token length t : UInt64) : UInt64 :=
   if !Guest.IdentityPolicy.permits (load64 g t) (load64 (g+24) t) caller
       (load64 (g+48) t) (load64 (k+24) t) (load64 (g+56) t) exactBody ||
       !validBody (load64 (k+16) t) purpose (command+64) bodyLength t ||
-      ((purpose == 4 || purpose == 5) && !eq (command+176) (k+32) 32 t) then fail 1 t else
+      ((purpose == 4 || purpose == 5) && (!eq (command+176) (k+32) 32 t ||
+        load64 (k+160) t != caller || syscall 146 (load64 (k+16) t) 0 0 0 t != caller)) then fail 1 t else
   let t := zero canonical 64 t
   let t := store64 canonical signingMagic t
   let t := store64 (canonical+8) 1 t
@@ -432,14 +433,16 @@ def dispatch (caller rights token length t : UInt64) : UInt64 :=
   if length < 64 || length > 320 || load64 (command+56) t != 1 ||
     load64 (command+40) t != 0 || load64 (command+48) t != 0 || !current token t then fail 2 t else
   if op == 410 then feedLifecycle caller token length t
-  else if op == 400 then if admin && length == 128 then create token t else fail 1 t
+  else if op == 400 then
+    if admin && length == 128 && load64 (command+16) t <= 4 then create token t else fail 1 t
   else if op == 401 then
     let k := findKey (load64 (command+8) t) 0 t
     if !admin then fail 1 t else if length != 64 then fail 2 t else if k == error then fail 3 t else exportKey k token t
   else if op == 402 then certify caller token length t
   else if op == 403 then if admin && length == 64 then revokeKey t else fail 1 t
   else if op == 404 then if admin && length == 64 then lock t else fail 1 t
-  else if op == 405 then if admin && length == 96 then authorize token t else fail 1 t
+  else if op == 405 then
+    if admin && length == 96 && load64 (command+24) t <= 3 then authorize token t else fail 1 t
   else if op == 406 then if admin && length == 64 then
     64+header 0 1 8 16 (countKeys 0 0 t) (countGrants 0 0 t) 0 t else fail 2 t
   else if op == 407 then if length == 64 then

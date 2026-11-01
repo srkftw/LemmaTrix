@@ -36,6 +36,9 @@ def main():
     return f,raw[64:]
    raise TimeoutError('native Feed signer completion')
   federation=hashlib.sha256(b'Feed signer selected federation').digest();scope=hashlib.sha256(b'Feed author account scope').digest()
+  for role in (5,6):
+   f,_=messenger.invoke(c,1,400,a=role,data=federation+scope,allowed_status=(1,));assert f[0]==1
+  passed('legacy administrative create cannot mint Feed author or moderator authority outside the typed current consumer')
   f,descriptor=request(accept.command(410,data=federation+scope));assert f[0]==0 and len(descriptor)==288,f
   key=f[1];public=descriptor[96:128]
   verify(public,descriptor[:192],descriptor[192:256],a.output/'descriptor-verify')
@@ -43,6 +46,8 @@ def main():
   body=bytearray(256);struct.pack_into('<4Q',body,0,0x3144564546544c,1,1,1)
   text=b'Use original signed events for a finite federated community.'
   body[64:96]=hashlib.sha256(text).digest();struct.pack_into('<Q',body,96,len(text));body[112:144]=federation
+  f,_=messenger.invoke(c,1,405,h=key,a=launcher,b=4,c=256,data=hashlib.sha256(body).digest(),allowed_status=(1,));assert f[0]==1
+  passed('legacy administrative approval cannot bypass current Feed owner approval')
   def approve(b):return request(accept.command(410,h=1,a=key,data=hashlib.sha256(b).digest()))[0]
   grant=approve(body);assert grant[0]==0,grant
   changed=bytearray(body);changed[144:176]=hashlib.sha256(b'broader audience').digest()
