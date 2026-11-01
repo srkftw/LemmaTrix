@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "campaign": "009",
-  "status": "clean-bulk-recovery-image-fresh-connected-journey-in-progress",
+  "status": "connected-local-workflow-passed-with-explicit-personal-recovery-and-qualification-limits",
   "branch": "codex/native-feed",
   "draft_pr": "https://github.com/srkftw/LemmaTrix/pull/5",
   "dependency": {
@@ -118,7 +118,7 @@
     }
   ],
   "common_run": {
-    "result": "Infrastructure, saturation/reuse, post512 useful Messenger, strict signed-project workflow, private report/appeal reversal and cold federation recovery passed with the disclosed earlier personal recovery. Offline retained migration is the remaining active continuation.",
+    "result": "Recorded connected local workflow passed: core, capacity/reuse, project Fork/revocation, moderation/appeal, cold operator restart, retained offline migration, public import and final Account0.9.3/UI0.9.4 recovery/reads/newpost. One unexplained personal transport loss required explicit personal recovery; full uninterrupted admission and full MVP gates are not claimed.",
     "output": "build/campaign009-connected-v7",
     "configuration": {
       "image_sha256": "2e5147c4198cf7ec39ab053f2ea8895cfdceb1c9b9dcf79e1b7bb7627314bcdf",
@@ -838,6 +838,57 @@
           "resolution": "Exact new Alpha event reservation345726bytes/1179work explains the delta; all13 prior rows retain their reservations. Controller now waits for a durable reservation and resumed only final checks, without repeating operator restart."
         }
       ]
+    },
+    "migration": {
+      "record": "docs/evidence/campaign-009-feed-migration-2e.json",
+      "sha256": "3f9006c123c68328bfa0bc9c52cf7ce8ab597228248f4d46918cc27bffb708f4",
+      "result": "pass",
+      "native_ui": "0.9.3",
+      "same_scoped_author": true,
+      "author_generation": 2,
+      "moved_event": "a60b5c0c76b60da64f77c83a116bdf3ddda424c1f23b4cfdd8ec0223b576605c",
+      "sequence": 6,
+      "ui_publication_phase": 6,
+      "destination_publication_state": 2,
+      "replicated_to_offline_alpha_claimed": false,
+      "retained_root_generation": 12,
+      "selected_preference_bytes": 1536,
+      "selected_preference_sha256": "6c2b38e011a752ca61fc76a1f6949e9dec2ddc2904df96afe3c1388034e5566c",
+      "public_profile_import_into_empty_account_without_key": true,
+      "preserved_native_read_bug": "UI0.9.3 rejected body-start could leave stale collection armed; fixed in f7cb852, new installed shipping qualification follows."
+    },
+    "final_installed_feed": {
+      "raw_record": "build/campaign009-connected-v7/feed-shipping-final.json",
+      "raw_sha256": "11323d083b1c642a482e210a0f05af2d6c29eee191d79d46f5655c018c44362f",
+      "result": "pass",
+      "account_version": "0.9.3",
+      "ui_version": "0.9.4",
+      "author": "26d3b302e8934ea1b6e4f72a13ffe975bc36b207df5a25c5beef0b92e32320d1",
+      "key_generation": 4,
+      "sequence": 7,
+      "event": "df34ef47cbbd8279a2299c0b623df743ad192aa722c8f0f0e93f7f6ac8e18292",
+      "body_bytes": 219,
+      "native_status_phase": 6,
+      "destination": "Beta",
+      "original_host_offline": true,
+      "original_host_acknowledged": false,
+      "retained_root_generation": 19,
+      "preference_sha256": "6c2b38e011a752ca61fc76a1f6949e9dec2ddc2904df96afe3c1388034e5566c",
+      "all_eight_remaining_actors_left_running": true,
+      "acceptance_controller_exited": true,
+      "replication_policy_sha256": "f4e26aed85f86fee00a69f4161ae6e12dcdd56d3ba2ba289c76bd70b6cb5be45",
+      "replication_policy_variant": 2,
+      "transport_total_bytes": 16777216,
+      "transport_allocated_bytes": 16777216,
+      "semantic_spent_bytes": 1380402,
+      "semantic_spent_work": 4716,
+      "public_record": "docs/evidence/campaign-009-feed-shipping-final.json",
+      "public_record_sha256": "195097a60757636a51d2f340befcdf2634a142ce91f9684fce4b778f46d6cf76",
+      "readable_next_record": "build/campaign009-connected-v7/feed-shipping-final-visible-next.json",
+      "readable_next_sha256": "65154b21d3ca50b154ca5ea30d0a1d85ff0376231aadd560c29202368cc5a31e",
+      "readable_next_seconds": 48.39731939700141,
+      "policy_audit_record": "build/campaign009-connected-v7/feed-shipping-final-policy-audit.json",
+      "policy_audit_sha256": "5dd80ec08b645694aaaed012fe06d3456fbeeb6d491aab55cfb49cffc2803488"
     }
   },
   "component_record": "campaign-009-components.json",
@@ -928,7 +979,7 @@
       "acknowledged_bulk_listener_not_expired"
     ]
   },
-  "proof_limit": "Named source predicates are used by the native implementation; these are not proofs of the compiler, crypto, devices, complete state machine or shipped binary.",
+  "proof_limit": "Named source predicates occur in the native implementation; these are not proofs of the compiler, crypto, devices, complete state machine or shipped binary. FeedPolicy.visible is called with blocked=false in federation reads. Its reversal_preserves_local_block theorem is a predicate/model fact, while the actual personal FeedAccount.blocked path is separately established by compiled and installed block/reversal controls.",
   "full_mvp_gates_complete": false,
   "limits": [
     "One-host local integration does not demonstrate independent administration.",
@@ -942,7 +993,9 @@
     "Terminal partial/IPC and handshake/request deadlines are implemented; their compiled state fixture is distinct from installed wire admission. Six paired routes were simultaneously admitted on the wire; native overflow refusal and owned release/reuse passed with the substantial latency recorded below.",
     "Each personal guest currently selects one outgoing routed destination/terminal owner at a time; app destination changes affect only its own route, while independent clients share uninterrupted native operators.",
     "Feed audiences bound open federation-public storage/replication scope; no private reader-membership ACL. An operator acting as an ordinary approved mode1 reader may join the other public feed.",
-    "Full saturation can queue an overflow TCP connection until the native100000-work-tick setup deadline; actual seventh refusal took1025.102seconds. New route admission194.885–213.883seconds, reuse229.759seconds in this emulated profile."
+    "Full saturation can queue an overflow TCP connection until the native100000-work-tick setup deadline; actual seventh refusal took1025.102seconds. New route admission194.885–213.883seconds, reuse229.759seconds in this emulated profile.",
+    "The original initiating Alice raw-transport loss remains unobserved; explicit personal recovery was required and continuous admission across it is not claimed.",
+    "Final receipt cadence provides a500tick GUIhandoff; continuous foreground reads can defer automatic receipts until a gap. It is not a strict weighted fairness guarantee."
   ],
   "prior_common_attempts": [
     {
@@ -1282,7 +1335,7 @@
     "scope": "Installed exact-role native signer authority gate and actual Feed service conflict/quota refusals on isolated purpose2 backing. No valid wrong-federation moderator signature admission is claimed."
   },
   "connected_continuations": {
-    "result": "Infrastructure, saturation/reuse, post512 useful Messenger, strict signed-project workflow, private report/appeal reversal and cold federation recovery passed with the disclosed earlier personal recovery. Offline retained migration is the remaining active continuation."
+    "result": "Recorded connected local workflow passed: core, capacity/reuse, project Fork/revocation, moderation/appeal, cold operator restart, retained offline migration, public import and final Account0.9.3/UI0.9.4 recovery/reads/newpost. One unexplained personal transport loss required explicit personal recovery; full uninterrupted admission and full MVP gates are not claimed."
   },
   "operator_interrupt_ownership": {
     "source_commit": "63fc11bcfe7a9f7c94f06b680d6e8b3e085478ed",
@@ -1494,7 +1547,7 @@
     "network_limit_bytes": 425984,
     "image_sha256": "2e5147c4198cf7ec39ab053f2ea8895cfdceb1c9b9dcf79e1b7bb7627314bcdf"
   },
-  "current_integration_work": "Bob retained account migration owns the personal/control portals; Alpha explicitly offline, shipping account/UI admitted, fresh Beta route/recovery ongoing. Moderation/restart completed; no Native changes or policy refills for those continuations.",
+  "current_integration_work": "Recorded local integration and final source/package validation complete; listed product and qualification limits remain.",
   "prior_690_active_forge": {
     "result": "pass",
     "raw_record": "build/campaign009-connected-v6/active-forge.json",
@@ -1741,12 +1794,12 @@
     "path": "docs/evidence/campaign-009-native-bulk-creation.json",
     "sha256": "3e301661acc9ee6b6e5d2e195ae722df794fb9b2334a31802e3156a2c4e1aa48",
     "source": "e2dee0a",
-    "qualification": "Real adapter asynchronous errno111 and compiled Native banked deadline/retry fixture passed on QEMU/emulatedAArch64. New common installed2e514Feed replication and exactseq5retry crossed successfully; remaining lifecycle continuations pending."
+    "qualification": "Real adapter asynchronous errno111 and compiled Native banked deadline/retry fixture passed on QEMU/emulatedAArch64. New common installed2e514Feed replication and exactseq5retry crossed successfully; project, moderation, cold restart and offline migration also passed as separately identified continuations."
   },
   "feed_local_block_fix": {
     "record": "campaign-009-feed-local-block.json",
     "source_commit": "4b78702dd2ed6a5a59372992937775645185d692",
-    "state": "Compiled Native QEMU/emulatedAArch64 producer/UI control checks passed; exact parent-linked shipping packages freshly reproduced; installed Bob retained upgrade remains pending.",
+    "state": "Compiled Native QEMU/emulatedAArch64 checks and actual installed hosting-move block/unblock/reblock/Next passed; final successor retains that change.",
     "wire_change": "local-block outcome15 marker0 may return96B with only public author32; existing64B followed-only marker1 unchanged",
     "image_change": false
   },
@@ -1792,51 +1845,62 @@
     "feed_ui": "05ca3c4",
     "feed_account": "b706c104c2c36d8caf1b96e887c6276d2a302a61"
   },
-  "shipping_feed_packages": [
-    {
-      "name": "identity",
-      "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v10-feed/identity.ltrel",
-      "rights": 0,
-      "code_bytes": 115952,
-      "code_sha256": "1437162555de9c55c72806039df49d07ead2ed36a267de5bfc7a3f886028bca7",
-      "release_id": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
-      "package_sha256": "d6467b6bf812768f4e25a466c4ce0c425635444f78b4b34fc85c50e1579ea5aa"
-    },
-    {
-      "name": "feed-account",
-      "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v10-feed/feed-account.ltrel",
-      "rights": 1024,
-      "code_bytes": 145572,
-      "code_sha256": "575955507f16547e018f040a7d12031e9bd7012c3ae2a96d4e3ec84b68287190",
-      "release_id": "2a1b3d4a12f1383f43228cba37ed717295ff92d7c17f3c78eff94768cd3ce06e",
-      "package_sha256": "516e45cd5bf25e96c08e1402101f1e4c09298981528ab4cee231f6dba0057b52"
-    },
-    {
-      "name": "feed",
-      "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v10-feed/feed.ltrel",
-      "rights": 799,
-      "code_bytes": 181516,
-      "code_sha256": "bb4a916a58e14a9bf08b96cfae3161e51caf1c40f9fede027de0beb002ad7a2e",
-      "release_id": "dc1bd86bdb90dd7832562d61a8c825fc1418a63582a78d54fab38acf7e365ef5",
-      "package_sha256": "57bc1a917c453784a2c7710fce47bf0eea2ac5be0673831290d886f226abe64b"
-    },
-    {
-      "name": "feed-federation",
-      "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v10-feed/feed-federation.ltrel",
-      "rights": 3072,
-      "code_bytes": 167516,
-      "code_sha256": "59b107b5702c4d231551da67a053543c94e012bd3d70bae4eeb1e2edd26f49e3",
-      "release_id": "02041c0eeca13f17a62a8913954558d9dc5be7e52f55d5db915dc76b14241526",
-      "package_sha256": "6cf3b1c142b5e076337575dfd22280760d1c75d95d2e3756c2ade7bbd38df35f"
-    }
-  ],
+  "shipping_feed_packages": {
+    "schema": 1,
+    "packages": [
+      {
+        "name": "identity",
+        "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v13-feed/identity.ltrel",
+        "rights": 0,
+        "code_bytes": 115952,
+        "code_sha256": "1437162555de9c55c72806039df49d07ead2ed36a267de5bfc7a3f886028bca7",
+        "release_id": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+        "package_sha256": "d6467b6bf812768f4e25a466c4ce0c425635444f78b4b34fc85c50e1579ea5aa"
+      },
+      {
+        "name": "feed-account",
+        "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v13-feed/feed-account.ltrel",
+        "rights": 1024,
+        "code_bytes": 146620,
+        "code_sha256": "b261266702f6bb334fd31575f4d4f8c3c1fec354b75634ae336e3e2332615cdf",
+        "release_id": "137979d9533c23df7baf8f0143025fd2ccea025d8cfb468f723284f9aa45f837",
+        "package_sha256": "3df6209c8a586bba87c0e1d806da767349fe88fff7c3ff6a06d3e6e7953d5552"
+      },
+      {
+        "name": "feed",
+        "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v13-feed/feed.ltrel",
+        "rights": 799,
+        "code_bytes": 182140,
+        "code_sha256": "53fcdfd01148b1e16502560ec4d50e768be93f577db3086b2f8d539dd78292af",
+        "release_id": "d8185a4497fc7b07c5e75c688b82ea09cf9eec0801edc75425ff513da6daee50",
+        "package_sha256": "4a1a7a7573e417e7d7a7caf86807c1ea44624a797c8ed1bcf24274cc764f265b"
+      },
+      {
+        "name": "feed-federation",
+        "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v13-feed/feed-federation.ltrel",
+        "rights": 3072,
+        "code_bytes": 167516,
+        "code_sha256": "59b107b5702c4d231551da67a053543c94e012bd3d70bae4eeb1e2edd26f49e3",
+        "release_id": "02041c0eeca13f17a62a8913954558d9dc5be7e52f55d5db915dc76b14241526",
+        "package_sha256": "6cf3b1c142b5e076337575dfd22280760d1c75d95d2e3756c2ade7bbd38df35f"
+      }
+    ],
+    "account_parent": "2a1b3d4a12f1383f43228cba37ed717295ff92d7c17f3c78eff94768cd3ce06e",
+    "federation_parent": "5bb8adb18e7161203a9eec7d6ffebf7ac1e7a0c510f8d74b652642f91c7b9686",
+    "ui_parent": "dc1bd86bdb90dd7832562d61a8c825fc1418a63582a78d54fab38acf7e365ef5",
+    "ui_version": "0.9.4",
+    "account_version": "0.9.3",
+    "publisher": "existing disclosed host RSA release bootstrap",
+    "feed_private_keys_exported": false,
+    "authoritative_host_database": false
+  },
   "shipping_feed_versions": {
-    "ui": "0.9.3",
-    "account": "0.9.2",
+    "ui": "0.9.4",
+    "account": "0.9.3",
     "federation": "0.9.1",
     "identity": "0.9.0",
-    "record": "campaign-009-final-feed-reproduction.json",
-    "installed_successor_workflow": "pending connected retained upgrade"
+    "record": "campaign-009-final-cadence-reproduction.json",
+    "installed_successor_workflow": "Account0.9.3/UI0.9.4 retained successor passed same-author generation4 recovery, exact old outbox onecopy reconciliation, original long/card reads, Registry11 refusal, block/unblock/reblock and sequence7 accepted by Beta with Alpha offline. No Alpha acknowledgment claimed."
   },
   "final_clean_feed_reproduction": "campaign-009-final-feed-reproduction.json",
   "common_initial_source": {
@@ -1855,15 +1919,16 @@
   "shipping_source": {
     "network": "e2dee0a",
     "feed_service": "a900493",
-    "feed_ui_account": "4b78702dd2ed6a5a59372992937775645185d692",
     "signer": "a380be67481f9fb1068c6230dcc51b6b90e5a6a0",
     "namespace_reclamation": "def8a34b3310656d5a57fd49bf4149937e67e0c0",
-    "feed_ui": "4b78702dd2ed6a5a59372992937775645185d692",
+    "feed_ui": "f7cb8523ea585c878a4d1648ae9ca1af89cc96aa",
     "objects_quota": "624ee19",
     "registry_revocation": "983f523",
     "terminal_service_pin": "8b4e26f",
     "late_listener_acceptance": "f2f1a97",
-    "messenger_delivery": "c4056be2a84cf24c89870b55fd3785882244f554"
+    "messenger_delivery": "c4056be2a84cf24c89870b55fd3785882244f554",
+    "feed_account": "c4160228dcec3ec3f5712d8899f43f0a110b69d0",
+    "local_block": "4b78702dd2ed6a5a59372992937775645185d692"
   },
   "audience_contract": {
     "personal_reading": "open federation-public reading after approved selected service route; no private reader-membership capability",
@@ -1874,7 +1939,7 @@
   "shipping_messenger_packages": [
     {
       "name": "identity",
-      "path": "build/campaign009-final-v6-messenger/identity.ltrel",
+      "path": "build/campaign009-final-v9-messenger/identity.ltrel",
       "rights": 0,
       "code_bytes": 115952,
       "code_sha256": "1437162555de9c55c72806039df49d07ead2ed36a267de5bfc7a3f886028bca7",
@@ -1883,7 +1948,7 @@
     },
     {
       "name": "messenger-session",
-      "path": "build/campaign009-final-v6-messenger/messenger-session.ltrel",
+      "path": "build/campaign009-final-v9-messenger/messenger-session.ltrel",
       "rights": 0,
       "code_bytes": 242348,
       "code_sha256": "42060352065337832b7974b6873cd70820f6ae2849814504d2db6507c7f1b472",
@@ -1892,7 +1957,7 @@
     },
     {
       "name": "messenger",
-      "path": "build/campaign009-final-v6-messenger/messenger.ltrel",
+      "path": "build/campaign009-final-v9-messenger/messenger.ltrel",
       "rights": 799,
       "code_bytes": 254852,
       "code_sha256": "3c1aeb82ccea52f4778424a2be800d29d179878aae9f606e7d6032d75f9ee462",
@@ -1901,7 +1966,7 @@
     },
     {
       "name": "messenger-delivery",
-      "path": "build/campaign009-final-v6-messenger/messenger-delivery.ltrel",
+      "path": "build/campaign009-final-v9-messenger/messenger-delivery.ltrel",
       "rights": 1024,
       "code_bytes": 213728,
       "code_sha256": "a7a5c79ed880f28899c0632527a77eab80313a6910614c9508859b5a719d2a3d",
@@ -1910,7 +1975,7 @@
     },
     {
       "name": "mailbox",
-      "path": "build/campaign009-final-v6-messenger/mailbox.ltrel",
+      "path": "build/campaign009-final-v9-messenger/mailbox.ltrel",
       "rights": 2048,
       "code_bytes": 97756,
       "code_sha256": "41a29975a4f7457a707120afe5c63a2580fae8d7a5132c4afe347ff2060c8ae0",
@@ -1941,5 +2006,51 @@
       "896KiB store capacity"
     ],
     "automatic_compaction_or_infinite_history_qualified": false
+  },
+  "native_busy_read": {
+    "record": "docs/evidence/campaign-009-feed-busy-read.json",
+    "sha256": "96d767b82f64dd3f1dbc32dc72f4b60cf1d412b8722f4f8f7e8646eb5e1e8547",
+    "source_commit": "f7cb8523ea585c878a4d1648ae9ca1af89cc96aa",
+    "native_tests": "QEMU0.151s/emulatedAArch640.379s pass; previous0.9.3 fails the same first Native check",
+    "installed_successor": "Final Account0.9.3/UI0.9.4 same-actor recovery/checked long/card/newpost passed; prior UI0.9.4/Account0.9.2 busy scheduling failure preserved in cadence record."
+  },
+  "final_clean_reader_reproduction": {
+    "record": "campaign-009-final-reader-reproduction.json",
+    "sha256": "db9d479a8aca6235bff999ae8fd232366667c7f1605b3e37d1bbd7a9f6ea579e",
+    "same_system_image": true,
+    "packages": 9,
+    "unchanged_packages": 8,
+    "new_ui_version": "0.9.4",
+    "new_ui_code_bytes": 182140
+  },
+  "native_account_cadence": {
+    "record": "docs/evidence/campaign-009-feed-account-cadence.json",
+    "sha256": "624eb23bce2748fbb5b6f88c2ecea3d45c1f01ef50891102fedd0478be52c2ad",
+    "source_commit": "c4160228dcec3ec3f5712d8899f43f0a110b69d0",
+    "qualification": "Actual compiled Native fixture passes QEMU and emulated AArch64; previous Account0.9.2 fails first check. Test-only clock/Network39 admission trap; no installed authority claim. Existing500tick cadence begins after successful/pending receipt4 and GUI5/6 completion; no increased budgets/authority/pollcap."
+  },
+  "final_clean_cadence_reproduction": {
+    "record": "campaign-009-final-cadence-reproduction.json",
+    "sha256": "bc0389d4a6bdc75d8edbcced9d8d82acf754e6fd861b255ff047d1f207b99e54",
+    "same_system_image": true,
+    "packages": 9,
+    "unchanged_packages": 8,
+    "new_account_version": "0.9.3",
+    "new_account_code_bytes": 146620
+  },
+  "acceptance_qualification": {
+    "A": "Three personal clients concurrently admitted through shared native relays/services without per-client operator handoff. Six paired routes, native seventh refusal and owned reuse observed; measured overload latency remains material.",
+    "B": "Native UI ordinary/1330B long posts, follow/reply and genuine1683B card crossed as original signed events. Final installed Account0.9.3/UI0.9.4 separately recovered, read and published with Alpha offline.",
+    "C": "Messenger text/reply and routed Forge progressed during another exact stalled request. A later unexplained personal transport loss required explicitly recorded personal Network recovery; uninterrupted admission across it is not claimed.",
+    "D": "Lost durable publication response reconciled one exact event without renewed positive reservation. Cold Beta recovery preserved its own credentials/events/checkpoints/policy/budgets; both outage events crossed. Original events/card served while Alpha offline.",
+    "E": "Real Library Fork through existing authority/lineage/trusted selection; fresh Fork/Inspect refused after known Registry revocation. Feed signature grants no execution approval.",
+    "F": "Real private report of own reply, authorized Beta hide, author appeal and authorized superseding reversal; Alpha independent and personal block retained. Independent-reporter and private remote-home appeals not qualified.",
+    "G": "Explicit selected retention recovered same author under fresh grants/generation; hosting moved to willing Beta while Alpha offline and new event accepted. Approved public profile/preferences imported to empty Charlie account without identity authority; NoVault ephemerality and domain separation retained.",
+    "H": "Focused refusals combine identified installed Native operations, compiled actual-consumer fixtures and explicitly modeled/oracle context fixtures. They are not all one connected on-wire refusal suite; each record preserves its boundary. No full binary assurance or full MVP gate is claimed."
+  },
+  "live_handoff": {
+    "record": "docs/evidence/campaign-009-live-handoff.json",
+    "sha256": "da52347538522613424a04d96073d36b3d65e2dfc12e5303b207e12b3904366f",
+    "result": "Two standalone native management commands passed after controller release; all8 guests remain running, Alpha offline."
   }
 }
