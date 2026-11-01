@@ -425,7 +425,11 @@ def dispatch (caller rights token length t : UInt64) : UInt64 :=
   let op := load64 command t
   let action := load64 (command+8) t
   let admin := (rights &&& 0x100000000) != 0
-  let origin := if caller == 6 then load64 (command+48) t else 0
+  -- The kernel sends the current process incarnation, not a bare slot.  The
+  -- exact incarnation remains part of stageOwned; only Network's protected
+  -- terminal dispatch can supply a transport origin for its built-in slot.
+  let networkCaller := (caller &&& 255) == 6
+  let origin := if networkCaller then load64 (command+48) t else 0
   if length < 64 || length > 960 || load64 (command+56) t != 1 || !current token t then response 2 0 0 0 0 0 t else
   if op == 490 then
     if !admin then response 1 0 0 0 0 0 t else
@@ -462,7 +466,7 @@ def dispatch (caller rights token length t : UInt64) : UInt64 :=
     else response 2 0 0 0 0 0 t
   else if op != 491 then response 7 0 0 0 0 0 t else
   if load64 st t != 1 then response 9 0 0 0 0 0 t else
-  if caller == 6 && origin == 0 then response 3 0 0 0 0 0 t else
+  if networkCaller && origin == 0 then response 3 0 0 0 0 0 t else
   if action == 1 then begin caller origin length t else
   if action == 2 then append caller origin length t else
   if action == 3 then commit caller origin length t else
