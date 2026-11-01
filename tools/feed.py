@@ -167,7 +167,7 @@ def main(argv=None):
     q=sub.add_parser('read');q.add_argument('--event',required=True);q.add_argument('--offset',type=int,default=0);q.add_argument('--bytes',type=int,default=512);q.add_argument('--moderator',action='store_true')
     q=sub.add_parser('moderator-retain');q.add_argument('--key',type=Path,required=True)
     q=sub.add_parser('moderate');q.add_argument('--target',required=True);q.add_argument('--action',choices=('hide','uphold','reverse'),required=True);q.add_argument('--reason',required=True)
-    for name in ('status','federation-status','replication-status','timeline'):
+    for name in ('status','federation-status','replication-status','replication-budget','timeline'):
 
         q=sub.add_parser(name)
         if name=='timeline':q.add_argument('--cursor',type=int,default=0);q.add_argument('--moderator',action='store_true')
@@ -239,6 +239,13 @@ def main(argv=None):
                 result=dict(events=f[1],content_bytes=f[2],event_limit=f[3],byte_limit=f[4],policy_version=f[5],index_generation=f[6],federation=raw[:32].hex(),peer=raw[32:64].hex(),moderator_public=raw[64:96].hex())
             elif a.command=='replication-status':
                 f,_=invoke(c,490,action=3);result=dict(status=list(f),mode=3)
+            elif a.command=='replication-budget':
+                f,raw=invoke(c,490,action=12)
+                result=dict(total_bytes=f[1],reserved_event_bytes=f[2],transport_allocated_bytes=f[3],
+                            total_work_units=f[4],reserved_event_work_units=f[5],policy_generation=f[6],
+                            exact_policy_hash=raw.hex(),allocation_max_bytes=1048576,
+                            attempts_per_event=9,polls_per_attempt=128,
+                            restart='unused old transport allocation is conservatively burned; counters are not renewed')
             elif a.command=='timeline':
                 f,raw=invoke(c,490 if a.moderator else 491,action=1 if a.moderator else 5,handle=a.cursor,allowed=(0,6))
                 result=dict(status=list(f),event_id=raw[:32].hex() if raw else None,original_signed_bytes=raw[32:].hex() if raw else None)

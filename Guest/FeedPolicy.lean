@@ -9,6 +9,14 @@ theorem foreign_origin_denied (caller origin handle ec eo eh : UInt64) (h : orig
     stageOwned caller origin handle ec eo eh = false := by simp [stageOwned, h]
 theorem zero_stage_denied (caller origin ec eo eh : UInt64) :
     stageOwned caller origin 0 ec eo eh = false := by simp [stageOwned]
+-- Used before durable transport/event reservations; an exact retry reuses the
+-- row's reservation and never subtracts from an unchecked unsigned counter.
+def reserveWithin (total spent requested : UInt64) : Bool :=
+  requested != 0 && spent <= total && requested <= total-spent
+theorem zero_reservation_denied (total spent : UInt64) : reserveWithin total spent 0 = false := by
+  simp [reserveWithin]
+theorem spent_allowance_denies_more (total : UInt64) : reserveWithin total total 1 = false := by
+  simp [reserveWithin]
 -- Signed moderation is separate from author validity and local preference.
 -- action1 hide,2 appeal upheld,3 reversal. A decision always binds one exact
 -- target event, one federation, configured moderator key and policy version.

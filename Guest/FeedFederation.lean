@@ -51,8 +51,10 @@ partial def pendingFor (caller origin id i t : UInt64) : UInt64 :=
   if load64 p t >= 1 && load64 p t <= 3 && load64 (p+16) t == caller &&
       load64 (p+24) t == origin && eq (p+64) id 32 t then i
   else pendingFor caller origin id (i+1) t
-partial def queued (i t : UInt64) : UInt64 :=
-  if i == 4 then error else if load64 (stage i) t == 2 then i else queued (i+1) t
+partial def queued (start offset t : UInt64) : UInt64 :=
+  if offset == 4 then error else
+  let i := (start+offset)%4
+  if load64 (stage i) t == 2 then i else queued start (offset+1) t
 -- Finite public admission: no event can expand its signed audience. Replicated
 -- private reports and moderation are forbidden even when their author is valid.
 def allowedScope (event t : UInt64) : Bool :=
@@ -238,8 +240,8 @@ def beginBank (which bytes source t : UInt64) : UInt64 :=
 def pumpWriter (t : UInt64) : UInt64 :=
   let phase := load64 (st+16) t
   if phase == 0 then
-    let i := queued 0 t
-    if i == error then t else startWriter i t
+    let i := queued (load64 (st+448) t) 0 t
+    if i == error then t else startWriter i (store64 (st+448) ((i+1)%4) t)
   else
   let target := load64 (st+32) t
   let offset := load64 (st+24) t
@@ -477,6 +479,7 @@ def configureReplication (t : UInt64) : UInt64 :=
   let spent := if known then load64 (active+216) t else 0
   if spent >= total then response 4 0 0 0 0 0 t else
   let budget := if total-spent > 1048576 then 1048576 else total-spent
+  if !Guest.FeedPolicy.reserveWithin total spent budget then response 4 0 0 0 0 0 t else
   let t := copy active candidate metaBytes t
   let t := if known then t else
     store64 (candidate+200) total (store64 (candidate+224) (total/64)
@@ -603,8 +606,8 @@ def reserveReplicaAttempt (t : UInt64) : UInt64 :=
   let bytes := replicaEventBytes (load64 (p+24) t)
   let work := replicaEventWork (load64 (p+24) t)
   if load64 (active+248) t != 1 || attempts >= 9 ||
-      (first && (bytes > load64 (active+200) t-load64 (active+208) t ||
-        work > load64 (active+224) t-load64 (active+232) t)) then
+      (first && (!Guest.FeedPolicy.reserveWithin (load64 (active+200) t) (load64 (active+208) t) bytes ||
+        !Guest.FeedPolicy.reserveWithin (load64 (active+224) t) (load64 (active+232) t) work)) then
     store64 (st+240) 4 (store64 (st+160) 6 t)
   else
   let t := copy active candidate metaBytes t
