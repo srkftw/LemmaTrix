@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "campaign": "009",
-  "status": "listener-repair-clean-final-run-starting",
+  "status": "request-ownership-and-late-listener-fixes-await-clean-connected-run",
   "branch": "codex/native-feed",
   "draft_pr": "https://github.com/srkftw/LemmaTrix/pull/5",
   "dependency": {
@@ -20,7 +20,7 @@
     "clean_build_log_sha256": "0336fbf06d2a3bd16b48243f85359606b8689ac9476f9a83d5b1c4567f724c5f"
   },
   "source": {
-    "network": "937320e",
+    "network": "c5147de",
     "feed_service": "a900493",
     "feed_ui_account": "b706c104c2c36d8caf1b96e887c6276d2a302a61",
     "signer": "a380be67481f9fb1068c6230dcc51b6b90e5a6a0",
@@ -28,7 +28,8 @@
     "feed_ui": "05ca3c4",
     "objects_quota": "624ee19",
     "registry_revocation": "983f523",
-    "terminal_service_pin": "8b4e26f"
+    "terminal_service_pin": "8b4e26f",
+    "late_listener_acceptance": "f2f1a97"
   },
   "feed_packages": [
     {
@@ -152,7 +153,7 @@
     "replication_allocation_bytes_max": 1048576,
     "replication_attempts_per_event": 9,
     "polls_per_attempt": 128,
-    "actual_concurrent_clients_in_common_run": 0,
+    "actual_concurrent_clients_in_common_run": 3,
     "mailbox_progress_ticks": 10000,
     "mailbox_absolute_stage_ticks": 60000,
     "relay_setup_ticks": 100000,
@@ -161,12 +162,13 @@
     "terminal_ipc_ticks": 10000,
     "terminal_handshake_ticks": 100000,
     "terminal_whole_request_ticks": 100000,
-    "network_code_bytes": 393176,
+    "network_code_bytes": 393816,
     "objects_code_bytes": 294432,
     "objects_owner_total_records": 24,
     "objects_owner_total_bytes": 1048576,
     "objects_ordinary_records": 8,
-    "objects_ordinary_bytes": 262144
+    "objects_ordinary_bytes": 262144,
+    "network_code_limit_bytes": 425984
   },
   "source_predicates": {
     "Guest.FeedPolicy.stageOwned": [
@@ -531,7 +533,7 @@
       "path": "docs/evidence/campaign-009-frames/bob-native-long-review-8542.png",
       "sha256": "8e99c0fb2596176807ebb028851601b58212672080f49c4cbc40612079a7c0f6",
       "image_sha256": "854253bc6b0d46ba043e6056ea8c065b00d4e8560b062d6f6f9220034f76a29b",
-      "scope": "Actual native640x400 rendered frame; lossless pixel-preserving PPM\u2192PNG conversion, one checked page of useful1330-byte post."
+      "scope": "Actual native640x400 rendered frame; lossless pixel-preserving PPM→PNG conversion, one checked page of useful1330-byte post."
     }
   ],
   "focused_native_refusals": {
@@ -690,7 +692,7 @@
     "scope": "Installed exact-role native signer authority gate and actual Feed service conflict/quota refusals on isolated purpose2 backing. No valid wrong-federation moderator signature admission is claimed."
   },
   "connected_continuations": {
-    "result": "pending on fresh f597common image"
+    "result": "f597 application checkpoint passed; final connected continuations pending on c5147de common image"
   },
   "operator_interrupt_ownership": {
     "source_commit": "63fc11bcfe7a9f7c94f06b680d6e8b3e085478ed",
@@ -2938,5 +2940,19 @@
     "scope": "native installed kernel/Launcher/Vault and opaque block adapter; no claim of full installed Feed or Messenger",
     "local_record": "build/campaign009-final-v5-aarch64-storage/evidence.json",
     "record_sha256": "14bc1adacd48fdb72c8050387e4cad4b65a015b5f7cb945a015200a07a36dca3"
+  },
+  "current_trial_partial_record": "docs/evidence/campaign-009-connected-f597.json",
+  "post_trial_request_ownership_fix": {
+    "commit": "c5147de",
+    "nonzero_cancel": "requires exact current request under full owner incarnation",
+    "collect": "rejects stale request before availability",
+    "owner_wide_cancel": "explicit request0 remains supported",
+    "network_profile": {
+      "code_limit": 425984,
+      "data_offset": 425984,
+      "stack_offset": 491520,
+      "physical_slot_bytes": 524288
+    },
+    "qualification": "incremental build and image-layout check pass; focused stale-request test/final clean connected run pending"
   }
 }

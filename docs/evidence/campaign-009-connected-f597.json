@@ -1,0 +1,758 @@
+{
+  "schema": 1,
+  "campaign": "009",
+  "result": "feed-history-and-application-pass-messenger-switch-failure-preserved",
+  "image": {
+    "path": "build/campaign009-final-v6.bin",
+    "bytes": 6291456,
+    "sha256": "f5978d3b335e699b55bf76453a5d5063d816e15bef382df9e33c8d67d01473df",
+    "build": "./lt build --clean after listener-reuse fix937320e; all9ordinary packages byte-identical with unchanged source closures; corrected Registry freshcompiled97504B identical.",
+    "clean_build_log": "build/campaign009-final-v6-clean-build.log",
+    "clean_build_log_sha256": "0336fbf06d2a3bd16b48243f85359606b8689ac9476f9a83d5b1c4567f724c5f"
+  },
+  "configuration": {
+    "image_sha256": "f5978d3b335e699b55bf76453a5d5063d816e15bef382df9e33c8d67d01473df",
+    "feed": {
+      "identity": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+      "feed-account": "f50eaa12d7dc69c962584ce34a12d53d9b064970c640d23d594e930d7fc4bc07",
+      "feed": "bfd1a9584b654f8ee4f0c3f1b3703608b452da7a9ad472683821aa8f4f13a635",
+      "feed-federation": "02041c0eeca13f17a62a8913954558d9dc5be7e52f55d5db915dc76b14241526"
+    },
+    "messenger": {
+      "identity": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+      "owner": "50f3e3ccb8d3faeaf29c50d6aec24bbc654a30754f26c15dd7585a4a8e64a5b3",
+      "ui": "a0b4294d2331e6704acd69093936339f7c0b8559dd9990d4967a22216f84e6c7",
+      "delivery": "f8f9a0c572e691398008ab13e3aa852a12eeec06344715f593bf8a921d07c20b",
+      "mailbox": "24e249a218f52813953b8d204f1c7b3d1129e1b675a9ed8500731cf842049135"
+    },
+    "mixed": true,
+    "history_events": 17,
+    "replication_auto_renew": true
+  },
+  "packages": {
+    "feed": [
+      {
+        "name": "identity",
+        "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v7-feed/identity.ltrel",
+        "rights": 0,
+        "code_bytes": 115952,
+        "code_sha256": "1437162555de9c55c72806039df49d07ead2ed36a267de5bfc7a3f886028bca7",
+        "release_id": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+        "package_sha256": "d6467b6bf812768f4e25a466c4ce0c425635444f78b4b34fc85c50e1579ea5aa"
+      },
+      {
+        "name": "feed-account",
+        "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v7-feed/feed-account.ltrel",
+        "rights": 1024,
+        "code_bytes": 145376,
+        "code_sha256": "fb1f2e8e34a47263d3450898a6f800d3f72a79081644413180b44b574951ccd8",
+        "release_id": "f50eaa12d7dc69c962584ce34a12d53d9b064970c640d23d594e930d7fc4bc07",
+        "package_sha256": "9d9be1ad2238d6e5063ac5664786939c2c186a08b4f613ed8912e2f9eb985b50"
+      },
+      {
+        "name": "feed",
+        "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v7-feed/feed.ltrel",
+        "rights": 799,
+        "code_bytes": 176848,
+        "code_sha256": "fbe5f9cf983464432ae4781bb7533a7182341d796d16e4bd20f4603cf3d2706f",
+        "release_id": "bfd1a9584b654f8ee4f0c3f1b3703608b452da7a9ad472683821aa8f4f13a635",
+        "package_sha256": "964a4a92a901520a151a7e7eb9f56c33733302fd8672b9109dd707eb51a4313d"
+      },
+      {
+        "name": "feed-federation",
+        "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v7-feed/feed-federation.ltrel",
+        "rights": 3072,
+        "code_bytes": 167516,
+        "code_sha256": "59b107b5702c4d231551da67a053543c94e012bd3d70bae4eeb1e2edd26f49e3",
+        "release_id": "02041c0eeca13f17a62a8913954558d9dc5be7e52f55d5db915dc76b14241526",
+        "package_sha256": "6cf3b1c142b5e076337575dfd22280760d1c75d95d2e3756c2ade7bbd38df35f"
+      }
+    ]
+  },
+  "core_checks": [
+    {
+      "check": "native durable Mailbox and receipt authority configured",
+      "result": "pass"
+    },
+    {
+      "check": "public approved relay and destination policies configured independently",
+      "result": "pass"
+    },
+    {
+      "check": "native federation alpha owns its independent backing, policy and moderator",
+      "result": "pass"
+    },
+    {
+      "check": "native federation beta owns its independent backing, policy and moderator",
+      "result": "pass"
+    },
+    {
+      "check": "two native graphical Messenger identities retain separate domain2 state and approve certified contacts",
+      "result": "pass"
+    },
+    {
+      "check": "actual existing signed project admitted through native Registry with disclosed existing RSA bootstrap",
+      "result": "pass"
+    },
+    {
+      "check": "native operators listen once and replenish their own bounded admission",
+      "result": "pass"
+    },
+    {
+      "check": "three independent Feed clients concurrently admitted; two share alpha and all share relays without operator handoff",
+      "result": "pass"
+    },
+    {
+      "check": "native signed enrollment derives separately approved inter-operator mode3 relationship; personal traffic still requires mode1",
+      "result": "pass"
+    },
+    {
+      "check": "independent native Feed reader paginates chronologically and validates the useful multi-payload long post before displaying it",
+      "result": "pass",
+      "event": "37b9a903ad12ec92f798f97ec473f5a6063a508e131cddc74bfb87270288e714",
+      "bytes": 1330
+    },
+    {
+      "check": "native ordinary and useful long post preserve original signed bytes across two operators; independent reader follows locally and replies across permitted scope",
+      "result": "pass",
+      "events": {
+        "ordinary": {
+          "id": "5a53c7a1239ea737daf9acdd7071d849fa65dfc17cf6e65626fd74ba7df12ea1",
+          "author": "d24e3943284be0eb877e481bfca61b515e174c1ff03df72dda114a829f5bf61e",
+          "kind": 1,
+          "bytes": 126,
+          "content_sha256": "541c88ecfd5e37d6e433746b0e38ce252c25c94a6874966ab975cee0c2cbb22b",
+          "signed_sha256": "5a53c7a1239ea737daf9acdd7071d849fa65dfc17cf6e65626fd74ba7df12ea1"
+        },
+        "long": {
+          "id": "37b9a903ad12ec92f798f97ec473f5a6063a508e131cddc74bfb87270288e714",
+          "author": "d24e3943284be0eb877e481bfca61b515e174c1ff03df72dda114a829f5bf61e",
+          "kind": 1,
+          "bytes": 1330,
+          "content_sha256": "da933b261f757e2e3556bd30c008f04fbdd90ce29e277d65883d4e3c0ca9e557",
+          "signed_sha256": "37b9a903ad12ec92f798f97ec473f5a6063a508e131cddc74bfb87270288e714"
+        },
+        "reply": {
+          "id": "ce1f9bd62ea45892ffdf355f0a0df570c6a9f112586a169df647033479ab7579",
+          "author": "8359a9010d36ffe6d99d083ad300a8b5dd0293691c1250ec9dc38e827fbcc2d0",
+          "kind": 2,
+          "bytes": 142,
+          "content_sha256": "c3b55f0ac6d9e6debdb353279f57693aa8ebf54b34411829709e63efb183235a",
+          "signed_sha256": "ce1f9bd62ea45892ffdf355f0a0df570c6a9f112586a169df647033479ab7579"
+        },
+        "review-0": {
+          "id": "28d8f88b9e28bbd714febec9aa54700efff4b0d53659987b811d147807a330a1",
+          "author": "d24e3943284be0eb877e481bfca61b515e174c1ff03df72dda114a829f5bf61e",
+          "kind": 1,
+          "bytes": 135,
+          "content_sha256": "4ca22c1ff9a33c74c8e2e918c7b8be5ea1382b0703951397ced9aded8eed69c9",
+          "signed_sha256": "28d8f88b9e28bbd714febec9aa54700efff4b0d53659987b811d147807a330a1"
+        },
+        "review-1": {
+          "id": "0f9d61caf868880b744065ef27e63386bc8768c1947a4e3919bb339be3dc8332",
+          "author": "8359a9010d36ffe6d99d083ad300a8b5dd0293691c1250ec9dc38e827fbcc2d0",
+          "kind": 1,
+          "bytes": 147,
+          "content_sha256": "7478de5c67a7b4b76250e7afe14a88be663b9ef070a95e5357e1604df5048d12",
+          "signed_sha256": "0f9d61caf868880b744065ef27e63386bc8768c1947a4e3919bb339be3dc8332"
+        },
+        "review-2": {
+          "id": "6b4fa8e15d212c0891c5eadbe3f0fcc4bbd46937847fd2545fc3def658491d06",
+          "author": "c1b8ea17e7fa160b06771abcb558a9f4ceb7a70f6129842b6812b93e03209c56",
+          "kind": 1,
+          "bytes": 149,
+          "content_sha256": "6232aff56fca73d062dd25c9c17cb783935dac3ce41b9e33a9596dc4f1fd81c4",
+          "signed_sha256": "6b4fa8e15d212c0891c5eadbe3f0fcc4bbd46937847fd2545fc3def658491d06"
+        },
+        "review-3": {
+          "id": "d992392ea9d2a1dcc2f55ee34684a10441fbafa69a1a2021f5baa9a7f3ad25b9",
+          "author": "d24e3943284be0eb877e481bfca61b515e174c1ff03df72dda114a829f5bf61e",
+          "kind": 1,
+          "bytes": 145,
+          "content_sha256": "e1ab90a478d350a70c33be1a9c31ac7b4f871b83b970ee2e8d23f01570bf8f22",
+          "signed_sha256": "d992392ea9d2a1dcc2f55ee34684a10441fbafa69a1a2021f5baa9a7f3ad25b9"
+        },
+        "review-4": {
+          "id": "81411489a0e6ea6b9f426cb190fac3d05986f726e22e286c79dcde50d133e0d1",
+          "author": "8359a9010d36ffe6d99d083ad300a8b5dd0293691c1250ec9dc38e827fbcc2d0",
+          "kind": 1,
+          "bytes": 147,
+          "content_sha256": "82d52ac7efdcbc0bf777772c06cfee2f6c25bbecdcc540c00a20ddbdfb701dce",
+          "signed_sha256": "81411489a0e6ea6b9f426cb190fac3d05986f726e22e286c79dcde50d133e0d1"
+        },
+        "review-5": {
+          "id": "6693304e56cba2f6319e2f08812a4c4c7df29d5367b12c6fc063f3d0675d04a8",
+          "author": "c1b8ea17e7fa160b06771abcb558a9f4ceb7a70f6129842b6812b93e03209c56",
+          "kind": 1,
+          "bytes": 150,
+          "content_sha256": "5989cfb675f726ba1aadef1d4544e2f09ffe5ac35319dff8da53ce4ccfbf7805",
+          "signed_sha256": "6693304e56cba2f6319e2f08812a4c4c7df29d5367b12c6fc063f3d0675d04a8"
+        },
+        "review-6": {
+          "id": "299b06c7e4c665d90e761d25ae229e5c0aff28e4b4569d90b38244333626f44f",
+          "author": "d24e3943284be0eb877e481bfca61b515e174c1ff03df72dda114a829f5bf61e",
+          "kind": 1,
+          "bytes": 149,
+          "content_sha256": "8d3d1e68804c17c3b8cc5a3397236c38bc0f0693fa743345f31883cd3b14df9e",
+          "signed_sha256": "299b06c7e4c665d90e761d25ae229e5c0aff28e4b4569d90b38244333626f44f"
+        },
+        "review-7": {
+          "id": "8c138b1669cc85fd7fae6b90cde91f02f811476a1b834a269d350def6e1984d2",
+          "author": "8359a9010d36ffe6d99d083ad300a8b5dd0293691c1250ec9dc38e827fbcc2d0",
+          "kind": 1,
+          "bytes": 141,
+          "content_sha256": "9471edd884fd2d80f32aaa6afda65f74155c0e57f91c83395c98f1a9772be2ff",
+          "signed_sha256": "8c138b1669cc85fd7fae6b90cde91f02f811476a1b834a269d350def6e1984d2"
+        },
+        "review-8": {
+          "id": "37ee3767a924967e186a5ae3b38ed16af1197b9b992e81a744e7211ce195f4f0",
+          "author": "c1b8ea17e7fa160b06771abcb558a9f4ceb7a70f6129842b6812b93e03209c56",
+          "kind": 1,
+          "bytes": 133,
+          "content_sha256": "e0612bb1c8801583d2c4164ab2a944917a7d00c07599dd1c1fbac5e2f86f806c",
+          "signed_sha256": "37ee3767a924967e186a5ae3b38ed16af1197b9b992e81a744e7211ce195f4f0"
+        },
+        "review-9": {
+          "id": "d7607ee388b9fc10d6b0c010975a269929589e9432f9e6133f1858dc958f4ec9",
+          "author": "d24e3943284be0eb877e481bfca61b515e174c1ff03df72dda114a829f5bf61e",
+          "kind": 1,
+          "bytes": 148,
+          "content_sha256": "132737f451305100ffe91d6277e380c001e722ffe2ffc81c40a0e0ae8b72a297",
+          "signed_sha256": "d7607ee388b9fc10d6b0c010975a269929589e9432f9e6133f1858dc958f4ec9"
+        },
+        "review-10": {
+          "id": "95fbdedab634e6c7ab81cd15978c902a7ee4eba7ff55accf304a698513b6856e",
+          "author": "8359a9010d36ffe6d99d083ad300a8b5dd0293691c1250ec9dc38e827fbcc2d0",
+          "kind": 1,
+          "bytes": 162,
+          "content_sha256": "ecceb580c0af69d0117ec0ed4a65985cf827031f74a92ddf694bf344b3a9155b",
+          "signed_sha256": "95fbdedab634e6c7ab81cd15978c902a7ee4eba7ff55accf304a698513b6856e"
+        },
+        "review-11": {
+          "id": "87fa53bc810350ef9b7c444bc29e15b6e45a0d27dcd37538c5aea6f52fd64d17",
+          "author": "c1b8ea17e7fa160b06771abcb558a9f4ceb7a70f6129842b6812b93e03209c56",
+          "kind": 1,
+          "bytes": 140,
+          "content_sha256": "da0d294baade36211e6d6ddcf0f12bb0324a3d5128a20aac4c93480bb59bcb55",
+          "signed_sha256": "87fa53bc810350ef9b7c444bc29e15b6e45a0d27dcd37538c5aea6f52fd64d17"
+        },
+        "review-12": {
+          "id": "53a933beaa3e23849bcd8a44c26826cb602192676fdb16feaeeb25cebbff83a8",
+          "author": "d24e3943284be0eb877e481bfca61b515e174c1ff03df72dda114a829f5bf61e",
+          "kind": 1,
+          "bytes": 150,
+          "content_sha256": "8d31d627d3066dbf6c3caee7e50ffa080c4f6856ec16dc19a3c8395e055ab569",
+          "signed_sha256": "53a933beaa3e23849bcd8a44c26826cb602192676fdb16feaeeb25cebbff83a8"
+        },
+        "review-13": {
+          "id": "ba48a3eead9742d9b7704615a7bb601c7d8b8724af5f4a5e37f27532a0894e1b",
+          "author": "8359a9010d36ffe6d99d083ad300a8b5dd0293691c1250ec9dc38e827fbcc2d0",
+          "kind": 1,
+          "bytes": 151,
+          "content_sha256": "3bbe1c686aff6139a4d2b193cf996d42d4b4bb0713bc22d33ec539ba0eac4ec4",
+          "signed_sha256": "ba48a3eead9742d9b7704615a7bb601c7d8b8724af5f4a5e37f27532a0894e1b"
+        }
+      }
+    },
+    {
+      "check": "meaningful discussion continues beyond the native UI single resident row; original history remains paginated and body commitments remain readable",
+      "result": "pass",
+      "events": 17,
+      "ui_resident_events": 1,
+      "service_committed_index_bound": 64,
+      "body_segment_cache_bytes": 131072
+    }
+  ],
+  "history": {
+    "ordinary": {
+      "id": "5a53c7a1239ea737daf9acdd7071d849fa65dfc17cf6e65626fd74ba7df12ea1",
+      "author": "d24e3943284be0eb877e481bfca61b515e174c1ff03df72dda114a829f5bf61e",
+      "kind": 1,
+      "bytes": 126,
+      "content_sha256": "541c88ecfd5e37d6e433746b0e38ce252c25c94a6874966ab975cee0c2cbb22b",
+      "signed_sha256": "5a53c7a1239ea737daf9acdd7071d849fa65dfc17cf6e65626fd74ba7df12ea1"
+    },
+    "long": {
+      "id": "37b9a903ad12ec92f798f97ec473f5a6063a508e131cddc74bfb87270288e714",
+      "author": "d24e3943284be0eb877e481bfca61b515e174c1ff03df72dda114a829f5bf61e",
+      "kind": 1,
+      "bytes": 1330,
+      "content_sha256": "da933b261f757e2e3556bd30c008f04fbdd90ce29e277d65883d4e3c0ca9e557",
+      "signed_sha256": "37b9a903ad12ec92f798f97ec473f5a6063a508e131cddc74bfb87270288e714"
+    },
+    "reply": {
+      "id": "ce1f9bd62ea45892ffdf355f0a0df570c6a9f112586a169df647033479ab7579",
+      "author": "8359a9010d36ffe6d99d083ad300a8b5dd0293691c1250ec9dc38e827fbcc2d0",
+      "kind": 2,
+      "bytes": 142,
+      "content_sha256": "c3b55f0ac6d9e6debdb353279f57693aa8ebf54b34411829709e63efb183235a",
+      "signed_sha256": "ce1f9bd62ea45892ffdf355f0a0df570c6a9f112586a169df647033479ab7579"
+    },
+    "review-0": {
+      "id": "28d8f88b9e28bbd714febec9aa54700efff4b0d53659987b811d147807a330a1",
+      "author": "d24e3943284be0eb877e481bfca61b515e174c1ff03df72dda114a829f5bf61e",
+      "kind": 1,
+      "bytes": 135,
+      "content_sha256": "4ca22c1ff9a33c74c8e2e918c7b8be5ea1382b0703951397ced9aded8eed69c9",
+      "signed_sha256": "28d8f88b9e28bbd714febec9aa54700efff4b0d53659987b811d147807a330a1"
+    },
+    "review-1": {
+      "id": "0f9d61caf868880b744065ef27e63386bc8768c1947a4e3919bb339be3dc8332",
+      "author": "8359a9010d36ffe6d99d083ad300a8b5dd0293691c1250ec9dc38e827fbcc2d0",
+      "kind": 1,
+      "bytes": 147,
+      "content_sha256": "7478de5c67a7b4b76250e7afe14a88be663b9ef070a95e5357e1604df5048d12",
+      "signed_sha256": "0f9d61caf868880b744065ef27e63386bc8768c1947a4e3919bb339be3dc8332"
+    },
+    "review-2": {
+      "id": "6b4fa8e15d212c0891c5eadbe3f0fcc4bbd46937847fd2545fc3def658491d06",
+      "author": "c1b8ea17e7fa160b06771abcb558a9f4ceb7a70f6129842b6812b93e03209c56",
+      "kind": 1,
+      "bytes": 149,
+      "content_sha256": "6232aff56fca73d062dd25c9c17cb783935dac3ce41b9e33a9596dc4f1fd81c4",
+      "signed_sha256": "6b4fa8e15d212c0891c5eadbe3f0fcc4bbd46937847fd2545fc3def658491d06"
+    },
+    "review-3": {
+      "id": "d992392ea9d2a1dcc2f55ee34684a10441fbafa69a1a2021f5baa9a7f3ad25b9",
+      "author": "d24e3943284be0eb877e481bfca61b515e174c1ff03df72dda114a829f5bf61e",
+      "kind": 1,
+      "bytes": 145,
+      "content_sha256": "e1ab90a478d350a70c33be1a9c31ac7b4f871b83b970ee2e8d23f01570bf8f22",
+      "signed_sha256": "d992392ea9d2a1dcc2f55ee34684a10441fbafa69a1a2021f5baa9a7f3ad25b9"
+    },
+    "review-4": {
+      "id": "81411489a0e6ea6b9f426cb190fac3d05986f726e22e286c79dcde50d133e0d1",
+      "author": "8359a9010d36ffe6d99d083ad300a8b5dd0293691c1250ec9dc38e827fbcc2d0",
+      "kind": 1,
+      "bytes": 147,
+      "content_sha256": "82d52ac7efdcbc0bf777772c06cfee2f6c25bbecdcc540c00a20ddbdfb701dce",
+      "signed_sha256": "81411489a0e6ea6b9f426cb190fac3d05986f726e22e286c79dcde50d133e0d1"
+    },
+    "review-5": {
+      "id": "6693304e56cba2f6319e2f08812a4c4c7df29d5367b12c6fc063f3d0675d04a8",
+      "author": "c1b8ea17e7fa160b06771abcb558a9f4ceb7a70f6129842b6812b93e03209c56",
+      "kind": 1,
+      "bytes": 150,
+      "content_sha256": "5989cfb675f726ba1aadef1d4544e2f09ffe5ac35319dff8da53ce4ccfbf7805",
+      "signed_sha256": "6693304e56cba2f6319e2f08812a4c4c7df29d5367b12c6fc063f3d0675d04a8"
+    },
+    "review-6": {
+      "id": "299b06c7e4c665d90e761d25ae229e5c0aff28e4b4569d90b38244333626f44f",
+      "author": "d24e3943284be0eb877e481bfca61b515e174c1ff03df72dda114a829f5bf61e",
+      "kind": 1,
+      "bytes": 149,
+      "content_sha256": "8d3d1e68804c17c3b8cc5a3397236c38bc0f0693fa743345f31883cd3b14df9e",
+      "signed_sha256": "299b06c7e4c665d90e761d25ae229e5c0aff28e4b4569d90b38244333626f44f"
+    },
+    "review-7": {
+      "id": "8c138b1669cc85fd7fae6b90cde91f02f811476a1b834a269d350def6e1984d2",
+      "author": "8359a9010d36ffe6d99d083ad300a8b5dd0293691c1250ec9dc38e827fbcc2d0",
+      "kind": 1,
+      "bytes": 141,
+      "content_sha256": "9471edd884fd2d80f32aaa6afda65f74155c0e57f91c83395c98f1a9772be2ff",
+      "signed_sha256": "8c138b1669cc85fd7fae6b90cde91f02f811476a1b834a269d350def6e1984d2"
+    },
+    "review-8": {
+      "id": "37ee3767a924967e186a5ae3b38ed16af1197b9b992e81a744e7211ce195f4f0",
+      "author": "c1b8ea17e7fa160b06771abcb558a9f4ceb7a70f6129842b6812b93e03209c56",
+      "kind": 1,
+      "bytes": 133,
+      "content_sha256": "e0612bb1c8801583d2c4164ab2a944917a7d00c07599dd1c1fbac5e2f86f806c",
+      "signed_sha256": "37ee3767a924967e186a5ae3b38ed16af1197b9b992e81a744e7211ce195f4f0"
+    },
+    "review-9": {
+      "id": "d7607ee388b9fc10d6b0c010975a269929589e9432f9e6133f1858dc958f4ec9",
+      "author": "d24e3943284be0eb877e481bfca61b515e174c1ff03df72dda114a829f5bf61e",
+      "kind": 1,
+      "bytes": 148,
+      "content_sha256": "132737f451305100ffe91d6277e380c001e722ffe2ffc81c40a0e0ae8b72a297",
+      "signed_sha256": "d7607ee388b9fc10d6b0c010975a269929589e9432f9e6133f1858dc958f4ec9"
+    },
+    "review-10": {
+      "id": "95fbdedab634e6c7ab81cd15978c902a7ee4eba7ff55accf304a698513b6856e",
+      "author": "8359a9010d36ffe6d99d083ad300a8b5dd0293691c1250ec9dc38e827fbcc2d0",
+      "kind": 1,
+      "bytes": 162,
+      "content_sha256": "ecceb580c0af69d0117ec0ed4a65985cf827031f74a92ddf694bf344b3a9155b",
+      "signed_sha256": "95fbdedab634e6c7ab81cd15978c902a7ee4eba7ff55accf304a698513b6856e"
+    },
+    "review-11": {
+      "id": "87fa53bc810350ef9b7c444bc29e15b6e45a0d27dcd37538c5aea6f52fd64d17",
+      "author": "c1b8ea17e7fa160b06771abcb558a9f4ceb7a70f6129842b6812b93e03209c56",
+      "kind": 1,
+      "bytes": 140,
+      "content_sha256": "da0d294baade36211e6d6ddcf0f12bb0324a3d5128a20aac4c93480bb59bcb55",
+      "signed_sha256": "87fa53bc810350ef9b7c444bc29e15b6e45a0d27dcd37538c5aea6f52fd64d17"
+    },
+    "review-12": {
+      "id": "53a933beaa3e23849bcd8a44c26826cb602192676fdb16feaeeb25cebbff83a8",
+      "author": "d24e3943284be0eb877e481bfca61b515e174c1ff03df72dda114a829f5bf61e",
+      "kind": 1,
+      "bytes": 150,
+      "content_sha256": "8d31d627d3066dbf6c3caee7e50ffa080c4f6856ec16dc19a3c8395e055ab569",
+      "signed_sha256": "53a933beaa3e23849bcd8a44c26826cb602192676fdb16feaeeb25cebbff83a8"
+    },
+    "review-13": {
+      "id": "ba48a3eead9742d9b7704615a7bb601c7d8b8724af5f4a5e37f27532a0894e1b",
+      "author": "8359a9010d36ffe6d99d083ad300a8b5dd0293691c1250ec9dc38e827fbcc2d0",
+      "kind": 1,
+      "bytes": 151,
+      "content_sha256": "3bbe1c686aff6139a4d2b193cf996d42d4b4bb0713bc22d33ec539ba0eac4ec4",
+      "signed_sha256": "ba48a3eead9742d9b7704615a7bb601c7d8b8724af5f4a5e37f27532a0894e1b"
+    }
+  },
+  "application_checkpoint": {
+    "schema": 1,
+    "result": "application-checkpoint-pass",
+    "qualification": "partial f597 application-only trial; no full connected-campaign pass",
+    "configuration": {
+      "image_sha256": "f5978d3b335e699b55bf76453a5d5063d816e15bef382df9e33c8d67d01473df",
+      "feed": {
+        "identity": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+        "feed-account": "f50eaa12d7dc69c962584ce34a12d53d9b064970c640d23d594e930d7fc4bc07",
+        "feed": "bfd1a9584b654f8ee4f0c3f1b3703608b452da7a9ad472683821aa8f4f13a635",
+        "feed-federation": "02041c0eeca13f17a62a8913954558d9dc5be7e52f55d5db915dc76b14241526"
+      },
+      "messenger": {
+        "identity": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+        "owner": "50f3e3ccb8d3faeaf29c50d6aec24bbc654a30754f26c15dd7585a4a8e64a5b3",
+        "ui": "a0b4294d2331e6704acd69093936339f7c0b8559dd9990d4967a22216f84e6c7",
+        "delivery": "f8f9a0c572e691398008ab13e3aa852a12eeec06344715f593bf8a921d07c20b",
+        "mailbox": "24e249a218f52813953b8d204f1c7b3d1129e1b675a9ed8500731cf842049135"
+      },
+      "mixed": true,
+      "history_events": 17,
+      "replication_auto_renew": true
+    },
+    "controller_portals_released": true,
+    "all_native_actors_preserved": true,
+    "finished_utc": "2026-11-01T14:37:39Z",
+    "evidence": {
+      "feed-project-account.json": "38acb705775b91d74652a76e740202adb224a7550f9bb63b0e056e6e7dc9b36f",
+      "feed-author-actions.json": "0968521a1a4abb0205d237b30097105d37dd14f65000f46659dd0f7fd4e4b354",
+      "feed-project-action/project.json": "910ea0708bbfbca9bdabc6e2080e71a050068643018e4a8b2029700e3e8f7116",
+      "feed-project-action/fork-action.json": "c7266976a1ff9b022588bf25e554e7640b7580406ce0c7c9cec71db8c7987ddc",
+      "feed-project-action/revocation-action.json": "e7a3046fb8dcb66d1f6f66395135690e5b599d23db6940a07ee23715d30eb28f",
+      "application-checkpoint-release.json": "a5adf0adba389dca312764493b2ee20d1708a8b07f72541e60c06eb0a14633c8"
+    },
+    "passed_checks": [
+      "one explicit project-stage replication lease check preserves the same durable policy and charged retry authority",
+      "native Feed identity retention explicitly selected in Objects domain3 before further publication",
+      "native author edit and tombstone preserve signed history and refuse the withdrawn body",
+      "existing native Messenger, Feed and selected Registry coexist with a free ordinary application slot",
+      "existing native Registry verifies exact original signed release evidence before the early application checkpoint",
+      "explicit native preference selection retains and exports a local stable-project follow",
+      "native project card opens original Registry verification and completes useful normal Library Fork",
+      "new independent local lineage is visible in the normal trusted Library/Forge project picker",
+      "current native release revocation refuses the valid old card at the action boundary",
+      "approved public export includes exact retained publication reference and selected preferences without signing seed or sealed key"
+    ],
+    "card": {
+      "id": "093a11c4f148a57e27f61bb9ebe20393427e4a9fd5f66818016de95eb1458243",
+      "author": "c1b8ea17e7fa160b06771abcb558a9f4ceb7a70f6129842b6812b93e03209c56",
+      "body_sha256": "89811425d12e63b1a25fe8a73b5594c3cfad1142807cacfc91f1787f3301716e",
+      "bytes": 1683,
+      "replicated": true
+    },
+    "fork": {
+      "event_id": "093a11c4f148a57e27f61bb9ebe20393427e4a9fd5f66818016de95eb1458243",
+      "upstream_root": "92daee22b2b8ed1f4de2b1354701a07742de03065c36ecc716c0a5e60624a7c2",
+      "fork": {
+        "cap": 7507304745497788676,
+        "name": "feedfork00000001",
+        "head": "ee9ab09ec4b53cb694cb9bd32fc67eb5318f008c043790afc5bb4044757d5a5a"
+      },
+      "publisher": "5f6d1099ba4a21287e8197b7e649bb8726b6c0d067d6cb8f32fce6c06e5365ea",
+      "project_id": "ee9ab09ec4b53cb694cb9bd32fc67eb5318f008c043790afc5bb4044757d5a5a",
+      "lineage_node": "94f20bff45ec25fdea6cfa2131049f13445e93b2888f07d0ebc4d221041cfc55",
+      "lineage_sha256": "f7e65cdd75ea2eaaa153aea035402086f0387d71e5e4a89a2dddb2abd2ccc8a8",
+      "action": "existing Objects.forkProject; independent local lineage, no install or execution consent"
+    },
+    "revocation": {
+      "revocation": {
+        "sequence": 2,
+        "listing": 3,
+        "reason": 6,
+        "logical_project_id": "69d8274c92d5b2c829e55d5e3f5359b7c652b13160d138eec5d7e99623a72f2b",
+        "publication_id": "14deec51b2e59bdd387e3edc7f3899503c8b6e4c244ac398c77dd18a8bd8d181",
+        "release_id": "7dc7d80f5dcb1656b8e2d32fa0728ae294be2d485cfbfe100c1a73782e4623c9",
+        "root": "92daee22b2b8ed1f4de2b1354701a07742de03065c36ecc716c0a5e60624a7c2",
+        "federation": "139574fa7cb8a07f80f01ec0c0d4a8d8d86458e24b230cd02d5a3578012cadbc",
+        "signature": "RSA2048/SHA256 over immutable guest-evaluated admission-v1",
+        "local_execution_approved": false
+      },
+      "feed_card_still_original": true,
+      "additional_forks": 0,
+      "execution_consent": false,
+      "fork_approval_opened_before_policy_change": {
+        "publisher": "5f6d1099ba4a21287e8197b7e649bb8726b6c0d067d6cb8f32fce6c06e5365ea",
+        "opened_at_sequence": 1,
+        "entered_public_digits": 64,
+        "submitted": true
+      },
+      "fresh_fork_refusal": [
+        0,
+        1,
+        8,
+        1683,
+        65,
+        7,
+        11,
+        1
+      ],
+      "fresh_inspection_refusal": [
+        0,
+        1,
+        0,
+        1683,
+        65,
+        7,
+        11,
+        1
+      ]
+    },
+    "project_follow_notice": 68,
+    "approved_profile": {
+      "bytes": 2048,
+      "sha256": "285015f1b637dd5d6a85b9291075b5150ed72b7f681190d7267f2cd2261bfe09",
+      "author_sequence": 7,
+      "signer_generation": 1,
+      "preferences_explicitly_selected": true,
+      "sealed_key_included": false
+    },
+    "opaque_retention_roots": [
+      {
+        "slot": 0,
+        "generation": 4,
+        "bytes": 19456,
+        "header_sha256": "44b9a94807e765f68d4b4396236d2434ecbdbcb8f6026c455aa271afc26c867c"
+      },
+      {
+        "slot": 1,
+        "generation": 5,
+        "bytes": 19456,
+        "header_sha256": "c4208ba1859077e70a9d0475e7354a94ef9f434eca2680808ca700a115261f21"
+      }
+    ],
+    "attempts": [
+      {
+        "started_utc": "2026-11-01T14:26:30Z",
+        "result": "failure",
+        "error": "TimeoutError('native next-row request')",
+        "seconds": 353.02541254099924
+      },
+      {
+        "started_utc": "2026-11-01T14:33:23Z",
+        "result": "pass",
+        "seconds": 204.01994600000035
+      }
+    ],
+    "limits": [
+      "Messenger and routed Forge were not started in this trial.",
+      "Reconnect, no-vault process replacement, capacity, moderation, restart and hosting migration are not qualified by this application checkpoint.",
+      "Original release metadata was verified locally through the existing native Registry, not fetched over routed Forge.",
+      "The initial ordinary Next timeout remains archived; the resumed controller reused exact accepted events and issued no replacement publication."
+    ]
+  },
+  "failures": [
+    {
+      "path": "build/campaign009-connected-v5/failure.json",
+      "sha256": "5a780995cca9cd8345d2be8808b4a4fdf44f4c3bcfdad7eb69f617df05622914"
+    },
+    {
+      "path": "build/campaign009-connected-v5/failure-alice-first-switch.json",
+      "sha256": "b7fd13e5bde4f1bd6471ca6ce6ed6c38469b429c83e6a74417ad77380c84950a"
+    },
+    {
+      "path": "build/campaign009-connected-v5/failure-alice-retry-switch.json",
+      "sha256": "5a780995cca9cd8345d2be8808b4a4fdf44f4c3bcfdad7eb69f617df05622914"
+    },
+    {
+      "path": "build/campaign009-connected-v5/alice-switch-diagnosis.json",
+      "sha256": "a6fbecde59e288e4aa557c954701d56595a8a89e08c3812bdd747b5ec7ea2275"
+    },
+    {
+      "path": "build/campaign009-connected-v5/alice-retry-diagnosis.json",
+      "sha256": "c7e8dbdc5e79bb37bb27a1c071c0491c5bab1b73c7fbf8bd6c249e31060a28b3"
+    }
+  ],
+  "observed_failure": "New own-client destination route failed38; native adjacent relay diagnostics51 while Bob and Charlie remained authenticated3. Native source evaluated the old idle-listener deadline after ACCEPTED8 cleared creation intent, before startHandshake refreshed the deadline. The later f2f1a97 fix is not part of this image.",
+  "not_qualified": [
+    "Messenger contention on this image",
+    "routed Forge on this image",
+    "response-loss reconciliation and NoVault on this image",
+    "six-route saturation/reuse",
+    "connected moderation/restart/migration"
+  ],
+  "limits": [
+    "Single host mixed QEMU/native-x86 local execution; no independent administration claim.",
+    "Native Feed application project action is a separately identified application-only continuation, not the complete connected campaign."
+  ],
+  "retirement": {
+    "path": "build/campaign009-connected-v5/retired-trial.json",
+    "sha256": "03c989f6f129cd93e132cc73fdd39a594fb7de7a36e57663ef6671b9cc9d1d34",
+    "result": {
+      "schema": 1,
+      "result": "retired",
+      "scope": "Whole partial-trial retirement after application-only checkpoint; backing and independent credentials preserved. No per-client operator stop/listen handoff.",
+      "started_utc": "2026-11-01T14:53:29.341860+00:00",
+      "configuration": {
+        "image_sha256": "f5978d3b335e699b55bf76453a5d5063d816e15bef382df9e33c8d67d01473df",
+        "feed": {
+          "identity": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+          "feed-account": "f50eaa12d7dc69c962584ce34a12d53d9b064970c640d23d594e930d7fc4bc07",
+          "feed": "bfd1a9584b654f8ee4f0c3f1b3703608b452da7a9ad472683821aa8f4f13a635",
+          "feed-federation": "02041c0eeca13f17a62a8913954558d9dc5be7e52f55d5db915dc76b14241526"
+        },
+        "messenger": {
+          "identity": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+          "owner": "50f3e3ccb8d3faeaf29c50d6aec24bbc654a30754f26c15dd7585a4a8e64a5b3",
+          "ui": "a0b4294d2331e6704acd69093936339f7c0b8559dd9990d4967a22216f84e6c7",
+          "delivery": "f8f9a0c572e691398008ab13e3aa852a12eeec06344715f593bf8a921d07c20b",
+          "mailbox": "24e249a218f52813953b8d204f1c7b3d1129e1b675a9ed8500731cf842049135"
+        },
+        "mixed": true,
+        "history_events": 17,
+        "replication_auto_renew": true
+      },
+      "records": {
+        "native-actors.json": {
+          "sha256": "ff0092304b169dd72e7aea03d1fe291e3f476286d98c9c9b882c37d3afe49da5"
+        },
+        "application-checkpoint-release.json": {
+          "sha256": "a5adf0adba389dca312764493b2ee20d1708a8b07f72541e60c06eb0a14633c8"
+        },
+        "feed-project-account.json": {
+          "sha256": "38acb705775b91d74652a76e740202adb224a7550f9bb63b0e056e6e7dc9b36f"
+        },
+        "feed-author-actions.json": {
+          "sha256": "0968521a1a4abb0205d237b30097105d37dd14f65000f46659dd0f7fd4e4b354"
+        },
+        "feed-project-action/fork-action.json": {
+          "sha256": "c7266976a1ff9b022588bf25e554e7640b7580406ce0c7c9cec71db8c7987ddc"
+        },
+        "feed-project-action/revocation-action.json": {
+          "sha256": "e7a3046fb8dcb66d1f6f66395135690e5b599d23db6940a07ee23715d30eb28f"
+        },
+        "failure-alice-first-switch.json": {
+          "sha256": "b7fd13e5bde4f1bd6471ca6ce6ed6c38469b429c83e6a74417ad77380c84950a"
+        },
+        "failure-alice-retry-switch.json": {
+          "sha256": "5a780995cca9cd8345d2be8808b4a4fdf44f4c3bcfdad7eb69f617df05622914"
+        }
+      },
+      "actors": {
+        "mailbox": {
+          "backend": "qemu",
+          "network": 4139601329423122694,
+          "adapter_pid": 458458,
+          "alive_before": true,
+          "error": "EOFError('management session closed')",
+          "adapter_exited": true,
+          "native_operator_70_requested": true,
+          "management_closed_on_shutdown": true,
+          "acknowledgment": "No response frame: native Launcher operation70 executes shutdown syscall70, closing the management session."
+        },
+        "relay1": {
+          "backend": "qemu",
+          "network": 10909363355865055494,
+          "adapter_pid": 458464,
+          "alive_before": true,
+          "error": "EOFError('management session closed')",
+          "adapter_exited": true,
+          "native_operator_70_requested": true,
+          "management_closed_on_shutdown": true,
+          "acknowledgment": "No response frame: native Launcher operation70 executes shutdown syscall70, closing the management session."
+        },
+        "relay2": {
+          "backend": "x86_64",
+          "network": 13513859192338776326,
+          "adapter_pid": 458470,
+          "alive_before": true,
+          "error": "EOFError('management session closed')",
+          "adapter_exited": true,
+          "native_operator_70_requested": true,
+          "management_closed_on_shutdown": true,
+          "acknowledgment": "No response frame: native Launcher operation70 executes shutdown syscall70, closing the management session."
+        },
+        "relay3": {
+          "backend": "qemu",
+          "network": 14652788805891784966,
+          "adapter_pid": 458475,
+          "alive_before": true,
+          "error": "EOFError('management session closed')",
+          "adapter_exited": true,
+          "native_operator_70_requested": true,
+          "management_closed_on_shutdown": true,
+          "acknowledgment": "No response frame: native Launcher operation70 executes shutdown syscall70, closing the management session."
+        },
+        "alpha": {
+          "backend": "qemu",
+          "network": 14209686118114263302,
+          "adapter_pid": 458481,
+          "alive_before": true,
+          "error": "EOFError('management session closed')",
+          "adapter_exited": true,
+          "native_operator_70_requested": true,
+          "management_closed_on_shutdown": true,
+          "acknowledgment": "No response frame: native Launcher operation70 executes shutdown syscall70, closing the management session."
+        },
+        "beta": {
+          "backend": "qemu",
+          "network": 15487591591941505286,
+          "adapter_pid": 458487,
+          "alive_before": true,
+          "error": "EOFError('management session closed')",
+          "adapter_exited": true,
+          "native_operator_70_requested": true,
+          "management_closed_on_shutdown": true,
+          "acknowledgment": "No response frame: native Launcher operation70 executes shutdown syscall70, closing the management session."
+        },
+        "alice": {
+          "backend": "qemu",
+          "network": 1355147793471111430,
+          "adapter_pid": 458493,
+          "alive_before": true,
+          "error": "EOFError('management session closed')",
+          "adapter_exited": true,
+          "native_operator_70_requested": true,
+          "management_closed_on_shutdown": true,
+          "acknowledgment": "No response frame: native Launcher operation70 executes shutdown syscall70, closing the management session."
+        },
+        "bob": {
+          "backend": "qemu",
+          "network": 7507304741202821382,
+          "adapter_pid": 458500,
+          "alive_before": true,
+          "error": "EOFError('management session closed')",
+          "adapter_exited": true,
+          "native_operator_70_requested": true,
+          "management_closed_on_shutdown": true,
+          "acknowledgment": "No response frame: native Launcher operation70 executes shutdown syscall70, closing the management session."
+        },
+        "charlie": {
+          "backend": "qemu",
+          "network": 1679256544002179334,
+          "adapter_pid": 458507,
+          "alive_before": true,
+          "error": "EOFError('management session closed')",
+          "adapter_exited": true,
+          "native_operator_70_requested": true,
+          "management_closed_on_shutdown": true,
+          "acknowledgment": "No response frame: native Launcher operation70 executes shutdown syscall70, closing the management session."
+        }
+      },
+      "application_only": true,
+      "unfinished": [
+        "Messenger contention",
+        "routed Forge",
+        "full reconnect",
+        "NoVault ephemerality",
+        "schema2 positive duplicate budgets"
+      ],
+      "finished_utc": "2026-11-01T14:53:30.132234+00:00",
+      "portals_released": true,
+      "limits": "Personal terminal phases were not observed at retirement and are not asserted to remain admitted after the long application-only continuation. Earlier three-context evidence retains its original observation times."
+    }
+  }
+}
