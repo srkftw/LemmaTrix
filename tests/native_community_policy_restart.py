@@ -129,6 +129,42 @@ def moderator(guest):
     return dict(generation=struct.unpack_from('<Q', descriptor, 24)[0], public=descriptor[96:128].hex())
 
 
+
+def check_replication_lease(guest, operator, endpoint):
+    """Explicit operator stage boundary; never a per-event reset or keepalive.
+
+    Native authority expires normally. Only an observed stale/expired grant3
+    permits one same-policy reauthorization from the remaining durable total.
+    The existing ABI exposes aggregate reservations, not row568 attempt counts.
+    """
+    before_phase = feed.invoke(guest.client, 490, action=3)[0]
+    before, policy = feed.invoke(guest.client, 490, action=12)
+    result = dict(operator=guest.name, before_phase=list(before_phase),
+                  before_budget=list(before), policy_hash=policy.hex(), renewed=False,
+                  row_attempt_counts='not exposed by the existing native operator API',
+                  attempt_authority='durable per-event attempts remain charged; no reset operation is invoked')
+    if before_phase[1] == 6:
+        if before_phase[3] != 3:
+            raise RuntimeError(('native replication stopped for a reason other than lease expiry/stale authority', guest.name, before_phase))
+        previous = operator['replication']
+        feed.replication(guest.client, NS(
+            peer=0, side='server' if guest.name == 'alpha' else 'client', slot=0,
+            scope=previous['scope'], endpoint=endpoint,
+            bytes=previous['bytes'], rate=previous['rate'], lifetime=previous['lifetime']))
+        after, after_policy = feed.invoke(guest.client, 490, action=12)
+        assert after_policy == policy
+        assert after[1] == before[1] and after[4:7] == before[4:7]
+        assert after[2] == before[2] and after[5] == before[5]
+        assert 0 < after[3]-before[3] <= 1048576 and after[3] <= after[1]
+        result.update(renewed=True, after_budget=list(after),
+                      after_phase=list(feed.invoke(guest.client, 490, action=3)[0]),
+                      disclosure='explicit operator renewal of expired finite transport authority from the same persisted policy; no event quota, total allowance, lifetime or hash was changed')
+    else:
+        result.update(after_budget=list(before), after_phase=list(before_phase),
+                      disclosure='current authority remains within its finite approved lifetime; no renewal was attempted')
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--attach', type=Path, required=True)
@@ -166,6 +202,14 @@ def main():
         state['configuration'] = campaign.state['configuration']
         state['target'] = target.hex()
         try:
+            lease_checks = []
+            for name in ('alpha', 'beta'):
+                if actors.get(name) is not None:
+                    lease_checks.append(check_replication_lease(
+                        actors[name], campaign.state['actors'][name], campaign.state['bulk_endpoint']))
+            state.setdefault('lease_checks', []).append(dict(stage=args.stage, operators=lease_checks))
+            save()
+            print('Native finite lease stage checks', json.dumps(lease_checks), flush=True)
             if args.stage == 'moderation':
                 select_feed_route(alice, beta, relays)
                 select_feed_route(bob, alpha, relays)
