@@ -119,7 +119,9 @@ def event (t : UInt64) : UInt64 :=
     let t := zero (p+32) 252 t
     let t := store64 p epoch t
     let t := store64 (p+16) (load64 (input+8) t >>> 32) t
-    store64 (p+8) 0 (store64 (p+24) 0 t)
+    -- Preserve the event kind separately from errno: a failed LISTEN command
+    -- is operator backoff work; an admitted peer disconnect is only its link.
+    store64 (p+1104) op (store64 (p+8) 0 (store64 (p+24) 0 t))
   else if op == 9 then store64 (p+24) 2 t else
   if op == 10 && epoch == load64 p t && load64 (p+8) t == 1 then
     let credit := load64 (input+8) t >>> 32

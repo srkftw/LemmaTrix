@@ -64,6 +64,17 @@ open Guest Guest.LiveSDK
   if load64 g t != 0 then 24 else 0
 @[noinline] def contextChecks (t : UInt64) : UInt64 :=
   let t := zero Guest.TorRouter.state 8192 (zero Guest.Transport.st 4096 t)
+  -- An idle listener can outlive its old setup deadline. Only acceptance
+  -- starts that new client's finite window; neither outbound nor repeated
+  -- in-progress checks can extend an admitted handshake.
+  let p := Guest.TorRouter.channel 4
+  let t := store64 p 1 (store64 (p+8) 2 (store64 (p+88) 1 (store64 (p+160) 500000 t)))
+  let t := Guest.TorRouter.acceptedWindow 4 t
+  if load64 (p+88) t != 600000 then 28 else
+  let t := Guest.TorRouter.acceptedWindow 4 (store64 p 2 (store64 (p+160) 700000 t))
+  if load64 (p+88) t != 600000 then 29 else
+  let t := Guest.TorRouter.acceptedWindow 4 (store64 p 1 (store64 (p+8) 1 (store64 (p+88) 77 t)))
+  if load64 (p+88) t != 77 then 30 else
   let t := store64 Guest.TorRouter.state 1 (store64 (Guest.TorRouter.state+8) 2 t)
   let t := store64 (Guest.TorRouter.state+72) 0 t
   let t := store64 (Guest.TorRouter.channel 0) 4 (store64 (Guest.TorRouter.channel 1) 4
@@ -142,6 +153,21 @@ open Guest Guest.LiveSDK
   let t := Guest.TorRouter.replenish t
   if load64 (Guest.TorRouter.channel 10) t != 1 || Guest.TorRouter.freeChannel 0 t != 11 ||
     load64 (Guest.TorRouter.channel 9) t != 4 then 25 else
+  let t := store64 (Guest.TorRouter.channel 10+144) 0 t
+  let t := store64 Guest.Transport.input (Guest.Transport.magic ||| (6 <<< 32) ||| (10 <<< 40))
+    (store64 (Guest.Transport.input+8) (98 <<< 32) t)
+  let t := Guest.Transport.event t
+  if load64 (Guest.Transport.channel 10+1104) t != 6 || !Guest.TorRouter.listenerLost 10 t then 31 else
+  let t := Guest.TorRouter.listenerFailure 10 1000000 t
+  if load64 (Guest.TorRouter.channel 10) t != 0 || load64 (Guest.TorRouter.channel 9) t != 4 ||
+    load64 (Guest.TorRouter.state+128) t != 1 || load64 (Guest.TorRouter.state+136) t != 1000200 then 32 else
+  let t := Guest.TorRouter.replenish t
+  if load64 (Guest.TorRouter.channel 10) t != 0 then 33 else
+  let t := Guest.TorRouter.replenish (store64 (Guest.TorRouter.state+128) 32 t)
+  if load64 (Guest.TorRouter.channel 10) t != 0 then 34 else
+  let t := Guest.TorRouter.dispatch 30 10 64 t
+  if load64 (Guest.TorRouter.state+128) t != 0 || load64 (Guest.TorRouter.state+136) t != 0 ||
+    load64 (Guest.TorRouter.channel 10) t != 1 || load64 (Guest.TorRouter.channel 9) t != 4 then 35 else
   0
 def check (t : UInt64) : UInt64 :=
   let checked := contextChecks t
@@ -172,6 +198,6 @@ fixtureClock:
  driver.asm(boot,native.B/'1.o')
  driver.run([driver.tool('ld.lld'),'-m','elf64lriscv','--no-relax','-T',ROOT/'runtime/kernel.ld',*(native.B/f'{i}.o'for i in range(3)),'-o',native.B/'check.elf'])
  driver.run([driver.tool('llvm-objcopy'),'-O','binary',native.B/'check.elf',binary])
- report=dict(schema=1,result='pass',image_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),checks=[native.execute(binary,b) for b in a.backend or ['qemu','aarch64']],boundaries=['relay integrity failure closes only dependent incoming/outgoing pair','terminal keys/buffers banked by channel, stream and epoch; stale epoch rejects','mailbox sameNetworkcaller different terminalorigin cannot append or collect foreignstaging','adapterv3 accepts slot15 and rejects slot16','bulk reconnect attempts remain context-private, finite32 and pending admission does not renew them','current native Feed relationship preserves exact used allowance and expiry only on link loss; lost jobs and inbox cleared, expired/pin-changed or explicit-stop grants cannot revive'],limitations='Focused compiled RV64 state transitions, including provisioned predicate inputs for bulk reconnect; no native certificate-admission claim from this fixture. AArch64 assembly emulator runs under qemu-aarch64; no physical hardware or full native Messenger qualification.')
+ report=dict(schema=1,result='pass',image_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),checks=[native.execute(binary,b) for b in a.backend or ['qemu','aarch64']],boundaries=['relay integrity failure closes only dependent incoming/outgoing pair','expired idle listener gets a finite setup window only when accepted; outbound and ongoing handshake deadlines do not renew','failed LISTEN retires only that listener, backs off within32 failures, and explicit operator listen renews its allowance','terminal keys/buffers banked by channel, stream and epoch; stale epoch rejects','mailbox sameNetworkcaller different terminalorigin cannot append or collect foreignstaging','adapterv3 accepts slot15 and rejects slot16','bulk reconnect attempts remain context-private, finite32 and pending admission does not renew them','current native Feed relationship preserves exact used allowance and expiry only on link loss; lost jobs and inbox cleared, expired/pin-changed or explicit-stop grants cannot revive'],limitations='Focused compiled RV64 state transitions, including provisioned predicate inputs for bulk reconnect; no native certificate-admission claim from this fixture. AArch64 assembly emulator runs under qemu-aarch64; no physical hardware or full native Messenger qualification.')
  (native.B/'evidence.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2))
 if __name__=='__main__':main()

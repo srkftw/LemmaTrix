@@ -43,6 +43,11 @@ def feed_ui(g,operation=791):
  raw=g.client.request(150,struct.pack('<Q8Q',g.feed_ui,operation,0,0,0,0,0,0,1))
  return struct.unpack_from('<8Q',raw),raw[64:]
 
+def circuit_ready(g):
+ fields,_=net(g,32)
+ if fields[1]==0 and fields[3]!=0:raise RuntimeError((g.name,'native route failed',list(fields)))
+ return fields[2]==3
+
 def focus_application(g,which):
  # Probe the existing harmless preview, close it, then use real Alt-Tab input.
  # This never writes compositor state or application-owned memory.
@@ -87,7 +92,7 @@ def select_feed_route(g,destination,relays,*,budget=8388608,attempts=65536):
  """Explicit personal destination selection; operators keep serving peers."""
  close_route(g)
  for slot,certificate in enumerate([*(r.certificate for r in relays),destination.certificate]):enroll(g,slot,certificate)
- net(g,31);wait(lambda:net(g,32)[0][2]==3,900,g.name+' selected Feed circuit')
+ net(g,31);wait(lambda:circuit_ready(g),900,g.name+' selected Feed circuit')
  net(g,38,h=3,a=21,b=g.feed_owner,cword=budget,d=attempts)
  wait(lambda:net(g,41)[0][2]==3,600,g.name+' selected Feed terminal')
  focus_application(g,'feed')
@@ -274,7 +279,7 @@ def main():
    g.feed_ui=personal['feed']['ui'];g.feed_owner=personal['feed']['owner']
    if not state['done'].get('feed-route-'+g.name):
     for slot,certificate in enumerate([*certs,(alpha,beta)[home].certificate]):enroll(g,slot,certificate)
-    net(g,31);wait(lambda g=g:net(g,32)[0][2]==3,900,g.name+' native Feed circuit')
+    net(g,31);wait(lambda g=g:circuit_ready(g),900,g.name+' native Feed circuit')
     net(g,38,h=3,a=21,b=g.feed_owner,cword=8388608,d=65536);wait(lambda g=g:net(g,41)[0][2]==3,600,g.name+' authenticated Feed terminal')
     state['done']['feed-route-'+g.name]=True;save()
    if not feed_ui(g)[0][1]:

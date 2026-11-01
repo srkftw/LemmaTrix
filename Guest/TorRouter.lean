@@ -124,8 +124,16 @@ def queueHandshake (i t : UInt64) : UInt64 :=
   let p := channel i
   let t := Guest.VaultCrypto.putLE (p+4096) 48 2 t
   store64 (p+48) 50 (store64 (p+56) 0 t)
+def acceptedWindow (i t : UInt64) : UInt64 :=
+  let p := channel i
+  -- Waiting for an arrival is not part of that new link's setup lifetime.
+  -- Only the accepted listener transition starts a fresh finite deadline;
+  -- outgoing connects retain their original absolute setup deadline.
+  if load64 p t == 1 && load64 (p+8) t == 2 then
+    store64 (p+88) (load64 (p+160) t+100000) t else t
 def startHandshake (i t : UInt64) : UInt64 :=
   let p := channel i
+  let t := acceptedWindow i t
   let role := load64 (p+8) t
   let peerIndex := load64 (p+16) t
   let declared := if role == 2 then localDescription t else Guest.NodeEnrollment.peer peerIndex
@@ -504,6 +512,17 @@ def advanceRelay (i t : UInt64) : UInt64 :=
     let t := copy (channel i+8192) (body+4) 129 t
     let t := Guest.TorCells.frame cell (load64 (circuit i+8) t) 10 body t
     store64 (circuit i) 3 (queueCell i cell t)
+def listenerLost (i t : UInt64) : Bool :=
+  let p := channel i
+  load64 p t == 1 && load64 (p+8) t == 2 && load64 (p+144) t == 0 &&
+    load64 (Guest.Transport.channel i+8) t == 0 && load64 (Guest.Transport.channel i+24) t == 0
+def listenerFailure (i clock t : UInt64) : UInt64 :=
+  let attempts := load64 (state+128) t
+  let attempts := if attempts < 32 then attempts+1 else 32
+  let delay := if attempts == 1 then 200 else if attempts == 2 then 400 else
+    if attempts == 3 then 800 else if attempts == 4 then 1600 else 3000
+  let t := retireChannel i t
+  store64 (state+48) 58 (store64 (state+128) attempts (store64 (state+136) (clock+delay) t))
 def pumpChannel (i t : UInt64) : UInt64 :=
   let t := store64 (state+72) i t
   let p := channel i
@@ -524,7 +543,10 @@ def pumpChannel (i t : UInt64) : UInt64 :=
     let status := Guest.Transport.status t
     let epoch := status >>> 32
     if (status &&& 3) != 3 then
-      if load64 p status == 1 then status else abort 38 status
+      if listenerLost i status then
+        if load64 (Guest.Transport.channel i+1104) status == 6 then listenerFailure i clock status
+        else abort 38 status
+      else if load64 p status == 1 then status else abort 38 status
     else if load64 (p+24) status != epoch then
       if load64 p status != 1 then abort 39 status else
         startHandshake i (store64 (p+24) epoch status)
@@ -574,6 +596,9 @@ partial def availableChannels (i count t : UInt64) : UInt64 :=
   if i == 12 then count else availableChannels (i+1) (count+(if load64 (channel i) t == 0 then 1 else 0)) t
 def replenish (t : UInt64) : UInt64 :=
   if load64 (state+8) t != 2 || load64 (state+120) t != 1 || listenerPending 0 t then t else
+  if load64 (state+128) t >= 32 then t else
+  let t := if load64 (state+128) t == 0 then t else syscall 110 0 0 0 0 t
+  if load64 (state+128) t != 0 && t < load64 (state+136) t then t else
   let terminal := load64 (localDescription t+208) t != 7
   if availableChannels 0 0 t < (if terminal then 1 else 2) then t else
   let next := freeChannel 0 t
@@ -605,7 +630,7 @@ def dispatch (op slot length t : UInt64) : UInt64 :=
     let t := if enabled t && load64 (state+8) t == 2 && load64 (channel slot) t == 0 then t else stop 0 t
     let t := store64 state 1 t
     let t := store64 (state+8) 2 t
-    let t := store64 (state+120) 1 t
+    let t := store64 (state+120) 1 (store64 (state+128) 0 (store64 (state+136) 0 t))
     let r := openChannel slot 2 4 t
     response (if r == error then 2 else 0) slot r
   else if op == 31 && length == 64 then
