@@ -1,0 +1,133 @@
+{
+  "schema": 1,
+  "result": "failed",
+  "scope": "Actual current690 connected campaign: native signed edit accepted in Alpha but not replicated to Beta; authorized read-only diagnosis, no operator reconfiguration or host renewal.",
+  "image_sha256": "690e8959d79a42d3e61aa6f69df14b4e0c485ad58b015f451685abf014c275ee",
+  "production_source_commit": "c5147de",
+  "signed_event": "408da403804f611731b3b5babfbf92b61320ce675e3f757d75ab909825ea3d71",
+  "kind": 4,
+  "home": "b2a1a86b8b958a613c578692e4c9c9b0e96e87fa676d18326fec1363183b00c3",
+  "peer": "d17d966d66359ea218b908b2d0c1f40452dc74a5d462f9138846c52048647185",
+  "body_length": 188,
+  "observed": {
+    "alpha": {
+      "context0": [
+        0,
+        0,
+        2,
+        34359738368,
+        657718,
+        10,
+        0,
+        1
+      ],
+      "replica": [
+        0,
+        1,
+        19,
+        0,
+        19,
+        1,
+        0,
+        1
+      ],
+      "budget": [
+        0,
+        16777216,
+        4854960,
+        5242880,
+        262144,
+        16533,
+        1,
+        1
+      ],
+      "authority": [
+        0,
+        2,
+        1,
+        0,
+        0,
+        128,
+        14805465147983790085,
+        1
+      ],
+      "public_description_sha256": "2e58dbfb51427bea7691548d717462b0855792868e8fb463f3a2dc5617fc8bf5",
+      "public_endpoint": "127.0.0.1:60935",
+      "own_certificate_sha256": "ba5fa1f1d42b60a0be9785e1d16b3d9676f9eac6de2b2f82a4ec4cc9bd896fdc",
+      "own_matches_saved": true,
+      "peer_matches_saved": true,
+      "opaque_bulk_socket_states": [
+        {
+          "local": "0100007F:EE07",
+          "remote": "00000000:0000",
+          "state": "0A",
+          "state_name": "LISTEN",
+          "inode": "1509713"
+        }
+      ]
+    },
+    "beta": {
+      "context0": [
+        0,
+        0,
+        1,
+        47244640256,
+        657654,
+        10,
+        0,
+        1
+      ],
+      "replica": [
+        0,
+        0,
+        0,
+        0,
+        17,
+        0,
+        0,
+        1
+      ],
+      "budget": [
+        0,
+        16777216,
+        2069514,
+        5242880,
+        262144,
+        7074,
+        1,
+        1
+      ],
+      "authority": [
+        0,
+        2,
+        1,
+        0,
+        0,
+        128,
+        10253123740657254405,
+        1
+      ],
+      "public_description_sha256": "2e58dbfb51427bea7691548d717462b0855792868e8fb463f3a2dc5617fc8bf5",
+      "public_endpoint": "127.0.0.1:60935",
+      "own_certificate_sha256": "ad99309b9f1a732fc3140b0aeec02f60e7e5121b3ec31ba7ea7d868af9018b07",
+      "own_matches_saved": true,
+      "peer_matches_saved": true,
+      "opaque_bulk_socket_states": []
+    }
+  },
+  "raw_evidence": [
+    {
+      "path": "build/campaign009-connected-v6/project-replication-diagnostic-1.json",
+      "sha256": "31c71595df45e9aeb626d2d8597d5e49d4335312e217340a285338c6a921be17"
+    },
+    {
+      "path": "build/campaign009-connected-v6/project-replication-diagnostic-2.json",
+      "sha256": "f9a767796846b8b0d86a12e24e1116b8c32b028dad9fef43bde72dc3e11cc16a"
+    }
+  ],
+  "source_cause": "Transport.event preserved pending creation intent on every disconnect event5. The opaque adapter emits5(nonzero errno) after asynchronous CONNECT failure; reconnectBulk refuses while that intent is nonzero. Cleanup5(0) must remain distinguishable from failed5(errno). No bulk creation deadline bounded a lost acknowledgement.",
+  "qualification": "Current native public status does not reveal private pending intent or reconnect attempt count. The exact intent value and whether32 attempts were exhausted were not observed. The source-reachable failure and public disconnected/socket tuple justify the targeted repair; they do not constitute a complete causal trace of this particular failed CONNECT.",
+  "actions": "Read-only public native490/Network7,15,25 plus /proc opaque socket state at the approved numeric endpoint. All nine management clients closed after diagnosis. No reset, stop/listen, renewal, peer replacement or re-signing performed.",
+  "observer_refusal": "Initial use of async175 for publicNetwork15 was rejected1 before token allocation; corrected observer uses the normal authorized synchronous170 API. No Native state failure or mutation from that refused call.",
+  "next_dependency": "Targeted Transport failed5 handling and independently banked finite bulk creation deadline, isolated native validation, then a fresh common campaign with the fixed ordinary MessengerDelivery."
+}
