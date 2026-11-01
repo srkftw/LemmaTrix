@@ -37,14 +37,35 @@ def complete_read(g,ui):
 
 def select_event(g,ui,event_id):
     """Read actual native timeline rows, including every checked body chunk."""
+    # Select the ordinary chronological view through its real local control.
+    # A previously chosen followed-only view can legitimately omit this author.
+    for _ in range(4):
+        g.device.press(15)
+        try:choice=wait(lambda:(lambda f:f if f[4]in(27,28)else None)(ui_call(g,ui,791)[0]),5,'native local timeline filter choice')
+        except TimeoutError:continue
+        if choice[4]==27:break
+    else:raise RuntimeError('native chronological filter choice was not observed')
     g.device.press(104)
     for _ in range(64):
+        requested=[False]
         def selected():
             f,p=ui_call(g,ui,795)
             observer=getattr(g,'project_observer',None)
             if observer is not None:observer('native chronological row',selected=p[:32].hex(),target=event_id.hex())
-            return p if any(p[:32])and complete_read(g,ui)else None
+            fields,diagnostic=ui_call(g,ui,791)
+            reading=struct.unpack_from('<Q',diagnostic,128)[0]!=0
+            requested[0]=requested[0]or reading
+            finished=complete_read(g,ui)
+            if not any(p[:32])and finished and (requested[0]or fields[6]in(4,9,12,14)):
+                return dict(empty=True,status=list(fields))
+            return p if any(p[:32])and finished else None
         chosen=wait(selected,300,'complete native signed row and content commitment')
+        if isinstance(chosen,dict):
+            # A refused/unavailable row has no verified body to display. The
+            # ordinary Next control retains native cursor ownership; do not
+            # invent content or a cursor to get past it.
+            if getattr(g,'project_observer',None):g.project_observer('native unavailable row; ordinary Next',status=chosen['status'])
+            g.device.press(28);continue
         if chosen[:32]==event_id:return chosen
         # Enter advances the chronological row directly. PgDn first scrolls a
         # long body, so it cannot be used as a one-event pagination counter.
