@@ -1075,5 +1075,12 @@
     "sha256": "3e301661acc9ee6b6e5d2e195ae722df794fb9b2334a31802e3156a2c4e1aa48",
     "source": "e2dee0a",
     "qualification": "Real adapter asynchronous errno111 plus compiled Native event/banked deadline/retry fixture on QEMU and emulatedAArch64; new installed community pending."
+  },
+  "feed_local_block_fix": {
+    "record": "campaign-009-feed-local-block.json",
+    "source_commit": "4b78702dd2ed6a5a59372992937775645185d692",
+    "state": "focused native fixture passed; ordinary successor package build and installed retained upgrade pending",
+    "wire_change": "local-block outcome15 marker0 may return96B with only public author32; existing64B followed-only marker1 unchanged",
+    "image_change": false
   }
 }

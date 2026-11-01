@@ -1,0 +1,42 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "sources": {
+    "Feed": "cae7f0d76b01e9bb69c2919f9075fb51743b09d7377fbd90f56255b4bfdeacb0",
+    "FeedAccount": "a3770a5cb554d68f32acdfdebbc5d2d05ae7e6009a22c79685c8dae10b452175"
+  },
+  "fixture_image_sha256": "e66525f664ac75a6459b9ed65ec61f4b82234ce4f0fa4b2727973d4a09e7e245",
+  "fixture_image_bytes": 226132,
+  "checks": [
+    {
+      "backend": "qemu",
+      "result": "pass",
+      "seconds": 0.21259826600726228,
+      "emulated_aarch64": false
+    },
+    {
+      "backend": "aarch64",
+      "result": "pass",
+      "seconds": 3.0106411640008446,
+      "emulated_aarch64": true
+    }
+  ],
+  "production_guest_oleans_unchanged": true,
+  "boundaries": [
+    "actual owner local-block outcome returns96B header+publicauthor only, preserving both cursors",
+    "UI clears cached body, envelope and eventID while retaining only author for F8",
+    "native renderer draws visible local-block notice",
+    "Enter and PgDn submit returned next cursor; subsequent actual completion/read makes progress",
+    "F8 from filtered marker unblocks exact native author preference",
+    "F8 block completion immediately hides prior readable row and preserves pagination; second F8 unblocks exact author",
+    "followed-only marker stays64B and automatically advances under the same local filter"
+  ],
+  "limits": "Compiled native producer/consumer/render/control transition fixture with provisioned public row/preference sentinels. Test-only M-mode trap accepts exact AccountSDK128/133 calls; no real kernel grants, authored history, installed package, networking, retention or complete community claim. AArch64 assembly backend runs under qemu-aarch64.",
+  "campaign": "009",
+  "source_commit": "4b78702dd2ed6a5a59372992937775645185d692",
+  "raw_record": "build/native-feed-local-block/evidence.json",
+  "raw_record_sha256": "7c0df5006110fe617e34c0153b38428b2c1f12c1d886f084926539c39690daa6",
+  "controller": "tests/native_feed_local_block.py",
+  "controller_sha256": "99d579bc8bcfd264c2b423a40df2317cec0be1cab49508b4a1fe8ac49434ce00",
+  "installed_successor_check": "pending explicit retained-account upgrade during connected migration"
+}
