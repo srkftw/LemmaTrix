@@ -8,6 +8,72 @@ SOURCE='''import Guest.Network
 import Guest.Mailbox
 namespace build.NativeSharedContexts
 open Guest Guest.LiveSDK
+@[noinline] def terminalLimitChecks (t : UInt64) : UInt64 :=
+  let t := zero Guest.TorRouter.state 8192 (zero Guest.Transport.st 4096 t)
+  let t := store64 Guest.TorRouter.state 1 (store64 (Guest.TorRouter.state+8) 2 t)
+  let t := store64 (Guest.TorRouter.channel 0) 4 (store64 (Guest.TorRouter.channel 1) 4
+    (store64 (Guest.TorRouter.channel 2) 4 (store64 (Guest.TorRouter.channel 3) 4 t)))
+  let t := store64 (Guest.TorRouter.circuit 0) 1 (store64 (Guest.TorRouter.circuit 0+16) 1
+    (store64 (Guest.TorRouter.circuit 1) 4 (store64 (Guest.TorRouter.circuit 1+40) 0
+    (store64 (Guest.TorRouter.circuit 2) 1 (store64 (Guest.TorRouter.circuit 2+16) 3
+    (store64 (Guest.TorRouter.circuit 3) 4 (store64 (Guest.TorRouter.circuit 3+40) 2 t)))))))
+  -- A terminal output is charged after another pair was the scheduler cursor.
+  -- Exhaustion must tear down the charged pair, not that unrelated cursor.
+  let t := store64 (Guest.TorRouter.state+72) 2 t
+  let t := store64 (Guest.TorRouter.channel 0+112) 10 (store64 (Guest.TorRouter.channel 0+128) 10 t)
+  let t := Guest.TorRouter.queueTerminal 0 17 Guest.OnionTerminal.sealed 1 t
+  if load64 (Guest.TorRouter.channel 0) t != 0 || load64 (Guest.TorRouter.channel 1) t != 0 ||
+    load64 (Guest.TorRouter.channel 2) t != 4 || load64 (Guest.TorRouter.channel 3) t != 4 then 36 else
+  let t := zero Guest.OnionTerminal.control 64 (zero Guest.OnionTerminal.st 4096 t)
+  let t := zero 0x770000 8192 t
+  let t := store64 (Guest.TorRouter.channel 0) 4 (zero (Guest.TorRouter.circuit 0) 16 t)
+  let t := store64 Guest.OnionTerminal.st 2 (store64 (Guest.OnionTerminal.st+32) 0
+    (store64 (Guest.OnionTerminal.st+176) 123 (store64 (Guest.OnionTerminal.control+16) 9 t)))
+  let t := store64 (Guest.OnionTerminal.st+48) 960 (store64 (Guest.OnionTerminal.st+56) 400
+    (store64 (Guest.OnionTerminal.st+184) 99 t))
+  let t := store64 Guest.OnionTerminal.noiseBank 0xaa (store64 Guest.OnionTerminal.received 0xbb
+    (store64 Guest.OnionTerminal.outgoing 0xcc (store64 (Guest.OnionTerminal.bank 0+512) 0xdd t)))
+  let t := store64 (Guest.OnionTerminal.bank 1) 2 (store64 (Guest.OnionTerminal.bank 1+24) 18
+    (store64 (Guest.OnionTerminal.bank 1+32) 2 (store64 (Guest.OnionTerminal.bank 1+168) 9
+    (store64 (Guest.OnionTerminal.bank 1+176) 456 (store64 (Guest.OnionTerminal.bank 1+512) 0xee t)))))
+  let t := store64 (Guest.OnionTerminal.control+32) 456 t
+  let t := Guest.OnionTerminal.expireWork 100 t
+  if load64 Guest.OnionTerminal.st t != 0 || load64 (Guest.TorRouter.channel 0) t != 0 ||
+    load64 (Guest.TorRouter.channel 2) t != 4 || load64 Guest.OnionTerminal.noiseBank t != 0 ||
+    load64 Guest.OnionTerminal.received t != 0 || load64 Guest.OnionTerminal.outgoing t != 0 ||
+    load64 (Guest.OnionTerminal.bank 0+512) t != 0 || load64 (Guest.OnionTerminal.bank 1+512) t != 0xee ||
+    load64 (Guest.OnionTerminal.control+32) t != 456 || load64 (Guest.OnionTerminal.control+16) t != 9 then 37 else
+  let t := store64 (Guest.TorRouter.channel 0) 4 (zero (Guest.TorRouter.circuit 0) 16 t)
+  let t := store64 Guest.OnionTerminal.st 2 (store64 (Guest.OnionTerminal.st+32) 0
+    (store64 (Guest.OnionTerminal.st+176) 123 (store64 (Guest.OnionTerminal.st+112) 77
+    (store64 (Guest.OnionTerminal.st+152) 99 (store64 (Guest.OnionTerminal.control+32) 123 t)))))
+  let t := Guest.OnionTerminal.expireWork 100 t
+  if load64 0x718200 t != 77 || load64 Guest.OnionTerminal.st t != 0 ||
+    load64 (Guest.OnionTerminal.control+32) t != 0 || load64 (Guest.TorRouter.channel 0) t != 0 ||
+    load64 (Guest.TorRouter.channel 2) t != 4 || load64 (Guest.OnionTerminal.bank 1+512) t != 0xee then 38 else
+  -- Healthy idle relationships are reusable, even after old deadline values.
+  let t := store64 Guest.OnionTerminal.st 2 (store64 (Guest.OnionTerminal.st+8) 3 (store64 (Guest.OnionTerminal.st+32) 2
+    (store64 (Guest.OnionTerminal.st+152) 0 (store64 (Guest.OnionTerminal.st+184) 0 t))))
+  let t := Guest.OnionTerminal.expireWork 100 t
+  if load64 Guest.OnionTerminal.st t != 2 || load64 (Guest.TorRouter.channel 2) t != 4 ||
+    Guest.OnionTerminal.workDeadline 0xffffffffffffffff 100000 != 0xffffffffffffffff then 39 else
+  -- An expired old bank cannot close a channel that was reused at a new epoch.
+  let t := store64 (Guest.OnionTerminal.st+48) 960 (store64 (Guest.OnionTerminal.st+56) 400
+    (store64 (Guest.OnionTerminal.st+184) 99 (store64 (Guest.OnionTerminal.st+168) 7
+    (store64 (Guest.TorRouter.channel 2+24) 9 t))))
+  let t := Guest.OnionTerminal.expireWork 100 t
+  if load64 Guest.OnionTerminal.st t != 0 || load64 (Guest.TorRouter.channel 2) t != 4 then 40 else
+  -- Full requests waiting behind another IPC retain their own absolute bound.
+  let t := store64 Guest.OnionTerminal.st 2 (store64 (Guest.OnionTerminal.st+32) 0
+    (store64 (Guest.OnionTerminal.st+48) 64 (store64 (Guest.OnionTerminal.st+56) 64
+    (store64 (Guest.OnionTerminal.st+240) 99 (store64 (Guest.OnionTerminal.control+32) 456 t)))))
+  let t := Guest.OnionTerminal.expireWork 100 t
+  if load64 Guest.OnionTerminal.st t != 0 || load64 (Guest.OnionTerminal.control+32) t != 456 then 41 else
+  -- A half-open handshake is finite; healthy authenticated idle is not.
+  let t := store64 Guest.OnionTerminal.st 2 (store64 (Guest.OnionTerminal.st+8) 1
+    (store64 (Guest.OnionTerminal.st+32) 0 (store64 (Guest.OnionTerminal.st+224) 99 t)))
+  let t := Guest.OnionTerminal.expireWork 100 t
+  if load64 Guest.OnionTerminal.st t != 0 then 42 else 0
 @[noinline] def bulkChecks (t : UInt64) : UInt64 :=
   let t := zero Guest.Network.control 512 (zero Guest.Network.st 64
     (zero Guest.Noise.state 52 (zero Guest.Transport.st 4096 t)))
@@ -170,7 +236,9 @@ open Guest Guest.LiveSDK
     load64 (Guest.TorRouter.channel 10) t != 1 || load64 (Guest.TorRouter.channel 9) t != 4 then 35 else
   0
 def check (t : UInt64) : UInt64 :=
-  let checked := contextChecks t
+  let checked := terminalLimitChecks t
+  if checked != 0 then checked else
+  let checked := contextChecks checked
   if checked != 0 then checked else bulkChecks checked
 end build.NativeSharedContexts
 '''
@@ -180,16 +248,25 @@ def main():
  for module in ('Guest.Network','Guest.Mailbox'):live_build.compile_module(module)
  binary=native.build(SOURCE,'NativeSharedContexts')
  # Replenishing a reclaimed pair creates a real native setup deadline. This
- # small clock oracle supplies only monotonic tick100; other traps fail.
+ # bounded oracle supplies monotonic tick100 and records exact IPC cancellation;
+ # it is not a kernel cancellation implementation. Other traps fail.
  boot=native.B/'boot.S'
  boot.write_text(boot.read_text().replace(' la t0,fatal',' la t0,fixtureClock')+'''
 fixtureClock:
  csrr t0,mcause
  li t1,9
  bne t0,t1,fatal
+ li t1,135
+ beq a7,t1,fixtureCancel
  li t1,110
  bne a7,t1,fatal
  li a0,100
+ j fixtureReturn
+fixtureCancel:
+ li t1,0x80518200
+ sd a0,0(t1)
+ li a0,0
+fixtureReturn:
  csrr t0,mepc
  addi t0,t0,4
  csrw mepc,t0
@@ -198,6 +275,6 @@ fixtureClock:
  driver.asm(boot,native.B/'1.o')
  driver.run([driver.tool('ld.lld'),'-m','elf64lriscv','--no-relax','-T',ROOT/'runtime/kernel.ld',*(native.B/f'{i}.o'for i in range(3)),'-o',native.B/'check.elf'])
  driver.run([driver.tool('llvm-objcopy'),'-O','binary',native.B/'check.elf',binary])
- report=dict(schema=1,result='pass',image_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),checks=[native.execute(binary,b) for b in a.backend or ['qemu','aarch64']],boundaries=['relay integrity failure closes only dependent incoming/outgoing pair','expired idle listener gets a finite setup window only when accepted; outbound and ongoing handshake deadlines do not renew','failed LISTEN retires only that listener, backs off within32 failures, and explicit operator listen renews its allowance','terminal keys/buffers banked by channel, stream and epoch; stale epoch rejects','mailbox sameNetworkcaller different terminalorigin cannot append or collect foreignstaging','adapterv3 accepts slot15 and rejects slot16','bulk reconnect attempts remain context-private, finite32 and pending admission does not renew them','current native Feed relationship preserves exact used allowance and expiry only on link loss; lost jobs and inbox cleared, expired/pin-changed or explicit-stop grants cannot revive'],limitations='Focused compiled RV64 state transitions, including provisioned predicate inputs for bulk reconnect; no native certificate-admission claim from this fixture. AArch64 assembly emulator runs under qemu-aarch64; no physical hardware or full native Messenger qualification.')
+ report=dict(schema=1,result='pass',image_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),checks=[native.execute(binary,b) for b in a.backend or ['qemu','aarch64']],boundaries=['terminal output link quota exhaustion closes the actual charged pair even when another pair was last pumped','partial terminal frames and pending typed IPC expire independently; exact cancellation frees the dispatch lane and wipes only the selected key/buffer snapshot','healthy idle terminal contexts do not expire; deadline addition saturates instead of disabling near clock exhaustion','relay integrity failure closes only dependent incoming/outgoing pair','expired idle listener gets a finite setup window only when accepted; outbound and ongoing handshake deadlines do not renew','failed LISTEN retires only that listener, backs off within32 failures, and explicit operator listen renews its allowance','terminal keys/buffers banked by channel, stream and epoch; stale epoch rejects','mailbox sameNetworkcaller different terminalorigin cannot append or collect foreignstaging','adapterv3 accepts slot15 and rejects slot16','bulk reconnect attempts remain context-private, finite32 and pending admission does not renew them','current native Feed relationship preserves exact used allowance and expiry only on link loss; lost jobs and inbox cleared, expired/pin-changed or explicit-stop grants cannot revive'],limitations='Focused compiled RV64 state transitions, including provisioned predicate inputs for bulk reconnect; no native certificate-admission claim from this fixture. AArch64 assembly emulator runs under qemu-aarch64; no physical hardware or full native Messenger qualification.')
  (native.B/'evidence.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2))
 if __name__=='__main__':main()

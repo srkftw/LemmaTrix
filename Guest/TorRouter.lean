@@ -82,6 +82,9 @@ partial def freeChannel (i t : UInt64) : UInt64 :=
 -- admission allowances, not civil-time expiry, prices or durable receipts.
 def accountRecord (i wireBytes t : UInt64) : UInt64 :=
   if i >= 12 then Guest.Effects.effectValue error (abort 55 t) else
+  -- Output may originate in a terminal turn after another channel was pumped.
+  -- The charged channel, rather than the last scheduler cursor, owns failure.
+  let t := store64 (state+72) i t
   let p := channel i
   let byteLimit := load64 (p+112) t
   let workLimit := load64 (p+120) t
@@ -165,6 +168,7 @@ def queueCell (i input t : UInt64) : UInt64 :=
 -- the final relay's adjacent NK key grants no authority over terminal answers.
 def queueTerminal (i stream input n t : UInt64) : UInt64 :=
   if t == error then Guest.Effects.effectValue error (abort 54 t) else
+  let t := if i < 12 then store64 (state+72) i t else t
   let p := channel i
   if !ready i t || !idleOutput i t || n == 0 || n > 498 || stream == 0 || stream > 65535 then error else
     let t := accountRecord i (n+23) t

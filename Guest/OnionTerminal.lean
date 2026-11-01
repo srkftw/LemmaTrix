@@ -43,7 +43,9 @@ def clear (t : UInt64) : UInt64 :=
   let token := load64 (st+112) t
   let t := if token != 0 then syscall 135 token 0 0 0 t else t
   let t := if load64 (control+32) t == load64 (st+176) t then store64 (control+32) 0 t else t
-  zero st 4096 (Guest.Noise.disconnect t)
+  -- zero counts words: the working eight pages include keys and all buffers.
+  -- Erase the selected saved snapshot as well, without touching other banks.
+  zero st 4096 (zero (bank (selected t)) 512 (Guest.Noise.disconnect t))
 partial def clearAllContexts (i t : UInt64) : UInt64 :=
   if i == 16 then t else clearAllContexts (i+1) (clear (selectContext i t))
 def clearAll (t : UInt64) : UInt64 :=
@@ -52,6 +54,26 @@ def clearAll (t : UInt64) : UInt64 :=
   let t := zero 0x770000 8192 t
   store64 (control+16) generation (zero control 64 (selectContext 0 t))
 def fail (reason t : UInt64) : UInt64 := store64 (st+160) reason (clear t)
+
+def elapsedDue (deadline clock : UInt64) : Bool := deadline != 0 && clock >= deadline
+theorem healthy_idle_has_no_deadline (clock : UInt64) : elapsedDue 0 clock = false := by
+  simp [elapsedDue]
+def workDeadline (clock interval : UInt64) : UInt64 :=
+  if clock > 0xffffffffffffffff-interval then 0xffffffffffffffff else clock+interval
+@[noinline] def expireWork (clock t : UInt64) : UInt64 :=
+  -- Nonzero deadlines identify admitted work. Successful completion clears
+  -- its deadline; authenticated idle contexts have four zero fields.
+  let expired := elapsedDue (load64 (st+184) t) clock ||
+    elapsedDue (load64 (st+152) t) clock || elapsedDue (load64 (st+224) t) clock ||
+    elapsedDue (load64 (st+240) t) clock
+  if !expired then t else
+  let ch := if load64 st t == 1 then 0 else load64 (st+32) t
+  -- A partial frame or hung typed service cannot hold a context/IPC lane.
+  -- A committed application operation remains reconcilable by its signed ID.
+  let current := load64 st t == 1 ||
+    (Guest.TorRouter.ready ch t && load64 (Guest.TorRouter.channel ch+24) t == load64 (st+168) t)
+  let t := if current then Guest.TorRouter.abort 59 (store64 (Guest.TorRouter.state+72) ch t) else t
+  fail 28 t
 
 def writeOpaque (source n t : UInt64) : UInt64 :=
   if load64 st t == 1 then Guest.TorRouter.clientRelay 2 (load64 (st+24) t) source n 0 t else
@@ -70,6 +92,8 @@ def beginClient (peer stream owner budget attempts t : UInt64) : UInt64 :=
   let t := store64 (st+128) owner t
   let t := store64 (st+136) budget t
   let t := store64 (st+144) attempts t
+  let clock := syscall 110 0 0 0 0 t
+  let t := store64 (st+224) (workDeadline clock 100000) clock
   let t := store64 (Guest.TorRouter.state+112) 0 t
   let t := copy (p+512) (st+192) 32 t
   let r := Guest.TorRouter.clientRelay 1 stream (p+144) 32 0 t
@@ -107,10 +131,10 @@ def receiveHandshake (kind n t : UInt64) : UInt64 :=
     if r == error then fail 8 r else
     let t := save (envelope 2 48 r)
     let r := writeOpaque sealed 72 t
-    if r == error then fail 9 r else store64 (st+8) 3 r
+    if r == error then fail 9 r else store64 (st+224) 0 (store64 (st+8) 3 r)
   else if kind == 2 && load64 st t == 1 && load64 (st+8) t == 2 then
     let r := Guest.NoiseNK.readSecond (incomingCopy+24) (restore t)
-    if r == error then fail 10 r else store64 (st+8) 3 (save r)
+    if r == error then fail 10 r else store64 (st+224) 0 (store64 (st+8) 3 (save r))
   else fail 11 t
 
 -- Fragment header is four UInt64s: request, total, offset, direction(0/1).
@@ -129,11 +153,15 @@ def receiveRecord (n t : UInt64) : UInt64 :=
   if (load64 st t == 1 && request != load64 (st+64) t) || request == 0 || direction != expected || total < 64 || total > 1024 || count == 0 ||
     offset > total || count > total-offset || load64 (st+112) t != 0 then fail 14 t else
   if offset == 0 && load64 (st+48) t == 0 then
+    let clock := syscall 110 0 0 0 0 t
+    let t := if load64 (st+240) clock == 0 then store64 (st+240) (workDeadline clock 100000) clock else clock
+    let t := store64 (st+184) (if count < total then workDeadline clock 10000 else 0) t
     let t := store64 (st+40) request t
     let t := store64 (st+48) total t
     let t := copy (fragment+32) received count t
     store64 (st+56) count t
   else if request != load64 (st+40) t || total != load64 (st+48) t || offset != load64 (st+56) t then fail 15 t else
+    let t := if offset+count == total then store64 (st+184) 0 t else t
     let t := copy (fragment+32) (received+offset) count t
     store64 (st+56) (offset+count) t
 
@@ -175,6 +203,8 @@ def processInput (t : UInt64) : UInt64 :=
     let t := store64 (st+8) 1 t
     let t := store64 (st+24) stream t
     let t := store64 (st+168) epoch t
+    let clock := syscall 110 0 0 0 0 t
+    let t := store64 (st+224) (workDeadline clock 100000) clock
     store64 (st+32) source t else t
   if !active t || n < 24 || load64 incomingCopy t != 1 || load64 (incomingCopy+16) t != n-24 || stream != load64 (st+24) t ||
     (load64 st t == 2 && (source != load64 (st+32) t || epoch != load64 (st+168) t)) then fail 16 t else
@@ -201,7 +231,7 @@ def sendQuantum (t : UInt64) : UInt64 :=
   let t := store64 (st+80) (offset+n) r
   if offset+n != total then t else
     let t := store64 (st+72) 0 (store64 (st+80) 0 t)
-    if load64 st t == 2 then store64 (st+48) 0 (store64 (st+56) 0 t) else t
+    if load64 st t == 2 then store64 (st+240) 0 (store64 (st+48) 0 (store64 (st+56) 0 t)) else t
 
 def serverQuantum (t : UInt64) : UInt64 :=
   if load64 st t != 2 then t else
@@ -210,7 +240,7 @@ def serverQuantum (t : UInt64) : UInt64 :=
     let r := syscall 134 token wire 1024 0 t
     if r == error || r > 960 then fail 20 r else
     if r == 0 then r else
-    let t := store64 (control+32) 0 (store64 (st+112) 0 r)
+    let t := store64 (st+152) 0 (store64 (control+32) 0 (store64 (st+112) 0 r))
     let t := copy wire outgoing r t
     let t := store64 (st+64) (load64 (st+40) t) t
     store64 (st+72) r t
@@ -234,10 +264,14 @@ def serverQuantum (t : UInt64) : UInt64 :=
   let t := store64 (wire+48) (load64 (st+176) t) t
   let token := syscall 133 target wire count 1024 t
   if token == error then fail 23 token else
-  store64 (control+32) (load64 (st+176) token) (store64 (st+112) token token)
+  let clock := syscall 110 0 0 0 0 token
+  store64 (st+152) (workDeadline clock 10000)
+    (store64 (control+32) (load64 (st+176) clock) (store64 (st+112) token clock))
 
 def pumpContext (i t : UInt64) : UInt64 :=
   let t := selectContext i t
+  let clock := syscall 110 0 0 0 0 t
+  let t := expireWork clock clock
   let p := Guest.NodeEnrollment.peer (load64 (st+16) t)
   let t := if active t && !Guest.TorRouter.enabled t then fail 26 t else t
   let t := if load64 st t == 2 &&
@@ -253,7 +287,7 @@ partial def pumpContexts (n t : UInt64) : UInt64 :=
   let role := load64 p t
   let ch := load64 (p+32) t
   let work := role == 1 || (role == 2 &&
-    (load64 (p+112) t != 0 || load64 (p+72) t != 0 || load64 (p+48) t != 0 ||
+    (load64 (p+112) t != 0 || load64 (p+72) t != 0 || load64 (p+48) t != 0 || load64 (p+224) t != 0 ||
      !Guest.TorRouter.ready ch t || load64 (Guest.TorRouter.channel ch+24) t != load64 (p+168) t))
   pumpContexts (n+1) (if work then pumpContext i t else t)
 def pump (t : UInt64) : UInt64 :=
@@ -274,6 +308,8 @@ def submitRequest (caller length t : UInt64) : UInt64 :=
   let t := store64 (st+72) n t
   let t := store64 (st+136) (load64 (st+136) t-n) t
   let t := store64 (st+144) (load64 (st+144) t-1) t
+  let clock := syscall 110 0 0 0 0 t
+  let t := store64 (st+240) (workDeadline clock 100000) clock
   response 0 request t
 
 def collectResponse (caller length t : UInt64) : UInt64 :=
@@ -283,7 +319,7 @@ def collectResponse (caller length t : UInt64) : UInt64 :=
   if load64 (command+8) t != load64 (st+40) t then response 3 0 t else
   let t := header 0 (load64 (st+40) t) n 0 0 0 0 t
   let t := copy received (wire+64) n t
-  64+n+store64 (st+48) 0 (store64 (st+56) 0 (zero received 128 t))
+  64+n+store64 (st+240) 0 (store64 (st+48) 0 (store64 (st+56) 0 (zero received 128 t)))
 
 def statusResponse (t : UInt64) : UInt64 :=
   let t := header 0 (load64 st t) (load64 (st+8) t) (load64 (st+160) t) (load64 (st+136) t) (load64 (st+144) t) 0 t
