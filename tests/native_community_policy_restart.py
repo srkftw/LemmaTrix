@@ -179,6 +179,35 @@ def blocked_marker(guest, operator, target, author):
 
 
 def compose(guest, text, key=61):
+    # Reuse the existing ordinary F5 exact-outbox reconciliation. Import at
+    # call time because the application continuation also imports this module's
+    # operator-policy helpers; no actor work happens during either import.
+    from native_feed_project_account import settle_exact
+    operator = guest.policy_operator
+    def reconciliation(observation):
+        if observation['check'] == 'query/route uncertainty observed before native exact retry':
+            event_id = bytes.fromhex(observation['event_id'])
+            original = find(operator, event_id=event_id)
+            assert original is not None, 'inspect an uncommitted prior outbox before composing another event'
+            assert original[1][144:176] == feed_ui(guest)[1][:32]
+            usage = feed.invoke(operator.client, 490, action=9)[0]
+            budget = feed.invoke(operator.client, 490, action=12)[0]
+            # Native begin verifies the original signature/domain/scope before
+            # recognizing this exact committed identity; it allocates no stage.
+            verified, _ = feed.invoke(operator.client, 491, action=1, data=original[1][32:])
+            assert verified[2] == 2
+            assert feed.invoke(operator.client, 490, action=9)[0][1:6] == usage[1:6]
+            after = feed.invoke(operator.client, 490, action=12)[0]
+            assert after[1:3] == budget[1:3] and after[4:7] == budget[4:7]
+            observation = dict(observation, native_signature_duplicate=list(verified),
+                               committed_usage=list(usage), before_budget=list(budget),
+                               after_budget=list(after), original_signed_sha256=hashlib.sha256(original[1][32:]).hexdigest())
+        elif observation['check'] == 'native exact retry reconciles original commitment after query/route uncertainty':
+            event_id = bytes.fromhex(observation['event_id'])
+            assert sum(row[:32] == event_id for _, row in rows(operator)) == 1
+            observation = dict(observation, visible_copies=1)
+        guest.policy_observed(observation)
+    settle_exact(guest, operator, reconciliation)
     focus_application(guest, 'feed')
     wait(lambda: feed_ui(guest)[0][5] in (0, 6, 7), 300,
          'native previous publication settled')
@@ -398,7 +427,21 @@ def main():
         alice, bob = actors['alice'], actors['bob']
         for reader in (alice, bob):
             reader.policy_first_event = bytes.fromhex(campaign.state['events']['ordinary']['id'])
+            reader.policy_operator = beta if reader is alice else alpha
+            def observed(observation, name=reader.name):
+                state.setdefault('publication_reconciliation', []).append(dict(person=name, **observation))
+                save()
+            reader.policy_observed = observed
         relays = [actors['relay'+str(i)] for i in (1, 2, 3)]
+        def selected_route(reader, destination):
+            route = net(reader, 32)[0]
+            terminal, pin = net(reader, 41)
+            if route[2] == 3 and terminal[2] == 3 and pin == hashlib.sha256(destination.certificate).digest():
+                state.setdefault('personal_route_choices', []).append(dict(person=reader.name,
+                    destination=destination.name, reused=True, route=list(route), terminal=list(terminal)))
+                save()
+                return
+            select_feed_route(reader, destination, relays)
         author = bytes.fromhex(campaign.state['personal']['alice']['feed_public'])
         target = bytes.fromhex(campaign.state['events']['reply']['id'])
         state['configuration'] = campaign.state['configuration']
@@ -424,8 +467,8 @@ def main():
             save()
             print('Native finite lease stage checks', json.dumps(lease_checks), flush=True)
             if args.stage == 'moderation':
-                select_feed_route(alice, beta, relays)
-                select_feed_route(bob, alpha, relays)
+                selected_route(alice, beta)
+                selected_route(bob, alpha)
                 original = find(beta, event_id=target)
                 assert original and original[1][144:176] == author
                 if not state['done'].get('block'):
@@ -510,9 +553,9 @@ def main():
             else:
                 assert state['done'].get('moderation'), 'run the moderation stage first'
                 if not state['done'].get('pending-beta'):
-                    select_feed_route(alice, beta, relays)
+                    selected_route(alice, beta)
                 if not state['done'].get('pending-alpha'):
-                    select_feed_route(bob, alpha, relays)
+                    selected_route(bob, alpha)
                 if not state['done'].get('sealed'):
                     node_key = key_credential(out/'beta.node-unlock')
                     mod_key = key_credential(out/'beta.moderator-unlock')
@@ -573,6 +616,7 @@ def main():
                     assert adapter_hash == RESTART_ADAPTER_SHA256, 'inspect changed opaque adapter before this exact restart continuation'
                     replacement = Guest('beta', 'qemu', out, out/'guest.bin', store=out/'beta.img').start()
                     actors['beta'] = beta = replacement
+                    alice.policy_operator = beta
                     state['beta_opaque_adapter_transition'] = dict(
                         initial_sha256=INITIAL_ADAPTER_SHA256,
                         initial_provenance='preserved startup adapter identity of the original nine long-lived actors; supplied by the integrator',
@@ -671,7 +715,7 @@ def main():
                 else:
                     assert alpha_after[3] == state['alpha_budget'][3]
                 state['block_after_restart'] = blocked_marker(bob, alpha, target, author)
-                select_feed_route(alice, beta, relays)
+                selected_route(alice, beta)
                 alice.device.press(63 if feed_ui(alice)[0][5] == 8 else 19)
                 wait(lambda: feed_ui(alice)[0][5] == 7, 600, 'author obtains actual replication evidence for its original accepted event through a fresh selected route')
                 state['after_beta_budget'] = after
