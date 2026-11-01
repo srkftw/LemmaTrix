@@ -113,6 +113,7 @@ def main():
     before_counter=state['coordinator_counters_before'][g.name];after_counter=state['coordinator_counters_after'][g.name]
     assert after_counter[1]<=512 and after_counter[2]>=before_counter[2]and after_counter[6]>=before_counter[6]
     assert after[i][4]<=state['before_stall'][i][4]and after[i][5]<=state['before_stall'][i][5],'native parent allowances must remain spent'
+   for obsolete in('error','traceback'):state.pop(obsolete,None)
    state.update(result='pass',elapsed_seconds=time.monotonic()-started,unrelated_after=after,checks=['explicit parent-linked coordinator lifecycle retains each approved private session owner and UI','fresh selected personal routes use unchanged peer certificates and required mode1','new native text and reply decrypt while one independent authenticated Feed request remains paused','only Charlie own cancellation follows; shared operators are never reset'],limits=['The preceding scoped Alice link loss remains unexplained and continuous admission is not claimed across recovery.','A local coordinator receive failure and finite allowance require explicit personal lifecycle recovery; this does not reset durable mailbox/event budgets or authorize a new peer.','This episode is separate from the already completed original text/reply and routed Forge checks.'])
    save();print(json.dumps(state,indent=2),flush=True)
   except BaseException as error:
