@@ -196,13 +196,20 @@ def rpc (length purpose t : UInt64) : UInt64 :=
 def mailboxAuth (p fetch dst t : UInt64) : UInt64 :=
   let t := copy p dst 32 t
   copy (p+(if fetch == 1 then 64 else 32)) (dst+32) 32 t
+def syncForgeSerial (t : UInt64) : UInt64 :=
+  let routed := load64 (Guest.ForgeRouted.st+16) t
+  let current := load64 (st+80) t
+  store64 (st+80) (if routed > current then routed else current) t
 def configure (token length t : UInt64) : UInt64 :=
   let owner := load64 (command+8) t
   let selected := syscall 128 2 434 0 0 t
   if owner == 0 || owner != selected || syscall 131 token 0 0 0 selected != 0 then response 1 0 0 0 selected else
   if length == 64 && owner == load64 st selected && load64 (st+152) selected == 1 then response 0 0 0 0 (clearAttachmentHint selected) else
-  if length != 64 || load64 (st+8) selected != 0 || load64 (st+88) selected != 0 then response 4 0 0 0 selected else
-  let t := zero foreground 20 (zero st 64 (zero preflight 128 selected))
+  if length != 64 || load64 (st+8) selected != 0 || load64 (st+88) selected != 0 ||
+    forgePending selected || Guest.MessengerForge.active selected then response 4 0 0 0 selected else
+  let selected := syncForgeSerial selected
+  let serial := load64 (st+80) selected
+  let t := store64 (st+80) serial (zero foreground 20 (zero st 64 (zero preflight 128 selected)))
   let t := store64 (preflight+128) 1 (store64 st owner t)
   let r := ownerSubmit 434 0 11 0 0 11 t
   if r == error then response 1 0 0 0 r else response 0 0 0 0 r
@@ -736,7 +743,7 @@ partial def loop (t : UInt64) : UInt64 :=
   else n
   let t := attachmentHintQuantum t
   let t := if forgePending t then queuedForgeQuantum t else
-    if Guest.MessengerForge.active t then Guest.MessengerForge.pump t else receiveQuantum (sendQuantum (prekeyQuantum (collectRPC (collectOwner t))))
+    if Guest.MessengerForge.active t then syncForgeSerial (Guest.MessengerForge.pump t) else receiveQuantum (sendQuantum (prekeyQuantum (collectRPC (collectOwner t))))
   let t := zero command 124 (zero wire 128 (zero scratch 80 t))
   let work := attachmentWaiting t || forgePending t || (load64 preflight t > 0 && load64 preflight t < 8) ||
     (load64 (preflight+128) t > 0 && load64 (preflight+128) t < 5) || load64 (st+8) t != 0 || load64 (st+88) t != 0 ||

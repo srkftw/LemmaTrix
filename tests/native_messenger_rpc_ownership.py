@@ -46,7 +46,28 @@ def check (t : UInt64) : UInt64 :=
   if load64 (st+88) r != 0 || load64 (st+200) r != 14 || load64 (oracle+24) r != 1 ||
     load64 (oracle+32) r != 81 || load64 (oracle+48) r != 81 || !retained r then 7 else
   let r := collectRPC (prepared 0 10 90000 90000 0 r)
-  if load64 (oracle+16) r != 0 || load64 (oracle+24) r != 0 || !retained r then 8 else 0
+  if load64 (oracle+16) r != 0 || load64 (oracle+24) r != 0 || !retained r then 8 else
+  -- A valid new session-owner binding does not rewind this Delivery's counter.
+  let t := zero Guest.ForgeRouted.st 512 (prepared 0 10 0 1000 0 r)
+  let t := store64 st 66 (store64 (st+80) 991 (store64 (Guest.ForgeRouted.st+16) 1001
+    (store64 (command+8) 77 t)))
+  let r := configure 123 64 t
+  if status r != 0 || load64 st r != 77 || load64 (st+80) r != 1001 ||
+    load64 (st+8) r != 222 || load64 (oracle+64) r != 1 then 9 else
+  -- A completed foreground serial joins the same monotonically increasing lane.
+  let t := store64 Guest.ForgeRouted.st 3 (store64 (Guest.ForgeRouted.st+16) 2001 r)
+  let r := syncForgeSerial t
+  if load64 (st+80) r != 2001 then 10 else
+  let r := syncForgeSerial (store64 (Guest.ForgeRouted.st+16) 2000 r)
+  if load64 (st+80) r != 2001 then 11 else
+  -- Reconfiguration cannot discard an active or queued foreground request.
+  let t := store64 st 66 (store64 (st+8) 0 (store64 (st+152) 0
+    (store64 Guest.ForgeRouted.st 1 r)))
+  let r := configure 123 64 t
+  if status r != 4 || load64 st r != 66 || load64 (st+80) r != 2001 ||
+    load64 Guest.ForgeRouted.st r != 1 then 12 else
+  let r := configure 123 64 (store64 Guest.ForgeRouted.st 3 (store64 foreground 1 r))
+  if status r != 4 || load64 foreground r != 1 || load64 (st+80) r != 2001 then 13 else 0
 end build.NativeMessengerRPCOwnership
 '''
 TRAP='''
@@ -57,6 +78,12 @@ fixtureTrap:
  li t0,0x805a1000
  li t1,116
  beq a7,t1,fixtureClock
+ li t1,128
+ beq a7,t1,fixtureEndpoint
+ li t1,131
+ beq a7,t1,fixtureGrant
+ li t1,133
+ beq a7,t1,fixtureOwner
  li t1,30
  bne a7,t1,fatal
  li t1,6
@@ -122,6 +149,30 @@ fixturePending:
 fixtureError:
  li a0,-1
  j fixtureReturn
+fixtureEndpoint:
+ li t1,2
+ bne a0,t1,fatal
+ li t1,434
+ bne a1,t1,fatal
+ li a0,77
+ j fixtureReturn
+fixtureGrant:
+ li t1,123
+ bne a0,t1,fatal
+ li a0,0
+ j fixtureReturn
+fixtureOwner:
+ li t1,77
+ bne a0,t1,fatal
+ li t1,0x411000
+ bne a1,t1,fatal
+ li t1,64
+ bne a2,t1,fatal
+ ld t1,64(t0)
+ addi t1,t1,1
+ sd t1,64(t0)
+ li a0,222
+ j fixtureReturn
 fixtureClock:
  ld a0,0(t0)
 fixtureReturn:
@@ -135,6 +186,6 @@ def main():
  native.B=a.output.resolve();binary=native.build(SOURCE,'NativeMessengerRPCOwnership')
  boot=native.B/'boot.S';boot.write_text(boot.read_text().replace(' la t0,fatal',' la t0,fixtureTrap')+TRAP)
  driver.asm(boot,native.B/'1.o');driver.run([driver.tool('ld.lld'),'-m','elf64lriscv','--no-relax','-T',ROOT/'runtime/kernel.ld',*(native.B/f'{i}.o'for i in range(3)),'-o',native.B/'check.elf']);driver.run([driver.tool('llvm-objcopy'),'-O','binary',native.B/'check.elf',binary])
- report=dict(schema=1,result='pass',image_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),delivery_source_sha256=hashlib.sha256((ROOT/'Guest/MessengerDelivery.lean').read_bytes()).hexdigest(),fixture_source_sha256=hashlib.sha256(SOURCE.encode()).hexdigest(),checks=[native.execute(binary,b)for b in a.backend or('qemu','aarch64')],boundaries=['actual rpc admits90000tick bounded deadline with10000tick margin before parent100000; addition saturates','late response available beyond old5000tick limit and ready at harddeadline both complete without cancellation','pending read does not renew its deadline; expiry polls then cancels exact nonzero current request before dropping its local handle','malformed or failed network results also cancel the exact owned request before failure; ciphertext commitment and stable request state survive','no pending local request causes no poll or cancellation'],limits='Actual compiled MessengerDelivery rpc/collectRPC transitions. A declared Network/clock oracle supplies response bytes and records exact42 request/local handle; it does not implement a kernel grant, real Network cancellation, mailbox, wire, durability or AEAD. The separate c514 terminal-request fixture verifies actual stale42 refusal/isolation. AArch64 assembly backend is emulated under qemu-aarch64.')
+ report=dict(schema=1,result='pass',image_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),delivery_source_sha256=hashlib.sha256((ROOT/'Guest/MessengerDelivery.lean').read_bytes()).hexdigest(),fixture_source_sha256=hashlib.sha256(SOURCE.encode()).hexdigest(),checks=[native.execute(binary,b)for b in a.backend or('qemu','aarch64')],boundaries=['actual rpc admits90000tick bounded deadline with10000tick margin before parent100000; addition saturates','late response available beyond old5000tick limit and ready at harddeadline both complete without cancellation','pending read does not renew its deadline; expiry polls then cancels exact nonzero current request before dropping its local handle','malformed or failed network results also cancel the exact owned request before failure; ciphertext commitment and stable request state survive','no pending local request causes no poll or cancellation','actual valid configuration preserves the maximum live RPC serial across a session-owner change; completed Forge counter synchronization cannot rewind it','configuration refuses active or queued foreground work without discarding its ownership'],limits='Actual compiled MessengerDelivery rpc/collectRPC transitions. Declared Network/clock and current Owner endpoint/grant/admission oracles supply response bytes, permit configuration, and record exact42 request/local handle; it does not implement a kernel grant, real Network cancellation, mailbox, wire, durability or AEAD. The separate c514 terminal-request fixture verifies actual stale42 refusal/isolation. AArch64 assembly backend is emulated under qemu-aarch64.')
  (native.B/'evidence.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2))
 if __name__=='__main__':main()

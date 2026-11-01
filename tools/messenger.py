@@ -57,6 +57,22 @@ def install(client,path,public,rights):
     service=nodes.start_package(client,nodes.approved_package(path,public,info['release_id'],rights),raw)
     return service,bytes.fromhex(info['release_id'])
 
+def delivery_start(client,a):
+    """Bind a new coordinator to the current owner/UI without replacing them."""
+    owner=endpoint(client,2,434);who=launcher(client)
+    ui_info=releases.inspect(a.ui_release.read_bytes());owner_info=releases.inspect(a.owner_release.read_bytes())
+    uid=bytes.fromhex(ui_info['release_id']);owner_sid=bytes.fromhex(owner_info['release_id'])
+    if ui_info['rights']!=799 or owner_info['rights']!=0:raise ValueError('exact native Messenger UI799 and rights-zero owner releases required')
+    delivery,did=install(client,a.release,a.public,1024)
+    try:
+        for op in (427,428,434):bind(client,2,owner,delivery,op,owner_sid,did)
+        for op in range(460,464):bind(client,4,delivery,a.ui,op,did,uid)
+        bind(client,4,delivery,who,464,did)
+        invoke(client,4,464,h=owner)
+    except BaseException:
+        client.request(26,struct.pack('<Q',delivery));raise
+    return dict(owner=owner,ui=a.ui,delivery=delivery,delivery_release=did.hex(),route_configured=False,exact_grant_count=32)
+
 def delivery_parent(value):
     if len(value)!=64 or any(c not in'0123456789abcdefABCDEF'for c in value)or not any(bytes.fromhex(value)):
         raise argparse.ArgumentTypeError('delivery parent must be a nonzero exact32-byte release hash')
@@ -168,20 +184,7 @@ def main(argv=None):
                 a.output.write_bytes(invitation)
                 result=dict(public_invitation=str(a.output),bytes=len(invitation),certificate_sha256=hashlib.sha256(certificate).hexdigest(),fingerprint=hashlib.sha256(subject).hexdigest(),private_keys_exported=False,certification_seed_retention='ephemeral; temporary signer is stopped after its public certificate is committed')
             finally:client.request(26,struct.pack('<Q',signer))
-        elif a.command=='delivery-start':
-            owner=endpoint(client,2,434);who=launcher(client)
-            ui_info=releases.inspect(a.ui_release.read_bytes());owner_info=releases.inspect(a.owner_release.read_bytes())
-            uid=bytes.fromhex(ui_info['release_id']);owner_sid=bytes.fromhex(owner_info['release_id'])
-            if ui_info['rights']!=799 or owner_info['rights']!=0:raise ValueError('exact native Messenger UI799 and rights-zero owner releases required')
-            delivery,did=install(client,a.release,a.public,1024)
-            try:
-                for op in (427,428,434):bind(client,2,owner,delivery,op,owner_sid,did)
-                for op in range(460,464):bind(client,4,delivery,a.ui,op,did,uid)
-                bind(client,4,delivery,who,464,did)
-                invoke(client,4,464,h=owner)
-            except BaseException:
-                client.request(26,struct.pack('<Q',delivery));raise
-            result=dict(owner=owner,ui=a.ui,delivery=delivery,delivery_release=did.hex(),route_configured=False,exact_grant_count=32)
+        elif a.command=='delivery-start':result=delivery_start(client,a)
         elif a.command=='delivery-status':
             f,_=invoke(client,4,464,a=1)
             result=dict(status=list(f),publication_phase=f[1],publication_reason=f[2],
