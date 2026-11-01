@@ -23,6 +23,23 @@ def service(client,operation,action=0,handle=0,offset=0,count=0,data=b'',allowed
  if fields[0]not in allowed:raise ValueError(('native service refusal',list(fields)))
  return fields,raw[64:]
 
+def read_borrowed_object(client,handle):
+ # UI794 shares a distinct read cap with Launcher. Release only that borrowed
+ # reference, so repeated observations do not keep the UI's old exports alive.
+ try:return client.read_object(handle)
+ finally:client.objects(47,handle)
+
+def timeline_rows(client):
+ cursor=0
+ for _ in range(65):
+  fields,body=service(client,491,action=5,handle=cursor,allowed=(0,6))
+  if fields[0]==6:return
+  assert len(body)==512 and hashlib.sha256(body[32:]).digest()==body[:32]
+  assert cursor<fields[1]<=64,fields
+  cursor=fields[1]
+  yield fields,body
+ raise RuntimeError('native bounded timeline has no termination')
+
 UNAVAILABLE='This review note was signed while the required private route was unavailable. Reconnect must publish the exact pending author sequence and event commitment without direct fallback.'
 UNCERTAIN=('Release review: a signed community note and a project release make different promises. A note records its author, intended federations, content commitment and causal references. The release must still pass the normal publisher signature and current admission checks before an action in Forge or Library. ' 'The service should preserve an accepted note across a lost connection and report uncertainty honestly to its author. An exact retry should retrieve the existing commitment instead of spending a fresh publication allowance or creating another visible row. Other readers and conversations should continue while that author reconnects. ' 'This review also asks operators to keep finite transport and storage terms visible. Expiry must require explicit approved renewal, and a failed or exhausted request must stay within its own context. Those limits make a small voluntary project community practical without granting a post permission to execute code or changing another federation policy.')
 
@@ -50,23 +67,19 @@ def main():
    while b'\n'not in raw:raw+=s.recv(4096)
    s.close();answer=json.loads(raw);assert answer['ok'],answer;return answer['channel']
   def lookup(g,text=None,event_id=None):
-   rows=[];cursor=0
-   for _ in range(64):
-    f,body=service(g.client,491,action=5,handle=cursor,allowed=(0,6))
-    if f[0]==6:return rows
-    assert len(body)==512 and hashlib.sha256(body[32:]).digest()==body[:32]
-    cursor=f[1]
+   rows=[]
+   for f,body in timeline_rows(g.client):
     author=body[32+112:32+144]==bytes.fromhex(campaign.state['personal']['charlie']['feed_public'])
     if event_id is not None and body[:32]==event_id:rows.append(body)
     elif event_id is None and author and(text is None or body[32+224:32+256]==hashlib.sha256(text.encode()).digest()):rows.append(body)
-   raise RuntimeError('native bounded timeline has no termination')
+   return rows
   def stats():
    rows=lookup(alpha)
    return dict(author_events=len(rows),author_content_bytes=sum(struct.unpack_from('<Q',row,32+256)[0]for row in rows))
   def export(label):
    charlie.device.press(59);wait(lambda:feed_ui(charlie)[0][2]==5,120,'native profile panel');old=feed_ui(charlie,793)[0][1];charlie.device.press(66)
    wait(lambda:feed_ui(charlie,793)[0][1]not in(0,old),180,'native explicit public profile export')
-   f,_=feed_ui(charlie,794);assert f[0]==0;raw=charlie.client.read_object(f[1])
+   f,_=feed_ui(charlie,794);assert f[0]==0;raw=read_borrowed_object(charlie.client,f[1])
    assert len(raw)==2048 and struct.unpack_from('<3Q',raw)==(0x3154524f5046544c,1,0),'public-only profile expected'
    result=dict(sequence=struct.unpack_from('<Q',raw,24)[0],public=raw[32:64].hex(),event=raw[128:160].hex(),generation=struct.unpack_from('<Q',raw,160)[0],sha256=hashlib.sha256(raw).hexdigest())
    (out/(label+'-public-profile.bin')).write_bytes(raw);return result
