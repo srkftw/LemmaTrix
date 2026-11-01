@@ -111,6 +111,38 @@ def save_approved_profile(path,profile):
     finally:os.close(fd)
 
 
+def import_public_preferences(g,profile,checkpoint,save,observed):
+    """Import approved public state through Objects and an explicit native F9."""
+    proof=checkpoint.setdefault('public_preferences_import',{})
+    assert len(profile)==2048 and struct.unpack_from('<Q',profile,16)[0]==1
+    expected=hashlib.sha256(profile).hexdigest()
+    if 'approved_sha256'in proof:assert proof['approved_sha256']==expected
+    proof['approved_sha256']=expected;save()
+    focus_feed(g)
+    before,identity_fields=feed_ui(g)
+    assert before[1]==0 and not any(identity_fields[:32]),'public import must use the existing empty no-vault account'
+    if not proof.get('imported'):
+        handle=g.client.import_object(profile,kind=6)
+        try:
+            delegated=g.client.objects(6,handle,g.feed_ui,1)[0][1]
+            staged,_=project.ui_call(g,g.feed_ui,792,delegated)
+            assert staged[0]==0
+        finally:g.client.objects(47,handle)
+        g.device.press(59);g.device.press(67)
+        project.wait_native(g,lambda:feed_ui(g)[0][4]==50 and project.complete_read(g,g.feed_ui),180,'explicit native public preference import without author credentials')
+        proof.update(imported=True,owner=g.feed_owner,ui=g.feed_ui);save()
+    exported=export_public(g,include_preferences=True)
+    assert exported[256:1792]==profile[256:1792]
+    assert not any(exported[24:64])and not any(exported[128:168]),'public profile must not create a signing identity, sequence or signed outbox'
+    status,public=feed_ui(g)
+    assert status[1]==0 and not any(public[:32])
+    proof.update(reexport_sha256=hashlib.sha256(exported).hexdigest(),preference_sha256=hashlib.sha256(exported[256:1792]).hexdigest(),
+        author_present=False,key_generation=0,sequence=0,signing_seed_or_seal_imported=False,moderator_authority_imported=False,
+        identity_created=False,network_relationship_created=False,frame=screenshot(g,'approved-public-preferences-import'))
+    save();observed(dict(check='approved public Objects profile imports selected preferences into the existing empty no-vault account without author or moderator credentials',**proof))
+    return proof
+
+
 def retained_generation(backing):
     generations=[0]
     with backing.open('rb')as source:
@@ -753,7 +785,10 @@ def main():
                     focus_feed(g);g.device.press(59);g.device.press(61)
                     if feed_ui(g,793)[0][5]!=1:g.device.press(62)
                     g.device.textASCII(secret(out/(g.name+'.feed-author-unlock'),create=False).hex(),delay=.04);g.device.press(63)
-                    project.wait_native(g,lambda:feed_ui(g)[0][1]==1 and feed_ui(g)[0][4]==46 and feed_ui(g)[0][5]==8
+                    # The immediate recovery notice46 is superseded by the
+                    # normal status poll's reconciliation notice12. Require
+                    # durable/current state, rather than a transient label.
+                    project.wait_native(g,lambda:feed_ui(g)[0][1]==1 and feed_ui(g)[0][5]==8
                         and feed_ui(g,793)[0][6]==1 and project.complete_read(g,g.feed_ui)
                         and retained_generation(backing)>recovery['previous_root_generation'],180,'complete retained author recovery and fresh reseal with original federation offline')
                 assert feed_ui(g)[1][:32]==author
@@ -814,6 +849,8 @@ def main():
                 if 'move_root_before'in checkpoint:assert retained_generation(backing)>checkpoint['move_root_before']
                 save_approved_profile(out/(g.name+'.migrated-approved-feed-profile'),after)
                 passed('native approved export after hosting move preserves exact new outbox reference and selected preferences',profile_sha256=hashlib.sha256(after).hexdigest(),preference_sha256=hashlib.sha256(after[256:1792]).hexdigest(),opaque_root_generation=retained_generation(backing),sealed_private_key_included=False)
+                portable=import_public_preferences(actors['charlie'],after,checkpoint,save,observed)
+                passed('explicit portable public preferences restore on an empty account without transferring publishing or moderation authority',**portable)
             else:
                 if a.feed_packages is None:raise ValueError('--feed-packages required for exact ephemeral relaunch')
                 ephemeral=actors['charlie'];focus_application(ephemeral,'feed')
