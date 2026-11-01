@@ -10,7 +10,7 @@ from pathlib import Path
 from types import SimpleNamespace
 ROOT=Path(__file__).resolve().parents[1]
 sys.path[:0]=[str(ROOT/'tools'),str(ROOT/'tests')]
-import feed,identity,projects
+import feed,federation,identity,projects
 import feed_project_controls as project
 from native_community_campaign import attach_campaign,feed_ui,focus_application,select_feed_route
 from native_community_policy_restart import approved_synchronous_beta_admin,check_replication_lease
@@ -152,22 +152,41 @@ def settle_exact(g,operator,observed):
     observed(dict(check='native exact retry reconciles original commitment after query/route uncertainty',event_id=event_id.hex(),status=list(feed_ui(g)[0]),duplicate_publication=False))
 
 
-def author_actions(g,original,destination,state,author,out,observed,defer_replication=False):
+def application_checkpoint(out,state):
+    """Accept only the explicitly released partial campaign, without upgrading it."""
+    path=out/'application-checkpoint-release.json';released=json.loads(path.read_text())
+    assert released['result']=='application-checkpoint-released'
+    assert released['configuration']==state['configuration']
+    assert released['controller_stopped']and released['portals_released']and released['all_nine_running']
+    assert released['event_count']==17==len(state['events'])
+    assert released['event_ids']=={key:event['id']for key,event in state['events'].items()}
+    assert all(released['passed'].get(key)for key in('three-feed','long-read','follow-reply'))
+    return dict(path=str(path),sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
+                qualification='partial application checkpoint; contention/reconnect not run',
+                reserved_history_keys=['ordinary','long','review-13'],editable_review='review-2')
+
+
+def author_actions(g,original,destination,state,author,out,observed,defer_replication=False,application_release=None):
     """Use the shipped E/T controls on one disposable own review, once each."""
-    history_path=out/'reconnect-progress.json';history=json.loads(history_path.read_text())
-    if history.get('configuration')!=state['configuration']or not history.get('done',{}).get('history-read'):
-        raise ValueError('Charlie must finish the exact common-image history read before author edits/tombstones')
+    history_path=out/'reconnect-progress.json'
+    if application_release is None:
+        history=json.loads(history_path.read_text())
+        if history.get('configuration')!=state['configuration']or not history.get('done',{}).get('history-read'):
+            raise ValueError('Charlie must finish the exact common-image history read before author edits/tombstones')
     path=out/'feed-author-actions.json'
     journal=json.loads(path.read_text())if path.exists()else None
     if journal is None:
-        key,event=next((key,event)for key,event in state['events'].items()if key.startswith('review-')and event['author']==author.hex()and event['kind']==1)
+        key,event=('review-2',state['events']['review-2'])if application_release else next((key,event)for key,event in state['events'].items()if key.startswith('review-')and event['author']==author.hex()and event['kind']==1)
+        assert event['author']==author.hex()and event['kind']==1
         target=bytes.fromhex(event['id'])
         original_row=next(p for _,p in rows(original)if p[:32]==target)
         replica_row=next(p for _,p in rows(destination)if p[:32]==target)
         assert original_row==replica_row and hashlib.sha256(original_row[32:]).hexdigest()==event['signed_sha256']
         assert hashlib.sha256(read_body(original,original_row)).hexdigest()==event['content_sha256']
         journal=dict(schema=1,configuration=state['configuration'],review_key=key,author=author.hex(),target=event['id'],original=original_row.hex(),
-                     original_content_sha256=event['content_sha256'],history_evidence_sha256=hashlib.sha256(history_path.read_bytes()).hexdigest(),actions={})
+                     original_content_sha256=event['content_sha256'],actions={})
+        if application_release:journal['application_checkpoint_release']=application_release
+        else:journal['history_evidence_sha256']=hashlib.sha256(history_path.read_bytes()).hexdigest()
         project.write_record(path,journal)
     assert journal['configuration']==state['configuration']and journal['author']==author.hex()
     target=bytes.fromhex(journal['target']);original_row=bytes.fromhex(journal['original'])
@@ -245,6 +264,7 @@ def main():
     parser.add_argument('--feed-packages',type=Path,help='exact frozen bundle required for ephemeral relaunch')
     parser.add_argument('--alpha-offline-approved',action='store_true',help='select only after connected moderation/restart checks finish')
     parser.add_argument('--local-project-only',action='store_true',help='preserve measured replication failure while completing unaffected native project actions; never a full pass')
+    parser.add_argument('--application-checkpoint',action='store_true',help='run strict project actions after the explicit partial 17-event release, preserving later history-read targets')
     a=parser.parse_args();out=a.attach.resolve();evidence=out/('feed-'+a.stage+'-account.json');began=time.monotonic()
     initial=json.loads((out/'native-actors.json').read_text());person=initial['personal'][a.person]['feed']
     original_name='alpha'if person['federation']==initial['actors']['alpha']['feed']['federation']else'beta'
@@ -260,7 +280,12 @@ def main():
     for historical in('error','traceback','native_ui','native_events','inspection_error'):report.pop(historical,None)
     attempt=dict(started_utc=time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),result='running');attempts.append(attempt);report['result']='running'
     checkpoint=report.setdefault('checkpoints',{})
-    if a.stage=='project':
+    release=None
+    if a.application_checkpoint:
+        assert a.stage=='project'and not a.local_project_only
+        release=application_checkpoint(out,initial)
+        report['application_checkpoint_release']=release
+    elif a.stage=='project':
         completed=json.loads((out/'reconnect-progress.json').read_text())
         assert initial['done'].get('cancel')and completed.get('result')=='pass'and completed.get('done',{}).get('ephemeral'),'finish the full Charlie continuation before acquiring project/UI control'
         assert completed['configuration']==initial['configuration']
@@ -295,8 +320,9 @@ def main():
                         check=check_replication_lease(actors[name],state['actors'][name],state['bulk_endpoint'])
                         if check['renewed']:
                             project.write_record(out/'native-actors.json',state)
-                            public=json.loads((out/'continuations.json').read_text());public['actors'][name]=state['actors'][name]
-                            project.write_record(out/'continuations.json',public)
+                            if(out/'continuations.json').exists():
+                                public=json.loads((out/'continuations.json').read_text());public['actors'][name]=state['actors'][name]
+                                project.write_record(out/'continuations.json',public)
                         leases[name]=check;save()
                     passed('one explicit project-stage replication lease check preserves the same durable policy and charged retry authority',operators=list(leases.values()),per_post_keepalive=False)
                     checkpoint['replication_lease_checked']=True;save()
@@ -328,7 +354,7 @@ def main():
                     checkpoint['retained']=True;save()
                 author_scope='local'if a.local_project_only else'replicated'
                 if checkpoint.get('author_actions')not in(True,'replicated',author_scope):
-                    result=author_actions(g,original,destination,state,author,out,observed,defer_replication=a.local_project_only)
+                    result=author_actions(g,original,destination,state,author,out,observed,defer_replication=a.local_project_only,application_release=release)
                     passed('native author edit and tombstone preserve signed history and refuse the withdrawn body',qualification=author_scope,**result)
                     checkpoint['author_actions']=author_scope;save()
                 settle_exact(g,original,observed)
@@ -344,6 +370,24 @@ def main():
                     checkpoint['ordinary_capacity']=True;save()
                 existing=dict(instance=candidates[0],admission_key=str((out/'registry-federation.pem').resolve()),admission_public=str((out/'registry-federation.pub').resolve()),
                               federation=state['project']['federation'],release_id=state['project']['decision']['release_id'],sequence=state['project']['decision']['sequence'])
+                if release and not checkpoint.get('original_admission_verified'):
+                    # This earlier application checkpoint precedes Messenger's
+                    # routed Forge inspection. Verify the same original public
+                    # admission in the already configured native Registry.
+                    source=actors['mailbox'];registries=[r[0]for r in identity.instances(source.client)if r[1]in(1,2,3,4)and r[2]==2175]
+                    assert len(registries)==1
+                    cursor=0;descriptor=None
+                    for _ in range(16):
+                        fields,value=federation.call(source.client,registries[0],6,h=cursor)
+                        if value[320:352].hex()==state['project']['root']and value[128:160].hex()==existing['release_id']:
+                            descriptor=value;break
+                        cursor=fields[3]
+                    assert descriptor is not None and len(descriptor)==768
+                    assert descriptor[288:320].hex()==existing['federation']and struct.unpack_from('<Q',descriptor,48)[0]==existing['sequence']
+                    fields,verified=federation.call(g.client,candidates[0],11,data=descriptor+bytes.fromhex(state['project']['root']))
+                    assert fields[1]==2 and verified==descriptor
+                    passed('existing native Registry verifies exact original signed release evidence before the early application checkpoint',source_registry=registries[0],selected_registry=candidates[0],descriptor_sha256=hashlib.sha256(descriptor).hexdigest(),routed_forge_qualified=False,new_registry_created=False,signature_rewritten=False)
+                    checkpoint['original_admission_verified']=True;save()
                 record=project.prepare(g,g.feed_ui,project_dir,existing=existing)if not (project_dir/'project.json').exists()else json.loads((project_dir/'project.json').read_text())
                 if not project.live_instance(g.client,record['registry']):raise ValueError('existing personal Registry was replaced; explicit authority recovery required')
                 def committed():
