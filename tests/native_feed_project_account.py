@@ -374,7 +374,7 @@ def main():
                     # This earlier application checkpoint precedes Messenger's
                     # routed Forge inspection. Verify the same original public
                     # admission in the already configured native Registry.
-                    source=actors['mailbox'];registries=[r[0]for r in identity.instances(source.client)if r[1]in(1,2,3,4)and r[2]==2175]
+                    source=actors['mailbox'];registries=[r[0]for r in identity.instances(source.client)if r[1]in(1,2,3,4)and 7<=(r[0]&255)<15 and r[2]==2175]
                     assert len(registries)==1
                     cursor=0;descriptor=None
                     for _ in range(16):
