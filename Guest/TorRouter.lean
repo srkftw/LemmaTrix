@@ -538,8 +538,13 @@ def pumpChannel (i t : UInt64) : UInt64 :=
       if load64 (p+152) t == 0 then store64 (p+152) (clock+30000) t else t
     if moving && clock >= load64 (p+152) t then abort 57 t else
     let phase := load64 p t
-    if phase < 4 && !(phase == 1 && load64 (p+8) t == 2 &&
-        load64 (Guest.Transport.channel i+24) t == 2) && clock >= load64 (p+88) t then abort 51 t else
+    -- ACCEPTED8 clears creation intent. An accepted listener may reach
+    -- startHandshake, which starts its new finite window, after a long idle.
+    -- Packed native enums: phase1/role2 is17; intent2 or connected1 is2.
+    -- Pending intent1 remains subject to the original setup deadline.
+    if phase < 4 && !((phase ||| (load64 (p+8) t <<< 3)) == 17 &&
+        ((load64 (Guest.Transport.channel i+24) t |||
+          (load64 (Guest.Transport.channel i+8) t <<< 1)) == 2)) && clock >= load64 (p+88) t then abort 51 t else
     let t := connectPending i t
     if !enabled t || load64 (p+144) t == 1 then t else
     if load64 p t == 4 && load64 (p+8) t == 1 &&
