@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "campaign": "009",
-  "status": "clean-request-safe-image-connected-journey-in-progress",
+  "status": "clean-request-safe-image-core-reconnect-pass-continuations-in-progress",
   "branch": "codex/native-feed",
   "draft_pr": "https://github.com/srkftw/LemmaTrix/pull/5",
   "dependency": {
@@ -117,7 +117,7 @@
     }
   ],
   "common_run": {
-    "result": "core and fresh active-terminal Forge pass; reconnect and later continuations in progress",
+    "result": "core, active-terminal Forge, full reconnect/ephemerality and exact durable duplicate ledger pass; capacity and application continuations in progress",
     "output": "build/campaign009-connected-v6",
     "raw_evidence": "build/campaign009-connected-v6/evidence.json",
     "raw_sha256": "b0e461169889663ebdf4eaf967f0abb4663a6b786abfaf870fe055e38403f5f6",
@@ -1231,5 +1231,135 @@
     "network_code_bytes": 393816,
     "network_limit_bytes": 425984,
     "image_sha256": "690e8959d79a42d3e61aa6f69df14b4e0c485ad58b015f451685abf014c275ee"
-  }
+  },
+  "connected_infrastructure": {
+    "path": "docs/evidence/campaign-009-community-690e.json",
+    "sha256": "82b079a2d95150859beda2c7c23025e86ca2d74369633fcbb726d4f411fdc371",
+    "result": "pass-for-recorded-infrastructure-and-product-segments",
+    "reconnect": {
+      "seconds": 1084.6993846360128,
+      "passed_steps": [
+        "history-read",
+        "ready",
+        "unavailable",
+        "reconnected",
+        "allowance",
+        "allowance-reconciled",
+        "cut",
+        "retry",
+        "ephemeral"
+      ],
+      "history_events": 17,
+      "padded_history_bytes": 9728,
+      "committed_read_page_bytes": 4096,
+      "segment_writer_workspace_bytes": 131072,
+      "required_mode1_failure": "Signed sequence8 remained absent from both federations until a fresh approved route retried the exact event; no direct fallback.",
+      "limited_terminal": "One byte/one request refused its own read; fresh context reused resources; unrelated Messenger terminals stayed phase3.",
+      "lost_receipt": {
+        "event": "98283045421cc9a8bfaa193ed180bb71d3f5c83cd5e20a95ae6dd48d1e6d15da",
+        "author": "16a50e5fedf4e6f6fa18fce942c5d1b12ad4f08a3343a988684135d333646757",
+        "sequence": 9,
+        "content_bytes": 989,
+        "ui_phase_when_fault_cut": 4,
+        "durable_acceptance_before_final_receipt": true,
+        "copies_per_federation_after_exact_retry": 1,
+        "author_usage_before_and_after": {
+          "author_events": 9,
+          "author_content_bytes": 3352
+        }
+      },
+      "no_vault": {
+        "historical_feed_public": "16a50e5fedf4e6f6fa18fce942c5d1b12ad4f08a3343a988684135d333646757",
+        "current_feed_identity_present": false,
+        "current_feed_public": null,
+        "current_feed_owner": 11924251543655678472,
+        "current_feed_ui": 11924251543655678473,
+        "published_replica_persists": true,
+        "private_key_exported": false
+      }
+    },
+    "positive_duplicate_budget": {
+      "seconds": 9.530123327000183,
+      "event": "98283045421cc9a8bfaa193ed180bb71d3f5c83cd5e20a95ae6dd48d1e6d15da",
+      "before": [
+        0,
+        16777216,
+        4509684,
+        3145728,
+        262144,
+        15354,
+        1,
+        1
+      ],
+      "after": [
+        0,
+        16777216,
+        4509684,
+        3145728,
+        262144,
+        15354,
+        1,
+        1
+      ],
+      "per_event_before": {
+        "available": true,
+        "event": "98283045421cc9a8bfaa193ed180bb71d3f5c83cd5e20a95ae6dd48d1e6d15da",
+        "fields": [
+          0,
+          19,
+          3,
+          1,
+          355077,
+          1188,
+          0,
+          1
+        ],
+        "flags": 3,
+        "attempts": 1,
+        "reserved_bytes": 355077,
+        "reserved_work": 1188
+      },
+      "per_event_after": {
+        "available": true,
+        "event": "98283045421cc9a8bfaa193ed180bb71d3f5c83cd5e20a95ae6dd48d1e6d15da",
+        "fields": [
+          0,
+          19,
+          3,
+          1,
+          355077,
+          1188,
+          0,
+          1
+        ],
+        "flags": 3,
+        "attempts": 1,
+        "reserved_bytes": 355077,
+        "reserved_work": 1188
+      },
+      "native_transport_allocation": {
+        "state": "unchanged",
+        "before_bytes": 3145728,
+        "after_bytes": 3145728,
+        "additional_bytes": 0,
+        "finite_ceiling": 16777216,
+        "attribution": "Transport allocations may roll independently under existing consent; this probe does not attribute a roll to the duplicate event."
+      },
+      "copies_per_federation": 1
+    },
+    "controllers_released": {
+      "all_controllers_exited_zero": true,
+      "all_management_and_graphical_clients_closed": true,
+      "operators_left_running": true,
+      "next_owner": "Root coordinates service capacity, then project/moderation/restart/portability continuations."
+    }
+  },
+  "capacity_attempts": [
+    {
+      "path": "docs/evidence/campaign-009-capacity-attempt-1.json",
+      "sha256": "35c98c36104026b9fc3db8b9d290b04eb741c8221caee030258fecfdbb77925f",
+      "result": "failed before six-pair saturation; three personal clients initially admitted, Bob later terminal28; diagnostics found abandoned Messenger background reads; no operator reset"
+    }
+  ],
+  "current_integration_work": "Fix ordinary MessengerDelivery ownership after early local RPC timeout; image690/Feed source unchanged. Strict project stage proceeds independently; capacity will be retried after identified package update and repeated Messenger contention."
 }
