@@ -1,0 +1,83 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "image": {
+    "path": "build/campaign009-final-v5.bin",
+    "sha256": "854253bc6b0d46ba043e6056ea8c065b00d4e8560b062d6f6f9220034f76a29b"
+  },
+  "registry": {
+    "path": "build/live/apps/campaign009-registry-final-v4.bin",
+    "bytes": 97504,
+    "sha256": "55413b5f50bcf07c93b8b9b6bc0ed98d2a289be60821143ffafa7881734c484b"
+  },
+  "original_graph": {
+    "path": "tests/fixtures/campaign008-existing-forge-closure.json",
+    "sha256": "56cc52e18fe0e9f37a4ad32fe2f47aa62dc29a2d7c0472ec9609d3b8e6a328f5"
+  },
+  "native_build_performed": false,
+  "active_community_accessed": false,
+  "authority": "Existing disclosed RSA Project Release and Registry admission bootstrap only",
+  "checks": [
+    {
+      "check": "source natively evaluates genuine signed Project Release and original admission",
+      "result": "pass",
+      "instance": 16440733478753927431,
+      "sequence": 1,
+      "descriptor_sha256": "cc941e335e888fbd6938f47acbc15955d63e52e2f1fec9ad68207c9b9b5445d8",
+      "root": "92daee22b2b8ed1f4de2b1354701a07742de03065c36ecc716c0a5e60624a7c2",
+      "project_id": "69d8274c92d5b2c829e55d5e3f5359b7c652b13160d138eec5d7e99623a72f2b",
+      "admission": {
+        "sequence": 1,
+        "listing": 2,
+        "reason": 0,
+        "logical_project_id": "69d8274c92d5b2c829e55d5e3f5359b7c652b13160d138eec5d7e99623a72f2b",
+        "publication_id": "14deec51b2e59bdd387e3edc7f3899503c8b6e4c244ac398c77dd18a8bd8d181",
+        "release_id": "7dc7d80f5dcb1656b8e2d32fa0728ae294be2d485cfbfe100c1a73782e4623c9",
+        "root": "92daee22b2b8ed1f4de2b1354701a07742de03065c36ecc716c0a5e60624a7c2",
+        "federation": "4936831773c95ac7bdaefbf3c59e21abd719dc14541bed362bd730f0817098b0",
+        "signature": "RSA2048/SHA256 over immutable guest-evaluated admission-v1",
+        "local_execution_approved": false
+      }
+    },
+    {
+      "check": "fresh B verifies and caches exact original768 with no prior local authoring",
+      "result": "pass",
+      "instance": 16440733478753927432,
+      "imported_sequence": 1,
+      "imported_slot": 0
+    },
+    {
+      "check": "authorized B revocation supersedes imported sequence and old positive is refused3",
+      "result": "pass",
+      "native_pending_sequence": 2,
+      "original_sequence": 1,
+      "latest_listing": 3,
+      "old_current_status": 3,
+      "original_source_bytes_unchanged": true,
+      "revocation_sha256": "0f8f49d48f5e52b215406468ea5c7850a862953e85b162bacc66b81ac523927e"
+    }
+  ],
+  "seconds": 74.85922021399892,
+  "limits": "One isolated QEMU guest; no persistence/restart, graphical Feed, or connected project-action claim. Sequence-wrap refusal is source-reviewed, not executed.",
+  "native_registry_source_commit": "983f523",
+  "raw_record": {
+    "path": "build/campaign009-registry-revocation/evidence.json",
+    "sha256": "94d48c093fb85285b46443bb5cbd4c21150fa21ae05d5ee3873c6f0d12726140"
+  },
+  "installed_packages": {
+    "source": {
+      "release_id": "448b5d7e06b26304bf20c7c2ab6dfb84ace937d7d0cd0181aef447ad5b58a8ac",
+      "package_sha256": "845e341fa2816d51528dd7d07edcfb256f08c2963d288fa14a2bc649ce2409a4"
+    },
+    "incoming": {
+      "release_id": "3ecbfa60290b4d7d8cfe83185849543da3551614fced424217b26edde17bed81",
+      "package_sha256": "08058dd49cf8c109c953ab6bd32618ea1ccade510faecaa802dc856bd78cee70"
+    }
+  },
+  "command": "PYTHONPATH=tools python3 tests/native_registry_imported_revocation.py --image build/campaign009-final-v5.bin --registry build/live/apps/campaign009-registry-final-v4.bin --output build/campaign009-registry-revocation",
+  "guest_stopped_after_case": true,
+  "setup_only_failure": {
+    "path": "build/campaign009-native-registry-imported-revocation/evidence.json",
+    "reason": "AF_UNIX path too long; shortened output/guest name and reran, no native change"
+  }
+}
