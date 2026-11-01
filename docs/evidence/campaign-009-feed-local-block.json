@@ -32,11 +32,7 @@
     "followed-only marker stays64B and automatically advances under the same local filter"
   ],
   "limits": "Compiled native producer/consumer/render/control transition fixture with provisioned public row/preference sentinels. Test-only M-mode trap accepts exact AccountSDK128/133 calls; no real kernel grants, authored history, installed package, networking, retention or complete community claim. AArch64 assembly backend runs under qemu-aarch64.",
-  "campaign": "009",
-  "source_commit": "4b78702dd2ed6a5a59372992937775645185d692",
-  "raw_record": "build/native-feed-local-block/evidence.json",
-  "raw_record_sha256": "7c0df5006110fe617e34c0153b38428b2c1f12c1d886f084926539c39690daa6",
-  "controller": "tests/native_feed_local_block.py",
-  "controller_sha256": "99d579bc8bcfd264c2b423a40df2317cec0be1cab49508b4a1fe8ac49434ce00",
-  "installed_successor_check": "pending explicit retained-account upgrade during connected migration"
+  "native_source_revision": "4b78702",
+  "command": "python3 tests/native_feed_local_block.py --backend qemu --backend aarch64",
+  "fixture_module_isolation": "Source copies change only namespace plus open Guest; actual Native producer/consumer/render/control definitions are compiled under build/ module names. Production Guest oleans remain byte-identical."
 }

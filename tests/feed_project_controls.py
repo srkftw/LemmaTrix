@@ -82,31 +82,35 @@ def select_event(g,ui,event_id):
             if getattr(g,'project_observer',None):g.project_observer('native unavailable row; ordinary Next',status=chosen['status'])
             g.device.press(28);continue
         if chosen[:32]==event_id:return chosen
-        # Enter advances the chronological row directly. PgDn first scrolls a
-        # long body, so it cannot be used as a one-event pagination counter.
-        g.device.press(28)
-        retries=[0,time.monotonic()]
-        def advanced():
-            current=ui_call(g,ui,795)[1][:32]
-            observer=getattr(g,'project_observer',None)
-            if observer is not None:observer('native next-row admission',selected=current.hex(),prior=chosen[:32].hex())
-            if current!=chosen[:32]or not complete_read(g,ui):return True
-            fields,diagnostic=ui_call(g,ui,791)
-            # A later publication-status read may clear a transient query
-            # busy response. The unchanged selection and an idle native UI
-            # still prove no row/query was accepted for this Next gesture.
-            quiescent=(fields[2]==0 and fields[5]in(6,7)and fields[4]in(6,10,11)
-                       and struct.unpack_from('<Q',diagnostic,96)[0]==0
-                       and struct.unpack_from('<Q',diagnostic,104)[0]==0
-                       and struct.unpack_from('<Q',diagnostic,128)[0]==0)
-            if (fields[6]==4 or quiescent)and time.monotonic()-retries[1]>=3:
-                if retries[0]>=8:raise RuntimeError(('native timeline remains busy after bounded ordinary Next retry',list(fields)))
-                # The refused query did not advance the current native cursor.
-                # Retry that same ordinary gesture after its typed busy result.
-                g.device.press(28);retries[:]=[retries[0]+1,time.monotonic()]
-            return None
-        wait(advanced,120,'native next-row request')
+        # Enter advances the row; PgDn first scrolls a long body.
+        advance_row(g,ui,chosen)
     raise AssertionError('exact event absent from bounded native timeline')
+
+
+def advance_row(g,ui,chosen):
+    """Retry only an unaccepted ordinary Next gesture under its typed busy result."""
+    g.device.press(28)
+    retries=[0,time.monotonic()]
+    def advanced():
+        current=ui_call(g,ui,795)[1][:32]
+        observer=getattr(g,'project_observer',None)
+        if observer is not None:observer('native next-row admission',selected=current.hex(),prior=chosen[:32].hex())
+        if current!=chosen[:32]or not complete_read(g,ui):return True
+        fields,diagnostic=ui_call(g,ui,791)
+        # A later publication-status read may clear a transient query
+        # busy response. The unchanged selection and an idle native UI
+        # still prove no row/query was accepted for this Next gesture.
+        quiescent=(fields[2]==0 and fields[5]in(6,7)and fields[4]in(6,10,11)
+                   and struct.unpack_from('<Q',diagnostic,96)[0]==0
+                   and struct.unpack_from('<Q',diagnostic,104)[0]==0
+                   and struct.unpack_from('<Q',diagnostic,128)[0]==0)
+        if (fields[6]==4 or quiescent)and time.monotonic()-retries[1]>=3:
+            if retries[0]>=8:raise RuntimeError(('native timeline remains busy after bounded ordinary Next retry',list(fields)))
+            # The refused query did not advance the current native cursor.
+            # Retry that same ordinary gesture after its typed busy result.
+            g.device.press(28);retries[:]=[retries[0]+1,time.monotonic()]
+        return None
+    wait(advanced,120,'native next-row request')
 
 
 def displayed_picker_root(frame):

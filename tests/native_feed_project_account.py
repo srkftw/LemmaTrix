@@ -10,7 +10,7 @@ from pathlib import Path
 from types import SimpleNamespace
 ROOT=Path(__file__).resolve().parents[1]
 sys.path[:0]=[str(ROOT/'tools'),str(ROOT/'tests')]
-import feed,federation,identity,projects
+import feed,federation,identity,projects,releases
 import feed_project_controls as project
 from native_community_campaign import attach_campaign,feed_ui,focus_application,select_feed_route
 from native_community_policy_restart import approved_synchronous_beta_admin,check_replication_lease
@@ -152,6 +152,116 @@ def settle_exact(g,operator,observed):
     observed(dict(check='native exact retry reconciles original commitment after query/route uncertainty',event_id=event_id.hex(),status=list(feed_ui(g)[0]),duplicate_publication=False))
 
 
+
+def successor_packages(bundle,old_releases):
+    paths={name:bundle/(name+'.ltrel')for name in('identity','feed-account','feed','feed-federation')}
+    selected={name:releases.inspect(path.read_bytes())for name,path in paths.items()}
+    for name in('identity','feed-federation'):
+        assert selected[name]['release_id']==old_releases[name],name+' must remain the exact existing service release'
+    for name,version,rights in(('feed-account','0.9.2',1024),('feed','0.9.3',799)):
+        info=selected[name]
+        assert info['project']==name and info['version']==version and info['rights']==rights
+        assert info['parent']==old_releases[name]and info['release_id']!=old_releases[name],'normal exact-parent upgrade required'
+    return paths,{name:dict(release_id=info['release_id'],parent=info['parent'],version=info['version'],
+                           package_sha256=hashlib.sha256(paths[name].read_bytes()).hexdigest())for name,info in selected.items()}
+
+
+def upgrade_retained_pair(g,campaign,bundle,checkpoint,save):
+    """Normal ordinary-package replacement after a completed explicit lock."""
+    state=campaign.state;out=campaign.output
+    intent=checkpoint.setdefault('ordinary_upgrade',dict(old=state['personal'][g.name]['feed'],old_releases=dict(state['configuration']['feed'])))
+    paths,packages=successor_packages(bundle,intent['old_releases'])
+    if 'packages'in intent:assert intent['packages']==packages,'successor package provenance changed on resume'
+    intent['packages']=packages;save()
+    old=intent['old']
+    if not intent.get('locked'):
+        focus_feed(g);g.device.press(59);g.device.press(64)
+        project.wait_native(g,lambda:feed_ui(g)[0][1]==0 and feed_ui(g)[0][4]==36 and project.complete_read(g,g.feed_ui),120,'explicit lock before normal retained Feed package upgrade')
+        intent['locked']=True;save()
+    if not intent.get('stopped'):
+        net(g,42);net(g,35)
+        for who in(old['ui'],old['owner']):
+            if project.live_instance(g.client,who):g.client.request(26,struct.pack('<Q',who))
+        intent['stopped']=True;save()
+    if 'new'not in intent:
+        intent['new']=feed.start(g.client,SimpleNamespace(identity=paths['identity'],owner=paths['feed-account'],ui=paths['feed'],public=PUB,
+                federation=old['federation'],peer=old['selected_peer']));save()
+    fresh=intent['new'];g.feed_owner,g.feed_ui=fresh['owner'],fresh['ui'];g.ui=g.feed_ui
+    assert fresh['owner']!=old['owner']and fresh['ui']!=old['ui']and fresh['identity']==old['identity']
+    state['personal'][g.name]['feed']=dict(fresh,owner_release=packages['feed-account']['release_id'],ui_release=packages['feed']['release_id'])
+    state.setdefault('ordinary_package_upgrades',{})[g.name]=dict(stage='retained hosting move',old_owner=old['owner'],old_ui=old['ui'],
+        new_owner=fresh['owner'],new_ui=fresh['ui'],packages=packages,authority_reused=False,image_unchanged=True)
+    project.write_record(out/'native-actors.json',state)
+    if(out/'continuations.json').exists():
+        public=json.loads((out/'continuations.json').read_text());public['personal'][g.name]=state['personal'][g.name]
+        public['ordinary_package_upgrades']=state['ordinary_package_upgrades'];project.write_record(out/'continuations.json',public)
+    intent['actor_ledger_updated']=True;save()
+    return intent
+
+
+def select_local_block_marker(g,author):
+    """Use real chronological controls; a local marker has no event reference."""
+    focus_feed(g)
+    for _ in range(4):
+        g.device.press(15)
+        try:choice=wait(lambda:(lambda f:f if f[4]in(27,28)else None)(feed_ui(g)[0]),5,'native chronological filter choice')
+        except TimeoutError:continue
+        if choice[4]==27:break
+    else:raise RuntimeError('native chronological filter choice unavailable')
+    g.device.press(104)
+    for _ in range(64):
+        def ready():
+            fields,payload=feed_ui(g,795)
+            observer=getattr(g,'project_observer',None)
+            if observer is not None:observer('native local-block pagination',selected=payload[:32].hex())
+            return payload if project.complete_read(g,g.feed_ui)and(any(payload[:32])or payload[144:176]==author)else None
+        row=wait(ready,300,'native chronological signed row or author-only local block marker')
+        if row[144:176]==author:
+            assert not any(row[:144])and not any(row[176:]),'blocked marker must contain only its public author'
+            assert feed_ui(g)[0][4]==16
+            return row
+        project.advance_row(g,g.feed_ui,row)
+    raise AssertionError('expected selected local block was absent from native timeline')
+
+
+def check_upgraded_local_block(g,state,approved,checkpoint,save,observed):
+    """Explicit unblock/reblock restores approved private preferences exactly."""
+    author=bytes.fromhex(state['personal']['alice'if g.name=='bob'else'bob']['feed_public'])
+    if not preference_bits(approved,author)&2:raise ValueError('the connected moderation stage must leave its explicitly selected local block effective')
+    record=checkpoint.setdefault('upgraded_local_block',{});save()
+    profile=export_public(g,True)
+    if not record.get('unblocked'):
+        if preference_bits(profile,author)&2:
+            select_local_block_marker(g,author)
+            record['unblock_intent']=True;save();g.device.press(66)
+            project.wait_native(g,lambda:feed_ui(g)[0][4]==51 and project.complete_read(g,g.feed_ui),180,'new native UI explicitly unblocks the filtered public author')
+        else:assert record.get('unblock_intent'),'unexpected preference change before explicit unblock'
+        profile=export_public(g,True);assert not preference_bits(profile,author)&2
+        record.update(unblocked=True,unblocked_profile_sha256=hashlib.sha256(profile).hexdigest());save()
+    if not record.get('restored'):
+        if not preference_bits(profile,author)&2:
+            focus_feed(g)
+            if feed_ui(g,795)[1][144:176]!=author:
+                reply=state['events']['reply'];assert reply['author']==author.hex()
+                project.select_event(g,g.feed_ui,bytes.fromhex(reply['id']))
+            record['reblock_intent']=True;save();g.device.press(66)
+            project.wait_native(g,lambda:feed_ui(g)[0][4]==18 and project.complete_read(g,g.feed_ui),180,'new native UI explicitly restores the same local block')
+        else:assert record.get('reblock_intent'),'unblock result was replaced outside the saved explicit action'
+        profile=export_public(g,True);assert profile[256:1792]==approved[256:1792]
+        record.update(restored=True,restored_preference_sha256=hashlib.sha256(profile[256:1792]).hexdigest());save()
+    if not record.get('next_progress'):
+        select_local_block_marker(g,author)
+        record['marker_frame']=screenshot(g,'upgraded-local-block-marker');save()
+        marker=feed_ui(g,795)[1]
+        project.advance_row(g,g.feed_ui,marker)
+        next_id=bytes.fromhex(state['events']['review-0']['id'])
+        project.wait_native(g,lambda:feed_ui(g,795)[1][:32]==next_id and project.complete_read(g,g.feed_ui),300,'new native UI advances beyond blocked reply to the next permitted discussion')
+        record.update(next_progress=True,next_event=next_id.hex(),next_frame=screenshot(g,'upgraded-after-local-block'));save()
+    observed(dict(check='new native UI local block reveals only public author, explicitly unblocks/reblocks and browses beyond it',
+                  blocked_author=author.hex(),**record,complete_preference_graph_published=False))
+    return record
+
+
 def application_checkpoint(out,state):
     """Accept only the explicitly released partial campaign, without upgrading it."""
     path=out/'application-checkpoint-release.json';released=json.loads(path.read_text())
@@ -282,10 +392,13 @@ def main():
     parser.add_argument('--stage',choices=('project','migrate','ephemeral'),required=True)
     parser.add_argument('--person',choices=('alice','bob'),default='bob')
     parser.add_argument('--feed-packages',type=Path,help='exact frozen bundle required for ephemeral relaunch')
+    parser.add_argument('--upgrade-feed-packages',type=Path,help='parent-linked Account0.9.2/UI0.9.3 bundle for explicit retained migration upgrade')
     parser.add_argument('--alpha-offline-approved',action='store_true',help='select only after connected moderation/restart checks finish')
     parser.add_argument('--local-project-only',action='store_true',help='preserve measured replication failure while completing unaffected native project actions; never a full pass')
     parser.add_argument('--application-checkpoint',action='store_true',help='run strict project actions after the explicit partial 17-event release, preserving later history-read targets')
-    a=parser.parse_args();out=a.attach.resolve();evidence=out/('feed-'+a.stage+'-account.json');began=time.monotonic()
+    a=parser.parse_args();
+    if a.upgrade_feed_packages is not None and a.stage!='migrate':raise ValueError('ordinary Feed upgrade is part of the explicit retained migration stage only')
+    out=a.attach.resolve();evidence=out/('feed-'+a.stage+'-account.json');began=time.monotonic()
     initial=json.loads((out/'native-actors.json').read_text());person=initial['personal'][a.person]['feed']
     original_name='alpha'if person['federation']==initial['actors']['alpha']['feed']['federation']else'beta'
     report=json.loads(evidence.read_text())if evidence.exists()else dict(schema=1,stage=a.stage,person=a.person,checks=[],observations=[],checkpoints={})
@@ -512,6 +625,12 @@ def main():
                 approved_path=out/(g.name+'.move-approved-feed-profile')
                 if not approved_path.exists():save_approved_profile(approved_path,export_public(g,include_preferences=True))
                 approved=approved_path.read_bytes();assert approved[32:64]==author
+                prior_event=approved[128:160]
+                prior_row=next(p for _,p in rows(destination)if p[:32]==prior_event)
+                assert prior_row[144:176]==author and prior_row[304:368]==approved[64:128]
+                assert struct.unpack_from('<Q',prior_row,216)[0]==struct.unpack_from('<Q',approved,24)[0]
+                assert struct.unpack_from('<Q',prior_row,64)[0]<=struct.unpack_from('<Q',approved,160)[0]
+                report['approved_prior_commitment']=dict(event=prior_event.hex(),sequence=struct.unpack_from('<Q',approved,24)[0],signed_sha256=hashlib.sha256(prior_row[32:]).hexdigest(),original_card=old_event.hex())
                 approved_hash=hashlib.sha256(approved).hexdigest()
                 if 'approved_profile_sha256'in checkpoint:assert checkpoint['approved_profile_sha256']==approved_hash
                 checkpoint['approved_profile_sha256']=approved_hash;save()
@@ -533,16 +652,21 @@ def main():
                     body=read_body(destination,committed);assert hashlib.sha256(body).hexdigest()==discussion['content_sha256']
                     passed('willing replica serves original checked long discussion with home federation offline and original no-vault author owner gone',event=discussion['id'],bytes=len(body),signed_sha256=discussion['signed_sha256'],content_sha256=discussion['content_sha256'],original_owner=history['old_owner'],fresh_ephemeral_owner=history['fresh_owner'],historical_author=history['historical_author'],no_vault_ledger_sha256=history['ledger_sha256'],original_host_offline=not(out/(original_name+'.sock')).exists())
                     checkpoint['offline_original_publisher_read']=True;save()
-                focus_feed(g)
-                selected_feed_route(g,destination,relays,observed)
                 backing=out/(g.name+'.img')
-                public=export_public(g,include_preferences=True)if feed_ui(g)[0][1]else None
                 if 'recovery_intent'not in checkpoint:
-                    assert public is not None and public[32:64]==author
-                    checkpoint['recovery_intent']=dict(previous_key_generation=struct.unpack_from('<Q',public,160)[0],
+                    checkpoint['recovery_intent']=dict(previous_key_generation=struct.unpack_from('<Q',approved,160)[0],
                         previous_root_generation=retained_generation(backing),original_host_offline=True,
                         selected_preference_sha256=hashlib.sha256(approved[256:1792]).hexdigest())
                     save()
+                if a.upgrade_feed_packages is not None:
+                    upgrade=upgrade_retained_pair(g,campaign,a.upgrade_feed_packages.resolve(),checkpoint,save)
+                    if not checkpoint.get('upgrade_recorded'):
+                        passed('explicit native lock and parent-linked ordinary Feed upgrade replace only this retained personal UI/account with fresh process authority',**upgrade)
+                        checkpoint['upgrade_recorded']=True;save()
+                elif checkpoint.get('ordinary_upgrade'):raise ValueError('resume the selected exact successor bundle with --upgrade-feed-packages')
+                focus_feed(g)
+                selected_feed_route(g,destination,relays,observed)
+                public=export_public(g,include_preferences=True)if feed_ui(g)[0][1]else None
                 recovery=checkpoint['recovery_intent']
                 recovered=(public is not None and public[32:64]==author
                     and struct.unpack_from('<Q',public,160)[0]>recovery['previous_key_generation']
@@ -569,10 +693,12 @@ def main():
                 assert public[256:1792]==approved[256:1792]and preference_bits(public,project_id)&4
                 if block_was_selected:assert preference_bits(public,blocked_author)&2
                 passed('native recovery restores exactly the explicitly approved local preferences independently of federation policy',preference_bytes=1536,preference_sha256=hashlib.sha256(public[256:1792]).hexdigest(),stable_project_follow=True,previously_selected_local_block=block_was_selected,local_block_preserved=True if block_was_selected else None,complete_graph_published=False)
+                if a.upgrade_feed_packages is not None:
+                    check_upgraded_local_block(g,state,approved,checkpoint,save,observed)
                 event=match(destination,author,1,hashlib.sha256(MOVED.encode()).digest())
-                assert public[32:64]==author and public[128:160]in(old_event,event[:32]if event else old_event)and struct.unpack_from('<Q',public,160)[0]>1
+                assert public[32:64]==author and public[128:160]in(prior_event,event[:32]if event else prior_event)and struct.unpack_from('<Q',public,160)[0]>1
                 if not checkpoint.get('recovered'):
-                    passed('fresh native recovery preserves scoped author and exact prior publication through selected willing federation',public=author.hex(),generation=struct.unpack_from('<Q',public,160)[0],sequence=struct.unpack_from('<Q',public,24)[0],exact_event=old_event.hex(),no_original_server_permission=True)
+                    passed('fresh native recovery preserves scoped author and exact prior publication through selected willing federation',public=author.hex(),generation=struct.unpack_from('<Q',public,160)[0],sequence=struct.unpack_from('<Q',public,24)[0],exact_event=prior_event.hex(),original_card=old_event.hex(),no_original_server_permission=True)
                     checkpoint['recovered']=True;save()
                 if event is None:
                     focus_feed(g);g.device.press(61)
