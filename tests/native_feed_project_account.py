@@ -410,7 +410,7 @@ def main():
                     public=export_public(g,include_preferences=True)
                     if not preference_bits(public,bytes.fromhex(record['project_id']))&4:
                         focus_feed(g);g.device.press(65)
-                        wait(lambda:feed_ui(g)[0][4]==17 and project.complete_read(g,g.feed_ui),180,'native stable project follow before old-image graph quota')
+                        wait(lambda:feed_ui(g)[0][4]in(18,68)and project.complete_read(g,g.feed_ui),180,'native stable project follow before old-image graph quota')
                         public=export_public(g,include_preferences=True)
                     assert preference_bits(public,bytes.fromhex(record['project_id']))&4
                     assert public[128:160]==chosen[:32]
@@ -444,9 +444,11 @@ def main():
                 project_id=bytes.fromhex(record['project_id'])
                 if not preference_bits(public,project_id)&4:
                     focus_feed(g);project.select_event(g,g.feed_ui,card[:32]);g.device.press(65)
-                    wait(lambda:feed_ui(g)[0][4]==17 and project.complete_read(g,g.feed_ui),180,'native follow of the selected stable project')
+                    wait(lambda:feed_ui(g)[0][4]in(18,68)and project.complete_read(g,g.feed_ui),180,'native follow of the selected stable project')
+                    observed(dict(check='native project-follow completion notice',notice=feed_ui(g)[0][4],legacy_kind4_label=feed_ui(g)[0][4]==18))
                     public=export_public(g,include_preferences=True)
                 assert preference_bits(public,project_id)&4
+                save_approved_profile(out/(g.name+'.approved-feed-profile'),public)
                 passed('explicit native preference selection retains and exports a local stable-project follow',project=record['project_id'],preference_bytes=1536,preference_sha256=hashlib.sha256(public[256:1792]).hexdigest(),automatically_published=False)
                 passed('native project card opens original Registry verification and completes useful normal Library Fork',action=action,durably_accepted_event=card[:32].hex(),replicated_event=card[:32].hex()if replica is not None else None,bytes=len(body),metadata_sha256=record['descriptor_sha256'],execution_consent=False)
                 passed('new independent local lineage is visible in the normal trusted Library/Forge project picker',visible=visible,second_fork_requested=False)

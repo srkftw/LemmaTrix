@@ -652,10 +652,34 @@ def notice (n t : UInt64) : UInt64 := dirty (store64 (st+32) n t)
     let t := store64 (labels+48) 29113321587106152 t
     text labels 55 x y color bg t
   else t
+@[noinline] def label4 (id x y color t : UInt64) : UInt64 :=
+  -- 68: Following project locally
+  if id == 68 then
+    let t := store64 (labels+0) 7956021537170812742 t
+    let t := store64 (labels+8) 7162247809296506983 t
+    let t := store64 (labels+16) 7812726533279981684 t
+    let t := store64 (labels+24) 121 t
+    text labels 25 x y color bg t
+  -- 69: Project unfollowed locally
+  else if id == 69 then
+    let t := store64 (labels+0) 2338603393740665424 t
+    let t := store64 (labels+8) 8606216625909558901 t
+    let t := store64 (labels+16) 7809632559043732581 t
+    let t := store64 (labels+24) 31084 t
+    text labels 26 x y color bg t
+  -- 70: Author unfollowed locally
+  else if id == 70 then
+    let t := store64 (labels+0) 8439871524511708481 t
+    let t := store64 (labels+8) 7311435031525680750 t
+    let t := store64 (labels+16) 7812726533279981668 t
+    let t := store64 (labels+24) 121 t
+    text labels 25 x y color bg t
+  else t
 def label (id x y color t : UInt64) : UInt64 :=
   if id < 16 then label0 id x y color t else
   if id < 32 then label1 id x y color t else
-  if id < 48 then label2 id x y color t else label3 id x y color t
+  if id < 48 then label2 id x y color t else
+  if id < 68 then label3 id x y color t else label4 id x y color t
 partial def wrapped (p n x y t : UInt64) : UInt64 :=
   if n == 0 || y > 306 then t else
   let c := load8 p t
@@ -924,7 +948,11 @@ partial def readPortable (object offset t : UInt64) : UInt64 :=
     if offset == load64 (st+40) t then submit 4 0 0 0 0 0 0 t else sendChunk t
   else if action == 4 || action == 10 then notice 9 (store64 (st+24) 0 t)
   else if action == 5 || action == 6 then store64 (st+200) action t
-  else if action == 7 then notice (if load64 (wire+8) t == 1 then 17 else if load64 (wire+16) t == 0 then 51 else 18) t
+  else if action == 7 then
+    let kind := load64 (wire+8) t
+    let enabled := load64 (wire+16) t != 0
+    notice (if kind == 4 then (if enabled then 68 else 69) else
+      if kind == 1 then (if enabled then 17 else 70) else if enabled then 18 else 51) t
   else if action == 9 then notice 36 (store64 (st+344) 0 (store64 (st+168) 0 t))
   else if action == 14 then
     let t := store64 (st+344) (if load64 (st+352) t == 2 then 0 else 1) t
