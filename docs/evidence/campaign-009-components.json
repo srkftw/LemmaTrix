@@ -839,7 +839,7 @@
     },
     {
       "name": "bounded-terminal-failure-scope-and-deadlines",
-      "local_record": "build/native-shared-contexts/evidence.json",
+      "local_record": "build/native-shared-contexts-before-primary-pin-3cfc22467d8c/evidence.json",
       "record_sha256": "3cfc22467d8c1c5b0e93ed9208d47ca512893944f9e05df630e5258fb1bdead4",
       "source_commit": "32088778c2369b1e5390ad61cda08514f18a9120",
       "scope": "Compiled native state-transition fixture; mocked clock/cancellation trap, separate from installed common-image wire execution",

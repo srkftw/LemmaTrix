@@ -20,7 +20,7 @@
     "clean_build_log_sha256": "4d601fc1f29c4733e6267487d9a2cc5cdaec45ccd5786759de8f9d07fdf62af3"
   },
   "source": {
-    "network": "32088778c2369b1e5390ad61cda08514f18a9120",
+    "network": "8b4e26f",
     "feed_service": "a900493",
     "feed_ui_account": "b706c104c2c36d8caf1b96e887c6276d2a302a61",
     "signer": "a380be67481f9fb1068c6230dcc51b6b90e5a6a0",
@@ -222,6 +222,9 @@
     "Guest.Objects.creationQuotaAllowed": [
       "aggregate_record_bound",
       "ordinary_record_bound"
+    ],
+    "Guest.OnionTerminal.serviceTargetAllowed": [
+      "changed_service_instance_denied"
     ]
   },
   "proof_limit": "Named source predicates are used by the native implementation; these are not proofs of the compiler, crypto, devices, complete state machine or shipped binary.",
@@ -725,12 +728,12 @@
     "terminal_ipc_elapsed_deadline": true,
     "observed": "Compiled RV64/emulatedAArch64 state fixture uses mocked clock/cancellation trap; exact token, selected-bank wiping, stale epoch and unrelated-pair checks passed. Installed current wire journey pending; no six-pair wire saturation claim.",
     "source_revision": "3208877",
-    "compiled_fixture_record": "build/native-shared-contexts/evidence.json",
+    "compiled_fixture_record": "build/native-shared-contexts-before-primary-pin-3cfc22467d8c/evidence.json",
     "compiled_fixture_sha256": "3cfc22467d8c1c5b0e93ed9208d47ca512893944f9e05df630e5258fb1bdead4"
   },
   "post_trial_network_fix": {
     "name": "bounded-terminal-failure-scope-and-deadlines",
-    "local_record": "build/native-shared-contexts/evidence.json",
+    "local_record": "build/native-shared-contexts-before-primary-pin-3cfc22467d8c/evidence.json",
     "record_sha256": "3cfc22467d8c1c5b0e93ed9208d47ca512893944f9e05df630e5258fb1bdead4",
     "source_commit": "32088778c2369b1e5390ad61cda08514f18a9120",
     "scope": "Compiled native state-transition fixture; mocked clock/cancellation trap, separate from installed common-image wire execution",
@@ -2354,5 +2357,12 @@
     "sha256": "0792747be09823a3be52ecdb6da8cae886d6be3b7a75f49269083a2ae6a722a8",
     "result": "pass",
     "scope": "Exact final90fd image, actual installed Native3clients/same3relays/Mailbox; correct-bearer foreign unfinished append/poll/cancel refused, owned cancel+stage reuse, concurrent commit/read, dead-context fresh replacement. Public ciphertext/cap fixtures, no Messenger UI or Feed social history in this boundary probe; CPU overlap with common setup recorded."
+  },
+  "terminal_service_incarnation_pin": {
+    "source_commit": "8b4e26f",
+    "published_record": "campaign-009-terminal-target-contexts.json",
+    "record_sha256": "0f3983b70c39c2f0724015e41fe2141d6dd3b70f5e5a59066d8fe36bfac850c6",
+    "scope": "Focused compiled RV64 state transitions, including provisioned predicate inputs for bulk reconnect and a declared128 target-result oracle plus133 dispatch counter; no claim that this oracle implements kernel binding/replacement; no native certificate-admission claim from this fixture. AArch64 assembly emulator runs under qemu-aarch64; no physical hardware or full native Messenger qualification.",
+    "current_primary_service_pin": "Full exact native service incarnation per authenticated terminal context, distinct from Registry pin. A changed target retires only the matching route epoch before133 dispatch, requiring a fresh context; durable exact-capability retry remains independent."
   }
 }
