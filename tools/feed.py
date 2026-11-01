@@ -18,6 +18,22 @@ def invoke(client, operation, action=0, handle=0, offset=0, count=0, data=b'', a
     return messenger.invoke(client, ROLE, operation, h=action, a=handle,
                             b=offset, c=count, data=data, allowed_status=allowed)
 
+def install_or_launch(client,path,public,rights):
+    """Relaunch an already admitted exact release through normal Launcher checks."""
+    raw=path.read_bytes();info=releases.inspect(raw)
+    if info['rights']!=rights or struct.unpack_from('<Q',raw,400)[0]!=2:
+        raise ValueError('wrong exact Feed package rights or profile')
+    selected=bytes.fromhex(info['release_id'])
+    for index in range(16):
+        try:header=client.request(13,struct.pack('<Q',index))
+        except ValueError as error:
+            if str(error)!='guest rejected command13, status1':raise
+            continue
+        if len(header)>=192 and header[160:192]==selected:
+            answer=client.request(25,struct.pack('<Q',index+1))
+            return struct.unpack_from('<Q',answer,8)[0],selected
+    return messenger.install(client,path,public,rights)
+
 def package(output, publisher):
     import live_build
     output.mkdir(parents=True, exist_ok=False)
@@ -39,8 +55,8 @@ def start(client,a):
     who=messenger.launcher(client)
     try: signer=identity.endpoint(client,410)
     except ValueError: signer=identity.start(client,a.identity,a.public)['service']
-    owner,oid=messenger.install(client,a.owner,a.public,1024)
-    ui,uid=messenger.install(client,a.ui,a.public,799)
+    owner,oid=install_or_launch(client,a.owner,a.public,1024)
+    ui,uid=install_or_launch(client,a.ui,a.public,799)
     sid=bytes.fromhex(releases.inspect(a.identity.read_bytes())['release_id'])
     for operation in (402,410):identity.bind(client,signer,owner,sid,oid,operation)
     messenger.bind(client,5,owner,ui,480,oid,uid)
@@ -54,7 +70,7 @@ def start(client,a):
 
 def federation_start(client,a):
     who=messenger.launcher(client)
-    owner,sid=messenger.install(client,a.release,a.public,3072)
+    owner,sid=install_or_launch(client,a.release,a.public,3072)
     try:
         for operation in (490,491):messenger.bind(client,ROLE,owner,who,operation,sid)
         network_owner=next(r[0] for r in identity.instances(client) if r[0]&255==6)
@@ -87,11 +103,17 @@ def federation_start(client,a):
         if getattr(a,'recover_key',None):
             credential=a.recover_key.read_bytes()
             if len(credential)!=32:raise ValueError('operator unlock credential32 required')
-            f,_=invoke(client,490,action=8,data=credential)
+            f,_=invoke(client,490,action=8,data=credential,allowed=(0,6))
+            until=time.monotonic()+600
+            while f[0]==6:
+                f,_=invoke(client,490,action=6,allowed=(0,6))
+                if time.monotonic()>until:raise TimeoutError('native recovered moderator generation commit')
+                if f[0]==6:time.sleep(.05)
     except BaseException:
         client.request(26,struct.pack('<Q',owner));raise
     return dict(instance=owner,release_id=sid.hex(),federation=a.federation,peer=a.peer,
                 moderator_public=moderator.hex(),namespace=a.namespace,status=list(f),
+                storage_grants=grants,storage_grants_are_live_session_handles=True,
                 capacity=dict(events=a.events,content_bytes=a.bytes,stages=4,content_max=16384,segments=7,per_author_events=16,per_author_content_bytes=262144),
                 persistence='native purpose2 ServerStore; index commit follows immutable content segment commit',
                 lifecycle='long-running native listener; no per-client handoff or host replication loop')

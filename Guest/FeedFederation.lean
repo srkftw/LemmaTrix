@@ -35,6 +35,12 @@ partial def stageFor (caller origin h id i t : UInt64) : UInt64 :=
   if i == 4 then error else
   let p := stage i
   if load64 p t != 0 && Guest.FeedPolicy.stageOwned caller origin h (load64 (p+16) t) (load64 (p+24) t) (load64 (p+8) t) && eq (p+64) id 32 t then i else stageFor caller origin h id (i+1) t
+partial def pendingFor (caller origin id i t : UInt64) : UInt64 :=
+  if i == 4 then error else
+  let p := stage i
+  if load64 p t >= 1 && load64 p t <= 3 && load64 (p+16) t == caller &&
+      load64 (p+24) t == origin && eq (p+64) id 32 t then i
+  else pendingFor caller origin id (i+1) t
 partial def queued (i t : UInt64) : UInt64 :=
   if i == 4 then error else if load64 (stage i) t == 2 then i else queued (i+1) t
 -- Finite public admission: no event can expand its signed audience. Replicated
@@ -85,6 +91,15 @@ def begin (caller origin length t : UInt64) : UInt64 :=
   let t := Guest.FeedEvent.identity event hashed t
   let old := find hashed 0 t
   if old != error then response 0 (old+1) 2 (load64 (row active old+544) t) 0 0 t else
+  let pending := pendingFor caller origin hashed 0 t
+  if pending != error then
+    let p := stage pending
+    if load64 p t != 1 then response 6 (load64 (p+8) t) 1 0 0 0 t else
+    -- A newly authenticated retry revalidates these exact signed bytes above.
+    -- Restart only this still-uncommitted upload, never its authority or quota.
+    response 0 (load64 (p+8) t) 1 0 0 0
+      (zero (p+1024) 2048 (store64 (p+32) 0 (store64 (p+40) (Guest.WaitSDK.now t+30000) t)))
+  else
   let conflict := authorCheck event 0 0 0 t
   if conflict != 0 then response conflict 0 0 0 0 0 t else
   if !referencesValid event t then response 14 0 0 0 0 0 t else
@@ -180,6 +195,7 @@ def writerFail (reason t : UInt64) : UInt64 :=
   let t := if phase == 2 || phase == 3 then
     Guest.ServerSDK.cancel (grant (if phase == 3 then 0 else load64 (st+32) t+1) t) t else t
   let t := if i < 4 then store64 (stage i) 5 (store64 (stage i+48) reason (store64 (stage i+40) (Guest.WaitSDK.now t+30000) t)) else t
+  let t := if load64 (st+400) t == 7 then store64 (st+400) 5 (store64 (st+416) reason t) else t
   store64 (st+16) 0 (store64 (st+8) 0 t)
 def startWriter (i t : UInt64) : UInt64 :=
   let p := stage i
@@ -248,6 +264,7 @@ def pumpWriter (t : UInt64) : UInt64 :=
       if r != 64 || status r != 0 then writerFail 5 r else
       let t := copy candidate active metaBytes r
       let t := if load64 (st+40) t < 4 then zero p 2176 t else t
+      let t := if load64 (st+400) t == 7 then store64 (st+432) 0 t else t
       store64 (st+16) 0 (store64 (st+8) 0 t)
   else writerFail 5 t
 
@@ -258,10 +275,14 @@ partial def recoverIndex (offset t : UInt64) : UInt64 :=
 partial def validIndex (i t : UInt64) : Bool :=
   if i == count t then true else
   let p := row active i
-  load64 p t == i+1 && load64 (p+8) t < 7 && load64 (p+24) t <= 16384 &&
+  let valid := load64 p t == i+1 && load64 (p+8) t < 7 && load64 (p+24) t <= 16384 &&
   load64 (p+16) t%512 == 0 && load64 (p+16) t <= segmentBytes &&
   load64 (p+24) t <= segmentBytes-load64 (p+16) t &&
-  Guest.FeedEvent.valid (p+64) t && allowedScope (p+64) t && validIndex (i+1) t
+  Guest.FeedEvent.valid (p+64) t && allowedScope (p+64) t &&
+  (load64 (p+240) t != 8 || Guest.FeedPolicy.authorizedDecision (p+64) (active+64) (active+128) (load64 (active+56) t) t)
+  if !valid then false else
+  let t := Guest.FeedEvent.identity (p+64) hashed t
+  eq (p+32) hashed 32 t && validIndex (i+1) t
 
 def configure (length t : UInt64) : UInt64 :=
   if length != 256 || load64 (st+16) t != 0 then response 2 0 0 0 0 0 t else
@@ -335,6 +356,7 @@ def moderate (length t : UInt64) : UInt64 :=
   let action := load64 (command+16) t
   let n := length-96
   if moderatorPending t || load64 (st+384) t == 0 || load64 st t != 1 then response 6 0 0 0 0 0 t else
+  if load64 (st+432) t != 0 then response 13 0 0 0 0 0 t else
   if length < 97 || length > 608 || action < 1 || action > 3 || find (command+64) 0 t == error ||
     !eq (moderatorPublic+96) (active+128) 32 t || !Guest.FeedEvent.utf8 (command+96) n 0 0 0 0 t then response 2 0 0 0 0 0 t else
   let t := Guest.ServiceHash.sha256At scratch (command+96) n hashed t
@@ -419,7 +441,11 @@ def recoverModerator (length t : UInt64) : UInt64 :=
   let r := Guest.IdentitySDK.recoverFeed (command+64) (active+128) (active+320) t
   if r != 352 || status r != 0 then response 3 0 0 0 0 0 r else
   let t := store64 (st+384) (load64 (wire+8) r) r
-  320+copy (wire+64) moderatorPublic 256 (header 0 (load64 (st+384) t) (load64 (wire+24) t) 0 0 0 0 t)
+  let t := copy (wire+64) moderatorPublic 256 (store64 (st+432) 1 t)
+  -- The fresh generation must itself be retained before restored policy
+  -- authority becomes usable. Reusing the old seal would repeat its generation
+  -- on every restart. The credential stays only in this live command buffer.
+  retainModerator length t
 
 def dispatch (caller rights token length t : UInt64) : UInt64 :=
   let op := load64 command t
@@ -505,6 +531,17 @@ def replicaQueue (bytes t : UInt64) : UInt64 :=
   let t := store64 (st+184) serial (store64 (st+192) serial t)
   store64 (st+216) (64+bytes) t
 
+-- Link failure retries the immutable application event, not an old IPC job or
+-- terminal grant. This allowance belongs to the whole event and is reset only
+-- when a different committed row starts replication.
+def replicaRetry (reason t : UInt64) : UInt64 :=
+  let attempts := load64 (st+248) t
+  let t := store64 (st+192) 0 (store64 (st+216) 0 (store64 (st+144) 0 t))
+  if attempts >= 8 then store64 (st+240) reason (store64 (st+160) 6 t) else
+  let t := store64 (st+248) (attempts+1) t
+  let t := store64 (st+264) (Guest.WaitSDK.now t+500*(attempts+1)) t
+  store64 (st+160) 1 (store64 (st+168) 0 (store64 (st+176) 0 t))
+
 def replicaResponse (length t : UInt64) : UInt64 :=
   let action := load64 (command+8) t
   let origin := load64 (st+128) t
@@ -518,6 +555,7 @@ def replicaResponse (length t : UInt64) : UInt64 :=
 def replicaReceive (t : UInt64) : UInt64 :=
   if load64 (st+208) t != 0 then t else
   let n := Guest.NetworkSDK.receivePeer (load64 (st+136) t) (load64 (st+128) t) t
+  if n == 64 && status n == 3 then store64 (st+240) 3 (store64 (st+160) 6 n) else
   if n < 128 || n > 768 || status n != 0 then n else
   let bytes := load64 (wire+16) n
   let t := copy (wire+64) replicaIn bytes n
@@ -533,10 +571,13 @@ def replicaReceive (t : UInt64) : UInt64 :=
   else if load64 (replicaIn+8) t != 2 || request != load64 (st+192) t then t else
   let phase := load64 (st+160) t
   let code := load64 (replicaIn+64) t
-  let t := store64 (st+192) 0 (store64 (st+248) 0 t)
+  let t := store64 (st+192) 0 t
+  if code == 3 && phase >= 2 && phase <= 4 then replicaRetry 3 t else
   if code != 0 && code != 6 then store64 (st+240) code (store64 (st+160) 6 t) else
   if phase == 1 then
-    if code == 6 then store64 (st+160) 0 t else
+    if code == 6 then
+      if load64 (replicaIn+72) t == 0 then replicaRetry 4 t else store64 (st+160) 4 t
+    else
     let t := store64 (st+176) (load64 (replicaIn+72) t) (store64 (st+168) 0 t)
     store64 (st+160) (if load64 (replicaIn+80) t == 2 then 5 else 2) t
   else if phase == 2 then
@@ -548,16 +589,16 @@ def replicaReceive (t : UInt64) : UInt64 :=
 def replicaPrepare (t : UInt64) : UInt64 :=
   if load64 (st+192) t != 0 || load64 (st+216) t != 0 then t else
   let phase := load64 (st+160) t
-  if phase == 6 then t else
+  if phase == 6 || Guest.WaitSDK.now t < load64 (st+264) t then t else
   if phase == 0 then
     let i := replicable 0 t
     if i == error then t else
-    let t := store64 (st+152) i (store64 (st+160) 1 t)
-    let t := Guest.FeedSDK.begin (replicaOut+64) (row active i+64) t
-    replicaQueue 544 t
+    let t := if load64 (st+272) t == i+1 then t else store64 (st+248) 0 t
+    store64 (st+152) i (store64 (st+272) (i+1) (store64 (st+160) 1 (store64 (st+240) 0 t)))
   else
   let p := row active (load64 (st+152) t)
-  if phase == 2 then
+  if phase == 1 then replicaQueue 544 (Guest.FeedSDK.begin (replicaOut+64) (p+64) t)
+  else if phase == 2 then
     let offset := load64 (st+168) t
     let total := load64 (p+24) t
     if offset == total then store64 (st+160) 3 t else
@@ -576,7 +617,9 @@ def replicaPrepare (t : UInt64) : UInt64 :=
     let r := beginBank 0 metaBytes candidate t
     if r == error then store64 (st+240) 5 r else
     let t := store64 (st+40) 4 (store64 (st+16) 3 (store64 (st+24) 0 r))
-    store64 (st+160) 0 t
+    store64 (st+160) 7 t
+  else if phase == 7 && load64 (st+16) t == 0 then
+    if load64 (p+544) t == 1 then store64 (st+160) 0 t else replicaRetry 5 t
   else t
 
 def replicaPump (t : UInt64) : UInt64 :=
@@ -585,14 +628,17 @@ def replicaPump (t : UInt64) : UInt64 :=
   let t := if job == 0 then t else
     let r := Guest.NetworkSDK.pollPeer (load64 (st+136) t) job t
     if r != 64 || status r != 0 then store64 (st+240) 9 (store64 (st+160) 6 (store64 (st+144) 0 r)) else
-    if load64 (wire+16) r == 3 then store64 (st+144) 0 r else r
+    if load64 (wire+16) r == 3 then store64 (st+144) 0 r else
+    if load64 (wire+16) r >= 4 then
+      -- An unacknowledged response may simply be requested again by its peer.
+      -- Only failure of our own request restarts our current signed event.
+      if load64 (st+280) r == 1 then store64 (st+144) 0 r else replicaRetry 9 r
+    else r
   let t := replicaReceive t
   let now := Guest.WaitSDK.now t
   let t := if load64 (st+192) now != 0 && load64 (st+216) now == 0 &&
       load64 (st+144) now == 0 && now >= load64 (st+200) now+5000 then
-    if load64 (st+248) now >= 8 then store64 (st+240) 16 (store64 (st+160) 6 (store64 (st+192) 0 now)) else
-    store64 (st+248) (load64 (st+248) now+1)
-      (store64 (st+216) (load64 (replicaOut+24) now+64) (store64 (st+200) now now))
+    replicaRetry 16 now
     else now
   let t := replicaPrepare t
   if load64 (st+144) t != 0 then t else
@@ -603,8 +649,15 @@ def replicaPump (t : UInt64) : UInt64 :=
   let r := Guest.NetworkSDK.sendPeer (load64 (st+136) t) (load64 (st+128) t) 3
     (if responseBytes != 0 then load64 (replicaAnswer+16) t else load64 (st+192) t)
     (if responseBytes != 0 then replicaAnswer else replicaOut) bytes t
-  if r != 64 || status r != 0 then r else
-  let t := store64 (st+144) (load64 (wire+8) r) r
+  if r != 64 then store64 (st+240) 9 (store64 (st+160) 6 r) else
+  if status r != 0 then
+    if status r == 4 then
+      if responseBytes != 0 then store64 (st+208) 0 (store64 (st+240) 4 r)
+      else replicaRetry 4 r
+    else store64 (st+240) (status r) (store64 (st+160) 6 r)
+  else
+  let t := store64 (st+280) (if responseBytes != 0 then 1 else 2)
+    (store64 (st+144) (load64 (wire+8) r) r)
   if responseBytes != 0 then store64 (st+208) 0 t else store64 (st+216) 0 (store64 (st+200) (Guest.WaitSDK.now t) t)
 
 partial def expire (i now t : UInt64) : UInt64 :=
