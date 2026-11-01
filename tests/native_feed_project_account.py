@@ -13,6 +13,7 @@ sys.path[:0]=[str(ROOT/'tools'),str(ROOT/'tests')]
 import feed,identity,projects
 import feed_project_controls as project
 from native_community_campaign import attach_campaign,feed_ui,focus_application,select_feed_route
+from native_community_policy_restart import approved_synchronous_beta_admin,check_replication_lease
 from messenger_journey import PUB,wait,screenshot
 
 CARD='This exact signed release is available for independent local review. Inspect its current admission before creating a new project lineage.'
@@ -221,8 +222,12 @@ def main():
         archived.write_bytes(evidence.read_bytes())
     attempt=dict(started_utc=time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),result='running');attempts.append(attempt);report['result']='running'
     checkpoint=report.setdefault('checkpoints',{})
+    if a.stage=='project':
+        completed=json.loads((out/'reconnect-progress.json').read_text())
+        assert initial['done'].get('cancel')and completed.get('result')=='pass'and completed.get('done',{}).get('ephemeral'),'finish the full Charlie continuation before acquiring project/UI control'
+        assert completed['configuration']==initial['configuration']
     skip=(original_name,)if a.stage=='migrate'and checkpoint.get('offline_intent')and not(out/(original_name+'.sock')).exists()else()
-    with attach_campaign(out,skip=skip)as campaign:
+    with attach_campaign(out,skip=skip)as campaign,approved_synchronous_beta_admin(campaign)as control_marker:
         state=campaign.state;actors=campaign.actors;report['configuration']=state['configuration'];report['person']=a.person
         g=actors[a.person];g.ui=g.feed_ui
         alpha,beta=actors.get('alpha'),actors.get('beta');relays=[actors['relay'+str(i)]for i in(1,2,3)]
@@ -232,9 +237,22 @@ def main():
         def observed(value):report.setdefault('observations',[]).append(value);save()
         def passed(label,**details):
             report['checks'].append(dict(check=label,result='pass',**details));save();print('PASS',label,flush=True)
+        if control_marker is not None:report['management_control_boundary']=control_marker
         save()
         try:
             if a.stage=='project':
+                if not checkpoint.get('replication_lease_checked'):
+                    leases=checkpoint.setdefault('replication_lease_checks',{})
+                    for name in('alpha','beta'):
+                        if name in leases:continue
+                        check=check_replication_lease(actors[name],state['actors'][name],state['bulk_endpoint'])
+                        if check['renewed']:
+                            project.write_record(out/'native-actors.json',state)
+                            public=json.loads((out/'continuations.json').read_text());public['actors'][name]=state['actors'][name]
+                            project.write_record(out/'continuations.json',public)
+                        leases[name]=check;save()
+                    passed('one explicit project-stage replication lease check preserves the same durable policy and charged retry authority',operators=list(leases.values()),per_post_keepalive=False)
+                    checkpoint['replication_lease_checked']=True;save()
                 focus_feed(g)
                 select_feed_route(g,original,relays)
                 settle_exact(g,original,observed)
@@ -341,6 +359,16 @@ def main():
                 if not checkpoint.get('offline'):
                     passed('original hosting federation explicitly offline while willing replica retains original signed project metadata',event=old_event.hex(),body_sha256=hashlib.sha256(old_body).hexdigest(),original=original_name,replica=destination.name)
                     checkpoint['offline']=True;save()
+                if not checkpoint.get('offline_original_publisher_read'):
+                    reconnect=json.loads((out/'reconnect-progress.json').read_text());assert reconnect['done']['ephemeral']
+                    replaced=next(check for check in reconnect['checks']if 'old_owner'in check and 'new_owner'in check)
+                    assert replaced['old_owner']!=replaced['new_owner']==state['personal']['charlie']['feed']['owner']
+                    discussion=state['events']['long'];assert discussion['author']==state['personal']['charlie']['feed_public']
+                    committed=next(p for _,p in rows(destination)if p[:32].hex()==discussion['id'])
+                    assert hashlib.sha256(committed[32:]).hexdigest()==discussion['signed_sha256']
+                    body=read_body(destination,committed);assert hashlib.sha256(body).hexdigest()==discussion['content_sha256']
+                    passed('willing replica serves original checked long discussion with home federation offline and original no-vault author owner gone',event=discussion['id'],bytes=len(body),signed_sha256=discussion['signed_sha256'],content_sha256=discussion['content_sha256'],original_owner=replaced['old_owner'],fresh_ephemeral_owner=replaced['new_owner'],original_host_offline=not(out/(original_name+'.sock')).exists())
+                    checkpoint['offline_original_publisher_read']=True;save()
                 focus_feed(g)
                 select_feed_route(g,destination,relays)
                 public=export_public(g,include_preferences=True)
