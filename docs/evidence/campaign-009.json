@@ -118,7 +118,7 @@
     }
   ],
   "common_run": {
-    "result": "in progress: three concurrent Feed clients and first UI-authored cross-federation event passed; later stages pending",
+    "result": "core passed on common2e image with original Feed packages; fresh active Forge, reconnect, capacity and product/account continuations in progress",
     "output": "build/campaign009-connected-v7",
     "configuration": {
       "image_sha256": "2e5147c4198cf7ec39ab053f2ea8895cfdceb1c9b9dcf79e1b7bb7627314bcdf",
@@ -174,7 +174,13 @@
       "lossless_pixels_verified": true,
       "method": "Native compositor PPM already captured by core after Bob verified/paginated long read. Standard-library PNG RGB8/filter0/zlib encoding; CRCs/decompressed exact pixel equality verified. No new UI input, crop, annotation or synthesis.",
       "documentation_png": "docs/evidence/campaign-009-frames/bob-native-long-review-2e514.png"
-    }
+    },
+    "core_record": {
+      "path": "build/campaign009-connected-v7/evidence.json",
+      "bytes": 21872,
+      "sha256": "c6ee1ace6b738b5bf1b30185c0bacf034b919c3f675b92c76c3be9084136acc6"
+    },
+    "core_elapsed_seconds": 2767.131
   },
   "component_record": "campaign-009-components.json",
   "capacity": {
@@ -1082,5 +1088,94 @@
     "state": "focused native fixture passed; ordinary successor package build and installed retained upgrade pending",
     "wire_change": "local-block outcome15 marker0 may return96B with only public author32; existing64B followed-only marker1 unchanged",
     "image_change": false
-  }
+  },
+  "common_initial_feed_packages": [
+    {
+      "name": "identity",
+      "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v7-feed/identity.ltrel",
+      "rights": 0,
+      "code_bytes": 115952,
+      "code_sha256": "1437162555de9c55c72806039df49d07ead2ed36a267de5bfc7a3f886028bca7",
+      "release_id": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+      "package_sha256": "d6467b6bf812768f4e25a466c4ce0c425635444f78b4b34fc85c50e1579ea5aa"
+    },
+    {
+      "name": "feed-account",
+      "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v7-feed/feed-account.ltrel",
+      "rights": 1024,
+      "code_bytes": 145376,
+      "code_sha256": "fb1f2e8e34a47263d3450898a6f800d3f72a79081644413180b44b574951ccd8",
+      "release_id": "f50eaa12d7dc69c962584ce34a12d53d9b064970c640d23d594e930d7fc4bc07",
+      "package_sha256": "9d9be1ad2238d6e5063ac5664786939c2c186a08b4f613ed8912e2f9eb985b50"
+    },
+    {
+      "name": "feed",
+      "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v7-feed/feed.ltrel",
+      "rights": 799,
+      "code_bytes": 176848,
+      "code_sha256": "fbe5f9cf983464432ae4781bb7533a7182341d796d16e4bd20f4603cf3d2706f",
+      "release_id": "bfd1a9584b654f8ee4f0c3f1b3703608b452da7a9ad472683821aa8f4f13a635",
+      "package_sha256": "964a4a92a901520a151a7e7eb9f56c33733302fd8672b9109dd707eb51a4313d"
+    },
+    {
+      "name": "feed-federation",
+      "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v7-feed/feed-federation.ltrel",
+      "rights": 3072,
+      "code_bytes": 167516,
+      "code_sha256": "59b107b5702c4d231551da67a053543c94e012bd3d70bae4eeb1e2edd26f49e3",
+      "release_id": "02041c0eeca13f17a62a8913954558d9dc5be7e52f55d5db915dc76b14241526",
+      "package_sha256": "6cf3b1c142b5e076337575dfd22280760d1c75d95d2e3756c2ade7bbd38df35f"
+    }
+  ],
+  "common_initial_feed_source": {
+    "feed_ui": "05ca3c4",
+    "feed_account": "b706c104c2c36d8caf1b96e887c6276d2a302a61"
+  },
+  "shipping_feed_packages": [
+    {
+      "name": "identity",
+      "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v10-feed/identity.ltrel",
+      "rights": 0,
+      "code_bytes": 115952,
+      "code_sha256": "1437162555de9c55c72806039df49d07ead2ed36a267de5bfc7a3f886028bca7",
+      "release_id": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+      "package_sha256": "d6467b6bf812768f4e25a466c4ce0c425635444f78b4b34fc85c50e1579ea5aa"
+    },
+    {
+      "name": "feed-account",
+      "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v10-feed/feed-account.ltrel",
+      "rights": 1024,
+      "code_bytes": 145572,
+      "code_sha256": "575955507f16547e018f040a7d12031e9bd7012c3ae2a96d4e3ec84b68287190",
+      "release_id": "2a1b3d4a12f1383f43228cba37ed717295ff92d7c17f3c78eff94768cd3ce06e",
+      "package_sha256": "516e45cd5bf25e96c08e1402101f1e4c09298981528ab4cee231f6dba0057b52"
+    },
+    {
+      "name": "feed",
+      "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v10-feed/feed.ltrel",
+      "rights": 799,
+      "code_bytes": 181516,
+      "code_sha256": "bb4a916a58e14a9bf08b96cfae3161e51caf1c40f9fede027de0beb002ad7a2e",
+      "release_id": "dc1bd86bdb90dd7832562d61a8c825fc1418a63582a78d54fab38acf7e365ef5",
+      "package_sha256": "57bc1a917c453784a2c7710fce47bf0eea2ac5be0673831290d886f226abe64b"
+    },
+    {
+      "name": "feed-federation",
+      "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v10-feed/feed-federation.ltrel",
+      "rights": 3072,
+      "code_bytes": 167516,
+      "code_sha256": "59b107b5702c4d231551da67a053543c94e012bd3d70bae4eeb1e2edd26f49e3",
+      "release_id": "02041c0eeca13f17a62a8913954558d9dc5be7e52f55d5db915dc76b14241526",
+      "package_sha256": "6cf3b1c142b5e076337575dfd22280760d1c75d95d2e3756c2ade7bbd38df35f"
+    }
+  ],
+  "shipping_feed_versions": {
+    "ui": "0.9.3",
+    "account": "0.9.2",
+    "federation": "0.9.1",
+    "identity": "0.9.0",
+    "record": "campaign-009-final-feed-reproduction.json",
+    "installed_successor_workflow": "pending connected retained upgrade"
+  },
+  "final_clean_feed_reproduction": "campaign-009-final-feed-reproduction.json"
 }
