@@ -391,6 +391,16 @@ def accepted (length t : UInt64) : UInt64 :=
   let t := store64 (receiptArgs+32) (load64 (st+48) t) (store64 (receiptArgs+40) 0 t)
   if !Guest.ReceiptSDK.verify receiptArgs (answer+64) (answer+256) receiptProfile t then failSend 9 t else
   store64 (st+24) 6 (copy (answer+64) receiptCache 256 t)
+def completedIdleFetch (length t : UInt64) : Bool :=
+  -- Mailbox.fetch's no-row response is exactly64 bytes with no handle,
+  -- body or offset. A pending deposit, partial read or selected attachment
+  -- is workflow work and retains its existing finite charge.
+  length == 64 && load64 answer t == 6 && load64 (answer+8) t == 0 &&
+  load64 (answer+16) t == 0 && load64 (answer+24) t == 0 && load64 (answer+32) t == 0 &&
+  load64 (answer+40) t == 0 && load64 (answer+48) t == 0 && load64 (answer+56) t == 1 &&
+  load64 request t == 441 && load64 (request+8) t == 5 && load64 (request+16) t == 0 &&
+  load64 (request+24) t == 0 && load64 (request+32) t == 512 && load64 (request+56) t == 1 &&
+  load64 (st+88) t == 0 && load64 (st+160) t == 0 && load64 (st+136) t == 0 && load64 (st+280) t == 0
 def rpcCompleted (purpose length t : UInt64) : UInt64 :=
   let code := load64 answer t
   let h := load64 (answer+8) t
@@ -431,7 +441,15 @@ def rpcCompleted (purpose length t : UInt64) : UInt64 :=
   else if purpose == 7 then
     if code == 0 || code == 3 then store64 (st+24) 8 t else if code == 6 then t else failSend code t
   else if purpose == 10 then
-    if code == 6 then t else if code != 0 then failReceive code t else
+    if code == 6 then
+      -- Return only this completed idle probe's one local workflow charge.
+      -- Network bytes/attempts and the monotonically increasing RPC serial
+      -- remain spent; other sender, preflight and receive work is untouched.
+      if completedIdleFetch length t && load64 (st+216) t > 0 then
+        let count := load64 (st+328) t
+        store64 (st+328) (if count == 0xffffffffffffffff then count else count+1)
+          (store64 (st+216) (load64 (st+216) t-1) t) else t
+    else if code != 0 then failReceive code t else
     let total := load64 (answer+16) t
     let offset := load64 (answer+24) t
     let count := load64 (answer+32) t
@@ -678,6 +696,12 @@ def dispatch (caller rights token length t : UInt64) : UInt64 :=
       64+header 0 (load64 (st+96) t) (load64 (st+24) t)
         (load64 (st+48) t) (load64 (st+56) t)
         (load64 (st+72) t) (load64 (st+232) t) t
+    else if load64 (command+16) t == 5 && length == 64 then
+      -- Existing Launcher-only diagnostic grant; no workflow or parent
+      -- budget mutation. Available from Delivery0.8.2 onward.
+      64+header 0 (load64 (st+216) t) (load64 (st+80) t)
+        (load64 (st+88) t) (load64 (st+160) t)
+        (load64 (st+200) t) (load64 (st+328) t) t
     else configure token length t
   else
   if op == 460 then if load64 (command+48) t == 3 then queuePreflight caller length t else

@@ -81,7 +81,7 @@ def delivery_parent(value):
 def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--socket',type=Path)
     sub=p.add_subparsers(dest='command',required=True)
-    q=sub.add_parser('package');q.add_argument('--publisher-private',type=Path,required=True);q.add_argument('--output',type=Path,required=True);q.add_argument('--delivery-version',choices=('0.8.0','0.8.1'),default='0.8.1',help='Delivery release version (default0.8.1); other components remain0.8.0');q.add_argument('--delivery-parent',type=delivery_parent,help='exact active Delivery release hash for a normal native upgrade')
+    q=sub.add_parser('package');q.add_argument('--publisher-private',type=Path,required=True);q.add_argument('--output',type=Path,required=True);q.add_argument('--delivery-version',choices=('0.8.0','0.8.1','0.8.2'),default='0.8.2',help='Delivery release version (default0.8.2); other components remain0.8.0');q.add_argument('--delivery-parent',type=delivery_parent,help='exact active Delivery release hash for a normal native upgrade')
     q=sub.add_parser('vault-init');q.add_argument('image',type=Path)
     q=sub.add_parser('start');q.add_argument('--owner',type=Path,required=True);q.add_argument('--public',type=Path,required=True);q.add_argument('--ui',type=Path);q.add_argument('--delivery',type=Path)
     q=sub.add_parser('certify-contact');q.add_argument('--identity-release',type=Path,required=True);q.add_argument('--public',type=Path,required=True);q.add_argument('--scope',required=True);q.add_argument('--output',type=Path,required=True)
