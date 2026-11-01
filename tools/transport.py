@@ -154,22 +154,25 @@ class MultiplexStream:
      data=bytes(incoming[HEADER.size:HEADER.size+n]);del incoming[:HEADER.size+n]
      if op in (1,2):
       if ch['sock'] or ch['listener']:disconnect(slot,remove=True)
+      candidate=None
       try:
        family,address=endpoint(data,op==2);ch['endpoint']=address
        if value not in (0,1008):raise ValueError('unsupported receive window')
        ch['flow']=value==1008;ch['rxcredit']=value
        shared=next((other['listener'] for other in channels if other is not ch and other['listener'] and other['endpoint']==address),None) if op==2 else None
-       remote=shared or socket.socket(family,socket.SOCK_STREAM);remote.setblocking(False)
+       candidate=shared or socket.socket(family,socket.SOCK_STREAM);candidate.setblocking(False)
        if op==2:
-        if shared is None:remote.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1);remote.bind(address);remote.listen(CHANNELS)
-        ch['listener']=remote;ch['accepting']=True;event(9,slot)
+        if shared is None:candidate.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1);candidate.bind(address);candidate.listen(CHANNELS)
+        ch['listener']=candidate;ch['accepting']=True;event(9,slot)
        else:
-        result=remote.connect_ex(address)
-        if result not in (0,errno.EINPROGRESS,errno.EWOULDBLOCK):remote.close();raise OSError(result,'connect failed')
-        ch['sock']=remote;ch['connecting']=bool(result);ch['deadline']=time.monotonic()+5
+        result=candidate.connect_ex(address)
+        if result not in (0,errno.EINPROGRESS,errno.EWOULDBLOCK):candidate.close();raise OSError(result,'connect failed')
+        ch['sock']=candidate;ch['connecting']=bool(result);ch['deadline']=time.monotonic()+5
         if result==0:new_epoch(ch);event(4,slot,LIMIT)
       except (OSError,ValueError,UnicodeError) as error:
-       if 'remote' in locals() and remote is not ch['sock'] and not any(other['listener'] is remote for other in channels):remote.close()
+       # Failure before socket allocation cannot own a previous readiness
+       # iteration's remote. Only this command's candidate may be reclaimed.
+       if candidate is not None and candidate is not ch['sock'] and not any(other['listener'] is candidate for other in channels):candidate.close()
        event(6,slot,getattr(error,'errno',None) or errno.EINVAL)
      elif op==3:disconnect(slot,remove=True)
      elif op==7:
