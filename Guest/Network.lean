@@ -341,7 +341,7 @@ partial def expireGrants (i t : UInt64) : UInt64 :=
   let p := Guest.Transport.channel slot
   if !Guest.Transport.enabled t || !nativeFeedRelationship t ||
     !nativePeerCurrent t || load64 (st+8) t == 0 ||
-    session t != 0 || load64 (st+136) t >= 32 || load64 (p+24) t != 0 ||
+    session t != 0 || load64 (st+136) t >= 32 || load64 (p+24) t != 0 || load64 (p+8) t == 1 ||
     now t < load64 (st+88) t || !Guest.Transport.controlAvailable t then t else
   let attempt := load64 (st+136) t
   let delay := if attempt == 0 then 200 else if attempt == 1 then 400 else
@@ -444,6 +444,19 @@ def configureFeedPeer (role slot length t : UInt64) : UInt64 :=
   let t := store64 (st+128) 2 t
   let r := configure role 192 t
   Guest.Effects.effectValue r (zero (command+160) 4 (zero nativePeerWork 512 r))
+
+@[noinline] def connectSelected (admin : Bool) (t : UInt64) : UInt64 :=
+  if !Guest.PeerDescription.verified t || load64 (st+8) t == 0 then failure 1 t else
+  if load64 (Guest.PeerDescription.st+8) t != 0 &&
+    (!nativeFeedRelationship t || !nativePeerCurrent t) then failure 1 t else
+  if !admin && load64 (Guest.PeerDescription.st+8) t != 0 then
+    failure (if load64 (st+136) t >= 32 then 4 else 0) (reconnectBulk t) else
+  let t := if admin then store64 (st+136) 0 t else t
+  let p := Guest.Transport.channel (transportSlot (activeSlot t) t)
+  if nativeFeedRelationship t && (load64 (p+24) t != 0 || load64 (p+8) t == 1) then failure 0 t else
+  let r := Guest.Transport.connect (transportSlot (activeSlot t) t) (load64 (st+8) t)
+    (Guest.PeerDescription.description+168) (load64 (Guest.PeerDescription.description+160) t) t
+  if r == error then failure 6 r else failure 0 r
 
 partial def ambiguousReceive (root operation stream i t : UInt64) : Bool :=
   if i == 4 then false else
@@ -570,12 +583,7 @@ def dispatchSelected (caller rights length t : UInt64) : UInt64 :=
   if op >= 20 && op <= 25 && admin then Guest.NodeEnrollment.dispatch op handle length t else
   if op == 48 && admin && length >= 64 && length <= 128 then configureFeedPeer (load64 (command+16) t) handle length t else
   if op == 13 && (admin || (rights &&& 1024) != 0) && length == 64 then
-    if !Guest.PeerDescription.verified t || load64 (st+8) t == 0 then failure 1 t else
-    if !admin && load64 (Guest.PeerDescription.st+8) t != 0 then
-      failure (if load64 (st+136) t >= 32 then 4 else 0) (reconnectBulk t) else
-      let t := if admin then store64 (st+136) 0 t else t
-      let r := Guest.Transport.connect (transportSlot (activeSlot t) t) (load64 (st+8) t) (Guest.PeerDescription.description+168) (load64 (Guest.PeerDescription.description+160) t) t
-      if r == error then failure 6 r else failure 0 r
+    connectSelected admin t
   else if op == 14 && (admin || caller == syscall 119 0 0 0 0 t) && length == 64 then
     let r := networkReset t
     failure 0 (store64 (st+8) 0 (disconnect 16 r))

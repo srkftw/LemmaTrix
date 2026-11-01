@@ -36,6 +36,12 @@ open Guest Guest.LiveSDK
     ((load64 Guest.Transport.output t >>> 40) &&& 255) != 13 then 17 else
   let t := Guest.Network.reconnectBulk (store64 Guest.Network.st 1300 t)
   if load64 (Guest.Network.st+136) t != 1 then 18 else
+  let held := load64 Guest.Transport.output t
+  let t := Guest.Network.connectSelected true t
+  if status t != 0 || load64 (Guest.Network.st+136) t != 0 ||
+    load64 Guest.Transport.output t != held || load64 (Guest.Transport.channel 13+24) t != 1 then 26 else
+  let t := Guest.Network.connectSelected false (store64 (Guest.Network.st+136) 7 t)
+  if status t != 0 || load64 (Guest.Network.st+136) t != 7 || load64 Guest.Transport.output t != held then 27 else
   let t := store64 (Guest.Transport.channel 13+24) 0 (store64 (Guest.Transport.st+16) 0
     (store64 (Guest.Network.st+136) 32 t))
   let t := Guest.Network.reconnectBulk t
@@ -131,6 +137,11 @@ open Guest Guest.LiveSDK
   let t := Guest.TorRouter.retireChannel 10 t
   let t := Guest.TorRouter.replenish t
   if Guest.TorRouter.freeChannel 0 t != 10 || load64 (Guest.TorRouter.channel 9) t != 4 then 12 else
+  let t := Guest.TorRouter.retireChannel 11 t
+  let t := store64 Guest.NodeEnrollment.localNode 1 t
+  let t := Guest.TorRouter.replenish t
+  if load64 (Guest.TorRouter.channel 10) t != 1 || Guest.TorRouter.freeChannel 0 t != 11 ||
+    load64 (Guest.TorRouter.channel 9) t != 4 then 25 else
   0
 def check (t : UInt64) : UInt64 :=
   let checked := contextChecks t
@@ -142,6 +153,25 @@ def main():
  native.B=ROOT/'build/native-shared-contexts'
  for module in ('Guest.Network','Guest.Mailbox'):live_build.compile_module(module)
  binary=native.build(SOURCE,'NativeSharedContexts')
+ # Replenishing a reclaimed pair creates a real native setup deadline. This
+ # small clock oracle supplies only monotonic tick100; other traps fail.
+ boot=native.B/'boot.S'
+ boot.write_text(boot.read_text().replace(' la t0,fatal',' la t0,fixtureClock')+'''
+fixtureClock:
+ csrr t0,mcause
+ li t1,9
+ bne t0,t1,fatal
+ li t1,110
+ bne a7,t1,fatal
+ li a0,100
+ csrr t0,mepc
+ addi t0,t0,4
+ csrw mepc,t0
+ mret
+''')
+ driver.asm(boot,native.B/'1.o')
+ driver.run([driver.tool('ld.lld'),'-m','elf64lriscv','--no-relax','-T',ROOT/'runtime/kernel.ld',*(native.B/f'{i}.o'for i in range(3)),'-o',native.B/'check.elf'])
+ driver.run([driver.tool('llvm-objcopy'),'-O','binary',native.B/'check.elf',binary])
  report=dict(schema=1,result='pass',image_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),checks=[native.execute(binary,b) for b in a.backend or ['qemu','aarch64']],boundaries=['relay integrity failure closes only dependent incoming/outgoing pair','terminal keys/buffers banked by channel, stream and epoch; stale epoch rejects','mailbox sameNetworkcaller different terminalorigin cannot append or collect foreignstaging','adapterv3 accepts slot15 and rejects slot16','bulk reconnect attempts remain context-private, finite32 and pending admission does not renew them','current native Feed relationship preserves exact used allowance and expiry only on link loss; lost jobs and inbox cleared, expired/pin-changed or explicit-stop grants cannot revive'],limitations='Focused compiled RV64 state transitions, including provisioned predicate inputs for bulk reconnect; no native certificate-admission claim from this fixture. AArch64 assembly emulator runs under qemu-aarch64; no physical hardware or full native Messenger qualification.')
  (native.B/'evidence.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2))
 if __name__=='__main__':main()
