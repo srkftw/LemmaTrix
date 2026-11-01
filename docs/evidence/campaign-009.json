@@ -642,10 +642,10 @@
     "No physical-hardware, independent security-review, post-quantum, Tor interoperability, global-correlation or hostile-government-resilience claim.",
     "Small private Messenger groups, Wallet/LemmaCoin/economics, modes2/4 and full native self-hosting remain separate obligations.",
     "Inter-operator grants expire after at most100000 local work ticks. Explicit opt-in rolling consent permits Native renewal only after charging another bounded allocation from the same durable finite total; idle allocations can exhaust it. Legacy manual policy does not gain this authority.",
-    "Terminal partial/IPC and handshake/request deadlines are implemented; their compiled state fixture is distinct from installed wire admission. Six paired routes have not been simultaneously saturated on the wire.",
+    "Terminal partial/IPC and handshake/request deadlines are implemented; their compiled state fixture is distinct from installed wire admission. Six paired routes were simultaneously admitted on the wire; native overflow refusal and owned release/reuse passed with the substantial latency recorded below.",
     "Each personal guest currently selects one outgoing routed destination/terminal owner at a time; app destination changes affect only its own route, while independent clients share uninterrupted native operators.",
     "Feed audiences bound open federation-public storage/replication scope; no private reader-membership ACL. An operator acting as an ordinary approved mode1 reader may join the other public feed.",
-    "Full saturation can queue an overflow TCP connection until the native100000-work-tick setup deadline; actual seventh refusal took1025.102seconds. New route admission194.885\u2013213.883seconds, reuse229.759seconds in this emulated profile."
+    "Full saturation can queue an overflow TCP connection until the native100000-work-tick setup deadline; actual seventh refusal took1025.102seconds. New route admission194.885–213.883seconds, reuse229.759seconds in this emulated profile."
   ],
   "prior_common_attempts": [
     {
@@ -939,16 +939,16 @@
       "conversion": "lossless PPM to PNG; original native640x400 pixels; visually inspected",
       "event": "194c3c53daaf158134cd0ff4f7470d89bcc8d1cfef3b1be5fe970c2ea098c04d",
       "image_sha256": "90fdde98b45bd9828b1d53a8d7c22e5d361480116ccef08ded5bf1c2f8f668a3",
-      "scope": "Actual final-image NativeFeed reader after full checked1330B content retrieval. Screenshot shows one body page; earlier screenshot remains attributed to prior582f trial."
+      "scope": "Preserved90fd-image NativeFeed reader after full checked1330B retrieval; this is historical evidence, not the current2e514 image. Screenshot shows one body page."
     },
     {
-      "label": "Native graphical Feed long review, current clean854 image/UI0.9.2",
+      "label": "Preserved8542 Native graphical Feed long review/UI0.9.2",
       "source_ppm": "build/campaign009-connected-v4/bob-native-long-review.ppm",
       "source_ppm_sha256": "ff888c35f206671da76f629eb8e7751bcfc734bb8d12fe3d2ee06cbb7c25b883",
       "path": "docs/evidence/campaign-009-frames/bob-native-long-review-8542.png",
       "sha256": "8e99c0fb2596176807ebb028851601b58212672080f49c4cbc40612079a7c0f6",
       "image_sha256": "854253bc6b0d46ba043e6056ea8c065b00d4e8560b062d6f6f9220034f76a29b",
-      "scope": "Actual native640x400 rendered frame; lossless pixel-preserving PPM\u2192PNG conversion, one checked page of useful1330-byte post."
+      "scope": "Actual native640x400 rendered frame; lossless pixel-preserving PPM→PNG conversion, one checked page of useful1330-byte post."
     },
     {
       "path": "docs/evidence/campaign-009-frames/bob-native-long-review-690e.png",
@@ -1629,5 +1629,20 @@
   },
   "final_clean_idle_reproduction": "campaign-009-final-idle-reproduction.json",
   "native_idle_poll_fixture": "campaign-009-native-idle-poll.json",
-  "transport_command_cleanup": "campaign-009-transport-command-cleanup.json"
+  "transport_command_cleanup": "campaign-009-transport-command-cleanup.json",
+  "history_qualification": {
+    "meaningful_initial_events": 8,
+    "padded_content_bytes": 5120,
+    "exceeds": [
+      "native UI one-selected-row working set",
+      "ServerStore4096-byte verified read page"
+    ],
+    "earliest_latest_re_read_from_both_stores": true,
+    "does_not_exceed": [
+      "64-event committed metadata index",
+      "128KiB segment writer workspace",
+      "896KiB store capacity"
+    ],
+    "automatic_compaction_or_infinite_history_qualified": false
+  }
 }
