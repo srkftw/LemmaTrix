@@ -118,7 +118,7 @@
     }
   ],
   "common_run": {
-    "result": "core passed on common2e image with original Feed packages; fresh active Forge, reconnect, capacity and product/account continuations in progress",
+    "result": "core and strict stalled Forge passed; exact seq5 retry replicated, then Alice upstream loss and failed local receivers paused reconnect; parent-linked Delivery0.8.2 repair/selected-route recovery pending",
     "output": "build/campaign009-connected-v7",
     "configuration": {
       "image_sha256": "2e5147c4198cf7ec39ab053f2ea8895cfdceb1c9b9dcf79e1b7bb7627314bcdf",
@@ -190,6 +190,17 @@
       "stalled_epoch": 6,
       "stalled_pending_bytes": 532,
       "unrelated_mailbox_sessions_preserved": true
+    },
+    "reconnect_interruption": {
+      "failure_record": "build/campaign009-connected-v7/reconnect-failure.json",
+      "failure_sha256": "bd6738b6015245fa326a7290031f23d25650a6ac11fcd44be5bbabaa41909b58",
+      "peer_diagnostic": "build/campaign009-connected-v7/reconnect-peer-diagnostic.json",
+      "peer_diagnostic_sha256": "dc00746e563da42d1ed684c98bddcded3792d76803644f8fc2e9829d0b4944ee",
+      "alice": "router38 upstream disconnect; terminal26 secondary; initiating reason unobserved",
+      "bob": "router3/terminal3; later Delivery receive7 with no local RPC",
+      "native_image_changed": false,
+      "operators_reset": false,
+      "recovery": "pending ordinary parent-linked Delivery upgrade for both clients and same-approved-peer personal routes; no key-owner/UI replacement"
     }
   },
   "component_record": "campaign-009-components.json",
@@ -291,7 +302,8 @@
     "Small private Messenger groups, Wallet/LemmaCoin/economics, modes2/4 and full native self-hosting remain separate obligations.",
     "Inter-operator grants expire after at most100000 local work ticks. Explicit opt-in rolling consent permits Native renewal only after charging another bounded allocation from the same durable finite total; idle allocations can exhaust it. Legacy manual policy does not gain this authority.",
     "Terminal partial/IPC and handshake/request deadlines are implemented; their compiled state fixture is distinct from installed wire admission. Six paired routes have not been simultaneously saturated on the wire.",
-    "Each personal guest currently selects one outgoing routed destination/terminal owner at a time; app destination changes affect only its own route, while independent clients share uninterrupted native operators."
+    "Each personal guest currently selects one outgoing routed destination/terminal owner at a time; app destination changes affect only its own route, while independent clients share uninterrupted native operators.",
+    "Feed audiences bound open federation-public storage/replication scope; no private reader-membership ACL. An operator acting as an ordinary approved mode1 reader may join the other public feed."
   ],
   "prior_common_attempts": [
     {
@@ -1213,5 +1225,11 @@
     "terminal_service_pin": "8b4e26f",
     "late_listener_acceptance": "f2f1a97",
     "messenger_delivery": "40e0930"
+  },
+  "audience_contract": {
+    "personal_reading": "open federation-public reading after approved selected service route; no private reader-membership capability",
+    "replication": "native push scans retained index, sends only signed local-home plus configured-peer audience; peer independently validates",
+    "bulk_reading": "typed replica protocol actions1-4 only; action5timeline/action6body refused7; source-reviewed, not a new installed-wire refusal claim",
+    "private_reports_appeals": "administrative access only; not public replication"
   }
 }
