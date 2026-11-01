@@ -163,7 +163,8 @@
       "three-feed": true,
       "replication": true,
       "long-read": true,
-      "follow-reply": true
+      "follow-reply": true,
+      "history": true
     },
     "live_state_record": "build/campaign009-connected-v4/native-actors.json",
     "first_product_checkpoint_result": "pass:126-byte nativeUI post; original480 signed bytes match across independently configured Alpha/Beta; selected audience unchanged",
@@ -174,6 +175,12 @@
       "bytes": 1330,
       "content_sha256": "da933b261f757e2e3556bd30c008f04fbdd90ce29e277d65883d4e3c0ca9e557",
       "signed_sha256": "6045eb474eea92e25e15ac18c5404a85e9ec17d2756861a1124bb1009b0eb5be"
+    },
+    "history_checkpoint": {
+      "result": "pass",
+      "meaningful_native_ui_events": 17,
+      "signed_bytes": "all original480-byte envelopes exact across Alpha/Beta",
+      "host_renewals": 0
     }
   },
   "component_record": "campaign-009-components.json",
@@ -266,8 +273,9 @@
     "Whole-store replacement lacks an external freshness anchor.",
     "No physical-hardware, independent security-review, post-quantum, Tor interoperability, global-correlation or hostile-government-resilience claim.",
     "Small private Messenger groups, Wallet/LemmaCoin/economics, modes2/4 and full native self-hosting remain separate obligations.",
-    "Inter-operator live grants expire after at most 100000 local work ticks; explicit unchanged-policy renewal spends another bounded allocation from the same durable total. No automatic lease extension is implemented.",
-    "Terminal partial/IPC and handshake/request deadlines are implemented; their compiled state fixture is distinct from installed wire admission. Six paired routes have not been simultaneously saturated on the wire."
+    "Inter-operator grants expire after at most100000 local work ticks. Explicit opt-in rolling consent permits Native renewal only after charging another bounded allocation from the same durable finite total; idle allocations can exhaust it. Legacy manual policy does not gain this authority.",
+    "Terminal partial/IPC and handshake/request deadlines are implemented; their compiled state fixture is distinct from installed wire admission. Six paired routes have not been simultaneously saturated on the wire.",
+    "Each personal guest currently selects one outgoing routed destination/terminal owner at a time; app destination changes affect only its own route, while independent clients share uninterrupted native operators."
   ],
   "prior_common_attempts": [
     {
