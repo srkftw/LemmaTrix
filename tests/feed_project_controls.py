@@ -344,6 +344,7 @@ def revoke_and_refuse(g,ui,record):
         signed=wait(lambda:federation.sign_once(g.client,record['registry'],Path(record['admission_key']),'portable'),180,'native revocation admission signed through original bootstrap')
     journal['decision']=signed;write_record(path,journal)
     assert signed['listing']==3 and signed['root']==record['root']['head']
+    assert signed['sequence']>record['registry_sequence'],('revocation must supersede the verified original',signed)
     # C rechecks the exact old descriptor against current native Registry state.
     g.device.press(46)
     wait(lambda:ui_call(g,ui,791)[0][6]==11 and complete_read(g,ui),90,'native Feed card refuses known revoked project')
