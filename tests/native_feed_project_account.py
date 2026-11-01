@@ -289,6 +289,11 @@ def main():
         completed=json.loads((out/'reconnect-progress.json').read_text())
         assert initial['done'].get('cancel')and completed.get('result')=='pass'and completed.get('done',{}).get('ephemeral'),'finish the full Charlie continuation before acquiring project/UI control'
         assert completed['configuration']==initial['configuration']
+    elif a.stage=='migrate':
+        if not a.alpha_offline_approved:raise ValueError('finish connected moderation/restart before selecting the original federation offline')
+        completed=json.loads((out/'reconnect-progress.json').read_text())
+        assert completed.get('result')=='pass'and completed.get('done',{}).get('ephemeral'),'finish original publisher ephemerality before taking its home federation offline'
+        assert completed['configuration']==initial['configuration']
     skip=(original_name,)if a.stage=='migrate'and checkpoint.get('offline_intent')and not(out/(original_name+'.sock')).exists()else()
     with attach_campaign(out,skip=skip)as campaign,approved_synchronous_beta_admin(campaign)as control_marker:
         state=campaign.state;actors=campaign.actors;report['configuration']=state['configuration'];report['person']=a.person
@@ -505,21 +510,37 @@ def main():
                     checkpoint['offline_original_publisher_read']=True;save()
                 focus_feed(g)
                 selected_feed_route(g,destination,relays,observed)
-                public=export_public(g,include_preferences=True)
-                recovered=public[32:64]==author and struct.unpack_from('<Q',public,160)[0]>1 and feed_ui(g,793)[0][6]==1
+                backing=out/(g.name+'.img')
+                public=export_public(g,include_preferences=True)if feed_ui(g)[0][1]else None
+                if 'recovery_intent'not in checkpoint:
+                    assert public is not None and public[32:64]==author
+                    checkpoint['recovery_intent']=dict(previous_key_generation=struct.unpack_from('<Q',public,160)[0],
+                        previous_root_generation=retained_generation(backing),original_host_offline=True,
+                        selected_preference_sha256=hashlib.sha256(approved[256:1792]).hexdigest())
+                    save()
+                recovery=checkpoint['recovery_intent']
+                recovered=(public is not None and public[32:64]==author
+                    and struct.unpack_from('<Q',public,160)[0]>recovery['previous_key_generation']
+                    and retained_generation(backing)>recovery['previous_root_generation']and feed_ui(g,793)[0][6]==1)
                 if not recovered:
                     if feed_ui(g)[0][1]!=0:
                         g.device.press(59);g.device.press(64)
-                        wait(lambda:feed_ui(g)[0][1]==0,120,'native account lock clears current author authority')
+                        project.wait_native(g,lambda:feed_ui(g)[0][1]==0 and feed_ui(g)[0][4]==36 and project.complete_read(g,g.feed_ui),120,'completed native account lock clears current author authority')
                     g.client.request(179,struct.pack('<2Q',g.feed_owner,1))
                     focus_feed(g);g.device.press(59);g.device.press(61)
                     if feed_ui(g,793)[0][5]!=1:g.device.press(62)
                     g.device.textASCII(secret(out/(g.name+'.feed-author-unlock'),create=False).hex(),delay=.04);g.device.press(63)
-                    wait(lambda:feed_ui(g)[0][1]==1 and feed_ui(g)[0][5]==8 and feed_ui(g,793)[0][6]==1,180,'complete retained author recovery with original federation offline')
+                    project.wait_native(g,lambda:feed_ui(g)[0][1]==1 and feed_ui(g)[0][4]==46 and feed_ui(g)[0][5]==8
+                        and feed_ui(g,793)[0][6]==1 and project.complete_read(g,g.feed_ui)
+                        and retained_generation(backing)>recovery['previous_root_generation'],180,'complete retained author recovery and fresh reseal with original federation offline')
                 assert feed_ui(g)[1][:32]==author
+                if 'recovery_root_generation'not in checkpoint:
+                    checkpoint['recovery_root_generation']=retained_generation(backing);save()
                 focus_feed(g)
                 settle_exact(g,destination,observed)
                 public=export_public(g,include_preferences=True)
+                assert public[64:128]==approved[64:128]
+                assert struct.unpack_from('<Q',public,160)[0]>recovery['previous_key_generation']
                 assert public[256:1792]==approved[256:1792]and preference_bits(public,project_id)&4
                 if block_was_selected:assert preference_bits(public,blocked_author)&2
                 passed('native recovery restores exactly the explicitly approved local preferences independently of federation policy',preference_bytes=1536,preference_sha256=hashlib.sha256(public[256:1792]).hexdigest(),stable_project_follow=True,previously_selected_local_block=block_was_selected,local_block_preserved=True if block_was_selected else None,complete_graph_published=False)
@@ -534,12 +555,37 @@ def main():
                     g.device.textASCII(MOVED,delay=.035)
                     wait(lambda:feed_ui(g)[0][3]==len(MOVED),180,'complete native hosting-move publication input')
                     g.device.press(62);wait(lambda:feed_ui(g)[0][2]==9,60,'native exact move publication preview')
-                    checkpoint['move_intent']=dict(author=author.hex(),content_sha256=hashlib.sha256(MOVED.encode()).hexdigest());save()
+                    intent=dict(author=author.hex(),home=home,peer=peer,kind=1,content_sha256=hashlib.sha256(MOVED.encode()).hexdigest())
+                    if 'move_intent'in checkpoint:assert checkpoint['move_intent']==intent
+                    else:checkpoint['move_root_before']=retained_generation(backing)
+                    checkpoint['move_intent']=intent;save()
                     g.device.press(63)
-                    event=wait(lambda:match(destination,author,1,hashlib.sha256(MOVED.encode()).digest()),600,'native new publication after fresh hosting authorization')
+                    retries=[0,time.monotonic()]
+                    def accepted_move():
+                        found=match(destination,author,1,hashlib.sha256(MOVED.encode()).digest())
+                        progress('native new publication after fresh hosting authorization')
+                        fields,diagnostic=feed_ui(g)
+                        if found is not None and fields[5]in(6,7)and project.complete_read(g,g.feed_ui):return found
+                        if fields[5]==8:raise RuntimeError(('hosting publication requires exact native reconciliation',list(fields)))
+                        if fields[2]==9 and fields[3]==len(MOVED)and fields[6]==4 and fields[5]in(0,6,7)and struct.unpack_from('<Q',diagnostic,104)[0]==0 and time.monotonic()-retries[1]>=3:
+                            if retries[0]>=8:raise RuntimeError(('native hosting publication remains busy',list(fields)))
+                            g.device.press(63);retries[:]=[retries[0]+1,time.monotonic()]
+                        return None
+                    event=wait(accepted_move,600,'native new publication after fresh hosting authorization')
                 assert event[304:336].hex()==home and event[336:368].hex()==peer
+                assert struct.unpack_from('<Q',event,216)[0]>struct.unpack_from('<Q',approved,24)[0]
+                assert struct.unpack_from('<Q',event,64)[0]>struct.unpack_from('<Q',approved,160)[0]
                 assert read_body(destination,event)==MOVED.encode()
                 passed('same retained federation-scoped author publishes a new checked event at willing second host while original remains offline',event=event[:32].hex(),sequence=struct.unpack_from('<Q',event,216)[0],original_still_offline=not(out/(original_name+'.sock')).exists(),new_identity_link_claim=False)
+                settle_exact(g,destination,observed)
+                after=export_public(g,include_preferences=True)
+                assert after[32:128]==public[32:128]and after[128:160]==event[:32]and after[256:1792]==approved[256:1792]
+                assert struct.unpack_from('<Q',after,24)[0]==struct.unpack_from('<Q',event,216)[0]
+                assert struct.unpack_from('<Q',event,64)[0]<=struct.unpack_from('<Q',after,160)[0]
+                assert retained_generation(backing)>recovery['previous_root_generation']
+                if 'move_root_before'in checkpoint:assert retained_generation(backing)>checkpoint['move_root_before']
+                save_approved_profile(out/(g.name+'.migrated-approved-feed-profile'),after)
+                passed('native approved export after hosting move preserves exact new outbox reference and selected preferences',profile_sha256=hashlib.sha256(after).hexdigest(),preference_sha256=hashlib.sha256(after[256:1792]).hexdigest(),opaque_root_generation=retained_generation(backing),sealed_private_key_included=False)
             else:
                 if a.feed_packages is None:raise ValueError('--feed-packages required for exact ephemeral relaunch')
                 ephemeral=actors['charlie'];focus_application(ephemeral,'feed')
