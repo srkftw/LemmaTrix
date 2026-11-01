@@ -5,6 +5,7 @@ import Guest.LiveMemory
 import Guest.WaitSDK
 import Guest.FeedRetentionSDK
 import Guest.RegistrySDK
+import Guest.FeedEvent
 namespace Guest.FeedAccount
 open Guest.LiveSDK
 -- A separate account/network owner. Only Identity owns signing seeds. This
@@ -24,6 +25,9 @@ def answer : UInt64 := 0x69b000
 def portable : UInt64 := 0x69c000
 def scratch : UInt64 := 0x6a0000
 def hashed : UInt64 := 0x6a1000
+def trustedEvent : UInt64 := 0x6a2000
+def trustedId : UInt64 := 0x6a2200
+def checkedBody : UInt64 := 0x6a4000
 def retained : UInt64 := 0x6c0000
 def eq (a b n t : UInt64) : Bool := Guest.LiveMemory.equal a b n t
 def hash (p n out t : UInt64) : UInt64 := Guest.ServiceHash.sha256At scratch p n out t
@@ -56,6 +60,7 @@ partial def writeRecord (offset t : UInt64) : UInt64 :=
     if r != 64 || status r != 0 then error else writeRecord (offset+512) r
 def persist (t : UInt64) : UInt64 :=
   if load64 (st+192) t == 0 then t else
+  if load64 (st+192) t != 1 then error else
   let t := zero retained 2432 t
   let t := store64 retained 0x315443434146544c (store64 (retained+8) 1 t)
   let t := store64 (retained+24) (load64 (st+8) t) (store64 (retained+32) (load64 (st+32) t) t)
@@ -84,6 +89,7 @@ def retention (length t : UInt64) : UInt64 :=
   let t := copy (command+64) (scope+512) 32 t
   if mode == 0 then
     if load64 st t == 0 || load64 (st+64) t != 0 then response 4 0 0 0 (zero (scope+512) 4 t) else
+    let t := store64 (st+192) 2 t
     let r := Guest.IdentitySDK.sealFeed (load64 st t) (scope+512) t
     if r != 256 || status r != 0 then response (if r == error then 1 else status r) 0 0 0 (zero (scope+512) 4 r) else
     let t := copy (wire+64) (scope+256) 192 (zero (scope+512) 4 r)
@@ -133,14 +139,39 @@ def commitUpload (t : UInt64) : UInt64 :=
 def pollUpload (t : UInt64) : UInt64 :=
   let t := req 4 0 0 0 t
   let r := rpc 96 4 (copy eventId (requestBuffer+64) 32 t)
-  if r == error then failed 14 r else store64 (st+32) 5 r
+  if r == error then failed 14 r else
+  store64 (st+240) (load64 (st+240) r+1)
+    (store64 (st+232) (Guest.WaitSDK.now r+500)
+      (if load64 (st+32) r == 6 then r else store64 (st+32) 5 r))
 -- A saved response belongs to one requested action. UI reads that action and
 -- its completion generation explicitly; a later timeline cannot be its commit.
 def saveAnswer (bytes purpose t : UInt64) : UInt64 :=
   store64 (st+136) bytes (store64 (st+144) purpose (store64 (st+152) (load64 (st+152) t+1)
     (copy wire answer bytes t)))
+def validateAnswer (bytes purpose t : UInt64) : UInt64 :=
+  if status t != 0 then t else
+  if purpose == 5 then
+    if bytes != 576 || !Guest.FeedEvent.valid (wire+96) t then
+      header 9 0 0 0 0 0 0 t
+    else
+      let t := hash (wire+96) 480 hashed t
+      if !eq hashed (wire+64) 32 t then header 9 0 0 0 0 0 0 t else
+      copy (wire+64) trustedId 32 (copy (wire+96) trustedEvent 480 (store64 (st+256) 0 t))
+  else if purpose == 6 then
+    let offset := load64 (requestBuffer+24) t
+    let n := bytes-64
+    let total := load64 (trustedEvent+256) t
+    if bytes <= 64 || bytes > 576 || offset != load64 (st+256) t || offset > total || n > total-offset ||
+        !eq (requestBuffer+64) trustedId 32 t then header 9 0 0 0 0 0 0 t else
+    let t := copy (wire+64) (checkedBody+offset) n (store64 (st+256) (offset+n) t)
+    if offset+n != total then t else
+    let t := hash checkedBody total hashed t
+    if eq hashed (trustedEvent+224) 32 t then t else header 9 0 0 0 0 0 0 t
+  else t
 def complete (bytes purpose t : UInt64) : UInt64 :=
+  let t := validateAnswer bytes purpose t
   let code := status t
+  let bytes := if code == 9 then 64 else bytes
   let t := saveAnswer bytes purpose (store64 (st+64) 0 t)
   if purpose >= 5 then t else
   if code != 0 && code != 6 && code != 10 then failed code t else
@@ -160,7 +191,10 @@ def complete (bytes purpose t : UInt64) : UInt64 :=
  def pump (t : UInt64) : UInt64 :=
   let serial := load64 (st+64) t
   if serial == 0 then
-    if load64 (st+32) t == 5 then pollUpload t else t
+    let phase := load64 (st+32) t
+    if phase != 5 && phase != 6 then t else
+    let now := Guest.WaitSDK.now t
+    if now < load64 (st+232) now || load64 (st+240) now >= 64 then now else pollUpload now
   else
   let r := net 40 serial t
   if r >= 64 && r <= 1024 && status r == 0 then
@@ -180,13 +214,16 @@ partial def validText (p n i t : UInt64) : Bool :=
   -- v1 deliberately supports printable ASCII and LF. Unsupported UTF8 is a
   -- typed refusal, never executable markup or silent replacement.
   (c == 10 || (c >= 32 && c <= 126)) && validText p n (i+1) t
- def createIdentity (t : UInt64) : UInt64 :=
+ def createIdentity (token t : UInt64) : UInt64 :=
   if load64 st t != 0 || load64 (st+64) t != 0 then response 4 0 0 0 t else
   let t := copy (command+64) scope 64 t
   let t := store64 scratch (self t) (store64 (scratch+8) (Guest.WaitSDK.now t) t)
   let t := hash scratch 16 hashed t
   let r := Guest.IdentitySDK.feedCreate scope hashed t
   if r != 352 || status r != 0 then response (if r == error then 1 else status r) 0 0 0 r else
+  if syscall 131 token 0 0 0 r != 0 then
+    let r := Guest.IdentitySDK.feedRevoke (result r) r
+    response 3 0 0 0 r else
   let t := store64 st (result r) (copy (wire+64) publicIdentity 288 r)
   response 0 (load64 st t) 1 0 (store64 (st+8) 0 (store64 (st+32) 0 t))
  def prepareDraft (length t : UInt64) : UInt64 :=
@@ -203,7 +240,7 @@ partial def validText (p n i t : UInt64) : Bool :=
   if bytes == 0 || bytes > 512 || offset != load64 (st+120) t || offset > load64 (st+24) t ||
       bytes > load64 (st+24) t-offset || load64 (st+32) t != 0 then response 2 0 0 0 t else
   response 0 (offset+bytes) 0 0 (store64 (st+120) (offset+bytes) (copy (command+64) (draft+offset) bytes t))
- def publish (t : UInt64) : UInt64 :=
+ def publish (token t : UInt64) : UInt64 :=
   let bytes := load64 (st+24) t
   let sequence := load64 (st+8) t+1
   if load64 st t == 0 then response 5 0 0 0 t else
@@ -224,13 +261,16 @@ partial def validText (p n i t : UInt64) : Bool :=
   if r != 64 || status r != 0 then response (if r == error then 1 else status r) 0 0 0 r else
   let r := Guest.IdentitySDK.certify (result r) canonical 256 r
   if r != 544 || status r != 0 then response (if r == error then 1 else status r) 0 0 0 r else
+  if syscall 131 token 0 0 0 r != 0 then response 3 0 0 0 r else
   let t := copy (wire+64) envelope 480 r
   let t := hash envelope 480 eventId t
   let t := copy draft outboxBody bytes t
   let t := store64 (st+208) bytes (store64 (st+216) kind (store64 (st+8) sequence (store64 (st+40) 0 t)))
+  let t := store64 (st+240) 0 (store64 (st+232) (Guest.WaitSDK.now t+500) t)
   let t := store64 (st+32) 1 t
   let r := persist t
   if r == error then response 13 sequence 12 0 (failed 13 r) else
+  if syscall 131 token 0 0 0 r != 0 then response 3 sequence 12 0 (failed 12 r) else
   response 0 sequence 1 0 (beginUpload r)
 partial def prefFind (author i t : UInt64) : UInt64 :=
   if i == 32 then error else
@@ -240,12 +280,12 @@ partial def prefFind (author i t : UInt64) : UInt64 :=
   let kind := load64 (command+16) t
   let enabled := load64 (command+24) t
   let p := prefFind (command+64) 0 t
-  if length != 96 || (kind != 1 && kind != 2) || enabled > 2 then response 2 0 0 0 t else
+  if length != 96 || (kind != 1 && kind != 2 && kind != 4) || enabled > 2 then response 2 0 0 0 t else
   if p == error then response 4 0 0 0 t else
   let t := store64 p 1 (copy (command+64) (p+16) 32 t)
   let old := load64 (p+8) t
   let selected := if enabled == 2 then (if (old &&& kind) == 0 then 1 else 0) else enabled
-  let bits := if selected == 1 then old ||| kind else old &&& (3-kind)
+  let bits := if selected == 1 then old ||| kind else old &&& (0xffffffffffffffff ^^^ kind)
   let r := persist (store64 (p+8) bits t)
   response (if r == error then 13 else 0) kind selected bits r
 partial def blocked (author i t : UInt64) : Bool :=
@@ -256,6 +296,10 @@ partial def followed (author i t : UInt64) : Bool :=
   if i == 32 then false else
   let p := preferences+i*48
   (load64 p t != 0 && (load64 (p+8) t &&& 1) != 0 && eq (p+16) author 32 t) || followed author (i+1) t
+partial def followedProject (project i t : UInt64) : Bool :=
+  if i == 32 then false else
+  let p := preferences+i*48
+  (load64 p t != 0 && (load64 (p+8) t &&& 4) != 0 && eq (p+16) project 32 t) || followedProject project (i+1) t
  def query (action length t : UInt64) : UInt64 :=
   if load64 (st+64) t != 0 then response 4 0 0 0 t else
   let t := if action == 5 then store64 (st+184) (load64 (command+24) t) t else t
@@ -272,7 +316,8 @@ partial def followed (author i t : UInt64) : Bool :=
   -- visible filtered marker and pagination, never another author's text.
   if load64 (st+144) t == 5 && n == 576 && blocked (answer+96+112) 0 t then
     response 15 (load64 (answer+8) t) (load64 (answer+16) t) 0 t else
-  if load64 (st+144) t == 5 && n == 576 && load64 (st+184) t == 1 && !followed (answer+96+112) 0 t then
+  if load64 (st+144) t == 5 && n == 576 && load64 (st+184) t == 1 && !followed (answer+96+112) 0 t &&
+      !(load64 (answer+96+176) t == 3 && followedProject (answer+96+368) 0 t) then
     response 15 (load64 (answer+8) t) (load64 (answer+16) t) 1 t else
   n+copy answer wire n t
  def lock (t : UInt64) : UInt64 :=
@@ -280,6 +325,7 @@ partial def followed (author i t : UInt64) : Bool :=
   let t := Guest.FeedRetentionSDK.lock t
   let r := Guest.IdentitySDK.lockFeed t
   let caller := load64 (st+128) r
+  let r := zero outboxBody 2048 (zero checkedBody 2048 (zero trustedEvent 60 (zero trustedId 4 (zero retained 4096 (zero scratch 256 r)))))
   let t := store64 (st+128) caller (zero st 32 (zero publicIdentity 36 (zero envelope 60 (zero canonical 32 (zero draft 2048 r)))))
   response (if r == error then 1 else 0) 0 0 0 t
 def exportPortable (length t : UInt64) : UInt64 :=
@@ -300,7 +346,7 @@ def exportPortable (length t : UInt64) : UInt64 :=
   64+count+copy (portable+offset) (wire+64) count t
 partial def validPreferences (p i t : UInt64) : Bool :=
   if i == 32 then true else
-  load64 (p+i*48) t <= 1 && load64 (p+i*48+8) t <= 3 && validPreferences p (i+1) t
+  load64 (p+i*48) t <= 1 && load64 (p+i*48+8) t <= 7 && validPreferences p (i+1) t
  def importPortable (length t : UInt64) : UInt64 :=
   let offset := load64 (command+16) t
   let bytes := length-64
@@ -330,10 +376,10 @@ partial def validPreferences (p i t : UInt64) : Bool :=
   if action == 0 then
     let t := response 0 (load64 st t) (load64 (st+8) t) (load64 (st+24) t) t
     96+t+copy (publicIdentity+96) (wire+64) 32 (copy scope (wire+96) 64 t)
-  else if action == 1 && length == 128 then createIdentity t
+  else if action == 1 && length == 128 then createIdentity token t
   else if action == 2 then prepareDraft length t
   else if action == 3 then appendDraft length t
-  else if action == 4 && length == 64 then publish t
+  else if action == 4 && length == 64 then publish token t
   else if (action == 5 && length == 64) || (action == 6 && length == 96) then query action length t
   else if action == 7 then preference length t
   else if action == 9 && length == 64 then lock t
@@ -341,6 +387,8 @@ partial def validPreferences (p i t : UInt64) : Bool :=
     if load64 (st+32) t != 8 || load64 (st+8) t == 0 then response 3 0 0 0 t else
     let r := persist (store64 (st+40) 0 t)
     if r == error then response 13 0 12 0 r else response 0 0 1 0 (beginUpload r)
+  else if action == 11 && length == 64 && load64 (st+32) t == 6 && load64 (st+64) t == 0 then
+    response 0 0 0 0 (pollUpload t)
   else if action == 12 then exportPortable length t
   else if action == 13 then importPortable length t
   else if action == 14 then retention length t
@@ -354,8 +402,11 @@ partial def validPreferences (p i t : UInt64) : Bool :=
     response 0 0 0 0 (store64 (st+176) (load64 (command+16) t) t)
   else if action == 16 && length == 64 then outcome t
   else if action == 17 && length == 64 then
+    let phase := load64 (st+32) t
+    let sending := (phase >= 1 && phase <= 5) || (phase == 8 && load64 (st+8) t != 0)
     let t := if load64 (st+64) t == 0 then t else net 42 (load64 (st+64) t) t
-    response 0 0 0 0 (failed 12 t)
+    let t := store64 (st+64) 0 t
+    response 0 0 0 0 (if sending then failed 12 t else t)
   else response 7 0 0 0 t
 partial def loop (t : UInt64) : UInt64 :=
   let n := syscall 36 (self t) incoming 1024 0 t
