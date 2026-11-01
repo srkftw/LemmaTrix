@@ -134,8 +134,24 @@
     },
     "reproduction_command": "PYTHONPATH=tools python3 tests/native_community_campaign.py --image build/campaign009-final-v5.bin --feed-packages build/campaign009-final-v7-feed --messenger-ready build/campaign009-final-v3-messenger/ready.json --registry build/live/apps/campaign009-registry-final-v4.bin --public-graph tests/fixtures/campaign008-existing-forge-closure.json --publisher tests/fixtures/campaign008-existing-forge-publisher.pub --output build/campaign009-connected-v4 --mixed --replication-auto-renew",
     "rolling_policy": "Explicit192-byte native policy variant2; mode3 inter-operator transport; same finite durable total; no per-post host renewal.",
-    "first_infrastructure_checkpoint": "pending fresh run",
-    "first_product_checkpoint": "pending fresh run"
+    "first_infrastructure_checkpoint": "pass: three independent personal clients phase3; Bob+Charlie shareAlpha and all share same running3relays; no operator handoff",
+    "first_product_checkpoint": {
+      "id": "4af1f78c21bf24d9d8f38421bb4e5742445451258fe93ba35d6e98d7da9d15c0",
+      "author": "01b4dc6aabc34d72afc42a1aae46e518b2de716bffddaa58ef0572c7567b216a",
+      "kind": 1,
+      "bytes": 126,
+      "content_sha256": "541c88ecfd5e37d6e433746b0e38ce252c25c94a6874966ab975cee0c2cbb22b",
+      "signed_sha256": "4af1f78c21bf24d9d8f38421bb4e5742445451258fe93ba35d6e98d7da9d15c0"
+    },
+    "observed_checkpoints": {
+      "three-feed": true,
+      "replication": true,
+      "ordinary": false,
+      "long": false,
+      "follow-reply": false
+    },
+    "live_state_record": "build/campaign009-connected-v4/native-actors.json",
+    "first_product_checkpoint_result": "pass:126-byte nativeUI post; original480 signed bytes match across independently configured Alpha/Beta; selected audience unchanged"
   },
   "component_record": "campaign-009-components.json",
   "capacity": {
@@ -167,7 +183,7 @@
     "replication_allocation_bytes_max": 1048576,
     "replication_attempts_per_event": 9,
     "polls_per_attempt": 128,
-    "actual_concurrent_clients_in_common_run": 0,
+    "actual_concurrent_clients_in_common_run": 3,
     "mailbox_progress_ticks": 10000,
     "mailbox_absolute_stage_ticks": 60000,
     "relay_setup_ticks": 100000,
