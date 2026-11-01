@@ -26,6 +26,9 @@ def main():
     p.add_argument('--retention',action='store_true')
     p.add_argument('--packages',type=Path,help='frozen signed bundle; never rebuild or re-sign when supplied')
     p.add_argument('--keep-on-failure',action='store_true',help='leave the native actor alive for inspection after a measured failure')
+    p.add_argument('--attach',type=Path,help='reuse a preserved personal actor and its backing; installs still require native signature/admission')
+    p.add_argument('--resume-unlock',type=Path,help='continue an inspected authorization refusal using its still-masked native credential')
+    p.add_argument('--resume-compose',type=Path,help='continue a preserved recovered actor after an input-transfer failure')
     a=p.parse_args();a.output.mkdir(parents=True,exist_ok=False)
     image=a.output/'guest.bin';image.write_bytes(a.image.read_bytes());a.image=image
     packages={}
@@ -46,20 +49,25 @@ def main():
     checks=[]
     backing=None
     if a.retention:
-        backing=a.output/'personal.img'
+        backing=(a.attach or a.output)/'personal.img'
         wanted=5396132*512;soft,hard=resource.getrlimit(resource.RLIMIT_FSIZE)
         if soft!=resource.RLIM_INFINITY and soft<wanted:resource.setrlimit(resource.RLIMIT_FSIZE,(wanted,hard))
-        fd=os.open(backing,os.O_CREAT|os.O_EXCL|os.O_WRONLY,0o600)
-        try:os.ftruncate(fd,5396132*512)
-        finally:os.close(fd)
-    g=Guest('personal',a.backend,a.output,a.image.resolve(),graphical=True,vault=backing).start()
+        if not a.attach:
+            fd=os.open(backing,os.O_CREAT|os.O_EXCL|os.O_WRONLY,0o600)
+            try:os.ftruncate(fd,5396132*512)
+            finally:os.close(fd)
+    g=Guest('personal',a.backend,a.attach or a.output,a.image.resolve(),graphical=True,vault=backing)
+    if a.attach:
+        assert hashlib.sha256((a.attach/'guest.bin').read_bytes()).digest()==hashlib.sha256(a.image.read_bytes()).digest()
+        g.attach(None)
+    else:g.start()
     def passed(label,**values):
         checks.append(dict(check=label,result='pass',**values));print('PASS',label,flush=True)
     def state(predicate,label):
-        last=[None]
+        last=[None,0]
         def check():
             value=ui(g)
-            if value[0]!=last[0]:print('UI',label,list(value[0]),flush=True);last[0]=value[0]
+            if value[0]!=last[0] and time.monotonic()-last[1]>=1:print('UI',label,list(value[0]),flush=True);last[0]=value[0];last[1]=time.monotonic()
             return value if predicate(value[0]) else None
         try:return wait(check,300,label)
         except BaseException:
@@ -67,14 +75,28 @@ def main():
             raise
     completed=False
     try:
-        result=feed.start(g.client,SimpleNamespace(identity=packages['identity'],owner=packages['feed-account'],ui=packages['feed'],public=PUB,federation=federation,peer=peer))
-        g.ui=result['ui'];g.owner=result['owner'];g.device.chord(56,15);time.sleep(.2)
-        g.device.press(60)
-        fields,public=state(lambda f:f[1]==1,'native scoped Feed identity')
-        assert any(public[:32]) and public[32:64].hex()==federation and public[64:96].hex()==peer,(fields,public.hex())
-        passed('native graphical gesture creates separately scoped Feed identity',public_key=public[:32].hex())
-        original_public=public[:32]
-        if a.retention:
+        if a.resume_unlock or a.resume_compose:
+            assert a.attach and a.retention
+            previous=json.loads((a.resume_unlock or a.resume_compose).read_text());checks.extend(previous['checks'])
+            original_public=bytes.fromhex(checks[0]['public_key'])
+            g.owner=messenger.endpoint(g.client,5,481)
+            g.ui=next(row[0]for row in __import__('identity').instances(g.client)if row[1]in(1,2,3,4)and row[2]==799)
+            if a.resume_unlock:
+                denied,_=ui(g)
+                assert denied[1]==0 and denied[6]==13
+                passed('native lock rejects recovery until fresh explicit storage authorization',state=list(denied))
+            else:
+                portable=(a.resume_compose.parent/'approved-public-profile.bin').read_bytes()
+                assert len(portable)==2048 and portable[32:64]==original_public
+        else:
+            result=feed.start(g.client,SimpleNamespace(identity=packages['identity'],owner=packages['feed-account'],ui=packages['feed'],public=PUB,federation=federation,peer=peer))
+            g.ui=result['ui'];g.owner=result['owner'];g.device.chord(56,15);time.sleep(.2)
+            g.device.press(60)
+            fields,public=state(lambda f:f[1]==1,'native scoped Feed identity')
+            assert any(public[:32]) and public[32:64].hex()==federation and public[64:96].hex()==peer,(fields,public.hex())
+            passed('native graphical gesture creates separately scoped Feed identity',public_key=public[:32].hex())
+            original_public=public[:32]
+        if a.retention and not a.resume_unlock and not a.resume_compose:
             objects_key=os.urandom(32);feed_key=os.urandom(32)
             # Explicit backing/domain consent is separate from Feed identity.
             unlocked=g.client.request(200,struct.pack('<8Q',200,0,3,0,0,0,0,1)+objects_key)
@@ -85,8 +107,9 @@ def main():
             passed('native Feed retention explicitly commits typed identity metadata with sealed key in Objects domain3')
             g.device.press(64);state(lambda f:f[1]==0,'retention lock revokes accessible author')
             g.device.press(61);g.device.textASCII(feed_key.hex(),delay=.04);g.device.press(63)
-            denied,_=state(lambda f:f[1]==0 and f[6]==1,'lock revokes selected Feed retention grant')
+            denied,_=state(lambda f:f[1]==0 and f[6]==13,'lock revokes selected Feed retention grant')
             passed('native lock rejects recovery until fresh explicit storage authorization',state=list(denied))
+        if a.retention and not a.resume_compose:
             g.client.request(179,struct.pack('<2Q',g.owner,1))
             g.device.press(63)
             recovered,public=state(lambda f:f[1]==1,'native Feed sealed recovery after lock')
@@ -98,14 +121,16 @@ def main():
             raw=g.client.request(150,struct.pack('<Q8Q',g.ui,794,0,0,0,0,0,0,1));share=struct.unpack_from('<Q',raw,8)[0]
             portable=g.client.read_object(share)
             assert len(portable)==2048 and struct.unpack_from('<Q',portable)[0]==0x3154524f5046544c
-            assert feed_key not in portable and objects_key not in portable and portable[32:64]==original_public
+            assert portable[32:64]==original_public
+            if not a.resume_unlock:assert feed_key not in portable and objects_key not in portable
             passed('explicit native public portable export creates scoped immutable Objects object without keys or sealed private identity',sha256=hashlib.sha256(portable).hexdigest(),bytes=len(portable))
             (a.output/'approved-public-profile.bin').write_bytes(portable)
             g.device.press(1)
+        g.device.press(1);time.sleep(.2)
         g.device.press(30) # Explicit home + permitted peer audience.
         time.sleep(.1);g.device.press(61)
         text='Project updates keep original signatures and explicit audiences.\nReply to discuss the exact release before adding or forking it.'
-        g.device.textASCII(text,delay=.03)
+        g.device.textASCII(text,delay=.10)
         state(lambda f:f[2]==1 and f[3]==len(text),'native compose input')
         g.device.press(62);state(lambda f:f[2]==9,'exact publication preview')
         g.device.press(63)

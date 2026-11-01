@@ -608,6 +608,18 @@ def notice (n t : UInt64) : UInt64 := dirty (store64 (st+32) n t)
     let t := store64 (labels+24) 7378429048234337650 t
     let t := store64 (labels+32) 111477728309861 t
     text labels 38 x y color bg t
+  -- 64: Feed retention unavailable: unlock Objects and approve this owner.
+  else if id == 64 then
+    let t := store64 (labels+0) 8387235364496303430 t
+    let t := store64 (labels+8) 8439867126481972837 t
+    let t := store64 (labels+16) 7089066488320385390 t
+    let t := store64 (labels+24) 8028913685025678700 t
+    let t := store64 (labels+32) 7162247752869505891 t
+    let t := store64 (labels+40) 6998704246172447604 t
+    let t := store64 (labels+48) 8367799667004698736 t
+    let t := store64 (labels+56) 7308910564438403432 t
+    let t := store64 (labels+64) 11890 t
+    text labels 66 x y color bg t
   else t
 def label (id x y color t : UInt64) : UInt64 :=
   if id < 16 then label0 id x y color t else
@@ -622,7 +634,7 @@ partial def wrapped (p n x y t : UInt64) : UInt64 :=
 partial def hexBytes (p n x y t : UInt64) : UInt64 :=
   if n == 0 then t else
   hexBytes (p+1) (n-1) (x+12) y (hex (load8 p t) 2 x y accent bg t)
-def draw (surface t : UInt64) : UInt64 :=
+def draw (_surface t : UInt64) : UInt64 :=
   let t := fill 0 0 640 352 bg t
   let t := fill 0 0 640 32 0x254259 t
   let t := label 0 14 12 fg t
@@ -686,9 +698,17 @@ def draw (surface t : UInt64) : UInt64 :=
   let t := label 24 350 340 0xa0b8c9 t
   let t := label 29 14 340 0xa0b8c9 t
   let t := hex (load64 (st+96) t) 2 600 324 0xffbd83 bg t
-  let r := upload surface 0 901120 0 t
-  let r := syscall 82 surface 0 0 0 r
-  store64 st 0 r
+  -- The surface transfer is separately pumped; a whole-frame upload must not
+  -- leave ordinary keyboard input waiting through880 kernel calls.
+  store64 st 0 (store64 (st+368) 1 t)
+def paintPump (surface t : UInt64) : UInt64 :=
+  let pending := load64 (st+368) t
+  if pending == 0 then t else
+  let offset := pending-1
+  let bytes := if 901120-offset > 16384 then 16384 else 901120-offset
+  let r := upload surface offset bytes 0 t
+  if r == error then notice 12 (store64 (st+368) 0 r) else
+  store64 (st+368) (if offset+bytes == 901120 then 0 else offset+bytes+1) r
  def submit (action h a b c payload bytes t : UInt64) : UInt64 :=
   -- A status read cannot consume an explicit keyboard/pointer gesture.
   let pending := load64 (st+8) t
@@ -699,7 +719,8 @@ def draw (surface t : UInt64) : UInt64 :=
   if load64 (st+8) t != 0 then notice 6 t else
   let token := Guest.FeedAccountSDK.submit action h a b c payload bytes t
   if token == error then notice 14 token else
-  notice 6 (store64 (st+352) h (store64 (st+8) token (store64 (st+16) action token)))
+  let t := store64 (st+352) h (store64 (st+8) token (store64 (st+16) action token))
+  if action == 0 then t else notice 6 t
  def inspect (t : UInt64) : UInt64 := submit 0 0 0 0 0 0 0 t
  def timeline (cursor t : UInt64) : UInt64 :=
   submit 5 cursor (load64 (st+160) t) 0 0 0 0 (store64 (st+24) 0 (store64 (st+72) 0 t))
@@ -827,6 +848,7 @@ partial def readPortable (object offset t : UInt64) : UInt64 :=
     let t := if action == 16 then
         zero content 2048 (zero selected 60 (zero eventId 4 (store64 (st+176) 0 (store64 (st+72) 0 (store64 (st+200) 0 t)))))
       else t
+    if action == 14 then notice 64 (store64 (st+344) 0 t) else
     notice (if code == 12 then 13 else if code == 15 then 16 else if code == 7 then 14 else 12) t else
   if action == 0 then
     let phase := load64 (wire+32) t
@@ -849,7 +871,7 @@ partial def readPortable (object offset t : UInt64) : UInt64 :=
   else if action == 4 || action == 10 then notice 9 (store64 (st+24) 0 t)
   else if action == 5 || action == 6 then store64 (st+200) action t
   else if action == 7 then notice (if load64 (wire+8) t == 1 then 17 else if load64 (wire+16) t == 0 then 51 else 18) t
-  else if action == 9 then notice 36 (store64 (st+168) 0 t)
+  else if action == 9 then notice 36 (store64 (st+344) 0 (store64 (st+168) 0 t))
   else if action == 14 then
     let t := store64 (st+344) (if load64 (st+352) t == 2 then 0 else 1) t
     inspect (notice 46 (zero credentialText 8 (zero credential 4 (store64 (st+240) 0 t))))
@@ -1055,12 +1077,13 @@ def request (n t : UInt64) : UInt64 :=
 partial def loop (surface t : UInt64) : UInt64 :=
   let n := syscall 36 (self t) incoming 1024 0 t
   let t := if n >= 96 && n <= 1024 then request n n else n
-  let t := projectPump (collect (inputPump 8 t))
+  let t := projectPump (collect (inputPump 64 t))
   let now := Guest.WaitSDK.now t
   let t := if load64 (st+8) now != 0 || now < load64 (st+128) now then now else
       let t := store64 (st+128) (now+100) now
       if load64 (st+200) t != 0 then submit 16 0 0 0 0 0 0 t else inspect t
-  let t := if load64 st t == 1 then draw surface t else t
+  let t := if load64 st t == 1 && load64 (st+368) t == 0 then draw surface t else t
+  let t := paintPump surface t
   loop surface (Guest.WaitSDK.deadline (Guest.WaitSDK.now t+1) t)
 def main (t : UInt64) : UInt64 :=
   let t := notice 4 (zero st 48 (zero accountScope 8 (zero identity 12 (zero eventId 4 t))))
