@@ -735,7 +735,7 @@
       }
     ],
     "timing_scope": "elapsed_seconds in core record is the last resumed controller segment, not full initialization/journey; individual native text/reply timings are recorded independently.",
-    "stall_boundary": "Text45.71s and reply31.24s completed while Charlie terminal3 remained paused at78.07s. Actual routedForge verified original project by138.07s while exact opaque transportepoch2 remained paused with532B; Feed terminal had been reclaimed to0. First stricter assertion failure preserved, never claimed terminal3 atForge. Only Charlie canceled/dropped; unrelatedAlice/Bob remained3. Fresh active3Forge continuation pending.",
+    "stall_boundary": "Text45.71s and reply31.24s completed while Charlie terminal3 remained paused at78.07s. Actual routed Forge verified original project by138.07s while exact opaque transportepoch2 remained paused with532B; Feed terminal had been reclaimed to0. First stricter assertion failure preserved, never claimed terminal3 atForge. Only Charlie canceled/dropped; unrelatedAlice/Bob remained3. A fresh request completed actual routed Forge in6.3517s while Charlie fresh epoch6 remained paused532B/terminal3, with native wire allowance consumed; see fresh_active_stall_forge.",
     "first_failure_record": "build/campaign009-connected-v4/failure-first-terminal-reclaimed.json",
     "first_failure_sha256": "adb04cbb19d5084ce5c2631085389f4bcaba3b4815fdca5fe47d6e4a66041e8d",
     "host_replication_renewals": 0,
