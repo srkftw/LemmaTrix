@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "backend": "aarch64",
+  "emulated": true,
+  "image_sha256": "690e8959d79a42d3e61aa6f69df14b4e0c485ad58b015f451685abf014c275ee",
+  "checks": [
+    "actual purpose2 backing mounts; all eight role6 namespaces renew without occupying extra slots",
+    "old native handles are denied after fresh generation through actual installed IPC",
+    "current bounded Network profile boots, answers actual native IPC, and restarts with a fresh full service incarnation beside the mounted store"
+  ],
+  "elapsed_seconds": 20.584404376000748,
+  "scope": "native installed kernel/Launcher/Vault/Network with actual service restart, IPC and opaque block adapter; no claim of full installed Feed or Messenger",
+  "raw_record": {
+    "path": "build/campaign009-final-v8-aarch64-storage/evidence.json",
+    "sha256": "37727b1de6056cfd91fe2b55c4a9f82e14d60aab982d298b8c0cdabd6a67ef4d"
+  },
+  "immutable_image_copy": "build/campaign009-final-v8-candidate.bin",
+  "native_source_commit": "c5147de",
+  "runner": {
+    "path": "tests/server_store_empty_arm.py",
+    "sha256": "d870c03c1e37799e7cdd40293781e03758f756827108493b963d8cba86102f6e"
+  },
+  "command": "PYTHONPATH=tools python3 tests/server_store_empty_arm.py --image build/campaign009-final-v8-candidate.bin --output build/campaign009-final-v8-aarch64-storage",
+  "attempts": 1,
+  "guest_stopped_after_case": true,
+  "guest_builds_performed": false,
+  "ordinary_app_builds_performed": false
+}
