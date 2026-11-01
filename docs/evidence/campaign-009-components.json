@@ -815,6 +815,27 @@
       ],
       "elapsed_seconds": 100.65297675799957,
       "limitations": "Isolated all-QEMU native application refusal probe. Canonical boundary inputs are explicit test data; this is not UI-authored connected community history."
+    },
+    {
+      "name": "actual-native-moderator-authority-gate",
+      "local_record": "build/campaign009-native-conflict-authority/evidence.json",
+      "published_record": "campaign-009-native-conflict-authority.json",
+      "record_sha256": "64e981ea1ddb2386416352f4fbe4e046354776109a831efcf33a52986014cc5e",
+      "source_commit": "157519fa1edbea68f2c3d3555a9ef05f26940e6a",
+      "result": "pass",
+      "image_sha256": "582f4d24d94874898e0bba18c98ef04d91e969f14aaf1ca0678c5152f50ae6f2",
+      "checks": [
+        {
+          "check": "current author consumer cannot forge moderator authority: an approved canonical kind8 body is refused by native signer with1 before any policy signature exists",
+          "result": "pass",
+          "refusal": 1,
+          "typed_consumer_role": 5,
+          "requested_event_kind": 8,
+          "signature_created": false
+        }
+      ],
+      "elapsed_seconds": 95.62428155700036,
+      "limitations": "Installed exact-role native signer authority gate and actual Feed service conflict/quota refusals on isolated purpose2 backing. No valid wrong-federation moderator signature admission is claimed."
     }
   ],
   "assurance": "Local one-host execution. AArch64 is qemu-aarch64 emulation. No physical hardware, independent operators, Tor interoperability, post-quantum security or whole-store external freshness claim."
