@@ -51,10 +51,10 @@ def connect (slot role endpoint n t : UInt64) : UInt64 :=
     -- The value requests byte-credit flow control. Legacy guests request zero.
     queue role slot 0 1008 endpoint n t
 
-def close (slot t : UInt64) : UInt64 :=
+@[noinline] def close (slot t : UInt64) : UInt64 :=
   let p := channel slot
-  let t := store64 (p+8) 0 t
-  let t := zero (p+32) 252 t
+  -- Retain only the epoch high-water mark; explicit close clears all intent.
+  let t := zero (p+8) 255 t
   -- A busy immutable adapter frame must finish before its CLOSE control.
   -- Pending close is retained privately and sent at the next output quantum.
   store64 (p+48) 1 t
@@ -116,13 +116,17 @@ def event (t : UInt64) : UInt64 :=
     store64 (p+8) 1 (store64 (p+24) 0 t)
   else if op == 5 || op == 6 then
     if epoch < load64 p t then t else
+    -- A replacement command may receive the old socket's cleanup before its
+    -- own acknowledgement. Preserve creation/listen intent across cleanup;
+    -- an actual command failure6 clears it. Accepted links have intent0.
+    let intent := (6-op)*load64 (p+24) t
     let t := zero (p+32) 252 t
     let t := store64 p epoch t
     let t := store64 (p+16) (load64 (input+8) t >>> 32) t
     -- Preserve the event kind separately from errno: a failed LISTEN command
     -- is operator backoff work; an admitted peer disconnect is only its link.
-    store64 (p+1104) op (store64 (p+8) 0 (store64 (p+24) 0 t))
-  else if op == 9 then store64 (p+24) 2 t else
+    store64 (p+1104) op (store64 (p+8) 0 (store64 (p+24) intent t))
+  else if op == 9 && epoch == load64 p t && load64 (p+24) t != 0 then store64 (p+24) 2 t else
   if op == 10 && epoch == load64 p t && load64 (p+8) t == 1 then
     let credit := load64 (input+8) t >>> 32
     let held := load64 (p+1080) t
