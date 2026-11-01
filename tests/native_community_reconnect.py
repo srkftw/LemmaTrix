@@ -66,6 +66,22 @@ def main():
    wait(lambda:feed_ui(charlie)[0][3]==len(text),180,'native complete review input');charlie.device.press(62);wait(lambda:feed_ui(charlie)[0][2]==9,120,'native exact review preview');charlie.device.press(63)
   try:
    peers()
+   stage='history exceeds native committed-read working page'
+   if not state['done'].get('history-read'):
+    events=campaign.state['events'];footprint=sum((event['bytes']+511)//512*512 for event in events.values())
+    assert footprint>4096,'core history must exceed the one verified ServerStore read page'
+    selected=['ordinary','long',next(reversed(events))];checked=[]
+    for key in selected:
+     event=events[key];event_id=bytes.fromhex(event['id'])
+     for operator in(alpha,beta):
+      rows=lookup(operator,event_id=event_id);assert len(rows)==1
+      assert hashlib.sha256(rows[0][32:]).hexdigest()==event['signed_sha256']
+      body=[]
+      for offset in range(0,event['bytes'],512):
+       _,part=feed.invoke(operator.client,491,action=6,offset=offset,count=min(512,event['bytes']-offset),data=event_id);body.append(part)
+      original=b''.join(body);assert len(original)==event['bytes']and hashlib.sha256(original).hexdigest()==event['content_sha256']
+      checked.append(dict(operator=operator.name,event=event['id'],bytes=len(original),content_sha256=event['content_sha256']))
+    record('history-read','native committed storage serves earliest and latest original signed bodies beyond its one verified read page on both federations',events=len(events),padded_content_bytes=footprint,server_store_read_page_bytes=4096,segment_writer_workspace_bytes=131072,reads=checked,unrelated_sessions=peers())
    stage='reconcile prior accepted publication after own backfill timeout'
    if not state['done'].get('ready'):
     prior=list(feed_ui(charlie)[0])
