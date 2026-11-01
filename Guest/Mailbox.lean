@@ -299,8 +299,8 @@ def enroll (length t : UInt64) : UInt64 :=
   let t := store64 (p+144) attempts t
   let r := preparePublication 0 t
   if r == error then response 5 0 0 0 0 r else response 6 0 0 0 0 r
--- An inactivity lease is renewed only by authenticated positive byte
--- progress. The existing1000-tick interval and8192-byte limit stay fixed;
+-- Authenticated positive byte progress renews this stage's10000-tick
+-- inactivity deadline, capped by its60000-tick absolute admission deadline.
 -- the volatile renewal count atst312 independently enforces the work bound.
 def stagingProgressAllowed (now deadline total offset count renewals : UInt64) : Bool :=
   now < deadline && count > 0 && count <= 512 && total <= 8192 && offset <= total &&
