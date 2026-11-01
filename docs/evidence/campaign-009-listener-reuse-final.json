@@ -1,0 +1,100 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "adapter": {
+    "initial": {
+      "op": 9,
+      "slot": 0,
+      "epoch": 0,
+      "value": 0
+    },
+    "repeated_listen": [
+      {
+        "op": 5,
+        "slot": 0,
+        "epoch": 1,
+        "value": 0
+      },
+      {
+        "op": 9,
+        "slot": 0,
+        "epoch": 1,
+        "value": 0
+      }
+    ],
+    "close_then_listen": [
+      {
+        "op": 5,
+        "slot": 0,
+        "epoch": 2,
+        "value": 0
+      },
+      {
+        "op": 9,
+        "slot": 0,
+        "epoch": 2,
+        "value": 0
+      }
+    ]
+  },
+  "image_sha256": "5ee7aad014a6fa63a35ab373051b123437ac5b6f5e961452f1504616e3976a25",
+  "checks": [
+    {
+      "backend": "qemu",
+      "seconds": 0.10901819200080354,
+      "result": "pass"
+    },
+    {
+      "backend": "aarch64",
+      "seconds": 0.37992789399868343,
+      "result": "pass"
+    }
+  ],
+  "boundaries": [
+    "cleanup5/new9 and old9/cleanup5/new9 preserve owned listener intent",
+    "older9 and9 after explicit close cannot restore intent",
+    "LISTEN failure6 clears intent and enters scoped bounded backoff",
+    "fresh CONNECTED4/ACCEPTED8 end intent; actual HUP5 retires only its own link",
+    "pending creation expires51; acknowledged healthy idle listener remains available",
+    "acceptance after an old idle deadline refreshes its finite100000-tick window before expiry; explicit entropy refusal follows with6, never51"
+  ],
+  "limits": "Real opaque adapter event order plus compiled RV64 Transport and TorRouter state transitions. Explicit syscall103 completion,110 monotonic-clock oracle, and104 records the setup deadline then returns no entropy; this does not qualify cryptographic handshake success. No complete kernel/socket or active-community causal-trace claim. AArch64 assembly emulator runs under qemu-aarch64.",
+  "raw_record": {
+    "path": "build/native-listener-reuse-compact-final-clean/evidence.json",
+    "sha256": "b1473419c742367227cb34fb1bc0b3f823535daa64a4292df33ef865076a3c21"
+  },
+  "prior_equivalent_fixture": {
+    "path": "build/native-listener-reuse-late-acceptance/evidence.json",
+    "fixture_image_sha256": "e155f7ccb65275df2408fb2737cddba4ea754e9f02e847b2480eba211fd2321c",
+    "scope": "Earlier equivalent accepted-window ordering implementation; exact historical evidence remains unchanged."
+  },
+  "prior_focused_evidence": {
+    "path": "docs/evidence/campaign-009-late-acceptance.json",
+    "sha256": "65e61f755dbde2220bc5ffd0905349015eb7ece6eec7d387cffd8abc3dbf173b"
+  },
+  "late_acceptance_observation": {
+    "old_deadline": 100100,
+    "idle_clock": 900000,
+    "acceptance_clock": 900001,
+    "deadline_recorded_before_entropy": 1000001,
+    "expected_post_window_entropy_refusal": 6,
+    "premature_deadline_refusal_51": false,
+    "unrelated_channel_preserved": true
+  },
+  "current_guest_source": {
+    "Guest/Transport.lean": "1fff86eee5203d3fd1ccf2235fee6939302d4bdae13a627a304fbaa3c44dafda",
+    "Guest/TorRouter.lean": "e9c483e8960bbb9594ad7898bddf9fab4731dddcd241aeafc027dea604e47258"
+  },
+  "integrated_image_context": "690e8959d79a42d3e61aa6f69df14b4e0c485ad58b015f451685abf014c275ee",
+  "network_profile": {
+    "code_bytes": 393816,
+    "code_sha256": "5f342b40588aa738f153608be02606a8b2a30dd95c23066233c2cf49fe755593",
+    "code_ceiling": 425984,
+    "physical_slot_bytes": 524288,
+    "data_offset": 425984,
+    "stack_offset": 491520,
+    "ordinary_code_ceiling": 262144
+  },
+  "installed_image_qualified_by_this_case": false,
+  "command": "PYTHONPATH=tools python3 tests/native_listener_reuse.py --output build/native-listener-reuse-compact-final-clean --backend qemu --backend aarch64"
+}
