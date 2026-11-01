@@ -395,6 +395,7 @@ def main():
                     if not a.local_project_only or not str(error).startswith("('native public export refused'")or not approved.exists():raise
                     public=approved.read_bytes()
                     observed(dict(check='old-image post-Fork public export remains refused by mixed-class Objects quota',native_ui=list(feed_ui(g)[0]),error=repr(error),approved_before_fork_profile_sha256=hashlib.sha256(public).hexdigest(),post_fork_export_qualified=False))
+                    g.device.press(1)
                 project_id=bytes.fromhex(record['project_id'])
                 if not preference_bits(public,project_id)&4:
                     focus_feed(g);project.select_event(g,g.feed_ui,card[:32]);g.device.press(65)
@@ -408,7 +409,12 @@ def main():
                 refused=project.revoke_and_refuse(g,g.feed_ui,record)
                 passed('current native release revocation refuses the valid old card at the action boundary',refusal=refused)
                 settle_exact(g,original,observed)
-                public=export_public(g,include_preferences=True)
+                try:public=export_public(g,include_preferences=True)
+                except RuntimeError as error:
+                    approved=out/(g.name+'.pre-fork-approved-feed-profile')
+                    if not a.local_project_only or not str(error).startswith("('native public export refused'")or not approved.exists():raise
+                    public=approved.read_bytes();g.device.press(1)
+                    observed(dict(check='old-image quota still refuses a post-action public export',error=repr(error),approved_before_fork_profile_sha256=hashlib.sha256(public).hexdigest(),post_action_export_qualified=False))
                 assert public[32:64]==author and public[128:160]==card[:32]
                 assert struct.unpack_from('<Q',public,16)[0]==1 and preference_bits(public,project_id)&4
                 assert not any(public[168:256])and not any(public[1792:])

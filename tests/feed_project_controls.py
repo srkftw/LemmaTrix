@@ -70,7 +70,20 @@ def select_event(g,ui,event_id):
         # Enter advances the chronological row directly. PgDn first scrolls a
         # long body, so it cannot be used as a one-event pagination counter.
         g.device.press(28)
-        wait(lambda:ui_call(g,ui,795)[1][:32]!=chosen[:32]or not complete_read(g,ui),120,'native next-row request')
+        retries=[0,time.monotonic()]
+        def advanced():
+            current=ui_call(g,ui,795)[1][:32]
+            observer=getattr(g,'project_observer',None)
+            if observer is not None:observer('native next-row admission',selected=current.hex(),prior=chosen[:32].hex())
+            if current!=chosen[:32]or not complete_read(g,ui):return True
+            fields,_=ui_call(g,ui,791)
+            if fields[6]==4 and time.monotonic()-retries[1]>=3:
+                if retries[0]>=8:raise RuntimeError(('native timeline remains busy after bounded ordinary Next retry',list(fields)))
+                # The refused query did not advance the current native cursor.
+                # Retry that same ordinary gesture after its typed busy result.
+                g.device.press(28);retries[:]=[retries[0]+1,time.monotonic()]
+            return None
+        wait(advanced,120,'native next-row request')
     raise AssertionError('exact event absent from bounded native timeline')
 
 
