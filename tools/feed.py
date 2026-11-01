@@ -125,18 +125,31 @@ def replication(client,a):
     endpoint=getattr(a,'endpoint',None)
     endpoint=endpoint.encode('ascii') if endpoint else b''
     if not 1<=len(endpoint)<=64:raise ValueError('explicit numeric bulk endpoint1..64 bytes required')
-    network.call(client,48,h=a.peer, a=1 if a.side=='client' else 2,b=len(endpoint),data=endpoint,slot=a.slot)
+    side=1 if a.side=='client' else 2
+    configured=False
+    try:
+        status,_=network.call(client,7,slot=a.slot)
+        _,current=network.call(client,15,slot=a.slot)
+        configured=(status[2]==side and len(current)==512 and
+                    struct.unpack_from('<Q',current,160)[0]==len(endpoint) and current[168:168+len(endpoint)]==endpoint)
+    except ValueError:pass
+    if not configured:network.call(client,48,h=a.peer,a=side,b=len(endpoint),data=endpoint,slot=a.slot)
     network.call(client,13,slot=a.slot)
     _,descriptor=network.call(client,15,slot=a.slot)
     if len(descriptor)!=512:raise ValueError('native Feed replication descriptor512 required')
-    side=1 if a.side=='client' else 2
     peer=descriptor[96:128] if side==1 else descriptor[64:96]
     pins=peer+hashlib.sha256(descriptor).digest()+digest(a.scope)
     data=pins+struct.pack('<3Q',a.bytes,a.rate,a.lifetime)
-    answer,_=invoke(client,490,action=2,handle=a.slot,data=data)
+    until=time.monotonic()+600
+    while True:
+        answer,_=invoke(client,490,action=2,handle=a.slot,data=data,allowed=(0,6))
+        if answer[0]==0:break
+        if time.monotonic()>until:raise TimeoutError('native durable replication allowance admission')
+        time.sleep(.1)
     return dict(peer=peer.hex(),network_slot=a.slot,grant=answer[1],mode=3,
                 bytes=a.bytes,rate=a.rate,lifetime=a.lifetime,scope=a.scope,status=list(answer),
                 disclosure='explicit direct encrypted inter-operator bulk relationship; client requests still require mode1',
+                durable_allowance='exact policy total persists; fresh transport allocation at most1MiB is burned before grant; exact event reserves bytes/work and nine attempts before replication',
                 scheduling='native guest replication; host controller may now exit')
 
 def main(argv=None):

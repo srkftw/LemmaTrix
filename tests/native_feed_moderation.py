@@ -63,9 +63,11 @@ def main():
         assert target_row()[5]==0
         denied,_=feed.invoke(operator.client,491,action=6,offset=0,count=134,data=target,allowed=(1,));assert denied[0]==1
         checks.append('Authorized native moderator decision hides exact event and ordinary direct read is refused')
-        select(reporter,target)
-        submit(68,'I appeal the visibility decision on my own reply and request an explicit local review result.')
-        appeal=wait(lambda:event(7,target),240,'native private appeal accepted')
+        appeal=event(7,target)
+        if appeal is None:
+            select(reporter,target)
+            submit(68,'I appeal the visibility decision on my own reply and request an explicit local review result.')
+            appeal=wait(lambda:event(7,target),240,'native private appeal accepted')
         reversed_id=decide(3,'Appeal reviewed: reverse the earlier visibility decision while retaining its signed policy history.')
         assert target_row()[5]==1
         after=next(p for f,p in rows()if p[:32]==target);assert after[32:]==original
