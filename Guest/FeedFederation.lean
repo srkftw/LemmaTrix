@@ -31,7 +31,7 @@ def replicaEventBytes (bytes : UInt64) : UInt64 := (bytes+1024+((bytes+511)/512)
 def replicaEventWork (bytes : UInt64) : UInt64 := (((bytes+511)/512)+130)*9
 def replicaPolicyValid (t : UInt64) : Bool :=
   if load64 (active+240) t == 0 then Guest.FeedEvent.zeroed (active+168) 88 t else
-  load64 (active+240) t == 1 && load64 (active+248) t == 1 &&
+  load64 (active+240) t == 1 && (load64 (active+248) t == 1 || load64 (active+248) t == 2) &&
   load64 (active+200) t > 0 && load64 (active+200) t <= 16777216 &&
   load64 (active+208) t <= load64 (active+200) t && load64 (active+216) t <= load64 (active+200) t &&
   load64 (active+224) t == load64 (active+200) t/64 && load64 (active+232) t <= load64 (active+224) t
@@ -466,46 +466,83 @@ def recoverModerator (length t : UInt64) : UInt64 :=
 -- invalid incoming frames are bounded across restarts; unused old allocations
 -- are conservatively lost. Event reservations below separately bound semantic
 -- work/retries, rather than pretending Network counters survived a reboot.
-def configureReplication (t : UInt64) : UInt64 :=
-  let t := Guest.ServiceHash.sha256At scratch (command+64) 120 hashed t
+-- Cached policy bytes are populated only by an explicit current operator
+-- configuration. Mode2 opts into finite rolling grants; mode1 remains manual.
+-- The extra flag is hashed, so a retained manual policy cannot silently upgrade.
+def replicaPolicyFailure (reason t : UInt64) : UInt64 :=
+  let job := load64 (st+144) t
+  let t := if job == 0 then t else Guest.NetworkSDK.cancelPeer (load64 (st+136) t) job t
+  let t := store64 (st+144) 0 (store64 (st+192) 0 (store64 (st+208) 0 (store64 (st+216) 0 t)))
+  store64 (st+464) 0 (store64 (st+312) 2
+    (store64 (st+240) reason (store64 (st+160) 6 t)))
+
+def allocateReplication (t : UInt64) : UInt64 :=
+  if load64 (st+16) t != 0 then 6 else
+  let bytes := load64 (st+456) t
+  let mode := if bytes == 128 && load64 (replicaPolicy+120) t == 1 then 2 else 1
+  if (bytes != 120 && bytes != 128) || (bytes == 128 && mode != 2) then 2 else
+  let t := Guest.ServiceHash.sha256At scratch replicaPolicy bytes hashed t
+  let known := load64 (active+240) t != 0
+  if known && (!eq hashed (active+168) 32 t || load64 (active+248) t != mode) then 11 else
+  let total := load64 (replicaPolicy+96) t
+  if total == 0 || total > 16777216 || load64 (replicaPolicy+104) t == 0 || load64 (replicaPolicy+104) t > 65536 ||
+      load64 (replicaPolicy+112) t == 0 || load64 (replicaPolicy+112) t > 100000 then 2 else
+  let spent := if known then load64 (active+216) t else 0
+  if spent >= total then 4 else
+  let budget := if total-spent > 1048576 then 1048576 else total-spent
+  if !Guest.FeedPolicy.reserveWithin total spent budget then 4 else
+  let t := copy active candidate metaBytes t
+  let t := if known then t else
+    store64 (candidate+200) total (store64 (candidate+224) (total/64)
+      (store64 (candidate+240) 1 (store64 (candidate+248) mode (copy hashed (candidate+168) 32 t))))
+  let t := store64 (candidate+216) (spent+budget) (store64 (candidate+16) (load64 (active+16) t+1) t)
+  let t := store64 (st+304) budget t
+  let r := beginBank 0 metaBytes candidate t
+  if r == error then 5 else
+  Guest.Effects.effectValue 0 (store64 (st+312) 1
+    (store64 (st+40) 4 (store64 (st+16) 3 (store64 (st+24) 0 r))))
+
+def configureReplication (length t : UInt64) : UInt64 :=
+  let bytes := length-64
+  if (bytes != 120 && bytes != 128) || (bytes == 128 && load64 (command+184) t != 1) then response 2 0 0 0 0 0 t else
+  let t := Guest.ServiceHash.sha256At scratch (command+64) bytes hashed t
   let known := load64 (active+240) t != 0
   if known && !eq hashed (active+168) 32 t then response 11 0 0 0 0 0 t else
   if load64 (st+312) t != 0 then response 6 0 0 0 0 0 t else
   if load64 (st+128) t != 0 && load64 (st+160) t != 6 then response 0 (load64 (st+128) t) 0 0 0 0 t else
   if load64 (st+16) t != 0 then response 6 0 0 0 0 0 t else
-  let total := load64 (command+160) t
-  if total == 0 || total > 16777216 || load64 (command+168) t == 0 || load64 (command+168) t > 65536 ||
-      load64 (command+176) t == 0 || load64 (command+176) t > 100000 then response 2 0 0 0 0 0 t else
-  let spent := if known then load64 (active+216) t else 0
-  if spent >= total then response 4 0 0 0 0 0 t else
-  let budget := if total-spent > 1048576 then 1048576 else total-spent
-  if !Guest.FeedPolicy.reserveWithin total spent budget then response 4 0 0 0 0 0 t else
-  let t := copy active candidate metaBytes t
-  let t := if known then t else
-    store64 (candidate+200) total (store64 (candidate+224) (total/64)
-      (store64 (candidate+240) 1 (store64 (candidate+248) 1 (copy hashed (candidate+168) 32 t))))
-  let t := store64 (candidate+216) (spent+budget) (store64 (candidate+16) (load64 (active+16) t+1) t)
-  let t := copy (command+64) replicaPolicy 120 t
-  let t := store64 (st+136) (load64 (command+16) t) (store64 (st+304) budget t)
-  let r := beginBank 0 metaBytes candidate t
-  if r == error then response 5 0 0 0 0 0 r else
-  response 6 0 0 0 0 0 (store64 (st+312) 1 (store64 (st+40) 4 (store64 (st+16) 3 (store64 (st+24) 0 r))))
+  let t := zero (replicaPolicy+120) 1 t
+  let t := copy (command+64) replicaPolicy bytes t
+  let t := store64 (st+456) bytes (store64 (st+136) (load64 (command+16) t) t)
+  let code := allocateReplication t
+  if code != 0 then response code 0 0 0 0 0 code else response 6 0 0 0 0 0 code
 
 def replicaPolicyPump (t : UInt64) : UInt64 :=
   if load64 (st+312) t != 1 || load64 (st+16) t != 0 then t else
-  -- A failed writer never yields a grant, even if older policy bytes exist.
+  -- Failure latches stop automatic allocation. Even a failed grant may have
+  -- burned one conservative slice, but it cannot burn the remaining pool.
   let budget := load64 (st+304) t
   if load64 (active+216) t != load64 (candidate+216) t || !eq (active+168) (candidate+168) 32 t then
-    store64 (st+312) 2 (store64 (st+240) 5 t)
+    replicaPolicyFailure 5 t
   else
+  let oldJob := load64 (st+144) t
+  let t := if oldJob == 0 then t else Guest.NetworkSDK.cancelPeer (load64 (st+136) t) oldJob t
+  let t := store64 (st+144) 0 t
   let t := store64 replicaGrantPolicy 3 (store64 (replicaGrantPolicy+8) 3 t)
   let t := store64 (replicaGrantPolicy+16) budget (store64 (replicaGrantPolicy+24) (load64 (replicaPolicy+104) t) t)
   let t := store64 (replicaGrantPolicy+32) (load64 (replicaPolicy+112) t)
     (store64 (replicaGrantPolicy+40) 3 (store64 (replicaGrantPolicy+48) 1 t))
   let r := Guest.NetworkSDK.grantPeer (load64 (st+136) t) replicaPolicy replicaGrantPolicy t
-  if r != 64 || status r != 0 then store64 (st+312) 2 (store64 (st+240) 3 r) else
+  if r != 64 || status r != 0 then replicaPolicyFailure 3 r else
   store64 (st+128) (load64 (wire+8) r) (store64 (st+312) 0
-    (store64 (st+272) 0 (store64 (st+296) 0 (zero (st+144) 16 r))))
+    (store64 (st+464) (if load64 (active+248) r == 2 then 1 else 0)
+      (store64 (st+272) 0 (store64 (st+296) 0 (zero (st+144) 16 r)))))
+
+def replicaAutoRenew (t : UInt64) : UInt64 :=
+  if load64 (st+464) t != 1 || load64 (active+248) t != 2 || load64 (st+456) t != 128 ||
+      load64 (st+160) t != 6 || load64 (st+240) t != 3 || load64 (st+312) t != 0 || load64 (st+16) t != 0 then t else
+  let code := allocateReplication t
+  if code == 0 || code == 6 then code else replicaPolicyFailure code code
 
 def dispatch (caller rights token length t : UInt64) : UInt64 :=
   let op := load64 command t
@@ -534,9 +571,9 @@ def dispatch (caller rights token length t : UInt64) : UInt64 :=
       160+copy (active+64) (wire+64) 96 t
     else if action == 10 then read length 1 t
     else if action == 1 && length == 64 then timeline (load64 (command+16) t) 1 t else
-    if action == 2 && length == 184 && load64 (command+16) t < 4 then
+    if action == 2 && (length == 184 || length == 192) && load64 (command+16) t < 4 then
       if load64 (st+312) t == 2 then response (load64 (st+240) t) 0 0 0 0 0 (store64 (st+312) 0 t)
-      else configureReplication t
+      else configureReplication length t
     else if action == 3 && length == 64 then
       response 0 (load64 (st+160) t) (load64 (st+152) t) (load64 (st+240) t)
         (load64 (active+160) t) (load64 (st+192) t) t
@@ -544,6 +581,14 @@ def dispatch (caller rights token length t : UInt64) : UInt64 :=
       let t := header 0 (load64 (active+200) t) (load64 (active+208) t) (load64 (active+216) t)
         (load64 (active+224) t) (load64 (active+232) t) (load64 (active+240) t) t
       96+copy (active+168) (wire+64) 32 t
+    else if action == 13 && length == 64 then
+      64+header 0 (load64 (active+248) t) (load64 (st+464) t) (load64 (st+312) t)
+        (load64 (st+240) t) (load64 (st+456) t) (load64 (st+128) t) t
+    else if action == 14 && length == 64 && load64 (command+16) t < count t then
+      let p := row active (load64 (command+16) t)
+      let t := header 0 (load64 (command+16) t+1) (load64 (p+544) t) (load64 (p+568) t)
+        (load64 (p+552) t) (load64 (p+560) t) 0 t
+      96+copy (p+32) (wire+64) 32 t
     else response 2 0 0 0 0 0 t
   else if op != 491 then response 7 0 0 0 0 0 t else
   if load64 st t != 1 then response 9 0 0 0 0 0 t else
@@ -605,7 +650,7 @@ def reserveReplicaAttempt (t : UInt64) : UInt64 :=
   let first := (load64 (p+544) t &&& 2) == 0
   let bytes := replicaEventBytes (load64 (p+24) t)
   let work := replicaEventWork (load64 (p+24) t)
-  if load64 (active+248) t != 1 || attempts >= 9 ||
+  if (load64 (active+248) t != 1 && load64 (active+248) t != 2) || attempts >= 9 ||
       (first && (!Guest.FeedPolicy.reserveWithin (load64 (active+200) t) (load64 (active+208) t) bytes ||
         !Guest.FeedPolicy.reserveWithin (load64 (active+224) t) (load64 (active+232) t) work)) then
     store64 (st+240) 4 (store64 (st+160) 6 t)
@@ -635,7 +680,9 @@ def replicaResponse (length t : UInt64) : UInt64 :=
 def replicaReceive (t : UInt64) : UInt64 :=
   if load64 (st+208) t != 0 then t else
   let n := Guest.NetworkSDK.receivePeer (load64 (st+136) t) (load64 (st+128) t) t
-  if n == 64 && status n == 3 then store64 (st+240) 3 (store64 (st+160) 6 n) else
+  if n == 64 && status n == 3 then
+    if load64 (st+160) n == 6 && load64 (st+240) n != 3 then n else
+    store64 (st+240) 3 (store64 (st+160) 6 n) else
   if n < 128 || n > 768 || status n != 0 then n else
   let bytes := load64 (wire+16) n
   let t := copy (wire+64) replicaIn bytes n
@@ -722,7 +769,7 @@ def replicaPump (t : UInt64) : UInt64 :=
       -- Only failure of our own request restarts our current signed event.
       if load64 (st+280) r == 1 then store64 (st+144) 0 r else replicaRetry 9 r
     else r
-  let t := replicaReceive t
+  let t := replicaAutoRenew (replicaReceive t)
   let now := Guest.WaitSDK.now t
   let t := if load64 (st+192) now != 0 && load64 (st+216) now == 0 &&
       load64 (st+144) now == 0 && now >= load64 (st+200) now+5000 then

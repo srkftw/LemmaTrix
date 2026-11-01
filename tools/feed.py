@@ -34,24 +34,28 @@ def install_or_launch(client,path,public,rights):
             return struct.unpack_from('<Q',answer,8)[0],selected
     return messenger.install(client,path,public,rights)
 
-def package(output, publisher, account_parent=None):
+def package(output, publisher, account_parent=None, federation_parent=None):
     import live_build
     if account_parent is not None:
         if not isinstance(account_parent,str)or len(account_parent)!=64 or any(c not in'0123456789abcdefABCDEF'for c in account_parent)or not any(bytes.fromhex(account_parent)):
             raise ValueError('account parent must be a nonzero exact32-byte release hash')
         account_parent=account_parent.lower()
+    if federation_parent is not None:
+        if not isinstance(federation_parent,str)or len(federation_parent)!=64 or any(c not in'0123456789abcdefABCDEF'for c in federation_parent)or not any(bytes.fromhex(federation_parent)):
+            raise ValueError('federation parent must be a nonzero exact32-byte release hash')
+        federation_parent=federation_parent.lower()
     output.mkdir(parents=True, exist_ok=False)
     rows=[]
     for name,module,rights in [('identity','Guest.Identity',0),('feed-account','Guest.FeedAccount',1024),
                               ('feed','Guest.Feed',799),('feed-federation','Guest.FeedFederation',3072)]:
         binary=live_build.app(module,module+'.main',name,2)
-        version='0.9.1'if name=='feed-account'else'0.9.0'
-        raw,_=releases.make(binary,name,version,rights,publisher,parent=account_parent if name=='feed-account'else None,profile=2,license='NOASSERTION')
+        version='0.9.1'if name in('feed-account','feed-federation')else'0.9.0'
+        raw,_=releases.make(binary,name,version,rights,publisher,parent=account_parent if name=='feed-account'else federation_parent if name=='feed-federation'else None,profile=2,license='NOASSERTION')
         path=output/(name+'.ltrel');path.write_bytes(raw)
         rows.append(dict(name=name,path=str(path.resolve()),rights=rights,code_bytes=binary.stat().st_size,
                          code_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),
                          release_id=releases.inspect(raw)['release_id'],package_sha256=hashlib.sha256(raw).hexdigest()))
-    report=dict(schema=1,packages=rows,account_parent=account_parent,publisher='existing disclosed host RSA release bootstrap',
+    report=dict(schema=1,packages=rows,account_parent=account_parent,federation_parent=federation_parent,publisher='existing disclosed host RSA release bootstrap',
                 feed_private_keys_exported=False,authoritative_host_database=False)
     (output/'packages.json').write_text(json.dumps(report,indent=2)+'\n')
     return report
@@ -144,7 +148,8 @@ def replication(client,a):
     if len(descriptor)!=512:raise ValueError('native Feed replication descriptor512 required')
     peer=descriptor[96:128] if side==1 else descriptor[64:96]
     pins=peer+hashlib.sha256(descriptor).digest()+digest(a.scope)
-    data=pins+struct.pack('<3Q',a.bytes,a.rate,a.lifetime)
+    auto_renew=bool(getattr(a,'auto_renew',False))
+    data=pins+struct.pack('<3Q',a.bytes,a.rate,a.lifetime)+(struct.pack('<Q',1)if auto_renew else b'')
     until=time.monotonic()+600
     while True:
         answer,_=invoke(client,490,action=2,handle=a.slot,data=data,allowed=(0,6))
@@ -152,7 +157,7 @@ def replication(client,a):
         if time.monotonic()>until:raise TimeoutError('native durable replication allowance admission')
         time.sleep(.1)
     return dict(peer=peer.hex(),network_slot=a.slot,grant=answer[1],mode=3,
-                bytes=a.bytes,rate=a.rate,lifetime=a.lifetime,scope=a.scope,status=list(answer),
+                bytes=a.bytes,rate=a.rate,lifetime=a.lifetime,scope=a.scope,status=list(answer),auto_renew=auto_renew,
                 disclosure='explicit direct encrypted inter-operator bulk relationship; client requests still require mode1',
                 durable_allowance='exact policy total persists; fresh transport allocation at most1MiB is burned before grant; exact event reserves bytes/work and nine attempts before replication',
                 scheduling='native guest replication; host controller may now exit')
@@ -160,7 +165,7 @@ def replication(client,a):
 def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--socket',type=Path)
     sub=p.add_subparsers(dest='command',required=True)
-    q=sub.add_parser('package');q.add_argument('--publisher-private',type=Path,required=True);q.add_argument('--output',type=Path,required=True);q.add_argument('--account-parent',help='nonzero exact previous Feed account release hash for a normal native upgrade')
+    q=sub.add_parser('package');q.add_argument('--publisher-private',type=Path,required=True);q.add_argument('--output',type=Path,required=True);q.add_argument('--account-parent',help='nonzero exact previous Feed account release hash for a normal native upgrade');q.add_argument('--federation-parent',help='nonzero exact previous Feed federation release hash for a normal native upgrade')
     q=sub.add_parser('vault-init');q.add_argument('image',type=Path)
     q=sub.add_parser('authorize-retention');q.add_argument('--owner',type=int,required=True)
     q=sub.add_parser('ui-status');q.add_argument('--ui',type=int,required=True)
@@ -168,16 +173,16 @@ def main(argv=None):
     q=sub.add_parser('stage-profile');q.add_argument('--ui',type=int,required=True);q.add_argument('profile',type=Path)
     q=sub.add_parser('start');q.add_argument('--identity',type=Path,required=True);q.add_argument('--owner',type=Path,required=True);q.add_argument('--ui',type=Path,required=True);q.add_argument('--public',type=Path,required=True);q.add_argument('--federation',required=True);q.add_argument('--peer',required=True)
     q=sub.add_parser('federation-start');q.add_argument('--release',type=Path,required=True);q.add_argument('--public',type=Path,required=True);q.add_argument('--namespace',required=True);q.add_argument('--federation',required=True);q.add_argument('--peer',required=True);q.add_argument('--moderator',help='existing native moderator public key; new operators omit and create natively');q.add_argument('--identity',type=Path,required=True);q.add_argument('--recover-key',type=Path,help='recover the native moderator seal from this operator backing');q.add_argument('--events',type=int,default=64);q.add_argument('--bytes',type=int,default=917504);q.add_argument('--policy',type=int,default=1)
-    q=sub.add_parser('replication');q.add_argument('--peer',type=int,choices=range(4),required=True);q.add_argument('--side',choices=('client','server'),required=True);q.add_argument('--endpoint',required=True,help='separately approved numeric bulk endpoint, distinct from signed onion endpoint');q.add_argument('--slot',type=int,choices=range(4),default=0);q.add_argument('--scope',required=True);q.add_argument('--bytes',type=int,default=16777216);q.add_argument('--rate',type=int,default=65536);q.add_argument('--lifetime',type=int,default=100000)
+    q=sub.add_parser('replication');q.add_argument('--peer',type=int,choices=range(4),required=True);q.add_argument('--side',choices=('client','server'),required=True);q.add_argument('--endpoint',required=True,help='separately approved numeric bulk endpoint, distinct from signed onion endpoint');q.add_argument('--slot',type=int,choices=range(4),default=0);q.add_argument('--scope',required=True);q.add_argument('--bytes',type=int,default=16777216);q.add_argument('--rate',type=int,default=65536);q.add_argument('--lifetime',type=int,default=100000);q.add_argument('--auto-renew',action='store_true',help='explicit finite rolling leases from the same durable policy total; failures stop')
     q=sub.add_parser('read');q.add_argument('--event',required=True);q.add_argument('--offset',type=int,default=0);q.add_argument('--bytes',type=int,default=512);q.add_argument('--moderator',action='store_true')
     q=sub.add_parser('moderator-retain');q.add_argument('--key',type=Path,required=True)
     q=sub.add_parser('moderate');q.add_argument('--target',required=True);q.add_argument('--action',choices=('hide','uphold','reverse'),required=True);q.add_argument('--reason',required=True)
-    for name in ('status','federation-status','replication-status','replication-budget','timeline'):
+    for name in ('status','federation-status','replication-status','replication-budget','replication-authority','timeline'):
 
         q=sub.add_parser(name)
         if name=='timeline':q.add_argument('--cursor',type=int,default=0);q.add_argument('--moderator',action='store_true')
     a=p.parse_args(argv)
-    if a.command=='package':result=package(a.output,a.publisher_private,a.account_parent)
+    if a.command=='package':result=package(a.output,a.publisher_private,a.account_parent,a.federation_parent)
     elif a.command=='vault-init':
         import os,resource
         sectors=5396132;size=sectors*512
@@ -244,6 +249,11 @@ def main(argv=None):
                 result=dict(events=f[1],content_bytes=f[2],event_limit=f[3],byte_limit=f[4],policy_version=f[5],index_generation=f[6],federation=raw[:32].hex(),peer=raw[32:64].hex(),moderator_public=raw[64:96].hex())
             elif a.command=='replication-status':
                 f,_=invoke(c,490,action=3);result=dict(status=list(f),mode=3)
+            elif a.command=='replication-authority':
+                f,_=invoke(c,490,action=13)
+                result=dict(policy_mode=f[1],rolling_armed=bool(f[2]),pending_or_failure=f[3],
+                            last_reason=f[4],cached_policy_bytes=f[5],current_grant=f[6],
+                            failure='quota4, revoked/grant3 or storage5 stops rolling; fresh authority is explicit')
             elif a.command=='replication-budget':
                 f,raw=invoke(c,490,action=12)
                 result=dict(total_bytes=f[1],reserved_event_bytes=f[2],transport_allocated_bytes=f[3],

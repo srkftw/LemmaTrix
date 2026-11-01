@@ -135,9 +135,9 @@ def moderator(guest):
 def check_replication_lease(guest, operator, endpoint):
     """Explicit operator stage boundary; never a per-event reset or keepalive.
 
-    Native authority expires normally. Only an observed stale/expired grant3
-    permits one same-policy reauthorization from the remaining durable total.
-    The existing ABI exposes aggregate reservations, not row568 attempt counts.
+    Manual policies permit one explicit same-policy renewal on observed expiry.
+    Opt-in rolling policies are observed only: native code owns finite renewal,
+    and a native failure is surfaced without host reauthorization.
     """
     before_phase = feed.invoke(guest.client, 490, action=3)[0]
     before, policy = feed.invoke(guest.client, 490, action=12)
@@ -145,6 +145,47 @@ def check_replication_lease(guest, operator, endpoint):
                   before_budget=list(before), policy_hash=policy.hex(), renewed=False,
                   row_attempt_counts='not exposed by the existing native operator API',
                   attempt_authority='durable per-event attempts remain charged; no reset operation is invoked')
+    if operator['replication'].get('auto_renew', False):
+        authority = feed.invoke(guest.client, 490, action=13)[0]
+        assert authority[1] == 2, ('rolling consent missing from native policy', authority)
+        result.update(auto_renew=True, native_before_authority=list(authority),
+                      row_attempt_counts='native49014: exact durable event attempts are observed below')
+        def attempts():
+            count = feed.invoke(guest.client, 490, action=9)[0][1]
+            return [list(feed.invoke(guest.client, 490, action=14, handle=i)[0])
+                    for i in range(count)]
+        result['before_attempts'] = attempts()
+        until = time.monotonic()+120
+        while True:
+            phase = feed.invoke(guest.client, 490, action=3)[0]
+            authority = feed.invoke(guest.client, 490, action=13)[0]
+            if authority[3] == 2 or (phase[1] == 6 and phase[3] != 3):
+                raise RuntimeError(('native rolling replication stopped within its finite policy',
+                                    guest.name, phase, authority,
+                                    feed.invoke(guest.client, 490, action=12)[0]))
+            if authority[3] == 0 and phase[1] != 6:
+                break
+            if authority[2] != 1 and authority[3] == 0:
+                raise RuntimeError(('native rolling authority requires fresh exact operator configuration', guest.name, authority))
+            if time.monotonic() >= until:
+                raise TimeoutError(('native finite rolling allocation did not settle', guest.name, phase, authority))
+            time.sleep(.1)
+        after, after_policy = feed.invoke(guest.client, 490, action=12)
+        assert after_policy == policy
+        assert after[1] == before[1] and after[4] == before[4] and after[6] == before[6]
+        assert after[2] >= before[2] and after[5] >= before[5]
+        assert before[3] <= after[3] <= after[1]
+        after_attempts = attempts()
+        for a, b in zip(result['before_attempts'], after_attempts):
+            assert b[3] >= a[3] and b[3] <= 9
+            assert b[4:6] == a[4:6] or a[4:6] == [0, 0]
+        operator['replication']['grant'] = authority[6]
+        result.update(after_budget=list(after), after_phase=list(phase),
+                      native_after_authority=list(authority), after_attempts=after_attempts,
+                      native_allocated_bytes=after[3]-before[3],
+                      current_grant=authority[6],
+                      disclosure='observed native rolling renewal within the exact opted-in durable policy; this controller issued no renewal and changed no event allowance or attempt counter')
+        return result
     if before_phase[1] == 6:
         if before_phase[3] != 3:
             raise RuntimeError(('native replication stopped for a reason other than lease expiry/stale authority', guest.name, before_phase))
@@ -437,7 +478,10 @@ def main():
                     replication = feed.replication(beta.client, NS(
                         peer=0, side='client', slot=0,
                         scope=campaign.state['actors']['beta']['replication']['scope'],
-                        endpoint=campaign.state['bulk_endpoint'], bytes=16777216, rate=65536, lifetime=100000))
+                        endpoint=campaign.state['bulk_endpoint'], bytes=16777216, rate=65536, lifetime=100000,
+                        auto_renew=campaign.state['actors']['beta']['replication'].get('auto_renew', False)))
+                    state['beta_after_current_configuration_budget'] = list(feed.invoke(beta.client, 490, action=12)[0])
+                    assert state['beta_after_current_configuration_budget'][3] == state['reserved_beta_budget'][3]+1048576
                     campaign.state['actors']['beta'].update(network=beta.network, feed=service, replication=replication)
                     (out/'native-actors.json').write_text(json.dumps(campaign.state, indent=2)+'\n')
                     public = out/'continuations.json'
@@ -448,15 +492,29 @@ def main():
                     record('recovered', 'Beta cold recovery recreates current grants and preserves exact pending event, checkpoint, moderator policy and spent event/transport allowances', moderator=recovered)
                 for key, destination in (('beta_pending', alpha), ('alpha_pending', beta)):
                     original = bytes.fromhex(state[key])
-                    row = wait(lambda: find(destination, event_id=original[:32]),
-                               900, 'native automatic pending event replication resumes after operator recovery')
+                    def resumed():
+                        for operator in (alpha, beta):
+                            if campaign.state['actors'][operator.name]['replication'].get('auto_renew', False):
+                                authority = feed.invoke(operator.client, 490, action=13)[0]
+                                if authority[3] == 2:
+                                    raise RuntimeError(('native finite rolling authority stopped during restart continuation', operator.name, authority))
+                        return find(destination, event_id=original[:32])
+                    row = wait(resumed, 900, 'native automatic pending event replication resumes after operator recovery')
                     assert row[1] == original
                     checked_body(destination, original, struct.unpack_from('<Q', original, 288)[0])
                 after = list(feed.invoke(beta.client, 490, action=12)[0])
                 assert after[2] == state['reserved_beta_budget'][2]
-                assert after[3] == state['reserved_beta_budget'][3]+1048576
+                if campaign.state['actors']['beta']['replication'].get('auto_renew', False):
+                    assert state['beta_after_current_configuration_budget'][3] <= after[3] <= after[1]
+                else:
+                    assert after[3] == state['reserved_beta_budget'][3]+1048576
                 assert after[5] == state['reserved_beta_budget'][5]
-                assert feed.invoke(alpha.client, 490, action=12)[0][3] == state['alpha_budget'][3]
+                alpha_after = feed.invoke(alpha.client, 490, action=12)[0]
+                if campaign.state['actors']['alpha']['replication'].get('auto_renew', False):
+                    assert state['alpha_budget'][3] <= alpha_after[3] <= alpha_after[1]
+                    assert alpha_after[2] == state['alpha_budget'][2] and alpha_after[5] == state['alpha_budget'][5]
+                else:
+                    assert alpha_after[3] == state['alpha_budget'][3]
                 assert select(bob, target)[4] == 16
                 select_feed_route(alice, beta, relays)
                 alice.device.press(63 if feed_ui(alice)[0][5] == 8 else 19)
