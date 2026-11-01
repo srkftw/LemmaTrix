@@ -9,8 +9,9 @@ import base64,hashlib,json,struct,sys,time
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 sys.path[:0]=[str(ROOT/'tools'),str(ROOT/'tests')]
-import capsule,federation,messenger,projects,releases
+import capsule,feed,federation,identity,messenger,projects,releases
 from messenger_journey import PUB,SIGN,wait
+from creator_journey import rendered_text
 
 
 def ui_call(g,ui,op,h=0):
@@ -18,40 +19,164 @@ def ui_call(g,ui,op,h=0):
     return struct.unpack_from('<8Q',raw),raw[64:]
 
 
-def prepare(g,ui,output,*,archive_path=ROOT/'build/signed-forge-journey-2/published-closure.json',publisher=ROOT/'build/signed-forge-journey-2/publisher.pub'):
-    output.mkdir(parents=True,exist_ok=False)
+def write_record(path,value):
+    temporary=path.with_suffix(path.suffix+'.next')
+    temporary.write_text(json.dumps(value,indent=2)+'\n');temporary.replace(path)
+
+
+def live_instance(client,who):
+    return any(row[0]==who and row[1]in(1,2,3,4)for row in identity.instances(client))
+
+
+def complete_read(g,ui):
+    _,diagnostic=ui_call(g,ui,791)
+    return (len(diagnostic)>=160 and struct.unpack_from('<Q',diagnostic,128)[0]==0
+            and (struct.unpack_from('<Q',diagnostic,104)[0]==0
+                 or struct.unpack_from('<Q',diagnostic,96)[0]==0))
+
+
+def select_event(g,ui,event_id):
+    """Read actual native timeline rows, including every checked body chunk."""
+    g.device.press(104)
+    for _ in range(64):
+        def selected():
+            f,p=ui_call(g,ui,795)
+            return p if any(p[:32])and complete_read(g,ui)else None
+        chosen=wait(selected,300,'complete native signed row and content commitment')
+        if chosen[:32]==event_id:return chosen
+        # Enter advances the chronological row directly. PgDn first scrolls a
+        # long body, so it cannot be used as a one-event pagination counter.
+        g.device.press(28)
+        wait(lambda:ui_call(g,ui,795)[1][:32]!=chosen[:32]or not complete_read(g,ui),120,'native next-row request')
+    raise AssertionError('exact event absent from bounded native timeline')
+
+
+def displayed_picker_root(frame):
+    """Read only the64 hexadecimal characters drawn by trusted chrome.
+
+    This uses completed display pixels, not guest memory or a picker setter.
+    The16 public glyphs come from the native renderer used in the common image.
+    An ordinary app frame or an incomplete upload produces no selection.
+    """
+    if frame is None or frame.width<414 or frame.height<345:return None
+    words=[]
+    for start in(12,114,216,318):
+        digits=rendered_text(frame,start,338,16)
+        if len(digits)!=16 or any(c not in'0123456789abcdef'for c in digits):return None
+        words.append(int(digits,16))
+    return struct.pack('<4Q',*words).hex()
+
+
+def approve_exact_picker(g,expected,*,approve=True):
+    seen=[]
+    for _ in range(16):
+        root=wait(lambda:displayed_picker_root(g.device.frame()),90,'trusted picker completed displayed root')
+        if root in seen:break
+        seen.append(root)
+        if root==expected:
+            frame=g.device.frame();path=g.out/(g.name+'-feed-picker-'+expected[:12]+'-'+frame.digest[:12]+'.ppm');path.write_bytes(frame.ppm())
+            g.device.press(28 if approve else 1)
+            return dict(displayed_root=root,frame_sha256=frame.digest,frame=str(path),visited_roots=seen)
+        g.device.press(108)
+        wait(lambda:displayed_picker_root(g.device.frame())not in(None,root),90,'trusted picker next root')
+    g.device.press(1)
+    raise AssertionError('trusted picker did not offer the exact signed release root')
+
+
+def prepare(g,ui,output,*,archive_path=ROOT/'build/signed-forge-journey-2/published-closure.json',publisher=ROOT/'build/signed-forge-journey-2/publisher.pub',existing=None):
+    output.mkdir(parents=True,exist_ok=True)
+    journal_path=output/'prepare.json'
+    provenance=dict(schema=1,archive=str(archive_path.resolve()),archive_sha256=hashlib.sha256(archive_path.read_bytes()).hexdigest(),publisher=str(publisher.resolve()),existing=existing)
+    journal=json.loads(journal_path.read_text())if journal_path.exists()else dict(provenance=provenance)
+    if journal['provenance']!=provenance:raise ValueError('project preparation provenance changed')
+    def save():write_record(journal_path,journal)
+    save()
     archive=json.loads(archive_path.read_text())
     records=[dict(row,payload=base64.b64decode(row['payload'],validate=True))for row in archive['nodes']]
-    root=projects.import_records(g.client,archive['selected'],records)[0]
+    wanted=archive['selected'][0]['head']
+    root=next((row for row in projects.roots(g.client)if row['head']==wanted),None)
+    if root is None:root=projects.import_records(g.client,archive['selected'],records)[0]
     actual=projects.project_identity(g.client,root['cap'])
     assert actual==archive['project_id']
+    journal['root']=root;save()
     shell=next(struct.unpack_from('<Q',raw,i)[0]for raw in [g.client.request(2)]for i in range(0,len(raw),32)if struct.unpack_from('<Q',raw,i)[0]&255==4)
     g.client.objects(27,root['cap'],shell,127)
-    binary=ROOT/'build/live/apps/native-registry.bin'
-    raw,_=releases.make(binary,'feed-project-registry','0.9.0',2175,SIGN,profile=2)
-    package=output/'registry.ltrel';package.write_bytes(raw)
-    registry,_=messenger.install(g.client,package,PUB,2175)
-    fedkey,fedpub=output/'federation.pem',output/'federation.pub';capsule.generate_key(fedkey,fedpub)
-    config=federation.configure(g.client,registry,fedpub,'portable')
+    if existing is not None:
+        # The common personal guest has seven ordinary owners already. Its
+        # current verifier is reused, preserving Messenger and a free UI slot.
+        registry=existing['instance'];fedkey=Path(existing['admission_key']);fedpub=Path(existing['admission_public'])
+        if not live_instance(g.client,registry):raise ValueError('current native Registry incarnation changed; explicit recovery required')
+        federation_id=hashlib.sha256(releases.public_modulus(fedpub)).hexdigest()
+        if federation_id!=existing['federation']or capsule.modulus(fedkey)!=releases.public_modulus(fedpub):raise ValueError('original project admission bootstrap scope differs')
+        config=dict(federation_id=federation_id)
+    else:
+        package=output/'registry.ltrel'
+        if not package.exists():
+            raw,_=releases.make(ROOT/'build/live/apps/native-registry.bin','feed-project-registry','0.9.0',2175,SIGN,profile=2);package.write_bytes(raw)
+        package_sha256=hashlib.sha256(package.read_bytes()).hexdigest()
+        if 'package_sha256'in journal and journal['package_sha256']!=package_sha256:raise ValueError('prepared exact Registry package changed')
+        journal['package_sha256']=package_sha256
+        if 'registry'in journal:
+            registry=journal['registry']
+            if not live_instance(g.client,registry):raise ValueError('prepared Registry incarnation changed; explicit recovery required')
+        else:
+            before=journal.setdefault('before_registry_instances',[r[0]for r in identity.instances(g.client)if r[1]in(1,2,3,4)])
+            save()
+            possible=[r[0]for r in identity.instances(g.client)if r[1]in(1,2,3,4)and r[2]==2175 and r[0]not in before]
+            if len(possible)>1:raise ValueError('ambiguous Registry launch outcome; no automatic second launch')
+            registry=possible[0]if possible else feed.install_or_launch(g.client,package,PUB,2175)[0]
+            journal['registry']=registry;save()
+        fedkey,fedpub=output/'federation.pem',output/'federation.pub'
+        if not fedkey.exists()and not fedpub.exists():capsule.generate_key(fedkey,fedpub)
+        if not fedkey.exists()or not fedpub.exists()or capsule.modulus(fedkey)!=releases.public_modulus(fedpub):raise ValueError('prepared original admission key pair is incomplete')
+        if not journal.get('configured'):
+            intent=journal.get('configure_intent',False);journal['configure_intent']=True;save()
+            try:federation.configure(g.client,registry,fedpub,'portable')
+            except ValueError as error:
+                if not intent or str(error)!='native registry status2':raise
+            journal['configured']=True;save()
+        config=dict(federation_id=hashlib.sha256(releases.public_modulus(fedpub)).hexdigest())
     # A Fork chooses a new local project publisher explicitly. This public
     # project bootstrap does not confer upstream-maintainer or Feed authority.
     forkkey,forkpub=output/'fork-publisher.pem',output/'fork-publisher.pub'
-    capsule.generate_key(forkkey,forkpub)
+    if not forkkey.exists()and not forkpub.exists():capsule.generate_key(forkkey,forkpub)
+    if not forkkey.exists()or not forkpub.exists()or capsule.modulus(forkkey)!=releases.public_modulus(forkpub):raise ValueError('chosen local Fork publisher key pair is incomplete')
     modulus=releases.public_modulus(publisher)
     publication=releases.publication(actual,hashlib.sha256(modulus).hexdigest())
-    federation.call(g.client,registry,3,data=publication+modulus)
-    delegated=g.client.objects(27,root['cap'],registry,25)[0][1]
-    federation.call(g.client,registry,2,h=delegated)
-    signed=wait(lambda:federation.sign_once(g.client,registry,fedkey,'portable'),180,'original Registry evaluated signed project')
-    catalog,descriptor=federation.call(g.client,registry,6)
-    assert signed['listing']==2 and signed['root']==root['head'] and descriptor[320:352].hex()==root['head']
+    def current():
+        cursor=0
+        for _ in range(16):
+            try:f,d=federation.call(g.client,registry,6,h=cursor)
+            except ValueError as error:
+                if str(error)=='native registry status6':return None
+                raise
+            if d[320:352].hex()==root['head']and d[64:96].hex()==actual:return f,d
+            cursor=f[3]
+        raise ValueError('native Registry pagination exceeded16 entries')
+    selected=current()
+    if selected is None:
+        if existing is not None:raise ValueError('existing native verifier lacks the exact original admission; complete routed Forge first')
+        federation.call(g.client,registry,3,data=publication+modulus)
+        try:_,pending=federation.call(g.client,registry,4)
+        except ValueError as error:
+            if str(error)!='native registry status6':raise
+            delegated=g.client.objects(27,root['cap'],registry,25)[0][1];federation.call(g.client,registry,2,h=delegated)
+        else:
+            if pending[320:352].hex()!=root['head']:raise ValueError('another original Registry decision is pending')
+        wait(lambda:federation.sign_once(g.client,registry,fedkey,'portable'),180,'original Registry evaluated signed project')
+        selected=current()
+    catalog,descriptor=selected
+    assert len(descriptor)==768 and struct.unpack_from('<Q',descriptor,16)[0]==2 and descriptor[320:352].hex()==root['head']
+    assert descriptor[96:128]==publication and descriptor[288:320].hex()==config['federation_id']
+    if existing is not None:
+        assert descriptor[128:160].hex()==existing['release_id']and catalog[1]==existing['sequence']
     record=dict(root=root,registry=registry,descriptor_sha256=hashlib.sha256(descriptor).hexdigest(),project_id=actual,
                 publication_id=publication.hex(),release_id=descriptor[128:160].hex(),federation=config['federation_id'],
                 original_graph=str(archive_path),original_graph_sha256=hashlib.sha256(archive_path.read_bytes()).hexdigest(),publisher=str(publisher),
                 fork_publisher=str(forkpub),registry_slot=catalog[2],registry_sequence=catalog[1],
                 admission_key=str(fedkey),
                 signature='unchanged original RSA Project Release; existing native Registry policy plus disclosed RSA admission bootstrap',execution_consent=False)
-    (output/'project.json').write_text(json.dumps(record,indent=2)+'\n')
+    write_record(output/'project.json',record)
     return record
 
 
@@ -60,68 +185,113 @@ def publish_and_fork(g,ui,record,*,publish_wait,card_text='This card links the e
     device.press(87)
     wait(lambda:ui_call(g,ui,791)[0][2]==1,90,'native Feed selects actual signed Registry release')
     device.textASCII(card_text,delay=.04);device.press(62);time.sleep(.15);device.press(63)
-    publish_wait()
     # Paginate actual federation events until this original release card is
     # selected in the native UI. No native state setter inserts the card.
-    device.press(104)
-    def selected_card():
-        fields,payload=ui_call(g,ui,795)
-        if len(payload)!=512 or struct.unpack_from('<Q',payload,32+176)[0]!=3 or payload[32+336:32+368].hex()!=record['root']['head']:
-            return None
-        return payload
-    def fully_read():
-        _,diagnostic=ui_call(g,ui,791)
-        return (len(diagnostic)>=160 and struct.unpack_from('<Q',diagnostic,128)[0]==0
-                and (struct.unpack_from('<Q',diagnostic,104)[0]==0
-                     or struct.unpack_from('<Q',diagnostic,96)[0]==0))
-    for _ in range(64):
-        try:chosen=wait(selected_card,3,'native timeline card')
-        except TimeoutError:
-            wait(fully_read,180,'native row content check before pagination')
-            device.press(109);continue
-        break
-    else:raise AssertionError('published card did not appear in native paginated timeline')
-    wait(fully_read,180,'native card original metadata content commitment checked')
+    committed=publish_wait()
+    chosen=select_event(g,ui,committed[:32])
     return inspect_and_fork(g,ui,record,chosen)
+
+
+def verify_fork(client,fork,record,publisher):
+    """Inspect the native immutable .fork lineage through ordinary Objects."""
+    if fork['head']==record['root']['head']:raise AssertionError('Fork did not create an independent root')
+    head=client.objects(24,fork['cap'])[0][1]
+    members=projects.decode_manifest(client.read_object(head))
+    lineage_id=next(identity for _,kind,identity in members if kind==15)
+    payload=client.read_object(projects.resolve(client,fork['cap'],lineage_id))
+    assert len(payload)==208 and struct.unpack_from('<Q',payload,32)[0]==0x314b524f46544c
+    assert payload[48:80].hex()==record['project_id']and payload[80:112].hex()==record['root']['head']
+    assert payload[112:144].hex()==record['release_id']and payload[144:176].hex()==publisher
+    logical=projects.project_identity(client,fork['cap']);assert logical!=record['project_id']
+    return dict(project_id=logical,lineage_node=lineage_id,lineage_sha256=hashlib.sha256(payload).hexdigest())
 
 
 def inspect_and_fork(g,ui,record,chosen):
     device=g.device
+    journal_path=Path(record['fork_publisher']).parent/'fork-action.json'
+    publisher=hashlib.sha256(releases.public_modulus(Path(record['fork_publisher']))).hexdigest()
+    intent=dict(event_id=chosen[:32].hex(),upstream_root=record['root']['head'],publisher=publisher)
+    journal=json.loads(journal_path.read_text())if journal_path.exists()else dict(intent=intent,before_heads=[r['head']for r in projects.roots(g.client)],first_ui_incarnation=ui)
+    if journal['intent']!=intent:raise ValueError('normal Fork intent changed on resume')
+    write_record(journal_path,journal)
+    def committed():
+        for row in projects.roots(g.client):
+            if row['head']in journal['before_heads']or not row['name'].startswith('feedfork'):continue
+            try:lineage=verify_fork(g.client,row,record,publisher)
+            except (AssertionError,StopIteration):continue
+            return dict(event_id=chosen[:32].hex(),upstream_root=record['root']['head'],fork=row,publisher=publisher,**lineage,
+                        action='existing Objects.forkProject; independent local lineage, no install or execution consent')
+        return None
+    wait(lambda:complete_read(g,ui),180,'previous native Feed request completed before project action')
+    prior=committed()
+    if prior:
+        journal['result']=prior;write_record(journal_path,journal);return prior
     device.press(46) # C uses original Registry consumer.
     wait(lambda:ui_call(g,ui,791)[0][2]==8,90,'native original release inspection')
     device.press(33) # F opens an explicit new publisher identity form.
     wait(lambda:ui_call(g,ui,791)[0][2]==10,30,'native Fork publisher approval')
-    publisher=hashlib.sha256(releases.public_modulus(Path(record['fork_publisher']))).hexdigest()
     device.textASCII(publisher,delay=.04);device.press(28)
     # The trusted picker is the normal Compositor flow; only the exact source
     # root that matches the card is eligible when the owner rechecks admission.
     wait(lambda:ui_call(g,ui,791)[0][4]==49,90,'native trusted project picker is open')
-    device.press(28)
-    def forked():
-        return next((row for row in projects.roots(g.client)if row['name'].startswith('feedfork')),None)
-    fork=wait(forked,120,'existing Objects graph Fork commits independent source')
-    assert fork['head']!=record['root']['head']
-    lineage=projects.project_identity(g.client,fork['cap'])
-    assert lineage!=record['project_id']
-    return dict(event_id=chosen[:32].hex(),upstream_root=record['root']['head'],fork=fork,project_id=lineage,publisher=publisher,
-                action='existing Objects.forkProject; independent local lineage, no install or execution consent')
+    journal['picker']=approve_exact_picker(g,record['root']['head']);write_record(journal_path,journal)
+    result=wait(committed,180,'existing Objects graph Fork commits independent source and Library grants')
+    journal['result']=result;write_record(journal_path,journal);return result
+
+
+def show_fork_in_picker(g,ui,record,action):
+    """Show the new Library/Forge project grant in the normal trusted picker.
+
+    Cancel before delegation or a second Fork. An unsigned local lineage is
+    never inserted into the published-release catalog just to make it visible.
+    """
+    path=Path(record['fork_publisher']).parent/'fork-action.json'
+    journal=json.loads(path.read_text())
+    if 'visible'in journal:return journal['visible']
+    if ui_call(g,ui,791)[0][2]!=8:
+        g.device.press(46)
+        wait(lambda:ui_call(g,ui,791)[0][2]==8,120,'native current project inspection before visibility check')
+    wait(lambda:complete_read(g,ui),180,'native current admission request completed')
+    g.device.press(33)
+    wait(lambda:ui_call(g,ui,791)[0][2]==10,60,'native project publisher approval form')
+    g.device.textASCII(action['publisher'],delay=.04);g.device.press(28)
+    wait(lambda:ui_call(g,ui,791)[0][4]==49,120,'normal trusted project picker')
+    visible=approve_exact_picker(g,action['fork']['head'],approve=False)
+    wait(lambda:ui_call(g,ui,791)[0][4]!=49 and complete_read(g,ui),120,'normal trusted picker cancellation completes')
+    journal['visible']=visible;write_record(path,journal);return visible
 
 
 def revoke_and_refuse(g,ui,record):
     """Known native Registry revocation must win over a valid old Feed card."""
     before=projects.roots(g.client)
-    f,_=federation.call(g.client,record['registry'],8,h=record['registry_slot'],a=record['registry_sequence'])
-    signed=wait(lambda:federation.sign_once(g.client,record['registry'],Path(record['admission_key']),'portable'),180,'native revocation admission signed through original bootstrap')
+    path=Path(record['fork_publisher']).parent/'revocation-action.json'
+    journal=json.loads(path.read_text())if path.exists()else dict(instance=record['registry'],original_sequence=record['registry_sequence'],root=record['root']['head'])
+    assert journal['instance']==record['registry']and journal['root']==record['root']['head']
+    current,descriptor=federation.call(g.client,record['registry'],6)
+    if struct.unpack_from('<Q',descriptor,16)[0]==3:
+        assert descriptor[320:352].hex()==record['root']['head']and current[1]>record['registry_sequence']
+        signed=dict(sequence=current[1],listing=3,root=record['root']['head'],resumed_committed_decision=True)
+    else:
+        try:_,pending=federation.call(g.client,record['registry'],4)
+        except ValueError as error:
+            if str(error)!='native registry status6':raise
+            journal['intent']=True;write_record(path,journal)
+            federation.call(g.client,record['registry'],8,h=record['registry_slot'],a=record['registry_sequence'])
+        else:
+            assert struct.unpack_from('<Q',pending,16)[0]==3 and pending[320:352].hex()==record['root']['head']
+        signed=wait(lambda:federation.sign_once(g.client,record['registry'],Path(record['admission_key']),'portable'),180,'native revocation admission signed through original bootstrap')
+    journal['decision']=signed;write_record(path,journal)
     assert signed['listing']==3 and signed['root']==record['root']['head']
     # C rechecks the exact old descriptor against current native Registry state.
     g.device.press(46)
-    wait(lambda:ui_call(g,ui,791)[0][6]==11,90,'native Feed card refuses known revoked project')
+    wait(lambda:ui_call(g,ui,791)[0][6]==11 and complete_read(g,ui),90,'native Feed card refuses known revoked project')
     # F may show the ordinary publisher form, but its action-time verify must
     # refuse before any trusted picker or graph Fork can acquire authority.
     g.device.press(33)
     if ui_call(g,ui,791)[0][2]==10:
         publisher=hashlib.sha256(releases.public_modulus(Path(record['fork_publisher']))).hexdigest()
         g.device.textASCII(publisher,delay=.04);g.device.press(28)
-    wait(lambda:ui_call(g,ui,791)[0][6]==11,90,'native Fork action revalidates revoked original release')
+    wait(lambda:ui_call(g,ui,791)[0][6]==11 and complete_read(g,ui),90,'native Fork action revalidates revoked original release')
     assert projects.roots(g.client)==before
-    return dict(revocation=signed,feed_card_still_original=True,additional_forks=0,execution_consent=False)
+    result=dict(revocation=signed,feed_card_still_original=True,additional_forks=0,execution_consent=False)
+    journal['result']=result;write_record(path,journal);return result
