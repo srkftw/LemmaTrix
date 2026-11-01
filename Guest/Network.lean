@@ -49,7 +49,7 @@ def localId (kind counter t : UInt64) : UInt64 :=
 def saveContext (i t : UInt64) : UInt64 :=
   let b := bank i
   let t := copy 0x600000 b 416 t
-  let t := copy st (b+512) 144 t
+  let t := copy st (b+512) 152 t
   let t := copy tx (b+1024) 1024 t
   let t := copy rx (b+2048) 1024 t
   let t := copy pins (b+4096) 128 t
@@ -60,7 +60,7 @@ def saveContext (i t : UInt64) : UInt64 :=
 def loadContext (i t : UInt64) : UInt64 :=
   let b := bank i
   let t := copy b 0x600000 416 t
-  let t := copy (b+512) st 144 t
+  let t := copy (b+512) st 152 t
   let t := copy (b+1024) tx 1024 t
   let t := copy (b+2048) rx 1024 t
   let t := copy (b+4096) pins 128 t
@@ -351,12 +351,30 @@ partial def expireGrants (i t : UInt64) : UInt64 :=
   let t := store64 (st+88) (now r+delay) r
   if r == error then t else store64 (st+136) (load64 (st+136) t+1) t
 
+def bulkCreationExpired (intent deadline clock : UInt64) : Bool :=
+  intent == 1 && deadline != 0 && clock >= deadline
+theorem acknowledged_bulk_listener_not_expired (deadline clock : UInt64) :
+    bulkCreationExpired 2 deadline clock = false := by simp [bulkCreationExpired]
+-- st+144 is banked with this relationship. A queued creation gets one finite
+-- window; pending polls cannot renew it. ACK2 is a healthy idle listener.
+@[noinline] def maintainBulkCreation (t : UInt64) : UInt64 :=
+  if !Guest.Transport.enabled t || !nativeFeedRelationship t then t else
+  let p := Guest.Transport.channel (transportSlot (activeSlot t) t)
+  let intent := load64 (p+24) t
+  let deadline := load64 (st+144) t
+  if intent != 1 then store64 (st+144) 0 t else
+  if deadline == 0 then
+    store64 (st+144) (Guest.OnionTerminal.workDeadline (now t) 100000) t
+  else if !bulkCreationExpired intent deadline (now t) then t else
+    disconnect 10 (networkReset (store64 (st+144) 0 t))
+
 def pump (initial : UInt64) : UInt64 :=
   let t := store64 st (syscall 110 0 0 0 0 initial) initial
   let t := if nativePeerCurrent t then t else disconnect 17 t
   let t := expireGrants 0 t
   let t := cancelRevoked 0 t
   let t := reclaimInbox 0 t
+  let t := maintainBulkCreation t
   let device := networkStatus t
   if device == error || (device &&& 3) != 3 then
     let t := if session device == 0 && load64 (st+80) device == 10 then device else disconnect 10 device
@@ -389,7 +407,7 @@ def configure (role length t : UInt64) : UInt64 :=
     let t := disconnect 0 t
     let t := zero 0x608000 2048 t
     let t := copy (command+64) pins 128 t
-    let t := store64 (st+8) role (store64 (st+136) 0 t)
+    let t := store64 (st+8) role (store64 (st+136) 0 (store64 (st+144) 0 t))
     failure 0 t
 
 -- Native inter-federation mode3 enrollment uses already approved Ed25519

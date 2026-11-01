@@ -116,10 +116,11 @@ def event (t : UInt64) : UInt64 :=
     store64 (p+8) 1 (store64 (p+24) 0 t)
   else if op == 5 || op == 6 then
     if epoch < load64 p t then t else
-    -- A replacement command may receive the old socket's cleanup before its
-    -- own acknowledgement. Preserve creation/listen intent across cleanup;
-    -- an actual command failure6 clears it. Accepted links have intent0.
-    let intent := (6-op)*load64 (p+24) t
+    -- Replacement cleanup5(0) may precede its command acknowledgement. An
+    -- asynchronous failed CONNECT is also event5, with a nonzero errno; it
+    -- must release pending intent so the native finite retry can proceed.
+    let reason := load64 (input+8) t >>> 32
+    let intent := if op == 5 && reason == 0 then load64 (p+24) t else 0
     let t := zero (p+32) 252 t
     let t := store64 p epoch t
     let t := store64 (p+16) (load64 (input+8) t >>> 32) t
