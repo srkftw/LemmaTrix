@@ -368,16 +368,21 @@ def configure (role length t : UInt64) : UInt64 :=
 -- node declarations and X25519 possession, never host-held pairwise secrets.
 -- The explicit admin choice authorizes mode3; it cannot satisfy mode1 calls.
 def nativePeerWork : UInt64 := 0x7a8000
-def configureFeedPeer (role slot t : UInt64) : UInt64 :=
+def configureFeedPeer (role slot length t : UInt64) : UInt64 :=
   let own := Guest.NodeEnrollment.localNode
   let peer := Guest.NodeEnrollment.peer slot
-  if slot >= 4 || (role != 1 && role != 2) || !Guest.TorRouter.peerValid peer t ||
+  let endpointLength := if length == 64 then 0 else load64 (command+24) t
+  if (Guest.TorRouter.enabled t && endpointLength == 0) || (length != 64 && (endpointLength == 0 || endpointLength > 64 || length != 64+endpointLength ||
+      !Guest.Identity.ipv4 (command+64) endpointLength 0 0 t)) || slot >= 4 || (role != 1 && role != 2) || !Guest.TorRouter.peerValid peer t ||
     load64 own t != 1 || load64 (own+208) t != 16 || load64 (peer+208) t != 16 ||
     Guest.NodeEnrollment.eq (own+144) (peer+144) 32 t then failure 1 t else
   let client := if role == 1 then own else peer
   let server := if role == 1 then peer else own
   let d := Guest.PeerDescription.description
+  if endpointLength != 0 && endpointLength == load64 (server+368) t &&
+    Guest.NodeEnrollment.eq (command+64) (server+376) endpointLength t then failure 2 t else
   let t := zero nativePeerWork 512 t
+  let t := if endpointLength == 0 then t else copy (command+64) (nativePeerWork+256) endpointLength t
   let t := Guest.Noise25519.x25519 Guest.NodeEnrollment.keys (peer+256) nativePeerWork t
   if nonzero nativePeerWork 32 0 t == 0 then failure 9 (zero nativePeerWork 512 t) else
   let t := copy (client+512) (nativePeerWork+32) 32 t
@@ -395,9 +400,9 @@ def configureFeedPeer (role slot t : UInt64) : UInt64 :=
   let t := store64 (d+56) 65536 t
   let t := copy (client+144) (d+64) 32 t
   let t := copy (server+144) (d+96) 32 t
-  let endpointBytes := load64 (server+368) t
+  let endpointBytes := if endpointLength == 0 then load64 (server+368) t else endpointLength
   let t := store64 (d+160) endpointBytes t
-  let t := copy (server+376) (d+168) endpointBytes t
+  let t := copy (if endpointLength == 0 then server+376 else nativePeerWork+256) (d+168) endpointBytes t
   let t := copy (server+144) Guest.PeerDescription.publicKey 32 t
   let t := copy (server+144) Guest.PeerDescription.hashes 32 t
   let t := Guest.ServiceHash.sha256At (nativePeerWork+512) d 512 (Guest.PeerDescription.hashes+32) t
@@ -535,7 +540,7 @@ def dispatchSelected (caller rights length t : UInt64) : UInt64 :=
     let t := if op == 30 || op == 31 then store64 (control+128) 1 t else t
     Guest.TorRouter.dispatch op handle length t else
   if op >= 20 && op <= 25 && admin then Guest.NodeEnrollment.dispatch op handle length t else
-  if op == 48 && admin && length == 64 then configureFeedPeer (load64 (command+16) t) handle t else
+  if op == 48 && admin && length >= 64 && length <= 128 then configureFeedPeer (load64 (command+16) t) handle length t else
   if op == 13 && (admin || (rights &&& 1024) != 0) && length == 64 then
     if !Guest.PeerDescription.verified t || load64 (st+8) t == 0 then failure 1 t else
       let r := Guest.Transport.connect (transportSlot (activeSlot t) t) (load64 (st+8) t) (Guest.PeerDescription.description+168) (load64 (Guest.PeerDescription.description+160) t) t

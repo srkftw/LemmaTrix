@@ -47,7 +47,7 @@ def initialized (t : UInt64) : Bool := load64 st t == 1
 def rootValid (p slot t : UInt64) : Bool :=
   if load64 p t != magic || load64 (p+8) t != 1 || load64 (p+16) t != slot ||
      load64 (p+24) t == 0 || load64 (p+32) t == 0 || load64 (p+32) t > 1048576 ||
-     load64 (p+40) t == 0 || load64 (p+40) t > 4 ||
+     load64 (p+40) t == 0 || load64 (p+40) t > 6 ||
      !Guest.ProjectGraph.allZero (p+176) 336 t then false else
     let t := ServiceHash.sha256At scratch p 144 hashed t
     eq hashed (p+144) 32 t

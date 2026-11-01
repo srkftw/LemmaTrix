@@ -1522,7 +1522,7 @@ partial def lifecycleRows (i t : UInt64) : UInt64 :=
 partial def lifecycleProcesses (i t : UInt64) : UInt64 :=
   if i == 15 then t else
     let row := 0x718000+i*32
-    let y := 278+(i-1)*9
+    let y := 270+(i-1)*8
     let who := load64 row t
     let t := char 4 y (if who == load64 (st+48) t && who != 0 then 62 else 32) fg bg t
     let t := hex who 16 20 y fg bg t

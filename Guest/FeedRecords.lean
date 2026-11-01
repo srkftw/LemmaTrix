@@ -31,9 +31,12 @@ partial def transfer (op sector p bytes t : UInt64) : UInt64 :=
 def bankSector (generation : UInt64) : UInt64 := firstSector+2+(generation%2)*65
 def authorized (caller t : UInt64) : Bool :=
   caller != 0 && syscall 147 0 0 0 3 t == caller && load64 0x620000 t == 1
+def backingAllowed (capacity : UInt64) : Bool := capacity != error && capacity >= firstSector+sectorCount
+theorem record_banks_fit_extent : (2 : UInt64)+2*65 = sectorCount := by decide
+theorem record_extent_follows_domain2 : firstSector = (5394976 : UInt64)+1024 := by decide
 def ready (t : UInt64) : UInt64 :=
   let capacity := syscall 64 1 0 0 0 t
-  if capacity == error || capacity < firstSector+sectorCount then error else
+  if !backingAllowed capacity then error else
   let r := Guest.PrivateRecords.ready capacity
   if r == error then error else
   let t := copy Guest.PrivateRecords.key scratch 32 r

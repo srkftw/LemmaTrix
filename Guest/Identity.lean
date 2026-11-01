@@ -5,6 +5,7 @@ import Guest.ServiceHash
 import Guest.LiveMemory
 import Guest.VaultCrypto
 import Guest.ReceiptSDK
+import Guest.WaitSDK
 namespace Guest.Identity
 open Guest.LiveSDK
 -- Installed profile2, rights EXACTLY zero. Kernel role1 grants narrow entropy;
@@ -414,6 +415,17 @@ def feedLifecycle (caller token length t : UInt64) : UInt64 :=
   else if action == 4 && length == 320 then feedRecover caller role token t
   else if action == 5 && length == 64 then response 0 0 0 0 (clearReceipt (lockFeedOwner caller 0 t))
   else receiptFail 2 t
+-- A replaced or dead consumer must not leave accessible keys or consume the
+-- finite table forever. Native current-role queries authenticate incarnation;
+-- no durable record recreates these IPC grants during reclamation.
+partial def reapFeedOwners (i t : UInt64) : UInt64 :=
+  if i == 8 then t else
+  let k := keyAt i
+  let owner := load64 (k+160) t
+  let role := load64 (k+16) t
+  let t := if load64 k t == 1 && owner != 0 && (role == 5 || role == 6) &&
+      syscall 146 role 0 0 0 t != owner then zero k 32 (revokeGrants (load64 (k+8) t) 0 t) else t
+  reapFeedOwners (i+1) t
 def dispatch (caller rights token length t : UInt64) : UInt64 :=
   let op := load64 command t
   let admin := Guest.IdentityPolicy.administrative rights
@@ -440,8 +452,11 @@ def dispatch (caller rights token length t : UInt64) : UInt64 :=
     if !admin && length == 256 then signReceipt caller token t else receiptFail 2 t
   else fail 7 t
 partial def serve (t : UInt64) : UInt64 :=
-  let n := receive (self t) t
+  let t := reapFeedOwners 0 t
+  let n := syscall 36 (self t) incoming 1024 0 t
+  if n == 0 then serve (Guest.WaitSDK.deadline (Guest.WaitSDK.now n+100) (clearScratch n)) else
   if n == error then serve (clearScratch n) else
+  let n := reapFeedOwners 0 n
   let token := load64 (incoming+8) n
   let result := if n >= 96 && load64 (incoming+24) n == 2 then
     dispatch (load64 incoming n) (load64 (incoming+16) n) token (n-32) n else fail 2 n

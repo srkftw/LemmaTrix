@@ -49,9 +49,10 @@ def main():
   audio_profile=audio_profile,network_profile=network_profile,
   supervisor_dma_regions=[dict(start=start,end_exclusive=stop,purpose=name) for start,stop,name in dma],
   objects_physical=dict(code=[0x81100000,0x81160000],data=[0x81160000,0x81170000],stack=[0x81170000,0x81174000],next_service_code=0x81180000),
-  vault_physical=dict(code=[0x81180000,0x811e0000],data=[0x811e0000,0x811f0000],stack=[0x811f0000,0x811f4000],next_service_code=0x81200000),
+  vault_physical=dict(code=[0x81180000,0x811e8000],data=[0x811e8000,0x811f8000],stack=[0x811f8000,0x811fc000],next_service_code=0x81200000),
   network_physical=dict(code=[0x81300000,0x81360000],data=[0x81360000,0x81370000],stack=[0x81370000,0x81374000],next_service_code=0x81380000),
-  ordinary_signed_application_code_limit=262144,process_slots=12,ram_bytes=160*1024*1024,
+  ordinary_signed_application_code_limit=262144,process_slots=15,ordinary_slots=8,service_roles=6,exact_operation_grants=96,
+  extra_ordinary_arenas=[dict(slot=i,start=0x89800000+(i-12)*0x200000,end_exclusive=0x89800000+(i-11)*0x200000) for i in range(12,15)],ram_bytes=160*1024*1024,
   assumptions='static ranges correspond to the documented kernel functions; actual boot/IPC/restart tested separately')
  if a.output:a.output.write_text(json.dumps(result,indent=2)+'\n')
  print(json.dumps(result,indent=2))

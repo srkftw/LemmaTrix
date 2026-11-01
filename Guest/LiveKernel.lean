@@ -399,6 +399,11 @@ def deliver (caller target token src len dst t : UInt64) : UInt64 :=
 -- their ordinary 5,000-tick RPC deadline can expire before this work replies.
 -- Extend only these authenticated local service operations. Remote transfers
 -- remain asynchronous broker jobs, and all other ordinary calls keep 5,000.
+@[noinline] def feedRpcAllowed (caller target endpoint ptr len t : UInt64) : Bool :=
+  Guest.load64 (bindingRole 5) t == endpoint && endpoint == identity target t &&
+    Guest.load64 (proc target+272) t == 5 && len >= 64 && len <= 640 &&
+    Guest.load64 (physical caller ptr) t == 480 && Guest.load64 (physical caller ptr+56) t == 1 &&
+    authorizedGrant (identity caller t) endpoint 480 (Guest.load64 (proc caller+232) t) t
 def rpcBudget (caller target endpoint ptr len t : UInt64) : UInt64 :=
   let operation := if len >= 8 then Guest.load64 (physical caller ptr) t else err
   if caller == 4 && target == 1 && ((operation == 24 && len == 8) || (operation == 180 && len == 16)) then 30000
@@ -414,6 +419,7 @@ def rpcBudget (caller target endpoint ptr len t : UInt64) : UInt64 :=
        (operation == 402 && (len == 192 || len == 320))) &&
       Guest.load64 (physical caller ptr+56) t == 1 &&
       authorizedGrant (identity caller t) endpoint operation (Guest.load64 (proc caller+232) t) t then 30000
+  else if feedRpcAllowed caller target endpoint ptr len t then 30000
   else if target == 3 || endpoint == Guest.load64 (state+200) t then 30000
   else 5000
 
@@ -598,14 +604,16 @@ def console (p ptr n t : UInt64) : UInt64 :=
     let t := encoded (physical p ptr) n t
     emit 10 t
 
-partial def inspectProcesses (p dst t : UInt64) : UInt64 :=
-  if p == 15 then t else
+partial def inspectProcessesBound (limit p dst t : UInt64) : UInt64 :=
+  if p == limit then t else
     let row := dst+p*32
     let t := Guest.store64 row (identity p t) t
     let t := Guest.store64 (row+8) (Guest.load64 (proc p) t) t
     let t := Guest.store64 (row+16) (Guest.load64 (proc p+16) t) t
     let t := Guest.store64 (row+24) (Guest.load64 (proc p+72) t) t
-    inspectProcesses (p+1) dst t
+    inspectProcessesBound limit (p+1) dst t
+
+def inspectProcesses (p dst t : UInt64) : UInt64 := inspectProcessesBound 15 p dst t
 
 def dispatch (p op h ptr n v t : UInt64) : UInt64 :=
   if op == 1 then console p ptr n t
@@ -953,7 +961,7 @@ def dispatch (p op h ptr n v t : UInt64) : UInt64 :=
     let slot := Guest.load64 (proc (h &&& 255)+112) t
     if slot == 0 || slot > 16 then err else 32+copy (release (slot-1)+64) (physical p ptr) 32 t
   else if op == 124 then
-    if identity p t != Guest.load64 (state+216) t || !validFor p ptr n 480 t || n != 480 then err else 480+inspectProcesses 0 (physical p ptr) t
+    if identity p t != Guest.load64 (state+216) t || !validFor p ptr n 480 t || (n != 384 && n != 480) then err else n+inspectProcessesBound (n/32) 0 (physical p ptr) t
   else if op == 120 then
     if (Guest.load64 (proc p+16) t &&& 4096) == 0 then err else Guest.AudioDevice.acquire (identity p t) t
   else if op == 121 then

@@ -1044,7 +1044,7 @@ def fetchPump (t : UInt64) : UInt64 :=
     nativeInstall (result t) (load64 (st+576) t) t
 
 partial def chooseProcess (i audio t : UInt64) : UInt64 :=
-  if i == 12 then error else
+  if i == 15 then error else
   let p := 0x6e6000+i*32
   let rights := load64 (p+16) t
   if load64 (p+8) t == 0 || load64 (p+8) t >= 5 then chooseProcess (i+1) audio t else
@@ -1060,7 +1060,7 @@ partial def chooseProcess (i audio t : UInt64) : UInt64 :=
   -- The active operation was submitted to this exact helper incarnation.
   -- Rebinding would send its inspection to another helper and orphan it.
   if audio == 2 && load64 (st+536) t != 0 then notice 18 t else
-  let r := syscall 124 0 0x6e6000 384 0 t
+  let r := syscall 124 0 0x6e6000 480 0 t
   if r == error then notice 58 r else
   let who := chooseProcess 7 audio r
   if who == error then notice 58 who else
