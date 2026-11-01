@@ -1,0 +1,111 @@
+{
+  "schema": 1,
+  "component": "final-image unattended shared mailbox",
+  "result": "pass",
+  "backend": "qemu",
+  "image": {
+    "path": "build/campaign009-final-v4.bin",
+    "sha256": "90fdde98b45bd9828b1d53a8d7c22e5d361480116ccef08ded5bf1c2f8f668a3",
+    "probe_image_byte_identical": true
+  },
+  "code": {
+    "network": {
+      "bytes": 392240,
+      "sha256": "462a3b6058446121f337eda5fb92ada52dcc88b1532b33bdabcc50fff5d34a19"
+    },
+    "mailbox": {
+      "sha256": "41a29975a4f7457a707120afe5c63a2580fae8d7a5132c4afe347ff2060c8ae0"
+    },
+    "identity": {
+      "bytes": 115952,
+      "sha256": "1437162555de9c55c72806039df49d07ead2ed36a267de5bfc7a3f886028bca7"
+    }
+  },
+  "packages": {
+    "identity": {
+      "project": "identity",
+      "version": "1.0.0",
+      "release_id": "d03157b542a7cb0a0285f640e2eb8861b31c90e0f527b3359d23d09c1ea0536e",
+      "rights": 0,
+      "executable_sha256": "1437162555de9c55c72806039df49d07ead2ed36a267de5bfc7a3f886028bca7",
+      "package_sha256": "9b95779a7b6483e11e12be70351d6d013f5b95767725e2ca1149fde08329c328"
+    },
+    "mailbox": {
+      "project": "mailbox",
+      "version": "1.0.0",
+      "release_id": "ecac8206f23373a2f7c18eee425c911b0f9ea5c446b224ca4826264a70e560ec",
+      "rights": 2048,
+      "executable_sha256": "41a29975a4f7457a707120afe5c63a2580fae8d7a5132c4afe347ff2060c8ae0",
+      "package_sha256": "8d69ce9b15dd3c8e744fd11b49f604345616608611909d3060c6072d1351d7ae"
+    }
+  },
+  "controller": {
+    "source_commit": "6a78477b08e5fae801098025abe8c3dd6200cc02",
+    "path": "tests/native_shared_terminal.py",
+    "additional_flag": "--ownership-boundaries",
+    "runtime_note": "After launch, two optional boundary error handlers were narrowed from BaseException to Exception. No interruption or error occurred in those checks; positive-path RPCs were unchanged."
+  },
+  "capacity": {
+    "simultaneously_admitted_clients": 3,
+    "same_relays": 3,
+    "same_destination_mailbox": true,
+    "onion_link_slots": 12,
+    "bulk_link_slots": 4,
+    "terminal_contexts": 16,
+    "upload_stages": 4,
+    "bytes_per_stage": 8192
+  },
+  "observed": {
+    "three_live_independent_terminal_contexts": true,
+    "native_uploads_coexist_while_one_stalls_after_bytes": 512,
+    "foreign_context_with_correct_bearer": {
+      "append_status": 3,
+      "unfinished_result_collection_status": 1,
+      "cancel_status": 3
+    },
+    "own_cancel_and_reuse": {
+      "cancel_status": 0,
+      "cancelled_handle": 4,
+      "fresh_handle": 5,
+      "stale_append_status": 3,
+      "unrelated_contexts_usable": true
+    },
+    "two_others_commit_exact_retry_and_fetch_while_stalled": true,
+    "independent_replacement_admitted_without_operator_reset": true,
+    "dead_context_staging_resume_status": 3,
+    "unrelated_sessions_remain_usable": true,
+    "all_isolated_guests_stopped": true,
+    "shared_common_campaign_actors_touched": false
+  },
+  "timings_seconds": {
+    "three_client_setup_seconds": 220.6292756039984,
+    "two_clients_commit_and_read_while_other_stalled_seconds": 29.943075922994467,
+    "total": 817.3946646080003,
+    "rpc": {
+      "min": 0.8366760649951175,
+      "median": 1.116850954000256,
+      "max": 1.965945900999941
+    }
+  },
+  "timing_context": "Concurrent setup of the nine native guests in campaign009-connected-v3; timings are shared-host wall times, not an isolated benchmark.",
+  "artifacts": {
+    "evidence": "build/campaign009-final-v4-shared-mailbox-boundaries/evidence.json",
+    "evidence_sha256": "35d0250a8f6e1bfa95b3de233fd3a2888c74e672eb02d0a6437d85f36d1972c5",
+    "boundaries": "build/campaign009-final-v4-shared-mailbox-boundaries/ownership-boundaries.json",
+    "qualification": "build/campaign009-final-v4-shared-mailbox-boundaries/qualification.json"
+  },
+  "interrupted_pre_boundary_setup": {
+    "path": "build/campaign009-final-v4-shared-mailbox/controller-stop.json",
+    "sha256": "c76b4d6b5fe750681366d78713677771b610e58d68362f737edb3d3153c493bc",
+    "failure_record": "build/campaign009-final-v4-shared-mailbox/failure.json",
+    "checks_completed": [],
+    "classification": "intentional controller interruption to extend the same focused probe before application checks; no pass is claimed",
+    "all_seven_isolated_guests_stopped": true
+  },
+  "limits": [
+    "Public capability and opaque ciphertext fixtures qualify native infrastructure ownership, not private social history.",
+    "This component does not exercise Feed or Messenger UI, signed mailbox receipts, Forge, operator restart or independent-host administration.",
+    "No foreign committed-operation refusal was required: a currently authorized capability may reconcile or retry an exact durable commitment after reconnect.",
+    "No native code changed for this focused run; the connected common-image product journey remains separately required."
+  ]
+}
