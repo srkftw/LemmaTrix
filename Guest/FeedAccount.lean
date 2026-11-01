@@ -27,6 +27,9 @@ def scratch : UInt64 := 0x6a0000
 def hashed : UInt64 := 0x6a1000
 def trustedEvent : UInt64 := 0x6a2000
 def trustedId : UInt64 := 0x6a2200
+-- Sealed material and unlock scratch never alias event IDs or causal references.
+def sealedAuthor : UInt64 := 0x6a3000
+def unlockSecret : UInt64 := 0x6a3100
 def checkedBody : UInt64 := 0x6a4000
 def retained : UInt64 := 0x6c0000
 def eq (a b n t : UInt64) : Bool := Guest.LiveMemory.equal a b n t
@@ -67,7 +70,7 @@ def persist (t : UInt64) : UInt64 :=
   let t := store64 (retained+40) (load64 (st+208) t) (store64 (retained+48) (load64 (st+216) t) t)
   let t := store64 (retained+56) (load64 (st+200) t) t
   let t := copy scope (retained+64) 64 (copy publicIdentity (retained+128) 288 t)
-  let t := copy (scope+256) (retained+416) 192 t
+  let t := copy sealedAuthor (retained+416) 192 t
   let t := copy eventId (retained+608) 32 (copy envelope (retained+640) 480 t)
   let t := if (load64 (st+200) t &&& 2) != 0 then copy preferences (retained+1120) 1536 t else t
   -- The exact signed pending outbox is mandatory; optional drafts are separate.
@@ -84,32 +87,32 @@ def retention (length t : UInt64) : UInt64 :=
   let flags := load64 (command+24) t
   if mode == 2 && length == 64 then
     let r := Guest.FeedRetentionSDK.forget t
-    response (if r == 64 then status r else 13) 0 0 0 (store64 (st+192) 0 (zero (scope+256) 24 r))
+    response (if r == 64 then status r else 13) 0 0 0 (store64 (st+192) 0 (zero sealedAuthor 24 r))
   else if length != 96 || mode > 1 || flags > 1 then response 2 0 0 0 t else
-  let t := copy (command+64) (scope+512) 32 t
+  let t := copy (command+64) unlockSecret 32 t
   if mode == 0 then
-    if load64 st t == 0 || load64 (st+64) t != 0 then response 4 0 0 0 (zero (scope+512) 4 t) else
+    if load64 st t == 0 || load64 (st+64) t != 0 then response 4 0 0 0 (zero unlockSecret 4 t) else
     let t := store64 (st+192) 2 t
-    let r := Guest.IdentitySDK.sealFeed (load64 st t) (scope+512) t
-    if r != 256 || status r != 0 then response (if r == error then 1 else status r) 0 0 0 (zero (scope+512) 4 r) else
-    let t := copy (wire+64) (scope+256) 192 (zero (scope+512) 4 r)
+    let r := Guest.IdentitySDK.sealFeed (load64 st t) unlockSecret t
+    if r != 256 || status r != 0 then response (if r == error then 1 else status r) 0 0 0 (zero unlockSecret 4 r) else
+    let t := copy (wire+64) sealedAuthor 192 (zero unlockSecret 4 r)
     let t := store64 (st+192) 1 (store64 (st+200) (1+flags*2) t)
     let r := persist t
     response (if r == error then 13 else 0) 0 1 0 r
   else
-    if load64 st t != 0 || load64 (st+64) t != 0 then response 4 0 0 0 (zero (scope+512) 4 t) else
+    if load64 st t != 0 || load64 (st+64) t != 0 then response 4 0 0 0 (zero unlockSecret 4 t) else
     let r := Guest.FeedRetentionSDK.recover t
-    if r != 64 || status r != 0 || result r != recordBytes then response 13 0 0 0 (zero (scope+512) 4 r) else
+    if r != 64 || status r != 0 || result r != recordBytes then response 13 0 0 0 (zero unlockSecret 4 r) else
     let r := readRecord 0 r
     if r == error || load64 retained r != 0x315443434146544c || load64 (retained+8) r != 1 ||
-        load64 (retained+40) r > 16384 || load64 (retained+48) r > 9 then response 13 0 0 0 (zero (scope+512) 4 r) else
-    let r := Guest.IdentitySDK.recoverFeed (scope+512) (retained+128+96) (retained+416) r
-    if r != 352 || status r != 0 then response (if r == error then 1 else status r) 0 0 0 (zero (scope+512) 4 r) else
+        load64 (retained+40) r > 16384 || load64 (retained+48) r > 9 then response 13 0 0 0 (zero unlockSecret 4 r) else
+    let r := Guest.IdentitySDK.recoverFeed unlockSecret (retained+128+96) (retained+416) r
+    if r != 352 || status r != 0 then response (if r == error then 1 else status r) 0 0 0 (zero unlockSecret 4 r) else
     let t := store64 st (result r) (copy (wire+64) publicIdentity 288 r)
-    let r := Guest.IdentitySDK.sealFeed (load64 st t) (scope+512) t
-    let r := zero (scope+512) 4 r
+    let r := Guest.IdentitySDK.sealFeed (load64 st t) unlockSecret t
+    let r := zero unlockSecret 4 r
     if r != 256 || status r != 0 then response (if r == error then 1 else status r) 0 0 0 r else
-    let t := copy (retained+64) scope 64 (copy (wire+64) (scope+256) 192 r)
+    let t := copy (retained+64) scope 64 (copy (wire+64) sealedAuthor 192 r)
     let t := store64 (st+8) (load64 (retained+24) t) (store64 (st+24) (load64 (retained+40) t) t)
     let t := store64 (st+16) (load64 (retained+48) t) (store64 (st+120) (load64 (retained+40) t) t)
     let t := store64 (st+192) 1 (store64 (st+200) (load64 (retained+56) t) t)
@@ -325,6 +328,7 @@ partial def followedProject (project i t : UInt64) : Bool :=
   let t := Guest.FeedRetentionSDK.lock t
   let r := Guest.IdentitySDK.lockFeed t
   let caller := load64 (st+128) r
+  let r := zero sealedAuthor 24 (zero unlockSecret 4 r)
   let r := zero outboxBody 2048 (zero checkedBody 2048 (zero trustedEvent 60 (zero trustedId 4 (zero retained 4096 (zero scratch 256 r)))))
   let t := store64 (st+128) caller (zero st 32 (zero publicIdentity 36 (zero envelope 60 (zero canonical 32 (zero draft 2048 r)))))
   response (if r == error then 1 else 0) 0 0 0 t

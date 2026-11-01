@@ -28,7 +28,8 @@ def fg : UInt64 := 0xe3ecf4
 def accent : UInt64 := 0x8cdec6
 def dirty (t : UInt64) : UInt64 := store64 st 1 t
 def notice (n t : UInt64) : UInt64 := dirty (store64 (st+32) n t)
-def label (id x y color t : UInt64) : UInt64 :=
+-- Separate label tables keep nested raster calls within the ordinary16KiB stack.
+@[noinline] def label0 (id x y color t : UInt64) : UInt64 :=
   -- 0: Feed / LemmaNET
   if id == 0 then
     let t := store64 (labels+0) 5485436162307089734 t
@@ -157,8 +158,10 @@ def label (id x y color t : UInt64) : UInt64 :=
     let t := store64 (labels+16) 7234309766870409316 t
     let t := store64 (labels+24) 8389754706581218080 t
     text labels 32 x y color bg t
+  else t
+@[noinline] def label1 (id x y color t : UInt64) : UInt64 :=
   -- 16: Locally blocked; federation reversal cannot unblock
-  else if id == 16 then
+  if id == 16 then
     let t := store64 (labels+0) 2340020694141857612 t
     let t := store64 (labels+8) 4279657057812966498 t
     let t := store64 (labels+16) 8386109760942204448 t
@@ -294,8 +297,10 @@ def label (id x y color t : UInt64) : UInt64 :=
     let t := store64 (labels+24) 7311146993654308961 t
     let t := store64 (labels+32) 8319383698887823136 t
     text labels 40 x y color bg t
+  else t
+@[noinline] def label2 (id x y color t : UInt64) : UInt64 :=
   -- 32: Private drafts and follow graph are never published
-  else if id == 32 then
+  if id == 32 then
     let t := store64 (labels+0) 2334399943808741968 t
     let t := store64 (labels+8) 6998720764704813668 t
     let t := store64 (labels+16) 8028911461405320302 t
@@ -444,8 +449,10 @@ def label (id x y color t : UInt64) : UInt64 :=
     let t := store64 (labels+40) 5053150324079355234 t
     let t := store64 (labels+48) 7041647 t
     text labels 51 x y color bg t
+  else t
+@[noinline] def label3 (id x y color t : UInt64) : UInt64 :=
   -- 48: F11 selects actual signed Registry release; C inspects
-  else if id == 48 then
+  if id == 48 then
     let t := store64 (labels+0) 7308327840451211590 t
     let t := store64 (labels+8) 8463498868543419491 t
     let t := store64 (labels+16) 7308892947869625441 t
@@ -602,6 +609,10 @@ def label (id x y color t : UInt64) : UInt64 :=
     let t := store64 (labels+32) 111477728309861 t
     text labels 38 x y color bg t
   else t
+def label (id x y color t : UInt64) : UInt64 :=
+  if id < 16 then label0 id x y color t else
+  if id < 32 then label1 id x y color t else
+  if id < 48 then label2 id x y color t else label3 id x y color t
 partial def wrapped (p n x y t : UInt64) : UInt64 :=
   if n == 0 || y > 306 then t else
   let c := load8 p t

@@ -4,7 +4,7 @@ This is a local UI refusal/recovery check, not the federated acceptance journey.
 The host only packages native code and supplies physical input/display adapters.
 """
 from __future__ import annotations
-import argparse,hashlib,json,struct,sys,time,os,resource
+import argparse,hashlib,json,struct,sys,time,os,resource,traceback
 from pathlib import Path
 from types import SimpleNamespace
 ROOT=Path(__file__).resolve().parents[1]
@@ -24,15 +24,23 @@ def main():
     p.add_argument('--output',type=Path,required=True)
     p.add_argument('--backend',choices=('qemu','x86_64','aarch64'),default='qemu')
     p.add_argument('--retention',action='store_true')
+    p.add_argument('--packages',type=Path,help='frozen signed bundle; never rebuild or re-sign when supplied')
+    p.add_argument('--keep-on-failure',action='store_true',help='leave the native actor alive for inspection after a measured failure')
     a=p.parse_args();a.output.mkdir(parents=True,exist_ok=False)
     image=a.output/'guest.bin';image.write_bytes(a.image.read_bytes());a.image=image
     packages={}
-    # Use existing compiled artifacts so a qualification controller cannot
-    # silently rebuild a different common image or native application.
-    for name,rights in [('identity',0),('feed-account',1024),('feed',799)]:
-        binary=ROOT/'build/live/apps'/(name+'.bin')
-        raw,_=releases.make(binary,'ui-check-'+name,'0.9.0',rights,SIGN,profile=2)
-        path=a.output/(name+'.ltrel');path.write_bytes(raw);packages[name]=path
+    # A supplied signed bundle is the exact common qualification selection.
+    if a.packages:
+        report=json.loads((a.packages/'packages.json').read_text())
+        packages={row['name']:Path(row['path'])for row in report['packages']}
+        for name,rights in [('identity',0),('feed-account',1024),('feed',799)]:
+            assert releases.inspect(packages[name].read_bytes())['rights']==rights
+    else:
+        # Standalone checks use already compiled artifacts without rebuilding.
+        for name,rights in [('identity',0),('feed-account',1024),('feed',799)]:
+            binary=ROOT/'build/live/apps'/(name+'.bin')
+            raw,_=releases.make(binary,'ui-check-'+name,'0.9.0',rights,SIGN,profile=2)
+            path=a.output/(name+'.ltrel');path.write_bytes(raw);packages[name]=path
     federation=hashlib.sha256(b'Feed native UI selected home').hexdigest()
     peer=hashlib.sha256(b'Feed native UI selected permitted peer').hexdigest()
     checks=[]
@@ -57,6 +65,7 @@ def main():
         except BaseException:
             (a.output/'failure.json').write_text(json.dumps(dict(stage=label,last_state=last[0]),indent=2)+'\n')
             raise
+    completed=False
     try:
         result=feed.start(g.client,SimpleNamespace(identity=packages['identity'],owner=packages['feed-account'],ui=packages['feed'],public=PUB,federation=federation,peer=peer))
         g.ui=result['ui'];g.owner=result['owner'];g.device.chord(56,15);time.sleep(.2)
@@ -128,6 +137,23 @@ def main():
                     packages={n:dict(sha256=hashlib.sha256(v.read_bytes()).hexdigest(),release_id=releases.inspect(v.read_bytes())['release_id'])for n,v in packages.items()},
                     limitations=['No connected federation or successful publication is claimed by this focused refusal check.','Retention and public portability are qualified only when --retention is selected.','Whole backing replacement lacks an external freshness anchor.'])
         (a.output/'evidence.json').write_text(json.dumps(report,indent=2)+'\n')
-    finally:g.stop()
+        completed=True
+    except BaseException as error:
+        failed=dict(error=str(error),traceback=traceback.format_exc(),checks=checks,
+                    socket=str(g.path),graphics=str(g.graphics),pid=g.process.pid,
+                    image_sha256=hashlib.sha256(a.image.read_bytes()).hexdigest(),
+                    preserved=a.keep_on_failure,
+                    native_events=g.client.events.decode('ascii','replace') if g.client else '')
+        try:failed['processes']=__import__('identity').instances(g.client)
+        except BaseException as inspection_error:failed['inspection_error']=str(inspection_error)
+        (a.output/'failure.json').write_text(json.dumps(failed,indent=2)+'\n')
+        raise
+    finally:
+        if completed or not a.keep_on_failure:g.stop()
+        else:
+            if g.device:g.device.close()
+            if g.client:g.client.close()
+            if g.log:g.log.close()
+            print('PRESERVED',g.path,'pid',g.process.pid,flush=True)
 
 if __name__=='__main__':main()
