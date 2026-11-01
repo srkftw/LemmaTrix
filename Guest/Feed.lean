@@ -620,6 +620,17 @@ def notice (n t : UInt64) : UInt64 := dirty (store64 (st+32) n t)
     let t := store64 (labels+56) 7308910564438403432 t
     let t := store64 (labels+64) 11890 t
     text labels 66 x y color bg t
+  -- 65: Project admission unavailable or revoked; no action granted.
+  else if id == 65 then
+    let t := store64 (labels+0) 2338603393740665424 t
+    let t := store64 (labels+8) 8028074750291829857 t
+    let t := store64 (labels+16) 7593480607560441966 t
+    let t := store64 (labels+24) 8245845062720840044 t
+    let t := store64 (labels+32) 7234306502912471584 t
+    let t := store64 (labels+40) 8386653723030331451 t
+    let t := store64 (labels+48) 7953764204164312937 t
+    let t := store64 (labels+56) 778331508 t
+    text labels 60 x y color bg t
   else t
 def label (id x y color t : UInt64) : UInt64 :=
   if id < 16 then label0 id x y color t else
@@ -652,7 +663,9 @@ def draw (_surface t : UInt64) : UInt64 :=
         else t
       let n := load64 (st+40) t
       let offset := if n > 1300 then n-1300 else 0
-      let t := wrapped (compose+offset) (n-offset) 14 146 t
+      let card := load64 (st+144) t == 3
+      let t := if card then hexBytes (references+32) 32 14 158 (label 33 14 146 accent t) else t
+      let t := wrapped (compose+offset) (n-offset) 14 (if card then 182 else 146) t
       hex n 4 540 316 accent bg t
     else if mode == 3 then
       let t := label 21 14 122 fg t
@@ -857,6 +870,7 @@ partial def readPortable (object offset t : UInt64) : UInt64 :=
         zero content 2048 (zero selected 60 (zero eventId 4 (store64 (st+176) 0 (store64 (st+72) 0 (store64 (st+200) 0 t)))))
       else t
     if action == 14 then notice 64 (store64 (st+344) 0 t) else
+    if action == 20 then notice 65 (store64 (st+312) 0 t) else
     notice (if code == 12 then 13 else if code == 15 then 16 else if code == 7 then 14 else 12) t else
   if action == 0 then
     let phase := load64 (wire+32) t
