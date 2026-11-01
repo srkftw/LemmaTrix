@@ -89,9 +89,23 @@ def mount (t : UInt64) : UInt64 :=
 
 partial def locate (ns i t : UInt64) : UInt64 :=
   if i == 8 then error else
-    if load64 (row i) t == magic && eq ns (row i+48) 32 t then i else locate ns (i+1) t
+    if (load64 (row i) t == magic && eq ns (row i+48) 32 t) ||
+      (load64 (grant i) t != 0 && eq ns (grant i+32) 32 t) then i else locate ns (i+1) t
 partial def vacant (i t : UInt64) : UInt64 :=
   if i == 8 then error else if load64 (row i) t == 0 && load64 (grant i) t == 0 then i else vacant (i+1) t
+def grantReclaimable (owner alive : UInt64) : Bool := owner != 0 && alive == error
+theorem current_owner_keeps_grant (owner alive : UInt64) (current : alive ≠ error) :
+    grantReclaimable owner alive = false := by simp [grantReclaimable, current]
+-- Empty namespaces have no durable root yet. Their old ephemeral grant must
+-- neither strand a slot after consumer death nor be revived by a replacement.
+-- Committed namespace rows remain intact; fresh permit allocates a new handle.
+partial def reapGrants (i t : UInt64) : UInt64 :=
+  if i == 8 then t else
+  let g := grant i
+  let owner := if load64 g t == 0 then 0 else load64 (g+8) t
+  let alive := if owner == 0 then 0 else syscall 34 owner 0 0 0 t
+  let t := if grantReclaimable owner alive then zero g 16 alive else alive
+  reapGrants (i+1) t
 def permit (length t : UInt64) : UInt64 :=
   let target := load64 (command+8) t
   let role := load64 (command+16) t
@@ -238,7 +252,7 @@ def read (caller h offset count t : UInt64) : UInt64 :=
 def dispatch (caller rights length t : UInt64) : UInt64 :=
   let owner := load64 txn t
   let alive := if owner == 0 then 0 else syscall 34 owner 0 0 0 t
-  let t := if owner != 0 && alive == error then abandon alive else alive
+  let t := reapGrants 0 (if owner != 0 && alive == error then abandon alive else alive)
   let op := load64 command t
   let h := load64 (command+8) t
   let admin := (rights &&& 0x100000000) != 0
