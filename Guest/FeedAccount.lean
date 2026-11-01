@@ -175,8 +175,10 @@ def complete (bytes purpose t : UInt64) : UInt64 :=
   let t := validateAnswer bytes purpose t
   let code := status t
   let bytes := if code == 9 then 64 else bytes
-  let t := saveAnswer bytes purpose (store64 (st+64) 0 t)
-  if purpose >= 5 then t else
+  let t := store64 (st+64) 0 t
+  -- GUI query completions retain their own response until outcome collection.
+  -- Background publication receipts cannot replace that independently owned row.
+  if purpose >= 5 then saveAnswer bytes purpose t else
   if code != 0 && code != 6 && code != 10 then failed code t else
   if purpose == 1 then
     if bytes != 64 then failed 9 t else
@@ -198,6 +200,7 @@ def complete (bytes purpose t : UInt64) : UInt64 :=
   if serial == 0 then
     let phase := load64 (st+32) t
     if phase != 5 && phase != 6 then t else
+    if phase == 6 && Guest.FeedEvent.zeroed (envelope+304) 32 t then t else
     let now := Guest.WaitSDK.now t
     if now < load64 (st+232) now || load64 (st+240) now >= 64 then now else pollUpload now
   else
