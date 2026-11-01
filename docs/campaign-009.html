@@ -8,7 +8,7 @@
 <h2>Reproduce</h2>
 <pre><code>./lt build --clean
 cp build/live/guest.bin build/campaign009-final-v2.bin
-./lt feed package --publisher-private tests/keys/development-rsa.pem --output build/campaign009-final-v2-feed
+./lt feed package --publisher-private tests/keys/development-rsa.pem --account-parent 4388f30ab958b655f441b6ff8675cfc53fb55a8d7075d6830a96804724e10f73 --output build/campaign009-final-v4-feed
 ./lt messenger package --publisher-private tests/keys/development-rsa.pem --output build/campaign009-final-v2-messenger
 PYTHONPATH=tools python3 - &lt;&lt;'PYREGISTRY'
 import live_build
@@ -18,17 +18,17 @@ PYREGISTRY
 <p>Use the <a href="native-feed.html">native Feed guide</a> for standalone personal/federation commands, relay enrollment, explicit mode 3 replication, moderation and sealed recovery. Commands continue to work after an acceptance controller exits. The checked-in RSA development publisher is the disclosed existing package/project bootstrap; it signs no Feed author event, moderation event or replication identity.</p>
 <pre><code>PYTHONPATH=tools python3 tests/native_community_campaign.py \
   --image build/campaign009-final-v2.bin \
-  --feed-packages build/campaign009-final-v2-feed \
+  --feed-packages build/campaign009-final-v4-feed \
   --messenger-ready build/campaign009-final-v2-messenger/ready.json \
   --registry build/live/apps/campaign009-registry-final.bin \
   --public-graph tests/fixtures/campaign008-existing-forge-closure.json \
   --publisher tests/fixtures/campaign008-existing-forge-publisher.pub \
   --output build/campaign009-connected-v2 --mixed
 # Preserve these native actors for the connected continuations:
-PYTHONPATH=tools python3 tests/native_community_reconnect.py --attach build/campaign009-connected-v2 --feed-packages build/campaign009-final-v2-feed
+PYTHONPATH=tools python3 tests/native_community_reconnect.py --attach build/campaign009-connected-v2 --feed-packages build/campaign009-final-v4-feed
 PYTHONPATH=tools python3 tests/native_feed_project_account.py --attach build/campaign009-connected-v2 --stage project
-PYTHONPATH=tools python3 tests/native_community_policy_restart.py --attach build/campaign009-connected-v2 --feed-packages build/campaign009-final-v2-feed --stage moderation
-PYTHONPATH=tools python3 tests/native_community_policy_restart.py --attach build/campaign009-connected-v2 --feed-packages build/campaign009-final-v2-feed --stage restart --resume
+PYTHONPATH=tools python3 tests/native_community_policy_restart.py --attach build/campaign009-connected-v2 --feed-packages build/campaign009-final-v4-feed --stage moderation
+PYTHONPATH=tools python3 tests/native_community_policy_restart.py --attach build/campaign009-connected-v2 --feed-packages build/campaign009-final-v4-feed --stage restart --resume
 # Last: select the original federation offline for the approved hosting move.
 PYTHONPATH=tools python3 tests/native_feed_project_account.py --attach build/campaign009-connected-v2 --stage migrate --alpha-offline-approved
 </code></pre>
@@ -40,8 +40,9 @@ PYTHONPATH=tools python3 tests/native_feed_project_account.py --attach build/cam
 <p>The signer probe independently verified native Ed25519 output and refused substituted audience/content/kind, consumed approval, wrong role/scope and legacy administrative Feed-signing bypass. Actual storage checks preserved a partial writer while independent reads proceeded; role 6 roots recovered after restart and dead empty namespaces were reclaimed with fresh handles. Installed AArch64 namespace/IPC/block checks passed on the final image under qemu-aarch64 in 17.65 seconds. A longer 13,422-byte interleaved read/write check also passed on its identified earlier image; it is not a full installed Feed/Messenger qualification.</p>
 <p>Retention testing found a real partial-recovery bug: clearing scratch replaced the signer response-length value before checking it. The corrected native owner restored the same author, sequence and exact pending event through two fresh authorizations, signer generations 2→3 and committed record roots 3→4. Recovery remains visibly reconciliation-required. Public profile import restores approved references/preferences under separately approved destination identity; it does not claim a certified cross-identity link.</p>
 <p>The first final-image attempt exposed a long-running listener bug: acceptance reused the original idle listener setup deadline, so a later client was immediately timed out. Relay2 reported <code>51</code> and Alice/upstream <code>38</code>; Charlie remained admitted in phase <code>3</code>. That failed attempt, image and controller segments remain identified. Acceptance must use the corrected listener lifecycle and a newly identified image.</p>
+<p>A prepublication check also found a real status-wire defect: the owner copied 96 payload bytes after a 64-byte header but advertised 96 total, while the UI required 160. The fixed 0.9.1 owner reports the complete 160 bytes. An isolated native SDK consumer and real graphical F2/export check passed on the common image. The connected continuation replaces only unused personal Feed owners/UI through normal package admission and fresh scoped personal routes; no accepted Feed event or operator service is reset.</p>
 <h2>Resource and authority boundaries</h2>
-<p>The deliberate extension provides 15 process slots/eight ordinary slots, six service roles and 96 exact operation grants. Ordinary code remains 256 KiB with 2 MiB arenas and 16 KiB stacks. Network is 388,624 bytes within its 384 KiB built-in profile; Feed UI 174,040, account 145,428 and federation 157,688 bytes each fit ordinary packages. The <a href="machine-abi.html">machine contract</a> records disjoint mappings and the Vault 416 KiB built-in profile.</p>
+<p>The deliberate extension provides 15 process slots/eight ordinary slots, six service roles and 96 exact operation grants. Ordinary code remains 256 KiB with 2 MiB arenas and 16 KiB stacks. Network is 388,624 bytes within its 384 KiB built-in profile; Feed UI 174,040, account 145,376 and federation 157,688 bytes each fit ordinary packages. The <a href="machine-abi.html">machine contract</a> records disjoint mappings and the Vault 416 KiB built-in profile.</p>
 <p>Sixteen transport channels partition into 12 routed and 4 bulk channels. A relay needs an incoming/outgoing pair: six is a bound, while three concurrent personal clients were actually observed. Sixteen terminal banks carry independent keys/counters/fragments/owned tokens; one finite IPC dispatch lane is fairly shared. Mailbox has four 8 KiB stages and one durable writer. Feed has four 16 KiB stages, seven 128 KiB content segments, a 37,888-byte index,64-event/896 KiB total allowance and 16-event/256 KiB per-author allowance. Its 128 KiB segment buffer is writer workspace; ordinary reads use ServerStore's separate 4 KiB verified page.</p>
 <p>Replication commits at most 1 MiB of transport allocation before issuing a Network grant, from a finite selected total of at most 16 MiB. Unused allocation is burned after restart. Each outgoing event reserves its whole worst-case byte/work allowance; each of at most nine attempts is durably recorded before transmission, with at most 128 polls per attempt. A duplicate cannot renew its event reservation. Personal mode 1 and explicit inter-operator mode 3 have separate authority and scheduling; there is no direct privacy fallback.</p>
 <p>Source proofs concern predicates actually used for stage ownership, signed scope, budget reservations, local-block visibility, recovered generations and dead-owner reclamation. They do not prove the compiler, devices, cryptographic implementation, complete imperative state machine or shipped binary. The machine record names those predicates without inflating a theorem count.</p>

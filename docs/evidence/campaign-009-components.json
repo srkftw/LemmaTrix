@@ -709,6 +709,52 @@
         ],
         "limitations": "Focused compiled RV64 state transitions, including provisioned predicate inputs for bulk reconnect; no native certificate-admission claim from this fixture. AArch64 assembly emulator runs under qemu-aarch64; no physical hardware or full native Messenger qualification."
       }
+    },
+    {
+      "name": "native-account-public-status",
+      "local_record": "build/native-feed-identity-status-fix/evidence.json",
+      "record_sha256": "937504fcc029392726ccba9e202fb2f58318fea48f950a560752bc990ffe3e70",
+      "record": {
+        "schema": 1,
+        "image_sha256": "582f4d24d94874898e0bba18c98ef04d91e969f14aaf1ca0678c5152f50ae6f2",
+        "packages": {
+          "identity": {
+            "release_id": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+            "sha256": "d6467b6bf812768f4e25a466c4ce0c425635444f78b4b34fc85c50e1579ea5aa"
+          },
+          "feed-account": {
+            "release_id": "631ccf112b4ec8d8113630ee2af304d9beb5ceb70671c5be2092b476dedd22a1",
+            "sha256": "05b2241f2ca263cc5b033f0e8aa6552961a97c420041d5764a5b43caa731190e"
+          },
+          "feed": {
+            "release_id": "2857edd061e198b013101f72221a1cbae06a1ba878da908447950306a944cf8a",
+            "sha256": "65444685ece3fcefb010eed026eb7afc154802178543cef355ecff01a762780c"
+          },
+          "status-client": {
+            "release_id": "60230b801bdd82472bfec977be44d5c701be7a7c3b5bcdafcdea34c4092a1f74",
+            "sha256": "000b306dab4756305be8dc9b9ea5a9bf12bbee2866a406ec75ed805fe3600502"
+          }
+        },
+        "checks": [
+          {
+            "check": "actual bound native AccountSDK consumer receives exactly160 bytes including public key and both public scopes",
+            "result": "pass",
+            "bytes": 160,
+            "public": "b5f2ab5bd4ebf8c551be3412b8a191d62bc74e4eff30752ccd3a81244ae4d842",
+            "response_sha256": "5692cf98ed3a6ddb78d21e525fff72330643ccf6630d82f8a89f66371228173c"
+          },
+          {
+            "check": "ordinary native F2 identity gesture displays the exact public key and scopes exported by its separately owned account",
+            "result": "pass",
+            "public": "cf46d9d985e5214548a3ab1c657b3070906e30876727ac07a518ac2d1d5ca44d",
+            "profile_sha256": "b27fe68bc91484892cd145c227e39d1a783fdaa78939ade92de8127965b38e55",
+            "profile_bytes": 2048
+          }
+        ],
+        "frame": "8585339de309310d689883b35dd46f14cfb651507badd1aa36f04be2de47258e",
+        "result": "pass",
+        "seconds": 84.34409918299934
+      }
     }
   ],
   "assurance": "Local one-host execution. AArch64 is qemu-aarch64 emulation. No physical hardware, independent operators, Tor interoperability, post-quantum security or whole-store external freshness claim."

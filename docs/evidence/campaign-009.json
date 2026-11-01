@@ -23,14 +23,14 @@
   "source": {
     "network": "d2e592a",
     "feed_service": "b936ea0",
-    "feed_ui_account": "fe92778",
+    "feed_ui_account": "b706c10",
     "signer": "a380be6",
     "namespace_reclamation": "def8a34"
   },
   "feed_packages": [
     {
       "name": "identity",
-      "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v2-feed/identity.ltrel",
+      "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v4-feed/identity.ltrel",
       "rights": 0,
       "code_bytes": 115952,
       "code_sha256": "1437162555de9c55c72806039df49d07ead2ed36a267de5bfc7a3f886028bca7",
@@ -39,16 +39,16 @@
     },
     {
       "name": "feed-account",
-      "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v2-feed/feed-account.ltrel",
+      "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v4-feed/feed-account.ltrel",
       "rights": 1024,
-      "code_bytes": 145428,
-      "code_sha256": "74eedbeae9b3eca1f1184fd8b826c17d66766b32e7e6be0d5bbf96bb4e7167c8",
-      "release_id": "4388f30ab958b655f441b6ff8675cfc53fb55a8d7075d6830a96804724e10f73",
-      "package_sha256": "a9e8d0bf8e04f091ef4cff0c69fbe27cbba253a0b35d8f39e05b3396269312b0"
+      "code_bytes": 145376,
+      "code_sha256": "fb1f2e8e34a47263d3450898a6f800d3f72a79081644413180b44b574951ccd8",
+      "release_id": "f50eaa12d7dc69c962584ce34a12d53d9b064970c640d23d594e930d7fc4bc07",
+      "package_sha256": "9d9be1ad2238d6e5063ac5664786939c2c186a08b4f613ed8912e2f9eb985b50"
     },
     {
       "name": "feed",
-      "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v2-feed/feed.ltrel",
+      "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v4-feed/feed.ltrel",
       "rights": 799,
       "code_bytes": 174040,
       "code_sha256": "ac8bd8c835aec5bc196c75355882e3a5def3dae3ef342691cd73be466bb909c7",
@@ -57,7 +57,7 @@
     },
     {
       "name": "feed-federation",
-      "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v2-feed/feed-federation.ltrel",
+      "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v4-feed/feed-federation.ltrel",
       "rights": 3072,
       "code_bytes": 157688,
       "code_sha256": "44737b49141b4bfc69df19f92935aaad1065b5123356ffd899b1a82d3e8180ee",
@@ -113,7 +113,7 @@
     }
   ],
   "common_run": {
-    "command": "PYTHONPATH=tools python3 tests/native_community_campaign.py --image build/campaign009-final-v2.bin --feed-packages build/campaign009-final-v2-feed --messenger-ready build/campaign009-final-v2-messenger/ready.json --output build/campaign009-connected-v2 --mixed --prior-attempt build/campaign009-connected",
+    "command": "PYTHONPATH=tools python3 tests/native_community_campaign.py --image build/campaign009-final-v2.bin --feed-packages build/campaign009-final-v4-feed --messenger-ready build/campaign009-final-v2-messenger/ready.json --output build/campaign009-connected-v2 --mixed --prior-attempt build/campaign009-connected --resume",
     "actors": [
       "alice",
       "bob",
@@ -131,8 +131,179 @@
     },
     "expected_events": 17,
     "result": "not-yet-qualified",
-    "reproduction_command": "PYTHONPATH=tools python3 tests/native_community_campaign.py --image build/campaign009-final-v2.bin --feed-packages build/campaign009-final-v2-feed --messenger-ready build/campaign009-final-v2-messenger/ready.json --output build/campaign009-connected-v2 --mixed",
-    "prior_attempt_argument": "evidence-only hashes; no credentials/backing/grants reused"
+    "reproduction_command": "PYTHONPATH=tools python3 tests/native_community_campaign.py --image build/campaign009-final-v2.bin --feed-packages build/campaign009-final-v4-feed --messenger-ready build/campaign009-final-v2-messenger/ready.json --output build/campaign009-connected-v2 --mixed",
+    "prior_attempt_argument": "evidence-only hashes; no credentials/backing/grants reused",
+    "initial_command": "PYTHONPATH=tools python3 tests/native_community_campaign.py --image build/campaign009-final-v2.bin --feed-packages build/campaign009-final-v2-feed --messenger-ready build/campaign009-final-v2-messenger/ready.json --output build/campaign009-connected-v2 --mixed --prior-attempt build/campaign009-connected",
+    "observed_checkpoints": {
+      "three-feed": true,
+      "replication": true,
+      "long-read": true,
+      "follow-reply": true,
+      "history": true,
+      "cancel": false
+    },
+    "events_observed": {
+      "ordinary": {
+        "id": "e59ff78d29a95c5ebca5aea06504f7fbe1c20b05f2ce7e13423b183e63cbc128",
+        "author": "548bd018ff5eadb8a9fb53d3b1dff9340cee21b56c002b2cf693b89116100822",
+        "kind": 1,
+        "bytes": 126,
+        "content_sha256": "541c88ecfd5e37d6e433746b0e38ce252c25c94a6874966ab975cee0c2cbb22b",
+        "signed_sha256": "e59ff78d29a95c5ebca5aea06504f7fbe1c20b05f2ce7e13423b183e63cbc128"
+      },
+      "long": {
+        "id": "00880c2c3701b12e583eae9d5731f51003452364b56129dc0d16a6d32b296fd8",
+        "author": "548bd018ff5eadb8a9fb53d3b1dff9340cee21b56c002b2cf693b89116100822",
+        "kind": 1,
+        "bytes": 1330,
+        "content_sha256": "da933b261f757e2e3556bd30c008f04fbdd90ce29e277d65883d4e3c0ca9e557",
+        "signed_sha256": "00880c2c3701b12e583eae9d5731f51003452364b56129dc0d16a6d32b296fd8"
+      },
+      "reply": {
+        "id": "40171ed42e73faf6f7ffabb80d9d7276639c9b4fbd36457e8d9dfbba8549767d",
+        "author": "47c04018f38f29c47f422edb74c9e0fcd6ed0cc477aab1fda7f8002a7383bfbf",
+        "kind": 2,
+        "bytes": 142,
+        "content_sha256": "c3b55f0ac6d9e6debdb353279f57693aa8ebf54b34411829709e63efb183235a",
+        "signed_sha256": "40171ed42e73faf6f7ffabb80d9d7276639c9b4fbd36457e8d9dfbba8549767d"
+      },
+      "review-0": {
+        "id": "d1acf84b3c45853d1ec48830a35f667a1854cae793092c74304a6adec66bcb13",
+        "author": "548bd018ff5eadb8a9fb53d3b1dff9340cee21b56c002b2cf693b89116100822",
+        "kind": 1,
+        "bytes": 135,
+        "content_sha256": "4ca22c1ff9a33c74c8e2e918c7b8be5ea1382b0703951397ced9aded8eed69c9",
+        "signed_sha256": "d1acf84b3c45853d1ec48830a35f667a1854cae793092c74304a6adec66bcb13"
+      },
+      "review-1": {
+        "id": "310a1048464ebed44d20b392465a091a2aaf92de7b80dbd9e83bfc5636b55c25",
+        "author": "47c04018f38f29c47f422edb74c9e0fcd6ed0cc477aab1fda7f8002a7383bfbf",
+        "kind": 1,
+        "bytes": 147,
+        "content_sha256": "7478de5c67a7b4b76250e7afe14a88be663b9ef070a95e5357e1604df5048d12",
+        "signed_sha256": "310a1048464ebed44d20b392465a091a2aaf92de7b80dbd9e83bfc5636b55c25"
+      },
+      "review-2": {
+        "id": "cc817b70689713245b501204834c8dc37be7ddc68ef05db4fddd59cb0ef4dc6d",
+        "author": "6b9cfa31cd427e556bc1516514ea1bc499e86c992066975aef5ecea1162f5f55",
+        "kind": 1,
+        "bytes": 149,
+        "content_sha256": "6232aff56fca73d062dd25c9c17cb783935dac3ce41b9e33a9596dc4f1fd81c4",
+        "signed_sha256": "cc817b70689713245b501204834c8dc37be7ddc68ef05db4fddd59cb0ef4dc6d"
+      },
+      "review-3": {
+        "id": "8c25051c4b708849f9b7415b71fef4aa7cce54e1de3352f3a8542c2ba80ec0f2",
+        "author": "548bd018ff5eadb8a9fb53d3b1dff9340cee21b56c002b2cf693b89116100822",
+        "kind": 1,
+        "bytes": 145,
+        "content_sha256": "e1ab90a478d350a70c33be1a9c31ac7b4f871b83b970ee2e8d23f01570bf8f22",
+        "signed_sha256": "8c25051c4b708849f9b7415b71fef4aa7cce54e1de3352f3a8542c2ba80ec0f2"
+      },
+      "review-4": {
+        "id": "d421daceb4e5b944a8c21544e46e1c5f9ef48ab9adbf6b4ebdc1e75b6d2029d2",
+        "author": "47c04018f38f29c47f422edb74c9e0fcd6ed0cc477aab1fda7f8002a7383bfbf",
+        "kind": 1,
+        "bytes": 147,
+        "content_sha256": "82d52ac7efdcbc0bf777772c06cfee2f6c25bbecdcc540c00a20ddbdfb701dce",
+        "signed_sha256": "d421daceb4e5b944a8c21544e46e1c5f9ef48ab9adbf6b4ebdc1e75b6d2029d2"
+      },
+      "review-5": {
+        "id": "c9284155fc075b62754d11d037eedd9b8555356a6fe02e89d1d97fe8f26cb639",
+        "author": "6b9cfa31cd427e556bc1516514ea1bc499e86c992066975aef5ecea1162f5f55",
+        "kind": 1,
+        "bytes": 150,
+        "content_sha256": "5989cfb675f726ba1aadef1d4544e2f09ffe5ac35319dff8da53ce4ccfbf7805",
+        "signed_sha256": "c9284155fc075b62754d11d037eedd9b8555356a6fe02e89d1d97fe8f26cb639"
+      },
+      "review-6": {
+        "id": "ff9dee412b2d1b6847264c675ff1599bc8aeb5a89aaef371f529308336feaccf",
+        "author": "548bd018ff5eadb8a9fb53d3b1dff9340cee21b56c002b2cf693b89116100822",
+        "kind": 1,
+        "bytes": 149,
+        "content_sha256": "8d3d1e68804c17c3b8cc5a3397236c38bc0f0693fa743345f31883cd3b14df9e",
+        "signed_sha256": "ff9dee412b2d1b6847264c675ff1599bc8aeb5a89aaef371f529308336feaccf"
+      },
+      "review-7": {
+        "id": "b9179c7999b61a741b82e4e2957e3927e3b81764800a66de1322c21143689da3",
+        "author": "47c04018f38f29c47f422edb74c9e0fcd6ed0cc477aab1fda7f8002a7383bfbf",
+        "kind": 1,
+        "bytes": 141,
+        "content_sha256": "9471edd884fd2d80f32aaa6afda65f74155c0e57f91c83395c98f1a9772be2ff",
+        "signed_sha256": "b9179c7999b61a741b82e4e2957e3927e3b81764800a66de1322c21143689da3"
+      },
+      "review-8": {
+        "id": "e7f3c4ea43848014a84d7d56b3096d0367e8aaa00c2c33d6c3c99f659ae8b6ba",
+        "author": "6b9cfa31cd427e556bc1516514ea1bc499e86c992066975aef5ecea1162f5f55",
+        "kind": 1,
+        "bytes": 133,
+        "content_sha256": "e0612bb1c8801583d2c4164ab2a944917a7d00c07599dd1c1fbac5e2f86f806c",
+        "signed_sha256": "e7f3c4ea43848014a84d7d56b3096d0367e8aaa00c2c33d6c3c99f659ae8b6ba"
+      },
+      "review-9": {
+        "id": "e3bfb05eeebb5cd34673d17d3b44ac4e4bf14ff43cc32239e919641c72ca4ef5",
+        "author": "548bd018ff5eadb8a9fb53d3b1dff9340cee21b56c002b2cf693b89116100822",
+        "kind": 1,
+        "bytes": 148,
+        "content_sha256": "132737f451305100ffe91d6277e380c001e722ffe2ffc81c40a0e0ae8b72a297",
+        "signed_sha256": "e3bfb05eeebb5cd34673d17d3b44ac4e4bf14ff43cc32239e919641c72ca4ef5"
+      },
+      "review-10": {
+        "id": "9d1edfdb9d724a7b0ba765465934f21dfaeefd3e16bbc0dad65083d950308933",
+        "author": "47c04018f38f29c47f422edb74c9e0fcd6ed0cc477aab1fda7f8002a7383bfbf",
+        "kind": 1,
+        "bytes": 162,
+        "content_sha256": "ecceb580c0af69d0117ec0ed4a65985cf827031f74a92ddf694bf344b3a9155b",
+        "signed_sha256": "9d1edfdb9d724a7b0ba765465934f21dfaeefd3e16bbc0dad65083d950308933"
+      },
+      "review-11": {
+        "id": "5bf819e1546eb7401e0e7209566d4b3c79bafd6cdde1909cd6302320c181efcb",
+        "author": "6b9cfa31cd427e556bc1516514ea1bc499e86c992066975aef5ecea1162f5f55",
+        "kind": 1,
+        "bytes": 140,
+        "content_sha256": "da0d294baade36211e6d6ddcf0f12bb0324a3d5128a20aac4c93480bb59bcb55",
+        "signed_sha256": "5bf819e1546eb7401e0e7209566d4b3c79bafd6cdde1909cd6302320c181efcb"
+      },
+      "review-12": {
+        "id": "c9edc9bb233e0df093fd030df9c869da15d95453eea8acc6b0c0acf7b70e8d24",
+        "author": "548bd018ff5eadb8a9fb53d3b1dff9340cee21b56c002b2cf693b89116100822",
+        "kind": 1,
+        "bytes": 150,
+        "content_sha256": "8d31d627d3066dbf6c3caee7e50ffa080c4f6856ec16dc19a3c8395e055ab569",
+        "signed_sha256": "c9edc9bb233e0df093fd030df9c869da15d95453eea8acc6b0c0acf7b70e8d24"
+      },
+      "review-13": {
+        "id": "13bea148262c60aa28b8a3ab3c8acb1e83febe451997f4abccfeb39791bca483",
+        "author": "47c04018f38f29c47f422edb74c9e0fcd6ed0cc477aab1fda7f8002a7383bfbf",
+        "kind": 1,
+        "bytes": 151,
+        "content_sha256": "3bbe1c686aff6139a4d2b193cf996d42d4b4bb0713bc22d33ec539ba0eac4ec4",
+        "signed_sha256": "13bea148262c60aa28b8a3ab3c8acb1e83febe451997f4abccfeb39791bca483"
+      }
+    },
+    "controller_segments": [
+      {
+        "git_head": "6dd0da69d673dd350da94d6de865a288fae1012f",
+        "controller_sha256": "8bdba8b723085443501b7400d302cc5cdd6f5cd4ae5e384b1e98ad545ec5db98",
+        "controller_snapshot": "controller-1.py",
+        "started_time_utc": "2026-11-01T06:26:53.171120+00:00",
+        "prior_failure_sha256": null
+      },
+      {
+        "git_head": "217c5a2269f0f510eced3884ffd569789d6d607a",
+        "controller_sha256": "9b1641edc3c59048731c7b7ea92da6674d55597545e744e062d3a1e23995085a",
+        "controller_snapshot": "controller-2.py",
+        "started_time_utc": "2026-11-01T07:07:08.689778+00:00",
+        "prior_failure_sha256": "1f3746d722b2647754145f1133417d2eb0708f6b77a93c23223d0e7d6b494445"
+      },
+      {
+        "git_head": "fab4bc949248725b4273ca80676dca3859ef3b9d",
+        "controller_sha256": "fe5f04a4137f81559384adc09fb10fd6abb4988d25a018a49226858e88d20dc4",
+        "controller_snapshot": "controller-3.py",
+        "started_time_utc": "2026-11-01T07:29:08.537386+00:00",
+        "prior_failure_sha256": "a314b9124e30bec3d6b89f5462d8cd4e69273147631fe6d5c1319dbb676c25ff"
+      }
+    ],
+    "observed_discussion_event_count": 17
   },
   "component_record": "campaign-009-components.json",
   "capacity": {
@@ -198,10 +369,11 @@
     "One-host local integration does not demonstrate independent administration.",
     "AArch64 is emulated; full installed Feed/Messenger remains unqualified.",
     "Private remote-home appeals, certified cross-identity continuity and encrypted private portable export remain unsupported.",
-    "Finite64-event store/fixed peer policy; no automatic compaction or infinite history.",
+    "Finite 64-event store/fixed peer policy; no automatic compaction or infinite history.",
     "Whole-store replacement lacks an external freshness anchor.",
     "No physical-hardware, independent security-review, post-quantum, Tor interoperability, global-correlation or hostile-government-resilience claim.",
-    "Small private Messenger groups, Wallet/LemmaCoin/economics, modes2/4 and full native self-hosting remain separate obligations."
+    "Small private Messenger groups, Wallet/LemmaCoin/economics, modes2/4 and full native self-hosting remain separate obligations.",
+    "Inter-operator live grants expire after at most 100000 local work ticks; explicit unchanged-policy renewal spends another bounded allocation from the same durable total. No automatic lease extension is implemented."
   ],
   "prior_common_attempts": [
     {
@@ -477,5 +649,18 @@
     "genuine_project_archive_sha256": "56cc52e18fe0e9f37a4ad32fe2f47aa62dc29a2d7c0472ec9609d3b8e6a328f5",
     "original_publisher": "tests/fixtures/campaign008-existing-forge-publisher.pub",
     "original_publisher_sha256": "cac01d2783e97891c3bee7bd3690fd6661d55e368f76a24b209f105d63b983af"
+  },
+  "prepublication_account_repair": {
+    "cause": "Account status copied96 payload bytes after64 header but advertised96 total; native UI required160, leaving its cached public identity zero",
+    "source": "b706c10",
+    "replacement": "ordinary personal UI/account stop, corrected0.9.1 owner admission, same exact UI/Identity relaunch, fresh ephemeral scoped key and own route; no federation/relay/Messenger reset",
+    "new_account_release": "f50eaa12d7dc69c962584ce34a12d53d9b064970c640d23d594e930d7fc4bc07",
+    "new_account_code_sha256": "fb1f2e8e34a47263d3450898a6f800d3f72a79081644413180b44b574951ccd8",
+    "before_publication": true,
+    "package_parent": "4388f30ab958b655f441b6ff8675cfc53fb55a8d7075d6830a96804724e10f73",
+    "parent_requirement": "Native Launcher correctly refused unlinked0.9.1; final signed package binds exact current predecessor, with no Native admission bypass.",
+    "result": "pass",
+    "local_record": "build/campaign009-connected-v2/feed-prepublication-upgrade.json",
+    "record_sha256": "0b68c721ff70699abcaf0d4a2a4fca439271e14896c3607533141bedddaf2032"
   }
 }
