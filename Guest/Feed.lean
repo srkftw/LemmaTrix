@@ -910,7 +910,16 @@ partial def readPortable (object offset t : UInt64) : UInt64 :=
       let t := store64 selectedRoot 0x6b726f6664656566 t
       let t := forkAlias (load64 (st+296) t) 0 t
       let r := Guest.ProjectSDK.forkProject (load64 (st+328) t) (project+320) (selectedRoot+64) selectedRoot 16 t
-      notice (if r == 256 && status r == 0 then 5 else 12) (store64 (st+312) 0 r)
+      if r != 256 || status r != 0 then notice 12 (store64 (st+312) 0 r) else
+      -- Match the existing Desktop Fork continuation: the new local lineage
+      -- becomes usable in Library and its trusted picker, without execution.
+      let root := result r
+      let launcher := syscall 97 1 0 0 0 r
+      let r := Guest.ProjectSDK.delegate root launcher 127 launcher
+      if r != 160 || status r != 0 then notice 12 (store64 (st+312) 0 r) else
+      let shell := syscall 97 4 0 0 0 r
+      let r := Guest.ProjectSDK.delegate root shell 127 shell
+      notice (if r == 160 && status r == 0 then 5 else 12) (store64 (st+312) 0 r)
   else if action == 16 then
     if code == 6 then t else
     let requested := load64 (st+200) t
