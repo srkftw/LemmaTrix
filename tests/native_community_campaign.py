@@ -128,9 +128,18 @@ def select_feed_route(g,destination,relays,*,budget=8388608,attempts=65536):
  close_route(g)
  for slot,relay in enumerate(relays):enroll(g,slot,relay.certificate)
  select_destination(g,destination.certificate)
- net(g,31);wait(lambda:circuit_ready(g),900,g.name+' selected Feed circuit')
+ observed=[0.0]
+ def ready(terminal=False):
+  fields,_=net(g,41 if terminal else 32)
+  now=time.monotonic()
+  if now-observed[0]>=10:
+   observed[0]=now;print('Native selected Feed '+('terminal'if terminal else'circuit'),g.name,list(fields),flush=True)
+  if terminal and fields[2]==4:raise RuntimeError((g.name,'native terminal failed',list(fields)))
+  if not terminal and fields[1]==0 and fields[3]!=0:raise RuntimeError((g.name,'native route failed',list(fields)))
+  return fields[2]==3
+ net(g,31);wait(ready,900,g.name+' selected Feed circuit')
  net(g,38,h=3,a=21,b=g.feed_owner,cword=budget,d=attempts)
- wait(lambda:net(g,41)[0][2]==3,600,g.name+' selected Feed terminal')
+ wait(lambda:ready(True),600,g.name+' selected Feed terminal')
  focus_application(g,'feed')
 
 def main():

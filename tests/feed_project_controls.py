@@ -41,6 +41,8 @@ def select_event(g,ui,event_id):
     for _ in range(64):
         def selected():
             f,p=ui_call(g,ui,795)
+            observer=getattr(g,'project_observer',None)
+            if observer is not None:observer('native chronological row',selected=p[:32].hex(),target=event_id.hex())
             return p if any(p[:32])and complete_read(g,ui)else None
         chosen=wait(selected,300,'complete native signed row and content commitment')
         if chosen[:32]==event_id:return chosen

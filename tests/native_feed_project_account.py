@@ -14,7 +14,7 @@ import feed,identity,projects
 import feed_project_controls as project
 from native_community_campaign import attach_campaign,feed_ui,focus_application,select_feed_route
 from native_community_policy_restart import approved_synchronous_beta_admin,check_replication_lease
-from messenger_journey import PUB,wait,screenshot
+from messenger_journey import PUB,wait,screenshot,net
 
 CARD='This exact signed release is available for independent local review. Inspect its current admission before creating a new project lineage.'
 MOVED='The original federation is offline. I recovered my explicitly retained publishing identity and reconciled the original signed project discussion through this willing federation before publishing this update.'
@@ -107,6 +107,14 @@ def retained_generation(backing):
             magic,version,domain,generation,length=struct.unpack_from('<5Q',header)
             if magic==0x315243455246544c and version==1 and domain==3 and 256<=length<=32768:generations.append(generation)
     return max(generations)
+
+
+def selected_feed_route(g,destination,relays,observed):
+    route,_=net(g,32);terminal,pin=net(g,41)
+    if route[2]==3 and terminal[2]==3 and pin==hashlib.sha256(destination.certificate).digest():
+        observed(dict(check='reuse currently authenticated selected Feed relationship',route=list(route),terminal=list(terminal),destination=destination.name,pin=pin.hex(),budgets_reset=False))
+        return
+    select_feed_route(g,destination,relays)
 
 
 def settle_exact(g,operator,observed):
@@ -237,6 +245,15 @@ def main():
         def observed(value):report.setdefault('observations',[]).append(value);save()
         def passed(label,**details):
             report['checks'].append(dict(check=label,result='pass',**details));save();print('PASS',label,flush=True)
+        last_progress=[0.0]
+        def progress(stage,**details):
+            now=time.monotonic()
+            if now-last_progress[0]<10:return
+            last_progress[0]=now
+            fields,diagnostic=feed_ui(g)
+            value=dict(stage=stage,ui=list(fields),diagnostics=list(struct.unpack_from('<8Q',diagnostic,96)),route=list(net(g,32)[0]),terminal=list(net(g,41)[0]),**details)
+            observed(value);print('Native progress',json.dumps(value),flush=True)
+        g.project_observer=progress
         if control_marker is not None:report['management_control_boundary']=control_marker
         save()
         try:
@@ -254,7 +271,7 @@ def main():
                     passed('one explicit project-stage replication lease check preserves the same durable policy and charged retry authority',operators=list(leases.values()),per_post_keepalive=False)
                     checkpoint['replication_lease_checked']=True;save()
                 focus_feed(g)
-                select_feed_route(g,original,relays)
+                selected_feed_route(g,original,relays,observed)
                 settle_exact(g,original,observed)
                 author=feed_ui(g)[1][:32];assert any(author)
                 backing=out/(g.name+'.img');assert backing.stat().st_size>=5396132*512
@@ -370,7 +387,7 @@ def main():
                     passed('willing replica serves original checked long discussion with home federation offline and original no-vault author owner gone',event=discussion['id'],bytes=len(body),signed_sha256=discussion['signed_sha256'],content_sha256=discussion['content_sha256'],original_owner=replaced['old_owner'],fresh_ephemeral_owner=replaced['new_owner'],original_host_offline=not(out/(original_name+'.sock')).exists())
                     checkpoint['offline_original_publisher_read']=True;save()
                 focus_feed(g)
-                select_feed_route(g,destination,relays)
+                selected_feed_route(g,destination,relays,observed)
                 public=export_public(g,include_preferences=True)
                 recovered=public[32:64]==author and struct.unpack_from('<Q',public,160)[0]>1 and feed_ui(g,793)[0][6]==1
                 if not recovered:
