@@ -26,7 +26,7 @@ import identity
 import messenger
 import onion
 import releases
-from messenger_journey import Guest, PUB, net, screenshot, wait
+from messenger_journey import Guest, PUB, net, restore_operator, screenshot, wait
 from native_community_campaign import attach_campaign, feed_ui, focus_application, select_feed_route
 
 BETA_NOTE = ('This project review remains committed while its Beta federation operator restarts. '
@@ -405,6 +405,17 @@ def main():
     progress = out / 'policy-restart-progress.json'
     state = json.loads(progress.read_text()) if args.resume else dict(schema=1, done={}, checks=[])
     assert args.resume or not progress.exists(), 'use --resume to preserve prior observations'
+    if args.resume and state.get('result', '').startswith('failure'):
+        original = progress.read_bytes()
+        digest = hashlib.sha256(original).hexdigest()
+        archive = out/('policy-restart-attempt-'+digest[:16]+'.json')
+        if archive.exists():
+            assert archive.read_bytes() == original
+        else:
+            archive.write_bytes(original)
+        state.setdefault('preserved_attempts', []).append(dict(
+            path=archive.name, sha256=digest, result=state['result'],
+            stage=state.get('stage'), error=state.get('error')))
     began, stage, paused_alpha = time.monotonic(), 'attach common actors', None
 
     def save():
@@ -557,15 +568,33 @@ def main():
                 if not state['done'].get('pending-alpha'):
                     selected_route(bob, alpha)
                 if not state['done'].get('sealed'):
-                    node_key = key_credential(out/'beta.node-unlock')
+                    # public_node already committed this operator's native DH
+                    # keys, signed certificate and paired Identity seal. Reuse
+                    # that approved retention; a new unlock value correctly
+                    # refuses9 and a bare43 would discard the paired seal.
+                    configuration_path = out/'beta.public-configuration.json'
+                    initial_configuration = configuration_path.read_bytes()
+                    configuration = json.loads(initial_configuration)
+                    assert configuration['identity_seeds_sealed'] is True
+                    assert configuration['certificate_sha256'] == hashlib.sha256(beta.certificate).hexdigest()
+                    snapshot = out/'beta.initial-public-configuration.json'
+                    if snapshot.exists():
+                        assert snapshot.read_bytes() == initial_configuration
+                    else:
+                        snapshot.write_bytes(initial_configuration)
+                    state['beta_node_retention'] = dict(
+                        origin='existing explicit native public_node retention; the original operator-name unlock fixture is reused only by native cold recovery',
+                        initial_public_configuration=snapshot.name,
+                        initial_public_configuration_sha256=hashlib.sha256(initial_configuration).hexdigest(),
+                        certificate_sha256=configuration['certificate_sha256'],
+                        receipt_public=configuration['receipt_public'],
+                        paired_identity_seal_preserved=True, new_unlock_or_seed_created=False)
                     mod_key = key_credential(out/'beta.moderator-unlock')
-                    beta.client.request(178, struct.pack('<2Q', beta.network, 1))
-                    onion.call(beta.client, 43, data=node_key)
                     feed.invoke(beta.client, 490, action=7, data=mod_key, allowed=(0, 6))
                     wait(lambda: feed.invoke(beta.client, 490, action=6, allowed=(0, 6))[0][0] == 0,
                          600, 'native moderator seal committed')
                     state['before_moderator'] = moderator(beta)
-                    record('sealed', 'operator explicitly retains native node and moderator keys under independent unlock credentials; no identity seeds are exported')
+                    record('sealed', 'operator reuses its already approved native node/paired Identity retention and explicitly retains its moderator key; independent unlock credentials export no identity seed', node_retention=state['beta_node_retention'])
                 if not state['done'].get('pending-beta'):
                     if 'before_beta_budget' not in state:
                         state['before_beta_budget'] = list(feed.invoke(beta.client, 490, action=12)[0])
@@ -635,12 +664,11 @@ def main():
                                        current_network=beta.network)
                         (out/'management-control-boundary.json').write_text(json.dumps(cleared, indent=2)+'\n')
                         state['management_control_boundary_after_restart'] = cleared
-                    identity.start(beta.client, bundle/'identity.ltrel', PUB)
-                    beta.client.request(178, struct.pack('<2Q', beta.network, 1))
-                    onion.call(beta.client, 44, data=key_credential(out/'beta.node-unlock'))
-                    _, certificate = onion.call(beta.client, 25, h=4)
-                    assert certificate[:480] == (out/'beta.certificate').read_bytes()
-                    beta.certificate = certificate[:480]
+                    beta.identity_package = bundle/'identity.ltrel'
+                    restored_node = restore_operator(beta, out)
+                    assert restored_node['certificate_sha256'] == state['beta_node_retention']['certificate_sha256']
+                    assert restored_node['receipt_public'] == state['beta_node_retention']['receipt_public']
+                    state['beta_node_recovered'] = restored_node
                     from messenger_journey import enroll
                     enroll(beta, 0, alpha.certificate)
                     previous = campaign.state['actors']['beta']['feed']
@@ -729,7 +757,12 @@ def main():
                         assert earlier['attempts'] <= later['attempts'] <= 9
                     state['beta_final_replication_ledger'] = final_ledger
                 record('restart', 'both final-image peers automatically resume original signed pending events without operator peer reset or renewed event budget; persisted appeal reversal and local block survive', local_block=state['block_after_restart'])
-            state.update(result='pass-'+args.stage, elapsed_seconds=time.monotonic()-began)
+            # Prior failed attempts remain in immutable snapshots. A completed
+            # result must not inherit their error or unfinished stage labels.
+            for stale in ('error', 'traceback', 'stage'):
+                state.pop(stale, None)
+            state.update(result='pass-'+args.stage, completed_stage=args.stage,
+                         elapsed_seconds=time.monotonic()-began)
             save()
             (out/('policy-'+args.stage+'.json')).write_text(json.dumps(state, indent=2)+'\n')
         except BaseException as error:
