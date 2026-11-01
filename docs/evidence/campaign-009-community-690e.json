@@ -1,0 +1,403 @@
+{
+  "schema": 1,
+  "result": "pass-for-recorded-infrastructure-and-product-segments",
+  "native_source_commit": "c5147de",
+  "image": {
+    "path": "build/campaign009-final-v8.bin",
+    "sha256": "690e8959d79a42d3e61aa6f69df14b4e0c485ad58b015f451685abf014c275ee",
+    "built_in_network_code_profile_bytes": 425984,
+    "ordinary_package_code_limit_bytes": 262144,
+    "physical_network_slot_bytes": 524288
+  },
+  "configuration": {
+    "image_sha256": "690e8959d79a42d3e61aa6f69df14b4e0c485ad58b015f451685abf014c275ee",
+    "feed": {
+      "identity": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+      "feed-account": "f50eaa12d7dc69c962584ce34a12d53d9b064970c640d23d594e930d7fc4bc07",
+      "feed": "bfd1a9584b654f8ee4f0c3f1b3703608b452da7a9ad472683821aa8f4f13a635",
+      "feed-federation": "02041c0eeca13f17a62a8913954558d9dc5be7e52f55d5db915dc76b14241526"
+    },
+    "messenger": {
+      "identity": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+      "owner": "50f3e3ccb8d3faeaf29c50d6aec24bbc654a30754f26c15dd7585a4a8e64a5b3",
+      "ui": "a0b4294d2331e6704acd69093936339f7c0b8559dd9990d4967a22216f84e6c7",
+      "delivery": "f8f9a0c572e691398008ab13e3aa852a12eeec06344715f593bf8a921d07c20b",
+      "mailbox": "24e249a218f52813953b8d204f1c7b3d1129e1b675a9ed8500731cf842049135"
+    },
+    "mixed": true,
+    "history_events": 17,
+    "replication_auto_renew": true
+  },
+  "topology": {
+    "personal_guests": 3,
+    "relay_guests": 3,
+    "mailbox_guests": 1,
+    "federation_guests": 2,
+    "mixed_role": "relay2 native x86_64 RV64 interpreter; all other roles QEMU",
+    "initialization": "Independent native credentials and backing; six operators listen once, no client handoff or restart during these segments."
+  },
+  "raw_records": {
+    "evidence.json": {
+      "path": "build/campaign009-connected-v6/evidence.json",
+      "sha256": "b0e461169889663ebdf4eaf967f0abb4663a6b786abfaf870fe055e38403f5f6"
+    },
+    "active-forge.json": {
+      "path": "build/campaign009-connected-v6/active-forge.json",
+      "sha256": "fab4939f0768cdf60a28bf223fb7e998d463c737f43c5281ae70bbfd3236493c"
+    },
+    "reconnect.json": {
+      "path": "build/campaign009-connected-v6/reconnect.json",
+      "sha256": "9c74f1709aadbb08cbcf1c345f2a6409110b108a7e7bb58b879397bdcf396b9c"
+    },
+    "commit-retry-budget.json": {
+      "path": "build/campaign009-connected-v6/commit-retry-budget.json",
+      "sha256": "49cb24366d354dfcc788569f5c894b73c32de4e53b0508b704b82c1d4dd86ff8"
+    },
+    "no-vault-public-ledger.json": {
+      "path": "build/campaign009-connected-v6/no-vault-public-ledger.json",
+      "sha256": "46442cda42d7d3278090af5f326ff830802c8ede593f9daf8fb68f9281503ffc"
+    },
+    "infra-portals-release.json": {
+      "path": "build/campaign009-connected-v6/infra-portals-release.json",
+      "sha256": "86a2ca1322a399c0ad6eb26e6f1b0cd0ec9c974e7c1544c84c578fa0232eaca5"
+    }
+  },
+  "controllers": {
+    "core": [
+      {
+        "git_head": "6b9cf366ae0047188aabbf7f6aeedf51229afcc9",
+        "controller_sha256": "269d6ef118d7212888a906d69ea8883fc8331abe24a73c10f8c42d8af6e4d569",
+        "controller_snapshot": "controller-1.py",
+        "started_time_utc": "2026-11-01T14:58:40.931689+00:00",
+        "prior_failure_sha256": null
+      }
+    ],
+    "active_forge": {
+      "path": "tests/native_community_active_forge.py",
+      "sha256": "ae98456db052b3c03b8bd2b0b5c5d2421a5f5236ef74404c5adc2c54c4d25e6e",
+      "source_commit": "13d2a44"
+    },
+    "reconnect_executed": {
+      "snapshot": "build/campaign009-connected-v6/reconnect-controller-executed.py",
+      "sha256": "0fe81e2e726219755ebd4fead043f50946548c0842b558e8a4b9438bed293db5",
+      "observer_and_route_fixes": [
+        "f412223",
+        "b3973aa"
+      ],
+      "post_execution_public_ledger_change": "8dcfadb; historical author is distinguished from the new empty owner; no Native action or changed result"
+    },
+    "positive_budget": {
+      "path": "tests/native_community_commit_retry.py",
+      "sha256": "812941338dcebd7d3381f2fa43d2728b17e73c1fdc99710e2eed0539c4721b8e",
+      "schema": 2,
+      "source_commit": "56723ba"
+    }
+  },
+  "core": {
+    "seconds": 3315.918975085995,
+    "simultaneous_personal_terminals": 3,
+    "shared_destination": "Charlie and Bob use Alpha; all three share selected relays",
+    "history": {
+      "events": 17,
+      "ordinary_event": {
+        "id": "f21897947ce1845fa3fc0f4ea5361391dc3960f61f78f93c94d897e2d75499e2",
+        "author": "16a50e5fedf4e6f6fa18fce942c5d1b12ad4f08a3343a988684135d333646757",
+        "kind": 1,
+        "bytes": 126,
+        "content_sha256": "541c88ecfd5e37d6e433746b0e38ce252c25c94a6874966ab975cee0c2cbb22b",
+        "signed_sha256": "f21897947ce1845fa3fc0f4ea5361391dc3960f61f78f93c94d897e2d75499e2"
+      },
+      "long_event": {
+        "id": "71f2a5ff2dd58408939c9dfcde612b9dbc82c0aae165deccdc6adad71a44f178",
+        "author": "16a50e5fedf4e6f6fa18fce942c5d1b12ad4f08a3343a988684135d333646757",
+        "kind": 1,
+        "bytes": 1330,
+        "content_sha256": "da933b261f757e2e3556bd30c008f04fbdd90ce29e277d65883d4e3c0ca9e557",
+        "signed_sha256": "71f2a5ff2dd58408939c9dfcde612b9dbc82c0aae165deccdc6adad71a44f178"
+      },
+      "causal_reply_event": {
+        "id": "633152b55e73a1cfec9b6dd5e424e701433675f32bb33db367d5460da1f1b2cf",
+        "author": "9005b69771a5651fe395967eff7b3d8a6379bf27e9dca218f0741e82be1a4aad",
+        "kind": 2,
+        "bytes": 142,
+        "content_sha256": "c3b55f0ac6d9e6debdb353279f57693aa8ebf54b34411829709e63efb183235a",
+        "signed_sha256": "633152b55e73a1cfec9b6dd5e424e701433675f32bb33db367d5460da1f1b2cf"
+      },
+      "native_reader": "Bob chronological pagination and complete long-body commitment validation; Alice cross-federation local follow and causal reply"
+    },
+    "messenger": {
+      "text_seconds": 46.5367094460089,
+      "reply_seconds": 31.609880107003846,
+      "stalled_feed_terminal_at_both_completion": 3,
+      "stalled_epoch": 2,
+      "pending_opaque_bytes": 532
+    },
+    "first_forge_episode": {
+      "fields": [
+        0,
+        6,
+        2,
+        0,
+        1,
+        0,
+        1,
+        1
+      ],
+      "elapsed_stall_seconds": 139.30581568198977,
+      "same_paused_transport_epoch": true,
+      "terminal_at_forge_completion": 0,
+      "reclamation_cause": "Not directly observed; elapsed Native deadline or owner cancellation is an inference. No active-terminal claim for this first longer episode.",
+      "execution_approved": false
+    }
+  },
+  "fresh_active_forge": {
+    "seconds": 6.209440205988358,
+    "new_inflight_work_fields": [
+      0,
+      6,
+      0,
+      0,
+      0,
+      1,
+      1,
+      1
+    ],
+    "verified_fields": [
+      0,
+      6,
+      2,
+      0,
+      1,
+      0,
+      1,
+      1
+    ],
+    "exact_original_project_reference": "92daee22b2b8ed1f4de2b1354701a07742de03065c36ecc716c0a5e60624a7c2eca69a0fbc36a60c601594528cd39253adecff887616c8cc04509e99b5881c41",
+    "bob_allowance_before": [
+      8374224,
+      65430
+    ],
+    "bob_allowance_after": [
+      8374000,
+      65428
+    ],
+    "charlie_epoch": 6,
+    "charlie_terminal_at_completion": 3,
+    "pending_opaque_bytes": 532,
+    "only_charlie_cancelled_and_disconnected": true,
+    "unrelated_sessions_after": [
+      [
+        0,
+        1,
+        3,
+        0,
+        8371762,
+        65414,
+        0,
+        1
+      ],
+      [
+        0,
+        1,
+        3,
+        0,
+        8374000,
+        65428,
+        0,
+        1
+      ]
+    ]
+  },
+  "reconnect": {
+    "seconds": 1084.6993846360128,
+    "passed_steps": [
+      "history-read",
+      "ready",
+      "unavailable",
+      "reconnected",
+      "allowance",
+      "allowance-reconciled",
+      "cut",
+      "retry",
+      "ephemeral"
+    ],
+    "history_events": 17,
+    "padded_history_bytes": 9728,
+    "committed_read_page_bytes": 4096,
+    "segment_writer_workspace_bytes": 131072,
+    "required_mode1_failure": "Signed sequence8 remained absent from both federations until a fresh approved route retried the exact event; no direct fallback.",
+    "limited_terminal": "One byte/one request refused its own read; fresh context reused resources; unrelated Messenger terminals stayed phase3.",
+    "lost_receipt": {
+      "event": "98283045421cc9a8bfaa193ed180bb71d3f5c83cd5e20a95ae6dd48d1e6d15da",
+      "author": "16a50e5fedf4e6f6fa18fce942c5d1b12ad4f08a3343a988684135d333646757",
+      "sequence": 9,
+      "content_bytes": 989,
+      "ui_phase_when_fault_cut": 4,
+      "durable_acceptance_before_final_receipt": true,
+      "copies_per_federation_after_exact_retry": 1,
+      "author_usage_before_and_after": {
+        "author_events": 9,
+        "author_content_bytes": 3352
+      }
+    },
+    "no_vault": {
+      "historical_feed_public": "16a50e5fedf4e6f6fa18fce942c5d1b12ad4f08a3343a988684135d333646757",
+      "current_feed_identity_present": false,
+      "current_feed_public": null,
+      "current_feed_owner": 11924251543655678472,
+      "current_feed_ui": 11924251543655678473,
+      "published_replica_persists": true,
+      "private_key_exported": false
+    }
+  },
+  "positive_duplicate_budget": {
+    "seconds": 9.530123327000183,
+    "event": "98283045421cc9a8bfaa193ed180bb71d3f5c83cd5e20a95ae6dd48d1e6d15da",
+    "before": [
+      0,
+      16777216,
+      4509684,
+      3145728,
+      262144,
+      15354,
+      1,
+      1
+    ],
+    "after": [
+      0,
+      16777216,
+      4509684,
+      3145728,
+      262144,
+      15354,
+      1,
+      1
+    ],
+    "per_event_before": {
+      "available": true,
+      "event": "98283045421cc9a8bfaa193ed180bb71d3f5c83cd5e20a95ae6dd48d1e6d15da",
+      "fields": [
+        0,
+        19,
+        3,
+        1,
+        355077,
+        1188,
+        0,
+        1
+      ],
+      "flags": 3,
+      "attempts": 1,
+      "reserved_bytes": 355077,
+      "reserved_work": 1188
+    },
+    "per_event_after": {
+      "available": true,
+      "event": "98283045421cc9a8bfaa193ed180bb71d3f5c83cd5e20a95ae6dd48d1e6d15da",
+      "fields": [
+        0,
+        19,
+        3,
+        1,
+        355077,
+        1188,
+        0,
+        1
+      ],
+      "flags": 3,
+      "attempts": 1,
+      "reserved_bytes": 355077,
+      "reserved_work": 1188
+    },
+    "native_transport_allocation": {
+      "state": "unchanged",
+      "before_bytes": 3145728,
+      "after_bytes": 3145728,
+      "additional_bytes": 0,
+      "finite_ceiling": 16777216,
+      "attribution": "Transport allocations may roll independently under existing consent; this probe does not attribute a roll to the duplicate event."
+    },
+    "copies_per_federation": 1
+  },
+  "replication_authority": {
+    "approved_total_bytes_per_operator": 16777216,
+    "native_auto_roll_explicitly_enabled": true,
+    "host_manual_lease_renewals": 0,
+    "core_runtime": {
+      "alpha": {
+        "lease": [
+          0,
+          2,
+          1,
+          0,
+          0,
+          128,
+          14805465147983790082,
+          1
+        ],
+        "budget": [
+          0,
+          16777216,
+          3809403,
+          2097152,
+          262144,
+          12987,
+          1,
+          1
+        ],
+        "policy_hash": "97dc8c95d6000db8d10ddef99dd029c035a8cee1fec670058120ae23edd23e62",
+        "host_lease_renewals": 0
+      },
+      "beta": {
+        "lease": [
+          0,
+          2,
+          1,
+          0,
+          0,
+          128,
+          10253123740657254402,
+          1
+        ],
+        "budget": [
+          0,
+          16777216,
+          2069514,
+          2097152,
+          262144,
+          7074,
+          1,
+          1
+        ],
+        "policy_hash": "acc2e2b5e6eb3cc5f8c4bccede07df192f2f2a2eeb4f7068289a9c14dfd1bd5c",
+        "host_lease_renewals": 0
+      }
+    },
+    "later_source_transport_allocation_bytes": 3145728
+  },
+  "declared_resource_bounds": {
+    "transport_channels": 16,
+    "onion_channels": 12,
+    "relay_complete_routes_bound": 6,
+    "observed_simultaneous_personal_clients": 3,
+    "bulk_channels": 4,
+    "terminal_banks": 16,
+    "mailbox_stages": 4,
+    "mailbox_stage_bytes": 8192
+  },
+  "controls_released": {
+    "all_controllers_exited_zero": true,
+    "all_management_and_graphical_clients_closed": true,
+    "operators_left_running": true,
+    "next_owner": "Root coordinates service capacity, then project/moderation/restart/portability continuations."
+  },
+  "limits": [
+    "One-host local integration with independent native credentials; not independent operator administration or physical hardware qualification.",
+    "The native x86_64 backend interprets RV64. Separate AArch64 evidence does not establish a full installed Feed/Messenger campaign on AArch64.",
+    "Seventeen meaningful events exceed the single UI row and one committed read page; they do not exhaust the 64-row index or 128KiB segment writer workspace.",
+    "Six complete relay route pairs and sixteen terminal banks are declared bounds; this record observes three clients and per-context exhaustion. Actual full-pair saturation/reuse belongs to the subsequent capacity continuation.",
+    "Project-card Add/Fork/current revocation, moderation/appeals, federation cold restart, retained recovery and migration require their subsequent connected records; this record does not claim all A-H or any full MVP gate.",
+    "Classical native crypto and local three-hop circuits do not establish Tor interoperability, post-quantum security, global correlation resistance or hostile-government resilience.",
+    "Existing disclosed RSA project/Registry bootstrap remains; native Feed authors, moderators and replication identities are generated and held in guest code."
+  ]
+}
