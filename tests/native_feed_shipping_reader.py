@@ -4,7 +4,7 @@ The original hosting federation stays offline. Only Bob's ordinary Feed UI and
 account processes are replaced through native admission and fresh recovery.
 """
 from __future__ import annotations
-import argparse,hashlib,json,struct,subprocess,sys,time,traceback
+import argparse,hashlib,json,re,struct,subprocess,sys,time,traceback
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 sys.path[:0]=[str(ROOT/'tools'),str(ROOT/'tests')]
@@ -55,14 +55,15 @@ def checked_read(g,target,observed):
  raise RuntimeError('target absent from bounded chronological native reader')
 
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--attach',type=Path,required=True);p.add_argument('--packages',type=Path,required=True);a=p.parse_args()
- out=a.attach.resolve();path=out/'feed-shipping-reader.json';began=time.monotonic();prior_path=out/'feed-migrate-account.json';prior=json.loads(prior_path.read_text())
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--attach',type=Path,required=True);p.add_argument('--packages',type=Path,required=True);p.add_argument('--record-name',default='feed-shipping-reader.json');a=p.parse_args()
+ if not re.fullmatch('[a-z0-9-]{1,72}\\.json',a.record_name):raise ValueError('one explicit local JSON record name required')
+ out=a.attach.resolve();path=out/a.record_name;began=time.monotonic();prior_path=out/'feed-migrate-account.json';prior=json.loads(prior_path.read_text())
  assert prior['result']=='pass'and not(out/'alpha.sock').exists()
  record=json.loads(path.read_text())if path.exists()else dict(schema=1,checks=[],observations=[],checkpoints={},migration_sha256=hashlib.sha256(prior_path.read_bytes()).hexdigest())
  assert record['migration_sha256']==hashlib.sha256(prior_path.read_bytes()).hexdigest()
  if record.get('result')=='pass':print('Previously completed shipping reader retained; no duplicate action');return
  if path.exists():
-  archive=path.with_name('feed-shipping-reader-attempt-'+str(len(record.get('attempts',[])))+'.json');archive.write_bytes(path.read_bytes())
+  archive=path.with_name(path.stem+'-attempt-'+str(len(record.get('attempts',[])))+'.json');archive.write_bytes(path.read_bytes())
   record.setdefault('preserved_attempts',[]).append(dict(path=str(archive),sha256=hashlib.sha256(archive.read_bytes()).hexdigest()))
  for name in('error','traceback'):record.pop(name,None)
  attempt=dict(started_utc=time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),result='running');record.setdefault('attempts',[]).append(attempt)
@@ -80,7 +81,7 @@ def main():
    last[0]=time.monotonic();f,d=feed_ui(g);value=dict(observed_utc=time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),stage=stage,ui=list(f),diagnostics=list(struct.unpack_from('<8Q',d,96)),route=list(net(g,32)[0]),terminal=list(net(g,41)[0]),**fields);observed(value);print('Native progress',json.dumps(value),flush=True)
   g.project_observer=progress
   try:
-   backing=out/'bob.img';approved_path=out/'bob.shipping-approved-feed-profile'
+   backing=out/'bob.img';approved_path=out/('bob.'+path.stem+'.approved-feed-profile')
    if not approved_path.exists():save_approved_profile(approved_path,export_public(g,True))
    approved=approved_path.read_bytes();author=approved[32:64];event_id=approved[128:160]
    assert event_id.hex()==next(x['event']for x in prior['checks']if 'same retained federation-scoped author publishes'in x['check'])
@@ -89,8 +90,8 @@ def main():
    if 'recovery'not in c:c['recovery']=dict(key_generation=struct.unpack_from('<Q',approved,160)[0],root_generation=retained_generation(backing));save()
    if 'budget_before'not in record:record['budget_before']=list(feed.invoke(beta.client,490,action=12)[0]);save()
    upgrade=upgrade_retained_pair(g,campaign,a.packages.resolve(),c,save)
-   assert upgrade['packages']['feed']['version']=='0.9.4'and upgrade['packages']['feed-account']['release_id']==upgrade['old_releases']['feed-account']
-   if not c.get('upgrade_recorded'):passed('normal UI0.9.4 successor with exact current Account0.9.2 relaunch replaces only Bob personal processes',**upgrade);c['upgrade_recorded']=True;save()
+   assert upgrade['packages']['feed']['version']=='0.9.4'and upgrade['packages']['feed-account']['version']in('0.9.2','0.9.3')
+   if not c.get('upgrade_recorded'):passed('normal per-component Feed successors and exact reused releases replace only Bob personal processes',**upgrade);c['upgrade_recorded']=True;save()
    selected_feed_route(g,beta,[actors['relay'+str(i)]for i in(1,2,3)],observed)
    public=export_public(g,True)if feed_ui(g)[0][1]else None
    recovered=public is not None and public[32:64]==author and struct.unpack_from('<Q',public,160)[0]>c['recovery']['key_generation']and retained_generation(backing)>c['recovery']['root_generation']
@@ -102,6 +103,12 @@ def main():
     project.wait_native(g,lambda:feed_ui(g)[0][1]==1 and feed_ui(g)[0][5]==8 and feed_ui(g,793)[0][6]==1 and project.complete_read(g,g.feed_ui)and retained_generation(backing)>c['recovery']['root_generation'],180,'shipping retained author recovery and fresh reseal')
    focus_feed(g);settle_exact(g,beta,observed);public=export_public(g,True)
    assert public[32:128]==approved[32:128]and public[256:1792]==approved[256:1792]and struct.unpack_from('<Q',public,160)[0]>c['recovery']['key_generation']
+   if public[128:160]!=event_id and c.get('new_event')!=public[128:160].hex():
+    intent=c.get('followup_intent');assert intent and intent['content_sha256']==hashlib.sha256(TEXT.encode()).hexdigest()
+    pending=match(beta,author,1,hashlib.sha256(TEXT.encode()).digest())
+    assert pending is not None and pending[:32]==public[128:160]and pending[304:368]==approved[64:128]and read_body(beta,pending)==TEXT.encode()
+    assert struct.unpack_from('<Q',pending,216)[0]>struct.unpack_from('<Q',approved,24)[0]
+    c['new_event']=pending[:32].hex();save()
    assert public[128:160]==event_id or c.get('new_event')==public[128:160].hex()
    passed('shipping successor recovers same author and approved preferences with fresh authority and reconciles one exact prior committed copy',prior_event=event_id.hex(),prior_sequence=struct.unpack_from('<Q',approved,24)[0],key_generation=struct.unpack_from('<Q',public,160)[0],preference_sha256=hashlib.sha256(public[256:1792]).hexdigest(),old_copy_count=1,original_host_offline=True)
    for name,expected in(('long',state['events']['long']),('card',json.loads((out/'feed-project-account.json').read_text())['card'])):
@@ -132,7 +139,7 @@ def main():
    assert event[304:368]==approved[64:128]and struct.unpack_from('<Q',event,216)[0]>struct.unpack_from('<Q',approved,24)[0]and read_body(beta,event)==TEXT.encode()
    c['new_event']=event[:32].hex();save();after=export_public(g,True)
    assert after[128:160]==event[:32]and after[256:1792]==approved[256:1792]and struct.unpack_from('<Q',after,160)[0]>c['recovery']['key_generation']
-   save_approved_profile(out/'bob.shipping-final-approved-feed-profile',after)
+   save_approved_profile(out/('bob.'+path.stem+'.final-approved-feed-profile'),after)
    record['budget_after']=list(feed.invoke(beta.client,490,action=12)[0]);assert record['budget_after'][1]==record['budget_before'][1]and record['budget_after'][3]>=record['budget_before'][3]and record['budget_after'][3]<=record['budget_after'][1]
    assert record['budget_after'][2]>=record['budget_before'][2]and record['budget_after'][5]>=record['budget_before'][5]
    passed('shipping UI publishes distinct checked follow-up with same retained author and selected preferences within unchanged finite operator authority',event=event[:32].hex(),bytes=len(TEXT),sequence=struct.unpack_from('<Q',event,216)[0],key_generation=struct.unpack_from('<Q',after,160)[0],ui_publication_phase=feed_ui(g)[0][5],replication_claim=False,profile_sha256=hashlib.sha256(after).hexdigest(),preference_sha256=hashlib.sha256(after[256:1792]).hexdigest(),opaque_root_generation=retained_generation(backing),operator_refill=False)

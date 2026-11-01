@@ -195,7 +195,7 @@ def retained_pair_packages(bundle,old_releases,*,relaunch=False):
     for name in('identity','feed-federation'):
         assert selected[name]['release_id']==old_releases[name],name+' must remain the exact existing service release'
     changed=False
-    for name,versions,rights in(('feed-account',('0.9.2',),1024),('feed',('0.9.3','0.9.4'),799)):
+    for name,versions,rights in(('feed-account',('0.9.2','0.9.3'),1024),('feed',('0.9.3','0.9.4'),799)):
         info=selected[name]
         assert info['project']==name and info['rights']==rights
         if relaunch or info['release_id']==old_releases[name]:
@@ -819,7 +819,7 @@ def main():
                 assert public[256:1792]==approved[256:1792]and preference_bits(public,project_id)&4
                 if block_was_selected:assert preference_bits(public,blocked_author)&2
                 passed('native recovery restores exactly the explicitly approved local preferences independently of federation policy',preference_bytes=1536,preference_sha256=hashlib.sha256(public[256:1792]).hexdigest(),stable_project_follow=True,previously_selected_local_block=block_was_selected,local_block_preserved=True if block_was_selected else None,complete_graph_published=False)
-                if lifecycle is not None and lifecycle['packages']['feed']['version']in('0.9.3','0.9.4')and lifecycle['packages']['feed-account']['version']=='0.9.2':
+                if lifecycle is not None and lifecycle['packages']['feed']['version']in('0.9.3','0.9.4')and lifecycle['packages']['feed-account']['version']in('0.9.2','0.9.3'):
                     check_upgraded_local_block(g,state,approved,checkpoint,save,observed)
                 event=match(destination,author,1,hashlib.sha256(MOVED.encode()).digest())
                 assert public[32:64]==author and public[128:160]in(prior_event,event[:32]if event else prior_event)and struct.unpack_from('<Q',public,160)[0]>1

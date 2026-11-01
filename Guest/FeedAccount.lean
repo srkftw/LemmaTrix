@@ -238,6 +238,13 @@ def complete (bytes purpose t : UInt64) : UInt64 :=
   let code := status t
   let bytes := if code == 9 then 64 else bytes
   let t := store64 (st+64) 0 t
+  -- The cadence starts after completion. A slow routed receipt must not use
+  -- the entire interval in flight and immediately reclaim the owner before
+  -- the UI can collect its row or start the next checked body chunk.
+  let t := if purpose >= 4 && purpose <= 6 && (code == 0 || code == 6) then
+      let now := Guest.WaitSDK.now t
+      store64 (st+232) (now+500) now
+    else t
   -- GUI query completions retain their own response until outcome collection.
   -- Background publication receipts cannot replace that independently owned row.
   if purpose == 7 then reconcileAnswer bytes t else
