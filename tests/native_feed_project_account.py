@@ -250,9 +250,9 @@ def author_actions(g,original,destination,state,author,out,observed,defer_replic
         def replicated():
             result=lookup(destination,kind,text)
             if result:return result
-            observer=getattr(g,'project_observer',None)
-            if observer is not None:observer('native author '+label+' replication',event=committed[:32].hex())
             phase=feed.invoke(original.client,490,action=3)[0]
+            observer=getattr(g,'project_observer',None)
+            if observer is not None:observer('native author '+label+' replication',event=committed[:32].hex(),replication=list(phase))
             if phase[1]==6:raise RuntimeError(('native replication explicitly stopped',original.name,list(phase),committed[:32].hex()))
             return None
         replica=lookup(destination,kind,text)if defer_replication else wait(replicated,600,'original signed author '+label+' replicates')
@@ -332,7 +332,7 @@ def main():
             if now-last_progress[0]<10:return
             last_progress[0]=now
             fields,diagnostic=feed_ui(g)
-            value=dict(stage=stage,ui=list(fields),diagnostics=list(struct.unpack_from('<8Q',diagnostic,96)),route=list(net(g,32)[0]),terminal=list(net(g,41)[0]),**details)
+            value=dict(observed_utc=time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),stage=stage,ui=list(fields),diagnostics=list(struct.unpack_from('<8Q',diagnostic,96)),route=list(net(g,32)[0]),terminal=list(net(g,41)[0]),**details)
             observed(value);print('Native progress',json.dumps(value),flush=True)
         g.project_observer=progress
         if control_marker is not None:report['management_control_boundary']=control_marker
@@ -452,7 +452,13 @@ def main():
                     approve_before_local_fork(chosen)
                     action=project.inspect_and_fork(g,g.feed_ui,record,chosen)
                 card=wait(committed,120,'original project card remains committed')
-                def replica_card():return next((p for _,p in rows(destination)if p[:32]==card[:32]),None)
+                def replica_card():
+                    result=next((p for _,p in rows(destination)if p[:32]==card[:32]),None)
+                    if result is None:
+                        phase=feed.invoke(original.client,490,action=3)[0]
+                        progress('native original project-card replication',event=card[:32].hex(),replication=list(phase))
+                        if phase[1]==6:raise RuntimeError(('native project-card replication explicitly stopped',list(phase),card[:32].hex()))
+                    return result
                 replica=replica_card()if a.local_project_only else wait(replica_card,600,'original project card replicates')
                 assert replica is None or card==replica
                 body=read_body(destination,replica)if replica is not None else read_body(original,card)
