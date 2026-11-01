@@ -37,6 +37,11 @@ def complete_read(g,ui):
 
 def select_event(g,ui,event_id):
     """Read actual native timeline rows, including every checked body chunk."""
+    # A completed selected row survives ordinary retention/picker panels.
+    # Reuse that exact native-verified selection instead of restarting a full
+    # chronological traversal merely to follow the card already on screen.
+    _,current=ui_call(g,ui,795)
+    if current[:32]==event_id and complete_read(g,ui):return current
     # Select the ordinary chronological view through its real local control.
     # A previously chosen followed-only view can legitimately omit this author.
     for _ in range(4):
