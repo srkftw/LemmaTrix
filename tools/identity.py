@@ -13,8 +13,8 @@ import live
 import releases
 
 ROLES = {'project': 1, 'messenger': 2, 'node': 3, 'receipt': 4}
-PURPOSES = {'contact': 1, 'service': 2}
-OPERATIONS = tuple(range(400, 408))
+PURPOSES = {'contact': 1, 'service': 2, 'receipt-key': 3}
+OPERATIONS = tuple(range(400, 410))
 IDENTITY_MAGIC = 0x314449544c
 SIGNING_MAGIC = 0x31474953544c
 CONTACT_MAGIC = 0x315443544c
@@ -49,7 +49,7 @@ def instances(client):
 
 def bind(client, service, caller, service_release, caller_release, operation, prior=0):
     if operation not in OPERATIONS:
-        raise ValueError('Identity-v1 operation outside 400..407')
+        raise ValueError('Identity-v1 operation outside 400..409')
     if len(service_release) != 32 or len(caller_release) != 32:
         raise ValueError('exact admitted release commitments required')
     body = struct.pack('<6Q', 1, 1, service, caller, operation, prior)
@@ -71,6 +71,20 @@ def endpoint(client, operation):
 
 def invoke(client, op, h=0, a=0, b=0, c=0, data=b''):
     target = endpoint(client, op)
+    if op in (408,409):
+        import time
+        token=struct.unpack('<Q',client.request(175,struct.pack('<Q8Q',target,op,h,a,b,c,0,0,1)+data))[0]
+        deadline=time.monotonic()+600
+        try:
+            while time.monotonic()<deadline:
+                raw=client.request(176,struct.pack('<Q',token))
+                if len(raw)==8:time.sleep(.025);continue
+                return fields(raw)
+            raise TimeoutError('bounded native Identity completion')
+        except BaseException:
+            try:client.request(177,struct.pack('<Q',token))
+            except (ValueError,OSError,EOFError):pass
+            raise
     raw = client.request(150, struct.pack('<Q8Q', target, op, h, a, b, c, 0, 0, 1) + data)
     return fields(raw)
 

@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "source": "build/signed-forge-journey-2/published-closure.json",
+  "source_sha256": "56cc52e18fe0e9f37a4ad32fe2f47aa62dc29a2d7c0472ec9609d3b8e6a328f5",
+  "bytes": 173189,
+  "public_graph": "tests/fixtures/campaign008-existing-forge-closure.json",
+  "public_publisher": "tests/fixtures/campaign008-existing-forge-publisher.pub",
+  "publisher_file_sha256": "cac01d2783e97891c3bee7bd3690fd6661d55e368f76a24b209f105d63b983af",
+  "publisher_key_id": "fd30609dd2f0cc5450320e3d5e11964560727f544a77ffcf1e8cc5b51e1f4da4",
+  "selected": [
+    {
+      "head": "92daee22b2b8ed1f4de2b1354701a07742de03065c36ecc716c0a5e60624a7c2",
+      "name": "creator"
+    }
+  ],
+  "logical_project_id": "69d8274c92d5b2c829e55d5e3f5359b7c652b13160d138eec5d7e99623a72f2b",
+  "nodes": 14,
+  "payload_bytes": 127788,
+  "release": {
+    "project": "creator",
+    "version": "1.0.0",
+    "release_id": "7dc7d80f5dcb1656b8e2d32fa0728ae294be2d485cfbfe100c1a73782e4623c9",
+    "publisher_key_id": "fd30609dd2f0cc5450320e3d5e11964560727f544a77ffcf1e8cc5b51e1f4da4",
+    "project_id": "14deec51b2e59bdd387e3edc7f3899503c8b6e4c244ac398c77dd18a8bd8d181",
+    "rights": 768,
+    "executable_sha256": "a10d5a5dcd5771711043bf3df8e595d2ed02e96b245bd7c803602e192fb4fa5f",
+    "source_root": "d6158de74b328580a0c2c0d94996785a84889a70d33cb6d5b52430b8591082a2",
+    "manifest_root": "a8cc0349612457b398c259227fc0cd68eb2be170f9277d6c3e5c7eae7ddd2718",
+    "parent": "0000000000000000000000000000000000000000000000000000000000000000",
+    "size": 38320,
+    "signature_verified": true,
+    "manifest_checked": true,
+    "identity_scheme": 3,
+    "logical_project_id": "69d8274c92d5b2c829e55d5e3f5359b7c652b13160d138eec5d7e99623a72f2b"
+  },
+  "historical_guest_image": "150a446ccca25014c1a1c05a8b8932303e72d0bf2ef56336fd1b5480418b4c1e",
+  "public_origin": "Existing selected public creator project exported by tests/signed_forge_journey.py archive_selected from native Objects after editor build/sign and publication; no catalog synthesized for Messenger.",
+  "audit": [
+    "all canonical node identifiers and manifest/parent closure verified",
+    "existing publisher RSA signature and manifest/executable commitments verified",
+    "explicit private sibling identity absent",
+    "only public sources/resources/build metadata/evidence/executable/release retained",
+    "no signing private key, pairwise channel credential, operational Messenger identity or session material copied"
+  ],
+  "limits": "Historical build evidence states source-to-binary chain unverified. Public package signature does not attest independent build reproducibility or hostile-environment security.",
+  "reproduction_registry_build": {
+    "builder": "live_build.app('Guest.Registry', 'Guest.Registry.main', 'campaign008-registry-reproduction', 2)",
+    "bytes": 97180,
+    "sha256": "91173aa82507fe1650ecaa82de739f1261eebb493b96b2869dabc8d9f8645bd8",
+    "scope": "new reproduction output; in-progress G prepared package and registry binary remain unchanged"
+  }
+}

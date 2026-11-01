@@ -1,15 +1,25 @@
 import Guest.LiveSDK
 namespace Guest.NetworkSDK
 open Guest.LiveSDK
--- Explicit mode contract. Only encryptedBulk is implemented in profile1.
+-- Explicit positive modes. Mode1 uses the terminal API after an approved
+-- three-hop circuit; the legacy record grant API remains explicitly mode3.
 def interactiveOnion : UInt64 := 1
 def delayedMix : UInt64 := 2
 def encryptedBulk : UInt64 := 3
 def privateCluster : UInt64 := 4
-def modeAvailable (mode : UInt64) : Bool := mode == encryptedBulk
-theorem privacy_modes_fail_closed : modeAvailable interactiveOnion = false ∧ modeAvailable delayedMix = false ∧ modeAvailable privateCluster = false := by decide
+def modeAvailable (mode : UInt64) : Bool := mode == interactiveOnion || mode == encryptedBulk
+def recordModeAvailable (mode : UInt64) : Bool := mode == encryptedBulk
+theorem privacy_modes_fail_closed : modeAvailable delayedMix = false ∧ modeAvailable privateCluster = false := by decide
+theorem interactive_uses_terminal : modeAvailable interactiveOnion = true ∧ recordModeAvailable interactiveOnion = false := by decide
 def maxPayload : UInt64 := 720
 def callNetwork (length t : UInt64) : UInt64 := syscall 30 6 wire length 1024 t
+-- Payload is a typed terminal request. Kernel binds its actual owner; the
+-- selected mailbox descriptor, inner Noise peer and circuit must all be live.
+def terminalSubmit (mode request source length t : UInt64) : UInt64 :=
+  if mode != interactiveOnion || request == 0 || length < 64 || length > 960 then error else
+  callNetwork (64+length) (copy source (wire+64) length (header 39 request 0 0 0 0 0 t))
+def terminalCollect (mode request t : UInt64) : UInt64 :=
+  if mode != interactiveOnion then error else callNetwork 64 (header 40 request 0 0 0 0 0 t)
 -- Provisioning buffer holds ordered clientID/serverID/serviceID/PSK,32 bytes each.
 -- Management-only; the PSK is never returned in status or normal IPC output.
 def configure (role provisioning t : UInt64) : UInt64 :=

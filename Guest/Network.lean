@@ -2,6 +2,11 @@ import Guest.NetworkSDK
 import Guest.Noise
 import Guest.PeerDescription
 import Guest.Transport
+import Guest.NoiseNK
+import Guest.NodeEnrollment
+import Guest.TorRouter
+import Guest.OnionTerminal
+import Guest.NodeStore
 namespace Guest.Network
 open Guest.LiveSDK
 -- Service6 owns this memory. No compiler/publisher key or graph root lives here.
@@ -360,7 +365,7 @@ def grant (caller length t : UInt64) : UInt64 :=
   let stream := if protocol2 t then load64 (command+168) t else 0
   let peer := pins+(if load64 (st+8) t == 1 then 32 else 0)
   let ceiling := if Guest.PeerDescription.verified t then load64 (Guest.PeerDescription.description+48) t else 16777216
-  if !Guest.NetworkSDK.modeAvailable mode then failure 7 t else
+  if !Guest.NetworkSDK.recordModeAvailable mode then failure 7 t else
   if !Guest.PeerDescription.permits operation t then failure 1 t else
   if (protocol2 t && stream == 0) || direction == 0 || direction > 3 || budget == 0 || budget > ceiling || rate == 0 || rate > 65536 || lifetime == 0 || lifetime > 100000 || operation == 0 || operation > 16 ||
     load64 (st+8) t == 0 || !equal (command+64) peer 32 t || !equal (command+96) (pins+64) 32 t then failure 2 t else
@@ -444,6 +449,17 @@ def dispatchSelected (caller rights length t : UInt64) : UInt64 :=
   let admin := (rights &&& 0x100000000) != 0
   let t := store64 (control+96) (load64 (control+96) t+1) t
   if length < 64 || load64 (command+56) t != 1 then failure 2 t else
+  if op == 43 && admin && (length == 96 || length == 288) then
+    Guest.NodeStore.retain (command+64) (if length == 288 then command+96 else 0) t else
+  if op == 44 && admin && length == 96 then Guest.NodeStore.recover (command+64) t else
+  if op == 45 && admin && length == 64 then
+    let t := Guest.TorRouter.stop 0 (Guest.OnionTerminal.clear t)
+    let t := zero Guest.NodeEnrollment.keys 32 (zero Guest.NodeEnrollment.localNode 68 t)
+    let t := syscall 145 0 0 0 2 (Guest.NodeStore.clear t)
+    failure 0 t
+  else if (op >= 38 && op <= 42) || op == 46 || op == 47 then Guest.OnionTerminal.dispatch caller (if admin then 1 else 0) op length t else
+  if op >= 30 && op <= 37 && admin then Guest.TorRouter.dispatch op handle length t else
+  if op >= 20 && op <= 25 && admin then Guest.NodeEnrollment.dispatch op handle length t else
   if op == 13 && (admin || (rights &&& 1024) != 0) && length == 64 then
     if !Guest.PeerDescription.verified t || load64 (st+8) t == 0 then failure 1 t else
       let r := Guest.Transport.connect (activeSlot t) (load64 (st+8) t) (Guest.PeerDescription.description+168) (load64 (Guest.PeerDescription.description+160) t) t
@@ -543,9 +559,10 @@ partial def serveReady (endpoint remaining t : UInt64) : UInt64 :=
   let deviceBefore := load64 (Guest.Transport.st+56) t
   let began := syscall 110 0 0 0 0 t
   let t := Guest.Transport.pump began
-  let t := if Guest.Transport.enabled t then
-    let clock := syscall 110 0 0 0 0 t
-    pumpContexts 0 clock clock
+  let t := if Guest.TorRouter.enabled t then Guest.OnionTerminal.pump (Guest.TorRouter.pump t) else
+    if Guest.Transport.enabled t then
+      let clock := syscall 110 0 0 0 0 t
+      pumpContexts 0 clock clock
     else pump (selectContext 0 t)
   -- Flush a newly queued immutable adapter frame in this same bounded turn.
   let t := if Guest.Transport.enabled t then Guest.Transport.flush t else t

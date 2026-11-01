@@ -3,6 +3,8 @@ import Guest.Devices
 import Guest.GraphicsDevice
 import Guest.AudioDevice
 import Guest.ServiceBindingPolicy
+import Guest.MessengerStoragePolicy
+import Guest.NodeStoragePolicy
 import Guest.SignerEntropy
 namespace Guest.Live
 open Guest.LiveMemory
@@ -14,12 +16,12 @@ def queue (p : UInt64) : UInt64 := 0x80c00000+p*16384
 def rx : UInt64 := 0x80d00000
 def code (p : UInt64) : UInt64 := 0x81000000+p*524288
 def arena (p : UInt64) : UInt64 := 0x81800000+p*0x200000
--- Built-in Objects/Vault profile3 uses the same private512KiB physical slot. Native
+-- Built-in Objects/Vault/Network profile3 uses the same private512KiB physical slot. Native
 -- signed application profile2 retains its256KiB ceiling and existing mapping.
-def codeLimit (p service : UInt64) : UInt64 := if (p == 2 && service == 2) || (p == 3 && service == 3) then 393216 else 262144
-def dataOffset (p : UInt64) : UInt64 := if p == 2 || p == 3 then 393216 else 262144
-def stackOffset (p : UInt64) : UInt64 := if p == 2 || p == 3 then 458752 else 327680
-def serviceSource (p : UInt64) : UInt64 := if p == 2 then 0x80480000 else if p == 3 then 0x80500000 else 0x80300000+(p-1)*262144
+def codeLimit (p service : UInt64) : UInt64 := if (p == 2 && service == 2) || (p == 3 && service == 3) || (p == 6 && service == 6) then 393216 else 262144
+def dataOffset (p : UInt64) : UInt64 := if p == 2 || p == 3 || p == 6 then 393216 else 262144
+def stackOffset (p : UInt64) : UInt64 := if p == 2 || p == 3 || p == 6 then 458752 else 327680
+def serviceSource (p : UInt64) : UInt64 := if p == 2 then 0x80480000 else if p == 3 then 0x80500000 else if p == 6 then 0x80340000 else 0x80300000+(p-1)*262144
 theorem ordinary_application_code_limit (p : UInt64) : codeLimit p 0 = 262144 := by
   simp [codeLimit]
 def physical (p v : UInt64) : UInt64 :=
@@ -84,6 +86,41 @@ def authorizedGrant (caller service operation generation t : UInt64) : Bool :=
     Guest.ServiceBindingPolicy.currentGrant caller service operation generation
       (Guest.load64 (grant+16) t) (Guest.load64 (grant+24) t) (Guest.load64 (grant+32) t) (Guest.load64 (grant+40) t)
 
+-- One bounded asynchronous request/completion per caller. This supervisor-only
+-- record never aliases process RPC fields, so UI may continue compositor calls.
+-- Layout state,token,exactTarget,generation,operation,capacity,length; payload64.
+def asyncAt (p : UInt64) : UInt64 := 0x80b20000+p*2048
+def networkAsyncAllowed (p operation generation t : UInt64) : Bool :=
+  Guest.ServiceBindingPolicy.builtInAsyncAllowed p 6 operation generation ||
+  (p >= 7 && (Guest.load64 (proc p+16) t &&& 1024) != 0 &&
+    ((operation >= 39 && operation <= 42) || operation == 47) && generation == 0)
+
+-- A terminal may read the explicitly selected native Registry. This grants
+-- neither its admission operation nor its signing/configuration operations.
+def routedRegistryAllowed (p service operation generation t : UInt64) : Bool :=
+  Guest.ServiceBindingPolicy.terminalRegistryRead p service operation generation && Guest.load64 (proc p+24) t == 6 &&
+  service == Guest.load64 (state+200) t && live service t &&
+  (service &&& 255) >= 7
+
+def asyncBindingCurrent (p t : UInt64) : Bool :=
+  let a := asyncAt p
+  let service := Guest.load64 (a+16) t
+  let target := service &&& 255
+  authorizedGrant (identity p t) service (Guest.load64 (a+32) t) (Guest.load64 (a+24) t) t ||
+  (target == 6 && service == identity 6 t && live service t && Guest.load64 (proc 6+24) t == 6 &&
+    networkAsyncAllowed p (Guest.load64 (a+32) t) (Guest.load64 (a+24) t) t) ||
+  routedRegistryAllowed p service (Guest.load64 (a+32) t) (Guest.load64 (a+24) t) t
+
+def asyncCurrent (p service token t : UInt64) : Bool :=
+  let a := asyncAt p
+  Guest.load64 a t == 1 && Guest.load64 (a+8) t == token &&
+  Guest.load64 (a+16) t == service &&
+  asyncBindingCurrent p t
+
+def requestCurrent (p service token t : UInt64) : Bool :=
+  (Guest.load64 (proc p) t == 2 && Guest.load64 (proc p+40) t == token &&
+    Guest.load64 (proc p+32) t == service) || asyncCurrent p service token t
+
 partial def cancelGrant (generation p t : UInt64) : UInt64 :=
   if p == 12 then t else
   let t := if Guest.load64 (proc p) t == 2 && Guest.load64 (proc p+232) t == generation then
@@ -92,6 +129,9 @@ partial def cancelGrant (generation p t : UInt64) : UInt64 :=
     let t := Guest.store64 (frame p+80) err t
     Guest.store64 (proc p) 1 t
   else t
+  let a := asyncAt p
+  let t := if Guest.load64 a t != 0 && Guest.load64 (a+24) t == generation then
+    Guest.store64 a 3 (zero (a+64) 128 t) else t
   cancelGrant generation (p+1) t
 
 -- Revoked or terminated requests leave holes that receive discards normally;
@@ -188,7 +228,7 @@ partial def activeServiceRequest (service token caller t : UInt64) : Bool :=
   (Guest.load64 (proc caller) t == 2 && Guest.load64 (proc caller+32) t == service &&
    Guest.load64 (proc caller+40) t == token &&
    authorizedGrant (identity caller t) service (Guest.load64 (proc caller+240) t) (Guest.load64 (proc caller+232) t) t) ||
-  activeServiceRequest service token (caller+1) t
+  asyncCurrent caller service token t || activeServiceRequest service token (caller+1) t
 
 def pte (pa flags : UInt64) : UInt64 := (pa >>> 12)*1024+flags
 partial def pages (tab pa count flags t : UInt64) : UInt64 :=
@@ -244,6 +284,8 @@ def teardown (p why t : UInt64) : UInt64 :=
   let t := purgeQueued old 0 0 t
   let t := invalidateBindings old 0 0 t
   let t := invalidateRoles old 1 t
+  let t := if Guest.load64 0x80b00800 t == old then zero 0x80b00800 8 t else t
+  let t := if Guest.load64 0x80b00880 t == old then zero 0x80b00880 8 t else t
   let t := Guest.AudioDevice.died old t
   let t := if Guest.load64 (state+216) t == old then Guest.store64 (state+216) 0 t else t
   let t := if Guest.load64 (state+128) t == old then Guest.store64 (state+128) 0 t else t
@@ -252,8 +294,9 @@ def teardown (p why t : UInt64) : UInt64 :=
   let t := cancelWaiters old 1 t
   let t := zero (queue p) 2048 t
   let t := clearPrivate p t
+  let t := zero (asyncAt p) 256 t
   let t := if p >= 6 then zero (0x87200000+(p-5)*0x100000) 112640 t else t
-  let t := if p == 2 || p == 3 then zero (code p+stackOffset p) 2048 (zero (code p+dataOffset p) 8192 t)
+  let t := if p == 2 || p == 3 || p == 6 then zero (code p+stackOffset p) 2048 (zero (code p+dataOffset p) 8192 t)
     else zero (code p+262144) 18432 t
   let t := zero (proc p+232) 6 t
   let t := zero (0x80d10000+p*1024) 128 t
@@ -262,7 +305,7 @@ def teardown (p why t : UInt64) : UInt64 :=
 def start (p source len rights entry service t : UInt64) : UInt64 :=
   let generation := Guest.load64 (proc p+8) t
   if generation >= 0x00ffffffffffffff || (generation &&& 0xffffff) == 0xffffff ||
-    ((p == 2 || p == 3) && service != p) || len == 0 || len > codeLimit p service ||
+    ((p == 2 || p == 3 || p == 6) && service != p) || len == 0 || len > codeLimit p service ||
     (entry != 0x200000 && entry != 0x400000) || (entry == 0x400000 && len > 65536) then err else
     let t := zero (proc p) 64 t
     let t := zero (queue p) 2048 t
@@ -380,6 +423,8 @@ def call (p endpoint ptr len capacity t : UInt64) : UInt64 :=
       authorizedGrant (identity p t) endpoint operation generation t
     let contentCall := target == 5 && (endpoint == 5 || endpoint == identity 5 t) &&
       ((operation >= 300 && operation <= 316) || operation == 318) && (Guest.load64 (proc p+16) t &&& 127) != 0
+    let routedRegistry := len == 64 && routedRegistryAllowed p endpoint operation generation t &&
+      Guest.load64 (physical p ptr+56) t == 1
     -- Trusted compositor progress never calls back through a Launcher that
     -- may itself be inspecting the Library. This single read-only operation
     -- neither grants a vault mount nor changes the caller's domain rights.
@@ -403,7 +448,7 @@ def call (p endpoint ptr len capacity t : UInt64) : UInt64 :=
       (endpoint == 3 || endpoint == identity 3 t) && len == 64 && operation == 247 &&
       Guest.load64 (physical p ptr+16) t == 3 && Guest.load64 (physical p ptr+56) t == 1
     if !live (identity target t) t || (if generic then !genericAllowed else
-      !contentCall && !contentProgress && !retainedRead && !retainedAttach && !retainedSelection && !serviceProgress && !allowedEndpoint p target endpoint t) then err else
+      !contentCall && !routedRegistry && !contentProgress && !retainedRead && !retainedAttach && !retainedSelection && !serviceProgress && !allowedEndpoint p target endpoint t) then err else
       let t := if Guest.load64 (proc target) t == 4 then
         let t := Guest.store64 (frame target+80) 0 t
         Guest.store64 (proc target) 1 t else t
@@ -442,6 +487,45 @@ def call (p endpoint ptr len capacity t : UInt64) : UInt64 :=
           let t := Guest.store64 (q+8) (tail+1) t
           Guest.store64 (q+16) (count+1) t
 
+def submitAsync (p endpoint ptr len capacity t : UInt64) : UInt64 :=
+  let target := endpoint &&& 255
+  let a := asyncAt p
+  if Guest.load64 a t != 0 || target == 0 || target >= 12 ||
+      capacity == 0 || !validFor p ptr len 1024 t || len < 64 then err else
+  let builtin := target == 6 && endpoint == identity 6 t && Guest.load64 (proc 6+24) t == 6 &&
+    networkAsyncAllowed p (Guest.load64 (physical p ptr) t) 0 t
+  let registry := len == 64 && routedRegistryAllowed p endpoint (Guest.load64 (physical p ptr) t) 0 t
+  if Guest.load64 (proc target+272) t == 0 && !builtin && !registry then err else
+  let r := call p endpoint ptr len capacity t
+  if r == err then err else
+  let token := Guest.load64 (proc p+40) r
+  let t := zero a 256 r
+  let t := Guest.store64 (a+8) token t
+  let t := Guest.store64 (a+16) (Guest.load64 (proc p+32) t) t
+  let t := Guest.store64 (a+24) (Guest.load64 (proc p+232) t) t
+  let t := Guest.store64 (a+32) (Guest.load64 (proc p+240) t) t
+  let t := Guest.store64 (a+40) capacity t
+  let t := Guest.store64 a 1 t
+  let t := Guest.store64 (proc p+40) 0 t
+  let t := Guest.store64 (proc p+232) 0 t
+  let t := Guest.store64 (proc p+120) 0 t
+  token+Guest.store64 (proc p) 1 t
+
+def collectAsync (p token ptr capacity t : UInt64) : UInt64 :=
+  let a := asyncAt p
+  if token == 0 || Guest.load64 (a+8) t != token || Guest.load64 a t == 0 ||
+    !validFor p ptr capacity 1024 t then err else
+  if Guest.load64 a t == 3 || !asyncBindingCurrent p t then err+zero a 256 t else
+  if Guest.load64 a t == 1 then 0 else
+  let len := Guest.load64 (a+48) t
+  if len > capacity then err else
+  let t := copy (a+64) (physical p ptr) len t
+  len+zero a 256 t
+
+def cancelAsync (p token t : UInt64) : UInt64 :=
+  let a := asyncAt p
+  if token == 0 || Guest.load64 a t == 0 || Guest.load64 (a+8) t != token then err else zero a 256 t
+
 partial def receive (p ptr capacity fuel t : UInt64) : UInt64 :=
   if !valid ptr capacity 2048 || capacity < 32 then err else
     let q := queue p
@@ -462,8 +546,10 @@ partial def receive (p ptr capacity fuel t : UInt64) : UInt64 :=
       let generation := Guest.load64 (slot+1056) t
       let genericInvalid := Guest.load64 (proc p+272) t != 0 &&
         !authorizedGrant caller (identity p t) (Guest.load64 (slot+32) t) generation t
-      if !live caller t || Guest.load64 (proc callerPID) t != 2 || Guest.load64 (proc callerPID+40) t != token || Guest.load64 (proc callerPID+32) t != identity p t || genericInvalid then receive p ptr capacity (fuel-1) (zero slot 136 t)
+      if !live caller t || !requestCurrent callerPID (identity p t) token t || genericInvalid then receive p ptr capacity (fuel-1) (zero slot 136 t)
       else if len+32 > capacity then
+        let a := asyncAt callerPID
+        let t := if asyncCurrent callerPID (identity p t) token t then Guest.store64 a 3 (zero (a+64) 128 t) else t
         let t := Guest.store64 (proc callerPID) 1 t
         let t := Guest.store64 (frame callerPID+80) err t
         receive p ptr capacity (fuel-1) (zero slot 136 t)
@@ -481,6 +567,12 @@ partial def reply (sender token ptr len p t : UInt64) : UInt64 :=
         let t := copy (physical sender ptr) (physical p dst) len t
         let t := Guest.store64 (frame p+80) len t
         Guest.store64 (proc p) 1 t
+    else if asyncCurrent p (identity sender t) token t then
+      let a := asyncAt p
+      if len > Guest.load64 (a+40) t || len == 0 then err else
+      let t := copy (physical sender ptr) (a+64) len t
+      let t := Guest.store64 (a+48) len t
+      Guest.store64 a 2 t
     else reply sender token ptr len (p+1) t
 
 def release (index : UInt64) : UInt64 := 0x80b10000+index*256
@@ -515,6 +607,9 @@ def dispatch (p op h ptr n v t : UInt64) : UInt64 :=
   else if op == 9 then t
   else if op == 10 then teardown p h t
   else if op == 30 then call p h ptr n v t
+  else if op == 133 then submitAsync p h ptr n v t
+  else if op == 134 then if v == 0 then collectAsync p h ptr n t else err
+  else if op == 135 then if ptr == 0 && n == 0 && v == 0 then cancelAsync p h t else err
   else if op == 36 then
     if (h == p || h == identity p t) && Guest.load64 (queue p+16) t > 0 then receive p ptr n 8 t else 0
   else if op == 31 then
@@ -735,11 +830,57 @@ def dispatch (p op h ptr n v t : UInt64) : UInt64 :=
   else if op == 128 then boundEndpoint (identity p t) h ptr t
   else if op == 129 then
     if p != 1 then err else revokeBinding h ptr n v t
+  else if op == 144 then
+    if p != 1 || ptr != 1 || v != 2 || n > 1 then err else
+    if n == 0 then zero 0x80b00880 8 t else
+    if h != identity 6 t || !live h t || Guest.load64 (proc 6+24) t != 6 || Devices.capacityPurpose 2 t < 64 then err else
+    Guest.store64 0x80b00880 h t
+  else if op == 145 then
+    if p != 6 || h != 0 || ptr != 0 || n != 0 || v != 2 then err else zero 0x80b00880 8 t
+  else if op == 141 || op == 142 || op == 143 then
+    if !Guest.NodeStoragePolicy.ownerAllowed p (Guest.load64 (proc p+24) t) (identity p t)
+      (Guest.load64 0x80b00880 t) v then err else
+    if op == 143 then
+      if h != 0 || ptr != 0 || n != 0 then err else Devices.blockPurpose 2 4 0 0x80e08000 0 t
+    else if !Guest.NodeStoragePolicy.extentAllowed h n || !validFor p ptr n 2048 t then err else
+    let t := if op == 142 then copy (physical p ptr) 0x80e08000 n t else t
+    let r := Devices.blockPurpose 2 (if op == 141 then 0 else 1) (Guest.NodeStoragePolicy.firstSector+h) 0x80e08000 n t
+    let t := if r == 0 && op == 141 then copy 0x80e08000 (physical p ptr) n r else r
+    let t := zero 0x80e08000 512 t
+    if r == 0 then t else err
+  else if op == 139 then
+    -- Explicit owner/domain2 retention consent. No key or block pointer crosses
+    -- the management boundary. Small existing Objects disks are never extended.
+    if p != 1 || ptr != 2 || v != 0 || n > 1 then err else
+    if n == 0 then zero 0x80b00800 8 t else
+    if h == 0 || h != Guest.load64 (bindingRole 2) t || !live h t ||
+      Guest.load64 (proc (h &&& 255)+272) t != 2 || Guest.load64 (proc (h &&& 255)+16) t != 0 ||
+      Devices.capacityPurpose 1 t < Guest.MessengerStoragePolicy.firstSector+Guest.MessengerStoragePolicy.sectorCount then err else
+    Guest.store64 0x80b00800 h t
+  else if op == 140 then
+    if h != 0 || ptr != 0 || n != 0 || v != 2 || Guest.load64 0x80b00800 t != identity p t then err
+    else zero 0x80b00800 8 t
+  else if op == 136 || op == 137 || op == 138 then
+    if !Guest.MessengerStoragePolicy.ownerAllowed (Guest.load64 (proc p+272) t)
+      (Guest.load64 (proc p+16) t) (identity p t) (Guest.load64 (bindingRole 2) t)
+      (Guest.load64 0x80b00800 t) v then err else
+    if op == 138 then
+      if h != 0 || ptr != 0 || n != 0 then err else Devices.blockPurpose 1 4 0 0x80e08000 0 t
+    else
+    if !Guest.MessengerStoragePolicy.extentAllowed h n (Devices.capacityPurpose 1 t) ||
+      !validFor p ptr n 4096 t then err else
+    let t := if op == 137 then copy (physical p ptr) 0x80e08000 n t else t
+    let r := Devices.blockPurpose 1 (if op == 136 then 0 else 1)
+      (Guest.MessengerStoragePolicy.firstSector+h) 0x80e08000 n t
+    let t := if r == 0 && op == 136 then copy 0x80e08000 (physical p ptr) n r else r
+    let t := zero 0x80e08000 512 t
+    if r == 0 then t else err
   else if op == 130 then
-    -- The signer can request only a seed-sized entropy sample in its private
-    -- arena. No stream/device authority or application RNG right is granted.
-    if Guest.load64 (bindingRole 1) t != identity p t || Guest.load64 (proc p+272) t != 1 ||
-        Guest.load64 (proc p+16) t != 0 || n != 32 || h != 0 || v != 0 ||
+    -- Only exact registered rights-zero signing/session owners draw32 bytes.
+    -- Repeated checked draws support XEdDSA; applications gain no RNG right.
+    let role := Guest.load64 (proc p+272) t
+    if !Guest.ServiceBindingPolicy.entropyOwner role (Guest.load64 (proc p+16) t) ||
+        Guest.load64 (bindingRole role) t != identity p t || n != 32 || h != 0 || v != 0 ||
         ptr < 0x600000 || ptr > 0x7fffe0 || ptr % 8 != 0 then err else
     let t := zero (physical p ptr) 4 t
     let t := zero Devices.randomBuffer 32 t
@@ -751,11 +892,14 @@ def dispatch (p op h ptr n v t : UInt64) : UInt64 :=
     if Guest.load64 (proc p+272) t == 0 || h == 0 ||
         !activeServiceRequest (identity p t) h 1 t then err else t
   else if op == 132 then
-    -- A scoped signer permit must follow the current IPC402 grant generation.
+    -- A scoped signer permit follows its exact IPC operation generation.
     -- Revoking and rebinding the same live recipient cannot revive old consent.
     if Guest.load64 (bindingRole 1) t != identity p t || Guest.load64 (proc p+272) t != 1 ||
-        Guest.load64 (proc p+16) t != 0 || ptr != 402 || n != 0 || v != 0 || !live h t then err else
-    let grant := findGrant h (identity p t) 402 0 t
+        Guest.load64 (proc p+16) t != 0 || (ptr != 402 && ptr != 409) || v != 0 || !live h t then err else
+    let recipient := h &&& 255
+    if (ptr == 402 && n != 0) || (ptr == 409 && (n != 3 || Guest.load64 (bindingRole 3) t != h ||
+      !Guest.ServiceBindingPolicy.receiptConsumer (Guest.load64 (proc recipient+272) t) (Guest.load64 (proc recipient+16) t))) then err else
+    let grant := findGrant h (identity p t) ptr 0 t
     if grant != 0 && grantLive grant t then Guest.load64 (grant+40) t else err
   else if op == 116 then Guest.load64 (state+16) t
   else if op == 117 then
@@ -816,7 +960,7 @@ def dispatch (p op h ptr n v t : UInt64) : UInt64 :=
       Guest.store64 (state+200) h t
   else if op == 113 then
     let registry := Guest.load64 (state+200) t
-    if (p == 1 || (Guest.load64 (proc p+16) t &&& 1024) != 0) && registry != 0 && live registry t then registry else err
+    if (p == 1 || (p == 6 && Guest.load64 (proc p+24) t == 6) || (Guest.load64 (proc p+16) t &&& 1024) != 0) && registry != 0 && live registry t then registry else err
   else if op == 114 then
     if p != 1 || (h != 0 && (!live h t || (h &&& 255) < 7)) then err else
       let old := Guest.load64 (state+208) t
@@ -856,6 +1000,7 @@ def kernelMain (initial : UInt64) : UInt64 :=
   let t := zero 0x80100000 24576 t
   let t := zero 0x80b00000 2560 t
   let t := zero 0x80b10000 512 t
+  let t := zero 0x80b20000 3072 t
   let t := zero 0x80c00000 24576 t
   let t := zero rx 2048 t
   let t := Guest.store8 0x10000002 7 t

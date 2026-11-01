@@ -32,19 +32,22 @@ def independent_vectors():
 def source(vectors,full=False):
  s='import Guest.Ed25519\nset_option maxRecDepth 10000\nset_option maxHeartbeats 4000000\nnamespace build.NativeEd25519\n'
  s+='def check (t : UInt64) : UInt64 :=\n'
+ s+='  let t := Guest.store64 0x640000 0x13579bdf t\n  let t := Guest.store64 0x641000 0x2468ace0 t\n'
  for i,v in enumerate(vectors):
   seed,pub,msg,sig=map(bytes.fromhex,[v['seed'],v['public_key'],v['message'],v['signature']])
   for p,raw in [(0x650000,seed),(0x650040,pub),(0x650080,sig),(0x651000,msg),(0x653000,hashlib.sha512(msg).digest())]:s+=store_bytes(p,raw)+'\n'
   s+=f'''  let t := Guest.SHA512.sha512At Guest.Ed25519.hashScratch 0x651000 {len(msg)} 0x660000 t
   if Guest.Ed25519.difference 0x653000 0x660000 64 0 t != 0 then {i*10+1} else
   let t := Guest.Ed25519.publicKey 0x650000 0x660000 t
-  if Guest.Ed25519.nonzero 0x640000 28672 0 t != 0 then 81 else
+  if Guest.load64 0x640000 t != 0x13579bdf || Guest.load64 0x641000 t != 0x2468ace0 then 98 else
+  if Guest.Ed25519.nonzero 0x6b0000 28672 0 t != 0 then 81 else
   if Guest.Ed25519.difference 0x650040 0x660000 32 0 t != 0 then {i*10+2} else
   let t := Guest.Ed25519.sign 0x650000 0x650040 0x651000 {len(msg)} 0x660000 t
   if Guest.Ed25519.difference 0x650080 0x660000 64 0 t != 0 then {i*10+3} else
-  if Guest.Ed25519.nonzero 0x640000 28672 0 t != 0 then 82 else
+  if Guest.Ed25519.nonzero 0x6b0000 28672 0 t != 0 then 82 else
   if !Guest.Ed25519.verify 0x650040 0x651000 {len(msg)} 0x650080 t then {i*10+4} else
-  if Guest.Ed25519.nonzero 0x640000 28672 0 t != 0 then 83 else
+  if Guest.load64 0x640000 t != 0x13579bdf || Guest.load64 0x641000 t != 0x2468ace0 then 99 else
+  if Guest.Ed25519.nonzero 0x6b0000 28672 0 t != 0 then 83 else
   let t := Guest.store8 0x10000000 {65+i} t
 '''
  # Strict public-input and cleanup checks retain published last vector seed.
@@ -52,24 +55,24 @@ def source(vectors,full=False):
  s+=store_bytes(0x654000,bytes.fromhex(vectors[-1]['signature']))+'\n'
  s+=store_bytes(0x654020,(2**252+27742317777372353535851937790883648493).to_bytes(32,'little'))+'\n'
  s+=f"""  if Guest.Ed25519.verify 0x650040 0x651000 {n} 0x654000 t then 84 else
-  if Guest.Ed25519.nonzero 0x640000 28672 0 t != 0 then 85 else
+  if Guest.Ed25519.nonzero 0x6b0000 28672 0 t != 0 then 85 else
 """
  # Noncanonical public y=p, negative-zero encoding, identity, and nonsquare y=2.
  for i,public in enumerate([(2**255-19).to_bytes(32,'little'),(1+2**255).to_bytes(32,'little'),(1).to_bytes(32,'little'),(2).to_bytes(32,'little')]):
   s+=store_bytes(0x654100,public)+'\n'
   s+=f"""  if Guest.Ed25519.verify 0x654100 0x651000 {n} 0x650080 t then {86+i} else
-  if Guest.Ed25519.nonzero 0x640000 28672 0 t != 0 then 90 else
+  if Guest.Ed25519.nonzero 0x6b0000 28672 0 t != 0 then 90 else
 """
  # Oversized operations must clear poisoned scratch and not touch output.
- s+="""  let t := Guest.store64 0x640000 0x12345678 t
-  let t := Guest.store64 0x646ff8 0x87654321 t
+ s+="""  let t := Guest.store64 0x6b0000 0x12345678 t
+  let t := Guest.store64 0x6b6ff8 0x87654321 t
   let t := Guest.store64 0x660000 0x1122334455667788 t
   let r := Guest.Ed25519.sign 0x650000 0x650040 0x651000 4097 0x660000 t
   if r != Guest.Ed25519.err || Guest.load64 0x660000 r != 0x1122334455667788 then 91 else
-  if Guest.Ed25519.nonzero 0x640000 28672 0 r != 0 then 92 else
-  let t := Guest.store64 0x640000 0x12345678 r
+  if Guest.Ed25519.nonzero 0x6b0000 28672 0 r != 0 then 92 else
+  let t := Guest.store64 0x6b0000 0x12345678 r
   if Guest.Ed25519.verify 0x650040 0x651000 4097 0x650080 t then 93 else
-  if Guest.Ed25519.nonzero 0x640000 28672 0 t != 0 then 94 else
+  if Guest.Ed25519.nonzero 0x6b0000 28672 0 t != 0 then 94 else
 """
  if full:
   s+=f"""  let t := Guest.store8 0x651000 (Guest.load8 0x651000 t ^^^ 1) t
@@ -140,9 +143,12 @@ def inspect_assembly(path):
  routines=dict(re.findall(r'^lt_(Guest_(?:Ed25519|Noise25519|SHA512)_[^:]+):\n(.*?)^\.size ',path.read_text(),re.M|re.S))
  returns=0
  for name,body in routines.items():
-  paths=body.split('  ret\n')[:-1];returns+=len(paths)
-  if body.count('secret_frame_clear')<2*len(paths):raise RuntimeError('missing frame erasure: '+name)
-  if any(not part.rstrip().endswith('li t6, 0') for part in paths):raise RuntimeError('missing register erasure: '+name)
+  paths=body.count('  j lt_secret_frame_clear_return');returns+=paths
+  if not paths or '  ret\n' in body:raise RuntimeError('sensitive return bypasses shared erasure: '+name)
+ helper=path.read_text().split('lt_secret_frame_clear_return:\n',1)[1].split('.size lt_secret_frame_clear_return',1)[0]
+ if 'sd zero, 0(t4)' not in helper or 'bnez t5, .Lsecret_frame_clear' not in helper or 'add sp, sp, t6' not in helper:raise RuntimeError('missing fixed-frame erasure loop')
+ for register in ['a1','a2','a3','a4','a5','a6','a7','t0','t1','t2','t3','t4','t5','t6']:
+  if f'li {register}, 0' not in helper:raise RuntimeError('missing register erasure: '+register)
  reviewed=['Guest_Ed25519_scalarLoop','Guest_Ed25519_pointSwap','Guest_Ed25519_reduceBits','Guest_Ed25519_reduceSelect','Guest_Ed25519_reduceSubtract','Guest_Ed25519_reduceShift','Guest_Ed25519_multiplyInner','Guest_Ed25519_carryWide','Guest_Noise25519_multiplyInner','Guest_SHA512_rounds']
  summaries={name:dict(sha256=hashlib.sha256(routines[name].encode()).hexdigest(),conditional_branches=len(re.findall(r'^  b(?:eq|ne|nez|eqz|lt|ge)',routines[name],re.M))) for name in reviewed}
  return dict(sensitive_functions=len(routines),sensitive_return_paths=returns,fixed_frame_and_argument_temporary_register_erasure='present on every emitted return',reviewed_routines=summaries,manual_control_flow_review='Scalar-bit selection and reduction use masks. Core loop exits use public counters; addresses use fixed scratch, public pointers and public indices. SHA padding uses public length/offset and constants use public round indices.',limits='No dynamic taint proof, compiler correctness proof, microarchitectural constant-time proof or independent audit. Live result a0 and protected in-progress kernel contexts remain necessary; whole-process termination cleanup belongs to the kernel.')

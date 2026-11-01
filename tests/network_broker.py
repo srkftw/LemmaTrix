@@ -3,7 +3,7 @@
 Normal Forge actions are verified separately. No graph data is copied between
 hosts here: the payload must travel through two independently running guests.
 """
-import argparse,hashlib,json,os,socket,struct,subprocess,sys,tempfile,time
+import argparse,hashlib,json,os,signal,socket,struct,subprocess,sys,tempfile,time
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'tools'))
@@ -35,7 +35,7 @@ def run_pair(client_backend,server_backend,size=4097,signed_description=False):
    for i,backend in [(1,server_backend),(0,client_backend)]:
     log=(directory/f'guest{i}.log').open('wb');logs.append(log)
     args=[str(ROOT/'lt'),'run','--backend',backend,'--socket',str(socks[i]),'--network-listen' if i==1 else '--network',endpoint]
-    processes.append(subprocess.Popen(args,cwd=ROOT,stdout=log,stderr=subprocess.STDOUT))
+    processes.append(subprocess.Popen(args,cwd=ROOT,stdout=log,stderr=subprocess.STDOUT,start_new_session=True))
    for path in socks:wait_until(path.exists)
    clients=[live.Client(path,timeout=90) for path in socks]
    if description:
@@ -118,10 +118,10 @@ def run_pair(client_backend,server_backend,size=4097,signed_description=False):
   finally:
    for client in clients:client.close()
    for process in processes:
-    if process.poll() is None:process.terminate()
+    if process.poll() is None:os.killpg(process.pid,signal.SIGTERM)
    for process in processes:
     try:process.wait(timeout=5)
-    except subprocess.TimeoutExpired:process.kill();process.wait()
+    except subprocess.TimeoutExpired:os.killpg(process.pid,signal.SIGKILL);process.wait()
    for log in logs:log.close()
 
 def main():

@@ -162,5 +162,7 @@ def openRecord (input n out t : UInt64) : UInt64 :=
 
 def disconnect (t : UInt64) : UInt64 :=
   let t := clear state 40 t
-  clear 0x620000 320 t
+  let t := clear 0x620000 320 t
+  let t := clear hashScratch 80 t
+  clear concat 40 t
 end Guest.Noise

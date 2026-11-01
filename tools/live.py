@@ -95,7 +95,7 @@ class OpaqueStream:
    if remote:remote.close()
    if listener:listener.close()
 
-def session(backend,path,vault=None,readonly=False,graphics=None,display="none",network=None,network_listen=None,server_store=None,server_readonly=False,image=None,network_mux=False,pcm_sink=None,pcm_play=False,startup_timeout=None):
+def session(backend,path,vault=None,readonly=False,graphics=None,display="none",network=None,network_listen=None,server_store=None,server_readonly=False,image=None,network_mux=False,pcm_sink=None,pcm_play=False,startup_timeout=None,network_fault_control=None):
  if startup_timeout is None:startup_timeout=300 if backend=='aarch64' else 60
  if not 1<=startup_timeout<=600:raise ValueError('startup timeout must be within1..600 seconds')
  image=Path(image or os.environ.get('LT_GUEST_IMAGE') or driver.BUILD/'live/guest.bin')
@@ -107,14 +107,25 @@ def session(backend,path,vault=None,readonly=False,graphics=None,display="none",
   server_store=server_store.resolve()
   if not server_store.is_file():raise ValueError('server backing must be an explicitly supplied existing image')
   if vault and os.path.samefile(vault,server_store):raise ValueError('personal and server purposes require distinct backing devices')
+ # A sparse personal backing can place authorized domains above the shell's
+ # default 2-GiB file-size limit. The opaque block adapter must be able to write
+ # every byte of the explicitly selected existing backing after a restart too.
+ import resource
+ writable=[p.stat().st_size for p,ro in ((vault,readonly),(server_store,server_readonly)) if p and not ro]
+ if writable:
+  wanted=max(writable);soft,hard=resource.getrlimit(resource.RLIMIT_FSIZE)
+  if soft!=resource.RLIM_INFINITY and soft<wanted:
+   if hard!=resource.RLIM_INFINITY and hard<wanted:raise ValueError('writable backing exceeds the process hard file-size limit')
+   resource.setrlimit(resource.RLIMIT_FSIZE,(wanted,hard))
  if path.exists():raise ValueError('socket path exists; refusing to replace it')
+ if network_fault_control is not None and not network_mux:raise ValueError('network fault control requires the explicit multiplex transport')
  server=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM)
  input_path=None;input_fd=None;created_input=False
  from pcm import PCMSink
  audio=PCMSink(pcm_sink,pcm_play) if pcm_sink or pcm_play else None
  if network_mux:
   from transport import MultiplexStream
-  transport=MultiplexStream()
+  transport=MultiplexStream(network_fault_control)
  else:transport=OpaqueStream(network_listen or network, bool(network_listen)) if network or network_listen else None
  try:
   if graphics and backend!='qemu':
@@ -308,6 +319,7 @@ def main(argv=None):
  sub=p.add_subparsers(dest='mode',required=True)
  s=sub.add_parser('session');s.add_argument('--backend',choices=['qemu','x86_64','aarch64'],default='qemu');s.add_argument('--socket',required=True,type=Path);s.add_argument('--vault',type=Path);s.add_argument('--vault-readonly',action='store_true');s.add_argument('--display',choices=['none','gtk','sdl'],default='none');s.add_argument('--graphics',type=Path,help='QMP socket (QEMU) or raw pixel/input prefix (assembly)')
  s.add_argument('--network-mux',action='store_true',help='LT-Transport-v2: four guest-selected independent opaque connections');s.add_argument('--network',help='explicit opaque UNIX socket or numeric HOST:PORT endpoint');s.add_argument('--network-listen',help='explicit opaque numeric HOST:PORT listener');s.add_argument('--server-store',type=Path);s.add_argument('--server-store-readonly',action='store_true')
+ s.add_argument('--network-fault-control',type=Path,help='opt-in local0600 UNIX control socket: bounded opaque per-epoch outgoing-byte pause/resume/status; requires --network-mux')
  s.add_argument('--image',type=Path,help='explicit identified common guest image (default build/live/guest.bin)')
  v=sub.add_parser('vault-init');v.add_argument('path',type=Path);v.add_argument('--sectors',type=int,default=512);v.add_argument('--key-out',type=Path)
  c=sub.add_parser('ctl');c.add_argument('--socket',required=True,type=Path);cs=c.add_subparsers(dest='command',required=True)
@@ -342,7 +354,7 @@ def main(argv=None):
  args=p.parse_args(argv)
  if args.mode=='session':
   if sum(bool(v) for v in (args.network,args.network_listen,args.network_mux))>1:raise ValueError('select one network transport contract')
-  return session(args.backend,args.socket,args.vault,args.vault_readonly,args.graphics,args.display,args.network,args.network_listen,args.server_store,args.server_store_readonly,args.image,args.network_mux,args.pcm_sink,args.pcm_play,args.startup_timeout)
+  return session(args.backend,args.socket,args.vault,args.vault_readonly,args.graphics,args.display,args.network,args.network_listen,args.server_store,args.server_store_readonly,args.image,args.network_mux,args.pcm_sink,args.pcm_play,args.startup_timeout,args.network_fault_control)
  if args.mode=='vault-init':
   if args.sectors<304:raise ValueError('development Objects vault needs >=304 sectors')
   if args.path.exists() or (args.key_out and args.key_out.exists()):raise ValueError('vault/key output exists; refusing overwrite')
