@@ -83,7 +83,7 @@ def approve_exact_picker(g,expected,*,approve=True):
     raise AssertionError('trusted picker did not offer the exact signed release root')
 
 
-def prepare(g,ui,output,*,archive_path=ROOT/'build/signed-forge-journey-2/published-closure.json',publisher=ROOT/'build/signed-forge-journey-2/publisher.pub',existing=None):
+def prepare(g,ui,output,*,archive_path=ROOT/'tests/fixtures/campaign008-existing-forge-closure.json',publisher=ROOT/'tests/fixtures/campaign008-existing-forge-publisher.pub',existing=None):
     output.mkdir(parents=True,exist_ok=True)
     journal_path=output/'prepare.json'
     provenance=dict(schema=1,archive=str(archive_path.resolve()),archive_sha256=hashlib.sha256(archive_path.read_bytes()).hexdigest(),publisher=str(publisher.resolve()),existing=existing)
