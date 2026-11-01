@@ -118,7 +118,7 @@
     }
   ],
   "common_run": {
-    "result": "running native operator setup; no new-image product acceptance yet",
+    "result": "in progress: three concurrent Feed clients and first UI-authored cross-federation event passed; later stages pending",
     "output": "build/campaign009-connected-v7",
     "configuration": {
       "image_sha256": "2e5147c4198cf7ec39ab053f2ea8895cfdceb1c9b9dcf79e1b7bb7627314bcdf",
@@ -127,7 +127,37 @@
       "replication_auto_renew": true,
       "feed_manifest": "build/campaign009-final-v7-feed/packages.json",
       "messenger_manifest": "build/campaign009-final-v4-messenger/packages.json"
-    }
+    },
+    "checkpoints": [
+      {
+        "utc": "2026-11-01T17:33:24Z",
+        "kind": "three-concurrent-feed-clients",
+        "clients": [
+          "charlie",
+          "alice",
+          "bob"
+        ],
+        "alpha_clients": [
+          "charlie",
+          "bob"
+        ],
+        "beta_clients": [
+          "alice"
+        ],
+        "shared_relays": 3,
+        "operator_handoffs": 0
+      },
+      {
+        "utc": "2026-11-01T17:34:47Z",
+        "kind": "native-ui-post-crossed-federations",
+        "event_id": "3f7ccee79369e00ca2f6007ef272d47fc163d71a7b4059bdbeec340d7a1a301e",
+        "content_bytes": 126,
+        "original_signed_bytes": 480,
+        "alpha_committed": true,
+        "beta_original_bytes_match": true,
+        "audience": "explicit home and selected peer"
+      }
+    ]
   },
   "component_record": "campaign-009-components.json",
   "capacity": {
@@ -159,7 +189,7 @@
     "replication_allocation_bytes_max": 1048576,
     "replication_attempts_per_event": 9,
     "polls_per_attempt": 128,
-    "actual_concurrent_clients_in_common_run": 0,
+    "actual_concurrent_clients_in_common_run": 3,
     "mailbox_progress_ticks": 10000,
     "mailbox_absolute_stage_ticks": 60000,
     "relay_setup_ticks": 100000,
