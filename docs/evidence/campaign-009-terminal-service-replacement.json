@@ -1,0 +1,253 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "image_sha256": "854253bc6b0d46ba043e6056ea8c065b00d4e8560b062d6f6f9220034f76a29b",
+  "packages": {
+    "identity": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+    "feed-federation": "02041c0eeca13f17a62a8913954558d9dc5be7e52f55d5db915dc76b14241526",
+    "mailbox": "24e249a218f52813953b8d204f1c7b3d1129e1b675a9ed8500731cf842049135"
+  },
+  "feed_service": {
+    "instance": 18216179405942685960,
+    "release_id": "02041c0eeca13f17a62a8913954558d9dc5be7e52f55d5db915dc76b14241526",
+    "federation": "2d3f155287fbc131838716cff6552e4112d84cf3ca35fda61f327e96fa1fcf28",
+    "peer": "872f5d2415ac5f07af3ee970d05f9bda9da5bed6b791522abbe4a092e36131b9",
+    "moderator_public": "12d3769e1840ebd25b4d530a97c75411b286529f37ab6aa6f2bc41011d9158c0",
+    "namespace": "ee787c3b9451bddea98a715503708713eeae6eb422111b9fba7701edc5b6df68",
+    "status": [
+      0,
+      0,
+      0,
+      64,
+      4,
+      16384,
+      0,
+      1
+    ],
+    "storage_grants": [
+      18216179410237653249,
+      18216179410237653506,
+      18216179410237653763,
+      18216179410237654020,
+      18216179410237654277,
+      18216179410237654534,
+      18216179410237654791,
+      18216179410237655048
+    ],
+    "storage_grants_are_live_session_handles": true,
+    "capacity": {
+      "events": 8,
+      "content_bytes": 131072,
+      "stages": 4,
+      "content_max": 16384,
+      "segments": 7,
+      "per_author_events": 16,
+      "per_author_content_bytes": 262144
+    },
+    "persistence": "native purpose2 ServerStore; index commit follows immutable content segment commit",
+    "lifecycle": "long-running native listener; no per-client handoff or host replication loop"
+  },
+  "checks": [
+    {
+      "check": "old terminal owns and cancels an uncommitted stage while a different primary service remains authenticated",
+      "result": "pass",
+      "old_mailbox": 14376374318563066120,
+      "old_handle": 1,
+      "feed_status": {
+        "terminal": [
+          0,
+          1,
+          64,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "application": [
+          0,
+          0,
+          0,
+          8,
+          131072,
+          0,
+          0,
+          1
+        ],
+        "body": ""
+      },
+      "mailbox_network": 14376374318563066118,
+      "terminal": [
+        0,
+        1,
+        3,
+        0,
+        1048256,
+        254,
+        0,
+        1
+      ]
+    },
+    {
+      "check": "idle old NK session cannot dispatch to a replacement primary app; unrelated Feed context still completes native RPC",
+      "result": "pass",
+      "old_mailbox": 14376374318563066120,
+      "new_mailbox": 14376374318563066376,
+      "stale_session_result": {
+        "terminal": [
+          8,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "application": null
+      },
+      "unchanged_network": 14376374318563066118,
+      "new_stage_before": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        40482,
+        1
+      ],
+      "new_stage_after": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        40584,
+        1
+      ],
+      "unaffected_feed": {
+        "terminal": [
+          0,
+          2,
+          64,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "application": [
+          0,
+          0,
+          0,
+          8,
+          131072,
+          0,
+          0,
+          1
+        ],
+        "body": ""
+      },
+      "feed_terminal": [
+        0,
+        1,
+        3,
+        0,
+        1048448,
+        254,
+        0,
+        1
+      ],
+      "relay_states": {
+        "relay1": [
+          0,
+          1,
+          0,
+          38,
+          0,
+          4,
+          0,
+          1
+        ],
+        "relay2": [
+          0,
+          1,
+          0,
+          38,
+          0,
+          4,
+          0,
+          1
+        ],
+        "relay3": [
+          0,
+          1,
+          0,
+          38,
+          0,
+          4,
+          0,
+          1
+        ]
+      }
+    },
+    {
+      "check": "fresh authenticated transport can use the replacement under current capability and exact app grant",
+      "result": "pass",
+      "old_uncommitted_handle": 1,
+      "new_handle": 1,
+      "serial_reuse_under_fresh_context": true,
+      "fresh_terminal": [
+        0,
+        1,
+        3,
+        0,
+        1048042,
+        253,
+        0,
+        1
+      ],
+      "final_feed": {
+        "terminal": [
+          0,
+          3,
+          64,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "application": [
+          0,
+          0,
+          0,
+          8,
+          131072,
+          0,
+          0,
+          1
+        ],
+        "body": ""
+      }
+    }
+  ],
+  "seconds": 565.0071971159996,
+  "host_private_keys": false,
+  "host_relay": false,
+  "operator_stop_listen": false,
+  "limits": "Isolated all-QEMU native context replacement probe. Opaque ciphertext/capability inputs qualify staging authority, not signed Messenger acceptance or graphical community history. Feed is a real role16 service; same-Network Registry bank isolation is qualified separately by focused native state transitions.",
+  "native_source_commit": "8b4e26f",
+  "controller_commit": "8eb3078",
+  "controller": "tests/native_terminal_replacement.py",
+  "record_path": "build/campaign009-native-terminal-replacement/evidence.json",
+  "record_sha256": "5ab7ec25a553492ddc7798d78f6d5cc9d0053970f3476521b59a68e45b64500b",
+  "replacement_observation_native_ticks": {
+    "before": 40482,
+    "after": 40584,
+    "difference": 102,
+    "scope": "Local server ticks include observer calls; not trusted global civil time or isolated RPC latency"
+  }
+}
