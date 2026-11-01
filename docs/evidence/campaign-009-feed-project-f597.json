@@ -1,0 +1,211 @@
+{
+  "schema": 1,
+  "result": "pass-application-only",
+  "qualification": "partial f597 application-only trial; no full connected-campaign pass",
+  "image": {
+    "path": "build/campaign009-final-v6.bin",
+    "sha256": "f5978d3b335e699b55bf76453a5d5063d816e15bef382df9e33c8d67d01473df",
+    "native_source_commit": "937320ec4068f2ae2b77ac402be8687e61493538"
+  },
+  "native_feed_bundle": "build/campaign009-final-v7-feed",
+  "native_feed_packages": [
+    {
+      "name": "identity",
+      "rights": 0,
+      "code_bytes": 115952,
+      "code_sha256": "1437162555de9c55c72806039df49d07ead2ed36a267de5bfc7a3f886028bca7",
+      "release_id": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+      "package_sha256": "d6467b6bf812768f4e25a466c4ce0c425635444f78b4b34fc85c50e1579ea5aa"
+    },
+    {
+      "name": "feed-account",
+      "rights": 1024,
+      "code_bytes": 145376,
+      "code_sha256": "fb1f2e8e34a47263d3450898a6f800d3f72a79081644413180b44b574951ccd8",
+      "release_id": "f50eaa12d7dc69c962584ce34a12d53d9b064970c640d23d594e930d7fc4bc07",
+      "package_sha256": "9d9be1ad2238d6e5063ac5664786939c2c186a08b4f613ed8912e2f9eb985b50"
+    },
+    {
+      "name": "feed",
+      "rights": 799,
+      "code_bytes": 176848,
+      "code_sha256": "fbe5f9cf983464432ae4781bb7533a7182341d796d16e4bd20f4603cf3d2706f",
+      "release_id": "bfd1a9584b654f8ee4f0c3f1b3703608b452da7a9ad472683821aa8f4f13a635",
+      "package_sha256": "964a4a92a901520a151a7e7eb9f56c33733302fd8672b9109dd707eb51a4313d"
+    },
+    {
+      "name": "feed-federation",
+      "rights": 3072,
+      "code_bytes": 167516,
+      "code_sha256": "59b107b5702c4d231551da67a053543c94e012bd3d70bae4eeb1e2edd26f49e3",
+      "release_id": "02041c0eeca13f17a62a8913954558d9dc5be7e52f55d5db915dc76b14241526",
+      "package_sha256": "6cf3b1c142b5e076337575dfd22280760d1c75d95d2e3756c2ade7bbd38df35f"
+    }
+  ],
+  "registry": {
+    "bytes": 97504,
+    "sha256": "55413b5f50bcf07c93b8b9b6bc0ed98d2a289be60821143ffafa7881734c484b",
+    "source_commit": "983f52374aab7e04cc2a41853c2587b5fe080121"
+  },
+  "controllers": {
+    "command": "python3 tests/native_feed_project_account.py --attach build/campaign009-connected-v5 --stage project --person bob --application-checkpoint",
+    "fresh_revocation_proof_commit": "a5ccde42513c12e89891440dbb364cf1aa5f4a51",
+    "idle_row_retry_commit": "5adf9ff563649ee5ed4d8200ec0fe89eb35c9310",
+    "native_ui_source_commit": "05ca3c478930c2e9feaca911954f0b53a9d20750",
+    "attempts": [
+      {
+        "started_utc": "2026-11-01T14:26:30Z",
+        "result": "failure",
+        "error": "TimeoutError('native next-row request')",
+        "seconds": 353.02541254099924
+      },
+      {
+        "started_utc": "2026-11-01T14:33:23Z",
+        "result": "pass",
+        "seconds": 204.01994600000035
+      }
+    ]
+  },
+  "evidence": {
+    "feed-project-account.json": "38acb705775b91d74652a76e740202adb224a7550f9bb63b0e056e6e7dc9b36f",
+    "feed-author-actions.json": "0968521a1a4abb0205d237b30097105d37dd14f65000f46659dd0f7fd4e4b354",
+    "feed-project-action/project.json": "910ea0708bbfbca9bdabc6e2080e71a050068643018e4a8b2029700e3e8f7116",
+    "feed-project-action/fork-action.json": "c7266976a1ff9b022588bf25e554e7640b7580406ce0c7c9cec71db8c7987ddc",
+    "feed-project-action/revocation-action.json": "e7a3046fb8dcb66d1f6f66395135690e5b599d23db6940a07ee23715d30eb28f",
+    "application-checkpoint-release.json": "a5adf0adba389dca312764493b2ee20d1708a8b07f72541e60c06eb0a14633c8"
+  },
+  "passed_checks": [
+    "one explicit project-stage replication lease check preserves the same durable policy and charged retry authority",
+    "native Feed identity retention explicitly selected in Objects domain3 before further publication",
+    "native author edit and tombstone preserve signed history and refuse the withdrawn body",
+    "existing native Messenger, Feed and selected Registry coexist with a free ordinary application slot",
+    "existing native Registry verifies exact original signed release evidence before the early application checkpoint",
+    "explicit native preference selection retains and exports a local stable-project follow",
+    "native project card opens original Registry verification and completes useful normal Library Fork",
+    "new independent local lineage is visible in the normal trusted Library/Forge project picker",
+    "current native release revocation refuses the valid old card at the action boundary",
+    "approved public export includes exact retained publication reference and selected preferences without signing seed or sealed key"
+  ],
+  "author_actions": {
+    "review_key": "review-2",
+    "original_event": "6b4fa8e15d212c0891c5eadbe3f0fcc4bbd46937847fd2545fc3def658491d06",
+    "original_signed_bytes_unchanged": true,
+    "edit": "1e1e78019b342ba253e862da802ff2b36b12b760238da4bba90245d832ea9735",
+    "tombstone": "bba759e67d3cdc7db4943794f4700906a977a41b0a7788d699eb9fde78f5100c",
+    "replicated_original_bytes": true,
+    "withdrawn_body_refused_on_both": true
+  },
+  "project_card": {
+    "id": "093a11c4f148a57e27f61bb9ebe20393427e4a9fd5f66818016de95eb1458243",
+    "author": "c1b8ea17e7fa160b06771abcb558a9f4ceb7a70f6129842b6812b93e03209c56",
+    "body_sha256": "89811425d12e63b1a25fe8a73b5594c3cfad1142807cacfc91f1787f3301716e",
+    "bytes": 1683,
+    "replicated": true
+  },
+  "fork": {
+    "event_id": "093a11c4f148a57e27f61bb9ebe20393427e4a9fd5f66818016de95eb1458243",
+    "upstream_root": "92daee22b2b8ed1f4de2b1354701a07742de03065c36ecc716c0a5e60624a7c2",
+    "fork": {
+      "cap": 7507304745497788676,
+      "name": "feedfork00000001",
+      "head": "ee9ab09ec4b53cb694cb9bd32fc67eb5318f008c043790afc5bb4044757d5a5a"
+    },
+    "publisher": "5f6d1099ba4a21287e8197b7e649bb8726b6c0d067d6cb8f32fce6c06e5365ea",
+    "project_id": "ee9ab09ec4b53cb694cb9bd32fc67eb5318f008c043790afc5bb4044757d5a5a",
+    "lineage_node": "94f20bff45ec25fdea6cfa2131049f13445e93b2888f07d0ebc4d221041cfc55",
+    "lineage_sha256": "f7e65cdd75ea2eaaa153aea035402086f0387d71e5e4a89a2dddb2abd2ccc8a8",
+    "action": "existing Objects.forkProject; independent local lineage, no install or execution consent"
+  },
+  "revocation": {
+    "revocation": {
+      "sequence": 2,
+      "listing": 3,
+      "reason": 6,
+      "logical_project_id": "69d8274c92d5b2c829e55d5e3f5359b7c652b13160d138eec5d7e99623a72f2b",
+      "publication_id": "14deec51b2e59bdd387e3edc7f3899503c8b6e4c244ac398c77dd18a8bd8d181",
+      "release_id": "7dc7d80f5dcb1656b8e2d32fa0728ae294be2d485cfbfe100c1a73782e4623c9",
+      "root": "92daee22b2b8ed1f4de2b1354701a07742de03065c36ecc716c0a5e60624a7c2",
+      "federation": "139574fa7cb8a07f80f01ec0c0d4a8d8d86458e24b230cd02d5a3578012cadbc",
+      "signature": "RSA2048/SHA256 over immutable guest-evaluated admission-v1",
+      "local_execution_approved": false
+    },
+    "feed_card_still_original": true,
+    "additional_forks": 0,
+    "execution_consent": false,
+    "fork_approval_opened_before_policy_change": {
+      "publisher": "5f6d1099ba4a21287e8197b7e649bb8726b6c0d067d6cb8f32fce6c06e5365ea",
+      "opened_at_sequence": 1,
+      "entered_public_digits": 64,
+      "submitted": true
+    },
+    "fresh_fork_refusal": [
+      0,
+      1,
+      8,
+      1683,
+      65,
+      7,
+      11,
+      1
+    ],
+    "fresh_inspection_refusal": [
+      0,
+      1,
+      0,
+      1683,
+      65,
+      7,
+      11,
+      1
+    ]
+  },
+  "native_project_follow_notice": 68,
+  "approved_profile": {
+    "bytes": 2048,
+    "sha256": "285015f1b637dd5d6a85b9291075b5150ed72b7f681190d7267f2cd2261bfe09",
+    "author_sequence": 7,
+    "signer_generation": 1,
+    "preferences_explicitly_selected": true,
+    "sealed_key_included": false
+  },
+  "opaque_retention_roots": [
+    {
+      "slot": 0,
+      "generation": 4,
+      "bytes": 19456,
+      "header_sha256": "44b9a94807e765f68d4b4396236d2434ecbdbcb8f6026c455aa271afc26c867c"
+    },
+    {
+      "slot": 1,
+      "generation": 5,
+      "bytes": 19456,
+      "header_sha256": "c4208ba1859077e70a9d0475e7354a94ef9f434eca2680808ca700a115261f21"
+    }
+  ],
+  "authority": {
+    "events_signed_natively": true,
+    "original_project_and_registry_rsa_bootstrap": "existing disclosed host publication scope",
+    "original_release_bytes_rewritten": false,
+    "new_registry_instance": false,
+    "install_or_execution_consent": false,
+    "private_record_decrypted": false,
+    "host_social_database": false,
+    "operator_handoff": false
+  },
+  "capacity": {
+    "ordinary_slots": 8,
+    "observed_live_personal_ordinary_slots": 7,
+    "free_ordinary_slots": 1
+  },
+  "all_native_guests_preserved": true,
+  "all_management_portals_released": true,
+  "limits": [
+    "Messenger and routed Forge were not started in this trial.",
+    "Reconnect, no-vault process replacement, capacity, moderation, restart and hosting migration are not qualified by this application checkpoint.",
+    "Original release metadata was verified locally through the existing native Registry, not fetched over routed Forge.",
+    "The initial ordinary Next timeout remains archived; the resumed controller reused exact accepted events and issued no replacement publication.",
+    "One-host local integration; relay2 used the native-x86 RV64 interpreter and other guests used QEMU.",
+    "Project follow and block preference bytes were explicitly selected; this record publishes their hash, not the preference graph.",
+    "No new-image connected campaign or global security assurance is inferred from this fixed-image application component."
+  ]
+}
