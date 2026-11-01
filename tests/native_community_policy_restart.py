@@ -124,6 +124,13 @@ def explicit_preferences(guest):
     return profile
 
 
+def blocked_selection_allowed(selected, previous, author):
+    """Legacy selection or exact author-only shipping marker; no hidden row."""
+    return len(selected) == 512 and len(author) == 32 and (
+        selected == previous or selected == bytes(512)
+        or selected == bytes(144)+author+bytes(336))
+
+
 def blocked_marker(guest, operator, target, author):
     """Prove suppression at the known next row without revealing its body.
 
@@ -163,7 +170,7 @@ def blocked_marker(guest, operator, target, author):
     wait(suppressed, 300, 'native local block suppresses the exact next chronological row')
     selected = feed_ui(guest, 795)[1]
     assert selected[:32] != target
-    assert selected == previous or not any(selected)
+    assert blocked_selection_allowed(selected, previous, author)
     return dict(author=author.hex(), target=target.hex(), predecessor=previous[:32].hex(),
                 next_cursor=fields[2], block_bits=bits,
                 approved_profile_sha256=hashlib.sha256(profile).hexdigest(),
