@@ -115,7 +115,7 @@
     }
   ],
   "common_run": {
-    "result": "core-pass; fresh active-terminal Forge boundary and other continuations in progress",
+    "result": "core and fresh live-terminal Forge contention pass; reconnect and remaining connected continuations in progress",
     "output": "build/campaign009-connected-v4",
     "actors": [
       "alice",
@@ -738,7 +738,14 @@
     "stall_boundary": "Text45.71s and reply31.24s completed while Charlie terminal3 remained paused at78.07s. Actual routedForge verified original project by138.07s while exact opaque transportepoch2 remained paused with532B; Feed terminal had been reclaimed to0. First stricter assertion failure preserved, never claimed terminal3 atForge. Only Charlie canceled/dropped; unrelatedAlice/Bob remained3. Fresh active3Forge continuation pending.",
     "first_failure_record": "build/campaign009-connected-v4/failure-first-terminal-reclaimed.json",
     "first_failure_sha256": "adb04cbb19d5084ce5c2631085389f4bcaba3b4815fdca5fe47d6e4a66041e8d",
-    "host_replication_renewals": 0
+    "host_replication_renewals": 0,
+    "fresh_active_stall_forge": {
+      "local_record": "build/campaign009-connected-v4/active-forge.json",
+      "sha256": "3bd405b94f70f072d5b62031fc437239e2b843e9f8b96d9f4562c7f0741c126a",
+      "result": "pass",
+      "seconds": 6.3517,
+      "scope": "Same9guests, onlyCharlie ownapprovedroute rebuilt. Actual BobF1 busy\u2192verified original signed reference, Native allowances8351056\u21928350832bytes and65249\u219265247requests. FreshCharlieopaqueepoch6 paused532B/terminal3 atcompletion; owncancel/drop leavesAlice/Bob3. Original longer episode/native reclamation preserved separately."
+    }
   },
   "component_record": "campaign-009-components.json",
   "capacity": {
