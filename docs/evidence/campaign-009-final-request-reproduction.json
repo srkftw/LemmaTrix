@@ -1,0 +1,95 @@
+{
+  "schema": 1,
+  "result": "pass-clean-build-and-fresh-packages",
+  "source_commit": "c5147de",
+  "artifacts": [
+    {
+      "path": "build/campaign009-final-v8.bin",
+      "bytes": 6291456,
+      "sha256": "690e8959d79a42d3e61aa6f69df14b4e0c485ad58b015f451685abf014c275ee"
+    },
+    {
+      "path": "build/live/network.bin",
+      "bytes": 393816,
+      "sha256": "5f342b40588aa738f153608be02606a8b2a30dd95c23066233c2cf49fe755593"
+    },
+    {
+      "path": "build/campaign009-final-v8-clean-build.log",
+      "bytes": 1793,
+      "sha256": "4181cfe32a1cee2650f31789bd50327daa4992b05f7f8d769db8d3124890f10d"
+    },
+    {
+      "path": "build/campaign009-final-v8-layout.json",
+      "bytes": 3972,
+      "sha256": "abe2d8880a373b9aaee4e7c77cc274f15e71a1f6a47862843b245617fbfd0e33"
+    }
+  ],
+  "network_code_limit": 425984,
+  "network_spare_bytes": 32168,
+  "package_comparison": [
+    {
+      "fresh": "build/campaign009-final-v8-source-feed/feed-account.ltrel",
+      "selected": "build/campaign009-final-v7-feed/feed-account.ltrel",
+      "bytes": 146144,
+      "sha256": "9d9be1ad2238d6e5063ac5664786939c2c186a08b4f613ed8912e2f9eb985b50"
+    },
+    {
+      "fresh": "build/campaign009-final-v8-source-feed/feed-federation.ltrel",
+      "selected": "build/campaign009-final-v7-feed/feed-federation.ltrel",
+      "bytes": 168284,
+      "sha256": "6cf3b1c142b5e076337575dfd22280760d1c75d95d2e3756c2ade7bbd38df35f"
+    },
+    {
+      "fresh": "build/campaign009-final-v8-source-feed/feed.ltrel",
+      "selected": "build/campaign009-final-v7-feed/feed.ltrel",
+      "bytes": 177616,
+      "sha256": "964a4a92a901520a151a7e7eb9f56c33733302fd8672b9109dd707eb51a4313d"
+    },
+    {
+      "fresh": "build/campaign009-final-v8-source-feed/identity.ltrel",
+      "selected": "build/campaign009-final-v7-feed/identity.ltrel",
+      "bytes": 116720,
+      "sha256": "d6467b6bf812768f4e25a466c4ce0c425635444f78b4b34fc85c50e1579ea5aa"
+    },
+    {
+      "fresh": "build/campaign009-final-v8-source-messenger/identity.ltrel",
+      "selected": "build/campaign009-final-v3-messenger/identity.ltrel",
+      "bytes": 116720,
+      "sha256": "01a013c3b5a16b987876304b7685ca6307ae81644cd834b8a040ecb3c8bbf0fc"
+    },
+    {
+      "fresh": "build/campaign009-final-v8-source-messenger/mailbox.ltrel",
+      "selected": "build/campaign009-final-v3-messenger/mailbox.ltrel",
+      "bytes": 98524,
+      "sha256": "9cebf4928c05e08f1688ee5437f52ffddf6e1f19393394d7889855c944d8fac8"
+    },
+    {
+      "fresh": "build/campaign009-final-v8-source-messenger/messenger-delivery.ltrel",
+      "selected": "build/campaign009-final-v3-messenger/messenger-delivery.ltrel",
+      "bytes": 208744,
+      "sha256": "8c6c4a4d0cd534d8d1e69637c485346ffec8aabcd2b117c02fa3200ba5512372"
+    },
+    {
+      "fresh": "build/campaign009-final-v8-source-messenger/messenger-session.ltrel",
+      "selected": "build/campaign009-final-v3-messenger/messenger-session.ltrel",
+      "bytes": 243116,
+      "sha256": "58985ad54e62aafd6cdbff0b8ed563d28b3de2c16d2330d259d521fd37613f10"
+    },
+    {
+      "fresh": "build/campaign009-final-v8-source-messenger/messenger.ltrel",
+      "selected": "build/campaign009-final-v3-messenger/messenger.ltrel",
+      "bytes": 255620,
+      "sha256": "e90ae124b8ec5fbf58463878e9610758945507dac4775d9b904af6bbbc675430"
+    }
+  ],
+  "registry": {
+    "path": "build/live/apps/campaign009-registry-final-v8.bin",
+    "bytes": 97504,
+    "sha256": "55413b5f50bcf07c93b8b9b6bc0ed98d2a289be60821143ffafa7881734c484b"
+  },
+  "registry_selected_identical": "build/live/apps/campaign009-registry-final-v4.bin",
+  "aarch64": "docs/evidence/campaign-009-final-aarch64-storage.json",
+  "listener_regression": "docs/evidence/campaign-009-listener-reuse-final.json",
+  "request_regression": "docs/evidence/campaign-009-terminal-request.json",
+  "qualification": "Clean image exactly matches immutable candidate690 used by installed emulated AArch64 storage/Network restart. All nine fresh signed packages and Registry reproduce selected bytes. Full connected journey pending."
+}

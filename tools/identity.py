@@ -12,9 +12,9 @@ import struct
 import live
 import releases
 
-ROLES = {'project': 1, 'messenger': 2, 'node': 3, 'receipt': 4}
-PURPOSES = {'contact': 1, 'service': 2, 'receipt-key': 3}
-OPERATIONS = tuple(range(400, 410))
+ROLES = {'project': 1, 'messenger': 2, 'node': 3, 'receipt': 4, 'feed': 5, 'moderator': 6}
+PURPOSES = {'contact': 1, 'service': 2, 'receipt-key': 3, 'feed-event': 4, 'feed-decision': 5}
+OPERATIONS = tuple(range(400, 411))
 IDENTITY_MAGIC = 0x314449544c
 SIGNING_MAGIC = 0x31474953544c
 CONTACT_MAGIC = 0x315443544c
@@ -49,7 +49,7 @@ def instances(client):
 
 def bind(client, service, caller, service_release, caller_release, operation, prior=0):
     if operation not in OPERATIONS:
-        raise ValueError('Identity-v1 operation outside 400..409')
+        raise ValueError('Identity-v1 operation outside 400..410')
     if len(service_release) != 32 or len(caller_release) != 32:
         raise ValueError('exact admitted release commitments required')
     body = struct.pack('<6Q', 1, 1, service, caller, operation, prior)
@@ -71,20 +71,27 @@ def endpoint(client, operation):
 
 def invoke(client, op, h=0, a=0, b=0, c=0, data=b''):
     target = endpoint(client, op)
-    if op in (408,409):
-        import time
-        token=struct.unpack('<Q',client.request(175,struct.pack('<Q8Q',target,op,h,a,b,c,0,0,1)+data))[0]
-        deadline=time.monotonic()+600
+    if op in (408,409,410):
+        import time,signal
+        prior_mask=signal.pthread_sigmask(signal.SIG_BLOCK,{signal.SIGINT})
+        token=None
         try:
+            token=struct.unpack('<Q',client.request(175,struct.pack('<Q8Q',target,op,h,a,b,c,0,0,1)+data))[0]
+            signal.pthread_sigmask(signal.SIG_SETMASK,prior_mask)
+            prior_mask=None
+            deadline=time.monotonic()+600
             while time.monotonic()<deadline:
                 raw=client.request(176,struct.pack('<Q',token))
                 if len(raw)==8:time.sleep(.025);continue
                 return fields(raw)
             raise TimeoutError('bounded native Identity completion')
         except BaseException:
-            try:client.request(177,struct.pack('<Q',token))
-            except (ValueError,OSError,EOFError):pass
+            if token is not None:
+                try:client.request(177,struct.pack('<Q',token))
+                except (ValueError,OSError,EOFError):pass
             raise
+        finally:
+            if prior_mask is not None:signal.pthread_sigmask(signal.SIG_SETMASK,prior_mask)
     raw = client.request(150, struct.pack('<Q8Q', target, op, h, a, b, c, 0, 0, 1) + data)
     return fields(raw)
 
@@ -96,7 +103,25 @@ def start(client, release_path, public_path):
         raise ValueError('Identity service must use profile2 with exactly zero package rights')
     # Explicit operator-selected publisher pin, before normal signature admission.
     client.request(10, raw[128:160] + releases.public_modulus(public_path))
-    slot, admitted = client.install(release_path)
+    # A temporary native signer may have exited while its exact public release
+    # remains admitted. Relaunch through normal current-policy checks rather
+    # than attempting to publish the same release again. No live key or grant
+    # is recovered from a stopped process.
+    slot = None
+    for index in range(16):
+        try:
+            entry = client.request(13, struct.pack('<Q', index))
+        except ValueError as error:
+            if str(error) != 'guest rejected command13, status1':
+                raise
+            continue
+        if len(entry) >= 192 and entry[160:192] == bytes.fromhex(info['release_id']):
+            slot = index + 1
+            break
+    if slot is None:
+        slot, admitted = client.install(release_path)
+    else:
+        admitted = info
     service = struct.unpack_from('<Q', client.request(25, struct.pack('<Q', slot)), 8)[0]
     launcher = next(row[0] for row in instances(client) if row[0] & 255 == 1)
     try:
@@ -138,9 +163,9 @@ def main(argv=None):
     p = sub.add_parser('bind'); p.add_argument('--service', required=True, type=int); p.add_argument('--service-release', required=True)
     p.add_argument('--caller', required=True, type=int); p.add_argument('--caller-release', required=True)
     p.add_argument('--operation', required=True, type=int, choices=OPERATIONS); p.add_argument('--generation', default=0, type=int)
-    p = sub.add_parser('create'); p.add_argument('--role', required=True, choices=ROLES); p.add_argument('--federation', required=True); p.add_argument('--scope', required=True); p.add_argument('--output', type=Path)
+    p = sub.add_parser('create'); p.add_argument('--role', required=True, choices=[r for r,n in ROLES.items() if n<=4]); p.add_argument('--federation', required=True); p.add_argument('--scope', required=True); p.add_argument('--output', type=Path)
     p = sub.add_parser('export'); p.add_argument('key', type=int); p.add_argument('--output', required=True, type=Path)
-    p = sub.add_parser('approve'); p.add_argument('--key', required=True, type=int); p.add_argument('--recipient', required=True, type=int); p.add_argument('--purpose', required=True, choices=PURPOSES); p.add_argument('--body', required=True, type=Path)
+    p = sub.add_parser('approve'); p.add_argument('--key', required=True, type=int); p.add_argument('--recipient', required=True, type=int); p.add_argument('--purpose', required=True, choices=[r for r,n in PURPOSES.items() if n<=3]); p.add_argument('--body', required=True, type=Path)
     p = sub.add_parser('certify'); p.add_argument('permit', type=int); p.add_argument('--body', required=True, type=Path); p.add_argument('--output', required=True, type=Path)
     p = sub.add_parser('revoke'); p.add_argument('key', type=int)
     p = sub.add_parser('cancel-approval'); p.add_argument('permit', type=int)

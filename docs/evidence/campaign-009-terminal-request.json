@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "image_sha256": "04a0c73a3af85c7cc1b2bc6bb200a7b704b02531fb32ef74db428d6f2280c55b",
+  "checks": [
+    {
+      "backend": "qemu",
+      "seconds": 0.054946323012700304,
+      "result": "pass"
+    },
+    {
+      "backend": "aarch64",
+      "seconds": 0.07004265500290785,
+      "result": "pass"
+    }
+  ],
+  "boundaries": [
+    "same owner old request cannot poll or cancel a newer request, before or after response availability; current request and explicit owner-wide0 close work without altering an unrelated key bank"
+  ],
+  "limitations": "Focused compiled RV64 execution of actual OnionTerminal dispatch40/42 over a modeled authenticated client38 state, with public sentinel key-bank words; no handshake, wire exchange, kernel grant, service replacement or full connected campaign claim. AArch64 assembly backend executes under qemu-aarch64, not physical hardware.",
+  "fixture_source_sha256": "8448a882991825559be7f5cac1e0db0127a690b1db3aac63141995ccfb7cf6e5",
+  "production_source_sha256": {
+    "Guest/OnionTerminal.lean": "59305cb66ca0a0f0fac9767a6aa82eac78d34f4579d5badbb6b1a12c6d93cd62",
+    "Guest/Network.lean": "e63e7f0dc9a4e3ccb4198e50b6b3d99ba17ba9e7f94ca7690724d365ffcceb71"
+  },
+  "command": "python -u tests/native_shared_contexts.py --modules-ready --client-requests-only --output build/native-client-request-fixture --backend qemu --backend aarch64",
+  "source_head": "49874148f299dba48f813213525850e8c9f05bc2",
+  "controller_sha256": "46950a29242205f95155279b710d6c9ae0ab3e391be2a628412c0c69c3b4322c",
+  "checks_executed": [
+    "stale same-owner nonzero request poll denied before response availability",
+    "stale same-owner cancellation denied without clearing a newer live relationship",
+    "same low32 owner but different high32 process incarnation denied",
+    "current request empty result remains pending",
+    "stale result poll denied after newer response becomes available",
+    "current response collected exactly, then current cancellation wipes own key bank",
+    "explicit owner-wide0 close remains supported; unrelated saved bank unchanged throughout"
+  ]
+}

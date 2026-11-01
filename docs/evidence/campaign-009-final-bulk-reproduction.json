@@ -1,0 +1,113 @@
+{
+  "schema": 1,
+  "result": "pass-clean-build-and-fresh-packages",
+  "native_network_source": "e2dee0a",
+  "native_delivery_source": "40e0930",
+  "artifacts": [
+    {
+      "path": "build/campaign009-final-v9.bin",
+      "bytes": 6291456,
+      "sha256": "2e5147c4198cf7ec39ab053f2ea8895cfdceb1c9b9dcf79e1b7bb7627314bcdf"
+    },
+    {
+      "path": "build/live/network.bin",
+      "bytes": 395140,
+      "sha256": "5551228ea06bbe47cba94bf835e8b8241d7e465b38536dc8732f17266fed0155"
+    },
+    {
+      "path": "build/campaign009-final-v9-clean-build.log",
+      "bytes": 1793,
+      "sha256": "b21e48212cdfaa2572a562370ff8d9ec36912591f2105d42be9faf58ae7a5dc1"
+    },
+    {
+      "path": "build/campaign009-final-v9-layout.json",
+      "bytes": 3972,
+      "sha256": "373fe480aa003d2ccdecbfc41f2bdcc600afe032eff4511997efc484278ab090"
+    }
+  ],
+  "network_code_limit": 425984,
+  "network_spare_bytes": 30844,
+  "package_comparison": [
+    {
+      "fresh": "build/campaign009-final-v9-source-feed/feed-account.ltrel",
+      "previous": "build/campaign009-final-v7-feed/feed-account.ltrel",
+      "byte_identical": true,
+      "bytes": 146144,
+      "sha256": "9d9be1ad2238d6e5063ac5664786939c2c186a08b4f613ed8912e2f9eb985b50"
+    },
+    {
+      "fresh": "build/campaign009-final-v9-source-feed/feed-federation.ltrel",
+      "previous": "build/campaign009-final-v7-feed/feed-federation.ltrel",
+      "byte_identical": true,
+      "bytes": 168284,
+      "sha256": "6cf3b1c142b5e076337575dfd22280760d1c75d95d2e3756c2ade7bbd38df35f"
+    },
+    {
+      "fresh": "build/campaign009-final-v9-source-feed/feed.ltrel",
+      "previous": "build/campaign009-final-v7-feed/feed.ltrel",
+      "byte_identical": true,
+      "bytes": 177616,
+      "sha256": "964a4a92a901520a151a7e7eb9f56c33733302fd8672b9109dd707eb51a4313d"
+    },
+    {
+      "fresh": "build/campaign009-final-v9-source-feed/identity.ltrel",
+      "previous": "build/campaign009-final-v7-feed/identity.ltrel",
+      "byte_identical": true,
+      "bytes": 116720,
+      "sha256": "d6467b6bf812768f4e25a466c4ce0c425635444f78b4b34fc85c50e1579ea5aa"
+    },
+    {
+      "fresh": "build/campaign009-final-v4-messenger/identity.ltrel",
+      "previous": "build/campaign009-final-v3-messenger/identity.ltrel",
+      "byte_identical": true,
+      "bytes": 116720,
+      "sha256": "01a013c3b5a16b987876304b7685ca6307ae81644cd834b8a040ecb3c8bbf0fc"
+    },
+    {
+      "fresh": "build/campaign009-final-v4-messenger/mailbox.ltrel",
+      "previous": "build/campaign009-final-v3-messenger/mailbox.ltrel",
+      "byte_identical": true,
+      "bytes": 98524,
+      "sha256": "9cebf4928c05e08f1688ee5437f52ffddf6e1f19393394d7889855c944d8fac8"
+    },
+    {
+      "fresh": "build/campaign009-final-v4-messenger/messenger-delivery.ltrel",
+      "previous": "build/campaign009-final-v3-messenger/messenger-delivery.ltrel",
+      "byte_identical": false,
+      "bytes": 209804,
+      "sha256": "5eb83b8c21fa33c045176da2c5bd9098cad9ba980e077a6ffa529d551071fcd9"
+    },
+    {
+      "fresh": "build/campaign009-final-v4-messenger/messenger-session.ltrel",
+      "previous": "build/campaign009-final-v3-messenger/messenger-session.ltrel",
+      "byte_identical": true,
+      "bytes": 243116,
+      "sha256": "58985ad54e62aafd6cdbff0b8ed563d28b3de2c16d2330d259d521fd37613f10"
+    },
+    {
+      "fresh": "build/campaign009-final-v4-messenger/messenger.ltrel",
+      "previous": "build/campaign009-final-v3-messenger/messenger.ltrel",
+      "byte_identical": true,
+      "bytes": 255620,
+      "sha256": "e90ae124b8ec5fbf58463878e9610758945507dac4775d9b904af6bbbc675430"
+    }
+  ],
+  "delivery": {
+    "name": "messenger-delivery",
+    "path": "build/campaign009-final-v4-messenger/messenger-delivery.ltrel",
+    "rights": 1024,
+    "code_bytes": 209036,
+    "code_sha256": "f8d4e502a2708553e15bf7eb503ae50c715aba6b287c707f5eeb5968664f473e",
+    "package_sha256": "5eb83b8c21fa33c045176da2c5bd9098cad9ba980e077a6ffa529d551071fcd9",
+    "release_id": "5e166b16eeeed082bb86a246f9a79bec88fb13f097304622c9d33cd51992320a"
+  },
+  "registry": {
+    "path": "build/live/apps/campaign009-registry-final-v9.bin",
+    "bytes": 97504,
+    "sha256": "55413b5f50bcf07c93b8b9b6bc0ed98d2a289be60821143ffafa7881734c484b",
+    "selected_identical": "build/live/apps/campaign009-registry-final-v4.bin"
+  },
+  "aarch64": "docs/evidence/campaign-009-final-v9-aarch64-storage.json",
+  "changed_boundary": "docs/evidence/campaign-009-native-bulk-creation.json",
+  "qualification": "Clean final image after concrete async CONNECT failure and banked bulk creation deadline fix. All nine ordinary packages freshly compiled: Feed4 and Messenger4 byte-identical; changed Messenger Delivery0.8.1 is separately identified. Registry reproduces exactly. New connected journey is in progress; no pending acceptance step is claimed."
+}

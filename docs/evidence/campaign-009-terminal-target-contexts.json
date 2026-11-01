@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "image_sha256": "5e34e40154c39ec1d9f2addf29629f222eae3a232fdce60bdfae063d5eb6d90c",
+  "checks": [
+    {
+      "backend": "qemu",
+      "seconds": 0.6124697470004321,
+      "result": "pass"
+    },
+    {
+      "backend": "aarch64",
+      "seconds": 4.767872541000543,
+      "result": "pass"
+    }
+  ],
+  "boundaries": [
+    "saved terminal primary target pins survive context switching; changed target retires only the selected epoch-owned pair before dispatch133, leaving unrelated bank/Registry pin intact; stale epochs cannot close a reused channel",
+    "terminal output link quota exhaustion closes the actual charged pair even when another pair was last pumped",
+    "partial terminal frames and pending typed IPC expire independently; exact cancellation frees the dispatch lane and wipes only the selected key/buffer snapshot",
+    "healthy idle terminal contexts do not expire; deadline addition saturates instead of disabling near clock exhaustion",
+    "relay integrity failure closes only dependent incoming/outgoing pair",
+    "expired idle listener gets a finite setup window only when accepted; outbound and ongoing handshake deadlines do not renew",
+    "failed LISTEN retires only that listener, backs off within32 failures, and explicit operator listen renews its allowance",
+    "terminal keys/buffers banked by channel, stream and epoch; stale epoch rejects",
+    "mailbox sameNetworkcaller different terminalorigin cannot append or collect foreignstaging",
+    "adapterv3 accepts slot15 and rejects slot16",
+    "bulk reconnect attempts remain context-private, finite32 and pending admission does not renew them",
+    "current native Feed relationship preserves exact used allowance and expiry only on link loss; lost jobs and inbox cleared, expired/pin-changed or explicit-stop grants cannot revive"
+  ],
+  "limitations": "Focused compiled RV64 state transitions, including provisioned predicate inputs for bulk reconnect and a declared128 target-result oracle plus133 dispatch counter; no claim that this oracle implements kernel binding/replacement; no native certificate-admission claim from this fixture. AArch64 assembly emulator runs under qemu-aarch64; no physical hardware or full native Messenger qualification.",
+  "native_source_commit": "8b4e26f",
+  "controller": "tests/native_shared_contexts.py",
+  "record_path": "build/native-shared-contexts/evidence.json",
+  "record_sha256": "0f3983b70c39c2f0724015e41fe2141d6dd3b70f5e5a59066d8fe36bfac850c6",
+  "prior_record_archive": "build/native-shared-contexts-before-primary-pin-3cfc22467d8c"
+}

@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "observed_utc": "2026-11-01T21:50:44.482392+00:00",
+  "scope": "Two independent read-only management commands after all acceptance-controller portals closed. They do not create keys, publish events, configure policy, refill allowances or reset actors. Selected returned public fields only; no new full-workflow claim.",
+  "common_image_sha256": "2e5147c4198cf7ec39ab053f2ea8895cfdceb1c9b9dcf79e1b7bb7627314bcdf",
+  "checks": [
+    {
+      "command": "./lt feed --socket build/campaign009-connected-v7/bob.sock ui-status --ui 8117591479108502541",
+      "exit_code": 0,
+      "native_status": [
+        0,
+        1,
+        0,
+        219,
+        5,
+        6,
+        0,
+        1
+      ],
+      "author_public": "26d3b302e8934ea1b6e4f72a13ffe975bc36b207df5a25c5beef0b92e32320d1",
+      "retention_authorized": true
+    },
+    {
+      "command": "./lt feed --socket build/campaign009-connected-v7/beta.sock federation-status",
+      "exit_code": 0,
+      "events": 22,
+      "content_bytes": 6982,
+      "event_limit": 64,
+      "byte_limit": 917504,
+      "policy_version": 1,
+      "index_generation": 49,
+      "federation": "d17d966d66359ea218b908b2d0c1f40452dc74a5d462f9138846c52048647185",
+      "peer": "b2a1a86b8b958a613c578692e4c9c9b0e96e87fa676d18326fec1363183b00c3",
+      "moderator_public": "62c34c09688b5c3d2d4201a990a17db29fe360e929c7f4d2cb4aba433cc8d1a8"
+    }
+  ],
+  "guests_left_running": 8,
+  "alpha_intentionally_offline": true,
+  "controller_authority_required_for_continued_service": false
+}

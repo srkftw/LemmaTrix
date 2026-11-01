@@ -1,0 +1,383 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "qualification": "strict project stage on the connected common-image actors after core, full reconnect, no-vault and six-route capacity; later moderation, restart and hosting move remain separate stages",
+  "image": {
+    "path": "build/campaign009-final-v11.bin",
+    "sha256": "2e5147c4198cf7ec39ab053f2ea8895cfdceb1c9b9dcf79e1b7bb7627314bcdf"
+  },
+  "native_feed_bundle": "build/campaign009-final-v7-feed",
+  "native_feed_packages": [
+    {
+      "name": "identity",
+      "rights": 0,
+      "code_bytes": 115952,
+      "code_sha256": "1437162555de9c55c72806039df49d07ead2ed36a267de5bfc7a3f886028bca7",
+      "release_id": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+      "package_sha256": "d6467b6bf812768f4e25a466c4ce0c425635444f78b4b34fc85c50e1579ea5aa"
+    },
+    {
+      "name": "feed-account",
+      "rights": 1024,
+      "code_bytes": 145376,
+      "code_sha256": "fb1f2e8e34a47263d3450898a6f800d3f72a79081644413180b44b574951ccd8",
+      "release_id": "f50eaa12d7dc69c962584ce34a12d53d9b064970c640d23d594e930d7fc4bc07",
+      "package_sha256": "9d9be1ad2238d6e5063ac5664786939c2c186a08b4f613ed8912e2f9eb985b50"
+    },
+    {
+      "name": "feed",
+      "rights": 799,
+      "code_bytes": 176848,
+      "code_sha256": "fbe5f9cf983464432ae4781bb7533a7182341d796d16e4bd20f4603cf3d2706f",
+      "release_id": "bfd1a9584b654f8ee4f0c3f1b3703608b452da7a9ad472683821aa8f4f13a635",
+      "package_sha256": "964a4a92a901520a151a7e7eb9f56c33733302fd8672b9109dd707eb51a4313d"
+    },
+    {
+      "name": "feed-federation",
+      "rights": 3072,
+      "code_bytes": 167516,
+      "code_sha256": "59b107b5702c4d231551da67a053543c94e012bd3d70bae4eeb1e2edd26f49e3",
+      "release_id": "02041c0eeca13f17a62a8913954558d9dc5be7e52f55d5db915dc76b14241526",
+      "package_sha256": "6cf3b1c142b5e076337575dfd22280760d1c75d95d2e3756c2ade7bbd38df35f"
+    }
+  ],
+  "registry": {
+    "bytes": 97504,
+    "sha256": "55413b5f50bcf07c93b8b9b6bc0ed98d2a289be60821143ffafa7881734c484b",
+    "source_commit": "983f52374aab7e04cc2a41853c2587b5fe080121"
+  },
+  "controller": {
+    "command": "python3 tests/native_feed_project_account.py --attach build/campaign009-connected-v7 --stage project --person bob",
+    "source_commit": "62326fc509305f691e77fc9f185ef87b80ed72a2",
+    "sources": {
+      "tests/native_feed_project_account.py": "fc53c339a40800337620ddbd5bcfdeb753ccf7dc57a7861fbc1b7917336845a5",
+      "tests/feed_project_controls.py": "412d50ddef421d8cf7dfa9cc876e648a2f98f257350cafa4b9998167ca042a28",
+      "tests/native_community_campaign.py": "269d6ef118d7212888a906d69ea8883fc8331abe24a73c10f8c42d8af6e4d569",
+      "tests/native_community_policy_restart.py": "f16984d8627ac17f4b7d13eb72801c4122c946f1282d09dbaa944132d27f0828"
+    },
+    "attempts": [
+      {
+        "started_utc": "2026-11-01T19:45:40Z",
+        "result": "pass",
+        "seconds": 590.8804292730056
+      }
+    ],
+    "seconds": 590.8804292730056
+  },
+  "evidence": {
+    "feed-project-account.json": "a08e61d9e125016d20e09d01176c5daaad7ef177b943abd341a78374b785a254",
+    "feed-author-actions.json": "988c19c79a129c3de0f50d29bfe19a342e44515a7c7c9516514679504a55434a",
+    "feed-project-action/project.json": "77cbb6c10f7ebb0bf4d4d03a15345b5618078961dc0f6c0283745eee6d7ad8e7",
+    "feed-project-action/fork-action.json": "e96e493a7dbd7dff6628a89085da98f7d91243d7e8cc216dffc578b528ce0edf",
+    "feed-project-action/revocation-action.json": "80c4721edc89646dea053cc85ea0b975e1c13174430e071dd3e52995a0936451",
+    "reconnect.json": "3ae366f2314d4fbf57cb3f743a2f5d9fa2655de7cc94f29dce50f53b5d19874a",
+    "reconnect-progress.json": "3ae366f2314d4fbf57cb3f743a2f5d9fa2655de7cc94f29dce50f53b5d19874a",
+    "no-vault-public-ledger.json": "f53619eebda80a63834f31237b94137f1ee5971bd5196998fbb6ef5344a96287",
+    "relay-capacity.json": "ef46141809b3c803b7e6bb91d7043706f1f91211b7d4aff14ed60221e434810d"
+  },
+  "original_project": {
+    "root": {
+      "head": "92daee22b2b8ed1f4de2b1354701a07742de03065c36ecc716c0a5e60624a7c2",
+      "name": "creator",
+      "cap": 8117591483403469056
+    },
+    "registry": 8117591479108501770,
+    "descriptor_sha256": "59e8ec7fe8a4670698cab5e8a9411c1ad6cb09f05301657851b69d60c244e959",
+    "project_id": "69d8274c92d5b2c829e55d5e3f5359b7c652b13160d138eec5d7e99623a72f2b",
+    "publication_id": "14deec51b2e59bdd387e3edc7f3899503c8b6e4c244ac398c77dd18a8bd8d181",
+    "release_id": "7dc7d80f5dcb1656b8e2d32fa0728ae294be2d485cfbfe100c1a73782e4623c9",
+    "federation": "da551ef420d34f0926267676a49c3d15816250f9d1e8e1900233dcbcebce1228",
+    "original_graph": "/home/sreekumaar/Desktop/LemmaTrix/tests/fixtures/campaign008-existing-forge-closure.json",
+    "original_graph_sha256": "56cc52e18fe0e9f37a4ad32fe2f47aa62dc29a2d7c0472ec9609d3b8e6a328f5",
+    "publisher": "/home/sreekumaar/Desktop/LemmaTrix/tests/fixtures/campaign008-existing-forge-publisher.pub",
+    "fork_publisher": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/feed-project-action/fork-publisher.pub",
+    "registry_slot": 0,
+    "registry_sequence": 1,
+    "admission_key": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/registry-federation.pem",
+    "signature": "unchanged original RSA Project Release; existing native Registry policy plus disclosed RSA admission bootstrap",
+    "execution_consent": false
+  },
+  "card": {
+    "id": "8caccbed6cdd0973d1f2151cae1132735be4e6563785e41b82f840dd4b25047c",
+    "author": "26d3b302e8934ea1b6e4f72a13ffe975bc36b207df5a25c5beef0b92e32320d1",
+    "body_sha256": "26eaceb10b20ed74a72f4d54153946446ace576394f4ce7e7ef7240120384485",
+    "bytes": 1683,
+    "replicated": true
+  },
+  "author_actions": {
+    "check": "native author edit and tombstone preserve signed history and refuse the withdrawn body",
+    "result": "pass",
+    "qualification": "replicated",
+    "target": "c0a8f93eed9cf3ed8ecf1852ac982d525a745c3cca346c285ff45c109ab9e3c5",
+    "review_key": "review-2",
+    "original_signed_sha256": "c0a8f93eed9cf3ed8ecf1852ac982d525a745c3cca346c285ff45c109ab9e3c5",
+    "edit": {
+      "intent": {
+        "kind": 4,
+        "target": "c0a8f93eed9cf3ed8ecf1852ac982d525a745c3cca346c285ff45c109ab9e3c5",
+        "content_sha256": "41d53d091acc9863662c7bde3bb08cb0542838fe5850ba2e8a2a6ad91a2c4cae",
+        "bytes": 188
+      },
+      "previewed": true,
+      "event": "fe85b24774fce690dd0075c11aaeb85b37536cd27230eeac494118092c7a3187",
+      "durably_accepted": true,
+      "signed_sha256": "fe85b24774fce690dd0075c11aaeb85b37536cd27230eeac494118092c7a3187",
+      "replicated": true,
+      "verified": true
+    },
+    "tombstone": {
+      "intent": {
+        "kind": 5,
+        "target": "c0a8f93eed9cf3ed8ecf1852ac982d525a745c3cca346c285ff45c109ab9e3c5",
+        "content_sha256": "70739123bc5303d342312b78a4a5315ff9d8fb68b5a905b1ec885c188f803143",
+        "bytes": 157
+      },
+      "previewed": true,
+      "event": "cbb3c2267d984d53f210c6ae7fcea9ab715a6a402e83d670ed75ac9eef7d6a5b",
+      "durably_accepted": true,
+      "signed_sha256": "cbb3c2267d984d53f210c6ae7fcea9ab715a6a402e83d670ed75ac9eef7d6a5b",
+      "replicated": true,
+      "verified": true
+    },
+    "original_signed_bytes_unchanged": true,
+    "ordinary_original_body_refused_on_both_federations": true,
+    "erasure_claim": false
+  },
+  "fork": {
+    "check": "native project card opens original Registry verification and completes useful normal Library Fork",
+    "result": "pass",
+    "action": {
+      "event_id": "8caccbed6cdd0973d1f2151cae1132735be4e6563785e41b82f840dd4b25047c",
+      "upstream_root": "92daee22b2b8ed1f4de2b1354701a07742de03065c36ecc716c0a5e60624a7c2",
+      "fork": {
+        "cap": 8117591483403469060,
+        "name": "feedfork00000001",
+        "head": "eba0bb8f2e80295d30b9b74dc1e3027d4c533c9d4babc5de7773d4d352263ca6"
+      },
+      "publisher": "e09dd8ce5f3b3bc718337fffe3c26e0a48fb99fa27ca5fceeae948afe6125087",
+      "project_id": "eba0bb8f2e80295d30b9b74dc1e3027d4c533c9d4babc5de7773d4d352263ca6",
+      "lineage_node": "d8ddea7d19f74ff0d80dbbf026433c8720f3944b0453268d80fce43354495179",
+      "lineage_sha256": "cf21c6fe99659d828a02bd2edcff4cb45b340583f7a3ad6153f8dd04a6abf7f6",
+      "action": "existing Objects.forkProject; independent local lineage, no install or execution consent"
+    },
+    "durably_accepted_event": "8caccbed6cdd0973d1f2151cae1132735be4e6563785e41b82f840dd4b25047c",
+    "replicated_event": "8caccbed6cdd0973d1f2151cae1132735be4e6563785e41b82f840dd4b25047c",
+    "bytes": 1683,
+    "metadata_sha256": "59e8ec7fe8a4670698cab5e8a9411c1ad6cb09f05301657851b69d60c244e959",
+    "execution_consent": false
+  },
+  "visible_picker": {
+    "check": "new independent local lineage is visible in the normal trusted Library/Forge project picker",
+    "result": "pass",
+    "visible": {
+      "displayed_root": "eba0bb8f2e80295d30b9b74dc1e3027d4c533c9d4babc5de7773d4d352263ca6",
+      "frame_sha256": "99c80b03a14150181e673716fa10fc08ad03c0cfeadd0f801ddce31eefd4891b",
+      "frame": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/bob-feed-picker-eba0bb8f2e80-99c80b03a141.ppm",
+      "visited_roots": [
+        "92daee22b2b8ed1f4de2b1354701a07742de03065c36ecc716c0a5e60624a7c2",
+        "eba0bb8f2e80295d30b9b74dc1e3027d4c533c9d4babc5de7773d4d352263ca6"
+      ]
+    },
+    "second_fork_requested": false
+  },
+  "action_time_revocation": {
+    "check": "current native release revocation refuses the valid old card at the action boundary",
+    "result": "pass",
+    "refusal": {
+      "revocation": {
+        "sequence": 2,
+        "listing": 3,
+        "reason": 6,
+        "logical_project_id": "69d8274c92d5b2c829e55d5e3f5359b7c652b13160d138eec5d7e99623a72f2b",
+        "publication_id": "14deec51b2e59bdd387e3edc7f3899503c8b6e4c244ac398c77dd18a8bd8d181",
+        "release_id": "7dc7d80f5dcb1656b8e2d32fa0728ae294be2d485cfbfe100c1a73782e4623c9",
+        "root": "92daee22b2b8ed1f4de2b1354701a07742de03065c36ecc716c0a5e60624a7c2",
+        "federation": "da551ef420d34f0926267676a49c3d15816250f9d1e8e1900233dcbcebce1228",
+        "signature": "RSA2048/SHA256 over immutable guest-evaluated admission-v1",
+        "local_execution_approved": false
+      },
+      "feed_card_still_original": true,
+      "additional_forks": 0,
+      "execution_consent": false,
+      "fork_approval_opened_before_policy_change": {
+        "publisher": "e09dd8ce5f3b3bc718337fffe3c26e0a48fb99fa27ca5fceeae948afe6125087",
+        "opened_at_sequence": 1,
+        "entered_public_digits": 64,
+        "submitted": true
+      },
+      "fresh_fork_refusal": [
+        0,
+        1,
+        8,
+        1683,
+        65,
+        7,
+        11,
+        1
+      ],
+      "fresh_inspection_refusal": [
+        0,
+        1,
+        0,
+        1683,
+        65,
+        7,
+        11,
+        1
+      ]
+    }
+  },
+  "retained_selection": {
+    "check": "native Feed identity retention explicitly selected in Objects domain3 before further publication",
+    "result": "pass",
+    "author": "26d3b302e8934ea1b6e4f72a13ffe975bc36b207df5a25c5beef0b92e32320d1",
+    "separate_from_messenger_domain2": true,
+    "selection": {
+      "identity": true,
+      "exact_signed_outbox": true,
+      "local_follows_blocks": true,
+      "unpublished_drafts": false,
+      "cached_content": false,
+      "history": false
+    },
+    "opaque_root_generation": 1
+  },
+  "approved_public_export": {
+    "check": "approved public export includes exact retained publication reference and selected preferences without signing seed or sealed key",
+    "result": "pass",
+    "bytes": 2048,
+    "sequence": 4,
+    "public_sha256": "7a6e79bcb61139a553ecd00659e75f4260f6024b9ea18f6f4beebd20985baf95",
+    "fields": [
+      "schema",
+      "explicit preference selection",
+      "sequence",
+      "author public key",
+      "home scope",
+      "selected peer scope",
+      "last signed event reference",
+      "public key generation",
+      "selected local preferences"
+    ],
+    "preference_sha256": "5ae7b5c4f31fddde1b9eaacbb07d97fb22be16e49f4315dc081e1fd8b3906b91",
+    "sealed_private_key_included": false
+  },
+  "local_project_follow": {
+    "check": "explicit native preference selection retains and exports a local stable-project follow",
+    "result": "pass",
+    "project": "69d8274c92d5b2c829e55d5e3f5359b7c652b13160d138eec5d7e99623a72f2b",
+    "preference_bytes": 1536,
+    "preference_sha256": "5ae7b5c4f31fddde1b9eaacbb07d97fb22be16e49f4315dc081e1fd8b3906b91",
+    "automatically_published": false
+  },
+  "operator_policy_checks": [
+    {
+      "operator": "alpha",
+      "host_renewal": false,
+      "native_allocated_bytes": 0,
+      "before_budget": [
+        0,
+        16777216,
+        2440350,
+        9437184,
+        262144,
+        8280,
+        1,
+        1
+      ],
+      "after_budget": [
+        0,
+        16777216,
+        2440350,
+        9437184,
+        262144,
+        8280,
+        1,
+        1
+      ],
+      "policy_hash": "ab4c557edae6924a6f7ca4b2065e759849fe71b4c0d1c77d47909ea0aec4268a"
+    },
+    {
+      "operator": "beta",
+      "host_renewal": false,
+      "native_allocated_bytes": 0,
+      "before_budget": [
+        0,
+        16777216,
+        1034676,
+        9437184,
+        262144,
+        3537,
+        1,
+        1
+      ],
+      "after_budget": [
+        0,
+        16777216,
+        1034676,
+        9437184,
+        262144,
+        3537,
+        1,
+        1
+      ],
+      "policy_hash": "f4e26aed85f86fee00a69f4161ae6e12dcdd56d3ba2ba289c76bd70b6cb5be45"
+    }
+  ],
+  "process_capacity": {
+    "check": "existing native Messenger, Feed and selected Registry coexist with a free ordinary application slot",
+    "result": "pass",
+    "live_ordinary_instances": [
+      {
+        "instance": 8117591479108501767,
+        "rights": 0
+      },
+      {
+        "instance": 8117591479108501768,
+        "rights": 799
+      },
+      {
+        "instance": 8117591479108502281,
+        "rights": 1024
+      },
+      {
+        "instance": 8117591479108501770,
+        "rights": 2175
+      },
+      {
+        "instance": 8117591479108501771,
+        "rights": 0
+      },
+      {
+        "instance": 8117591479108501772,
+        "rights": 1024
+      },
+      {
+        "instance": 8117591479108501773,
+        "rights": 799
+      }
+    ],
+    "capacity": 8,
+    "free_slots": 1,
+    "registry_reused": true,
+    "messenger_stopped": false
+  },
+  "passed_checks": [
+    "one explicit project-stage replication lease check preserves the same durable policy and charged retry authority",
+    "native Feed identity retention explicitly selected in Objects domain3 before further publication",
+    "native author edit and tombstone preserve signed history and refuse the withdrawn body",
+    "existing native Messenger, Feed and selected Registry coexist with a free ordinary application slot",
+    "explicit native preference selection retains and exports a local stable-project follow",
+    "native project card opens original Registry verification and completes useful normal Library Fork",
+    "new independent local lineage is visible in the normal trusted Library/Forge project picker",
+    "current native release revocation refuses the valid old card at the action boundary",
+    "approved public export includes exact retained publication reference and selected preferences without signing seed or sealed key"
+  ],
+  "limits": [
+    "One host with emulated RV64 and mixed native-x86 actors is local integration evidence, not independent administration or physical hardware qualification.",
+    "The existing disclosed RSA project/Registry bootstrap signed admission evidence; new Feed authorship and federation replication executed natively.",
+    "This record covers the strict project stage only. The selected Feed UI/account were baseline0.9.2/0.9.1; the newer local-block successors require separate recovery and interaction evidence.",
+    "The host controller supplied real keyboard/pointer input and public configuration; it did not sign social events, replicate posts, mutate native event state, or reset operator leases.",
+    "Tombstones retain signed history and do not guarantee erasure from recipients or external copies."
+  ]
+}

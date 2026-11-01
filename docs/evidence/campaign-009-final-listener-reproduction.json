@@ -1,0 +1,142 @@
+{
+  "schema": 1,
+  "result": "pass-clean-build",
+  "source_commit": "937320ec4068f2ae2b77ac402be8687e61493538",
+  "artifacts": [
+    {
+      "path": "build/campaign009-final-v6.bin",
+      "bytes": 6291456,
+      "sha256": "f5978d3b335e699b55bf76453a5d5063d816e15bef382df9e33c8d67d01473df"
+    },
+    {
+      "path": "build/live/network.bin",
+      "bytes": 393176,
+      "sha256": "f96b489549926c4b1460787c8cca588676db93976adc6b2f5e084de3feb804dd"
+    },
+    {
+      "path": "build/campaign009-final-v6-clean-build.log",
+      "bytes": 1793,
+      "sha256": "0336fbf06d2a3bd16b48243f85359606b8689ac9476f9a83d5b1c4567f724c5f"
+    }
+  ],
+  "network_code_limit": 393216,
+  "network_spare_bytes": 40,
+  "listener_fix_commit": "937320e",
+  "listener_fixture": "docs/evidence/campaign-009-listener-reuse.json",
+  "package_comparison": [
+    {
+      "name": "identity.ltrel",
+      "bytes": 116720,
+      "sha256": "01a013c3b5a16b987876304b7685ca6307ae81644cd834b8a040ecb3c8bbf0fc"
+    },
+    {
+      "name": "mailbox.ltrel",
+      "bytes": 98524,
+      "sha256": "9cebf4928c05e08f1688ee5437f52ffddf6e1f19393394d7889855c944d8fac8"
+    },
+    {
+      "name": "messenger-delivery.ltrel",
+      "bytes": 208744,
+      "sha256": "8c6c4a4d0cd534d8d1e69637c485346ffec8aabcd2b117c02fa3200ba5512372"
+    },
+    {
+      "name": "messenger-session.ltrel",
+      "bytes": 243116,
+      "sha256": "58985ad54e62aafd6cdbff0b8ed563d28b3de2c16d2330d259d521fd37613f10"
+    },
+    {
+      "name": "messenger.ltrel",
+      "bytes": 255620,
+      "sha256": "e90ae124b8ec5fbf58463878e9610758945507dac4775d9b904af6bbbc675430"
+    }
+  ],
+  "registry": {
+    "path": "/home/sreekumaar/Desktop/LemmaTrix/build/live/apps/campaign009-registry-final-v6.bin",
+    "bytes": 97504,
+    "sha256": "55413b5f50bcf07c93b8b9b6bc0ed98d2a289be60821143ffafa7881734c484b",
+    "identical_selected": "build/live/apps/campaign009-registry-final-v4.bin"
+  },
+  "feed_selected_unchanged": true,
+  "unchanged_package_source_closures": [
+    {
+      "module": "Guest.Identity",
+      "files": 32,
+      "listener_fix_in_dependency_closure": false
+    },
+    {
+      "module": "Guest.FeedAccount",
+      "files": 34,
+      "listener_fix_in_dependency_closure": false
+    },
+    {
+      "module": "Guest.Feed",
+      "files": 22,
+      "listener_fix_in_dependency_closure": false
+    },
+    {
+      "module": "Guest.FeedFederation",
+      "files": 34,
+      "listener_fix_in_dependency_closure": false
+    },
+    {
+      "module": "Guest.MessengerSession",
+      "files": 36,
+      "listener_fix_in_dependency_closure": false
+    },
+    {
+      "module": "Guest.Messenger",
+      "files": 32,
+      "listener_fix_in_dependency_closure": false
+    },
+    {
+      "module": "Guest.MessengerDelivery",
+      "files": 40,
+      "listener_fix_in_dependency_closure": false
+    },
+    {
+      "module": "Guest.Mailbox",
+      "files": 34,
+      "listener_fix_in_dependency_closure": false
+    },
+    {
+      "module": "Guest.Registry",
+      "files": 28,
+      "listener_fix_in_dependency_closure": false
+    }
+  ],
+  "aarch64_storage": {
+    "schema": 1,
+    "result": "pass",
+    "backend": "aarch64",
+    "emulated": true,
+    "image_sha256": "f5978d3b335e699b55bf76453a5d5063d816e15bef382df9e33c8d67d01473df",
+    "checks": [
+      "actual purpose2 backing mounts; all eight role6 namespaces renew without occupying extra slots",
+      "old native handles are denied after fresh generation through actual installed IPC"
+    ],
+    "elapsed_seconds": 17.164202975007356,
+    "scope": "native installed kernel/Launcher/Vault and opaque block adapter; no claim of full installed Feed or Messenger"
+  },
+  "feed_package_comparison": [
+    {
+      "path": "build/campaign009-final-v6-source-feed/feed-account.ltrel",
+      "bytes": 146144,
+      "sha256": "9d9be1ad2238d6e5063ac5664786939c2c186a08b4f613ed8912e2f9eb985b50"
+    },
+    {
+      "path": "build/campaign009-final-v6-source-feed/feed-federation.ltrel",
+      "bytes": 168284,
+      "sha256": "6cf3b1c142b5e076337575dfd22280760d1c75d95d2e3756c2ade7bbd38df35f"
+    },
+    {
+      "path": "build/campaign009-final-v6-source-feed/feed.ltrel",
+      "bytes": 177616,
+      "sha256": "964a4a92a901520a151a7e7eb9f56c33733302fd8672b9109dd707eb51a4313d"
+    },
+    {
+      "path": "build/campaign009-final-v6-source-feed/identity.ltrel",
+      "bytes": 116720,
+      "sha256": "d6467b6bf812768f4e25a466c4ce0c425635444f78b4b34fc85c50e1579ea5aa"
+    }
+  ]
+}

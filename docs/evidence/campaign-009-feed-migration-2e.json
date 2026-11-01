@@ -1,0 +1,396 @@
+{
+  "schema": 1,
+  "stage": "migrate",
+  "person": "bob",
+  "checks": [
+    {
+      "check": "original hosting federation explicitly offline while willing replica retains original signed project metadata",
+      "result": "pass",
+      "event": "8caccbed6cdd0973d1f2151cae1132735be4e6563785e41b82f840dd4b25047c",
+      "body_sha256": "26eaceb10b20ed74a72f4d54153946446ace576394f4ce7e7ef7240120384485",
+      "original": "alpha",
+      "replica": "beta"
+    },
+    {
+      "check": "willing replica serves original checked long discussion with home federation offline and original no-vault author owner gone",
+      "result": "pass",
+      "event": "1ed503591deb1fd6b2f953b9aabe138fd9444bc720ee42dbd085a22acff7a489",
+      "bytes": 1330,
+      "signed_sha256": "1ed503591deb1fd6b2f953b9aabe138fd9444bc720ee42dbd085a22acff7a489",
+      "content_sha256": "da933b261f757e2e3556bd30c008f04fbdd90ce29e277d65883d4e3c0ca9e557",
+      "original_owner": 11218089221463998728,
+      "fresh_ephemeral_owner": 11218089221463998984,
+      "historical_author": "dea81b778d1718c58b487255f80cbd56f0510a5105385e2cfae311aa4953692e",
+      "no_vault_ledger_sha256": "f53619eebda80a63834f31237b94137f1ee5971bd5196998fbb6ef5344a96287",
+      "original_host_offline": true
+    },
+    {
+      "check": "explicit native lock and parent-linked ordinary Feed upgrade replace only this retained personal UI/account with fresh process authority",
+      "result": "pass",
+      "old": {
+        "identity": 8117591479108501771,
+        "owner": 8117591479108501772,
+        "ui": 8117591479108501773,
+        "rights": [
+          1024,
+          799
+        ],
+        "federation": "b2a1a86b8b958a613c578692e4c9c9b0e96e87fa676d18326fec1363183b00c3",
+        "selected_peer": "d17d966d66359ea218b908b2d0c1f40452dc74a5d462f9138846c52048647185",
+        "default_retention": "ephemeral",
+        "controls": "native Feed window: create identity, compose, select audience, publish, timeline and reply",
+        "transport": "selected native mode1 circuit and Feed terminal required; no direct fallback"
+      },
+      "old_releases": {
+        "identity": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+        "feed-account": "f50eaa12d7dc69c962584ce34a12d53d9b064970c640d23d594e930d7fc4bc07",
+        "feed": "bfd1a9584b654f8ee4f0c3f1b3703608b452da7a9ad472683821aa8f4f13a635",
+        "feed-federation": "02041c0eeca13f17a62a8913954558d9dc5be7e52f55d5db915dc76b14241526"
+      },
+      "packages": {
+        "identity": {
+          "release_id": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+          "parent": "0000000000000000000000000000000000000000000000000000000000000000",
+          "version": "0.9.0",
+          "code_sha256": "1437162555de9c55c72806039df49d07ead2ed36a267de5bfc7a3f886028bca7",
+          "package_sha256": "d6467b6bf812768f4e25a466c4ce0c425635444f78b4b34fc85c50e1579ea5aa"
+        },
+        "feed-account": {
+          "release_id": "2a1b3d4a12f1383f43228cba37ed717295ff92d7c17f3c78eff94768cd3ce06e",
+          "parent": "f50eaa12d7dc69c962584ce34a12d53d9b064970c640d23d594e930d7fc4bc07",
+          "version": "0.9.2",
+          "code_sha256": "575955507f16547e018f040a7d12031e9bd7012c3ae2a96d4e3ec84b68287190",
+          "package_sha256": "516e45cd5bf25e96c08e1402101f1e4c09298981528ab4cee231f6dba0057b52"
+        },
+        "feed": {
+          "release_id": "dc1bd86bdb90dd7832562d61a8c825fc1418a63582a78d54fab38acf7e365ef5",
+          "parent": "bfd1a9584b654f8ee4f0c3f1b3703608b452da7a9ad472683821aa8f4f13a635",
+          "version": "0.9.3",
+          "code_sha256": "bb4a916a58e14a9bf08b96cfae3161e51caf1c40f9fede027de0beb002ad7a2e",
+          "package_sha256": "57bc1a917c453784a2c7710fce47bf0eea2ac5be0673831290d886f226abe64b"
+        },
+        "feed-federation": {
+          "release_id": "02041c0eeca13f17a62a8913954558d9dc5be7e52f55d5db915dc76b14241526",
+          "parent": "5bb8adb18e7161203a9eec7d6ffebf7ac1e7a0c510f8d74b652642f91c7b9686",
+          "version": "0.9.1",
+          "code_sha256": "59b107b5702c4d231551da67a053543c94e012bd3d70bae4eeb1e2edd26f49e3",
+          "package_sha256": "6cf3b1c142b5e076337575dfd22280760d1c75d95d2e3756c2ade7bbd38df35f"
+        }
+      },
+      "exact_current_native_catalog_verified": true,
+      "locked": true,
+      "stopped": true,
+      "new": {
+        "identity": 8117591479108501771,
+        "owner": 8117591479108502028,
+        "ui": 8117591479108502029,
+        "rights": [
+          1024,
+          799
+        ],
+        "federation": "b2a1a86b8b958a613c578692e4c9c9b0e96e87fa676d18326fec1363183b00c3",
+        "selected_peer": "d17d966d66359ea218b908b2d0c1f40452dc74a5d462f9138846c52048647185",
+        "default_retention": "ephemeral",
+        "controls": "native Feed window: create identity, compose, select audience, publish, timeline and reply",
+        "transport": "selected native mode1 circuit and Feed terminal required; no direct fallback"
+      },
+      "actor_ledger_updated": true
+    },
+    {
+      "check": "native recovery restores exactly the explicitly approved local preferences independently of federation policy",
+      "result": "pass",
+      "preference_bytes": 1536,
+      "preference_sha256": "6c2b38e011a752ca61fc76a1f6949e9dec2ddc2904df96afe3c1388034e5566c",
+      "stable_project_follow": true,
+      "previously_selected_local_block": true,
+      "local_block_preserved": true,
+      "complete_graph_published": false
+    },
+    {
+      "check": "native recovery restores exactly the explicitly approved local preferences independently of federation policy",
+      "result": "pass",
+      "preference_bytes": 1536,
+      "preference_sha256": "6c2b38e011a752ca61fc76a1f6949e9dec2ddc2904df96afe3c1388034e5566c",
+      "stable_project_follow": true,
+      "previously_selected_local_block": true,
+      "local_block_preserved": true,
+      "complete_graph_published": false
+    },
+    {
+      "check": "fresh native recovery preserves scoped author and exact prior publication through selected willing federation",
+      "result": "pass",
+      "public": "26d3b302e8934ea1b6e4f72a13ffe975bc36b207df5a25c5beef0b92e32320d1",
+      "generation": 2,
+      "sequence": 5,
+      "exact_event": "ec5a50b55824e0347e60d1802e2e046e31df2c028f7b714ca7dff46ac9c20f47",
+      "original_card": "8caccbed6cdd0973d1f2151cae1132735be4e6563785e41b82f840dd4b25047c",
+      "no_original_server_permission": true
+    },
+    {
+      "check": "native recovery restores exactly the explicitly approved local preferences independently of federation policy",
+      "result": "pass",
+      "preference_bytes": 1536,
+      "preference_sha256": "6c2b38e011a752ca61fc76a1f6949e9dec2ddc2904df96afe3c1388034e5566c",
+      "stable_project_follow": true,
+      "previously_selected_local_block": true,
+      "local_block_preserved": true,
+      "complete_graph_published": false
+    },
+    {
+      "check": "same retained federation-scoped author publishes a new checked event at willing second host while original remains offline",
+      "result": "pass",
+      "event": "a60b5c0c76b60da64f77c83a116bdf3ddda424c1f23b4cfdd8ec0223b576605c",
+      "sequence": 6,
+      "original_still_offline": true,
+      "new_identity_link_claim": false,
+      "ui_publication_phase": 6,
+      "destination_publication_state": 2,
+      "replication_claim": false,
+      "replication_limit": "durable acceptance does not imply acknowledgement from the offline original federation"
+    },
+    {
+      "check": "native approved export after hosting move preserves exact new outbox reference and selected preferences",
+      "result": "pass",
+      "profile_sha256": "bd2c078f8cae7ecd4e4c135fd1a3efc9e92c8ffb6ea83cac16dc1bc125241f43",
+      "preference_sha256": "6c2b38e011a752ca61fc76a1f6949e9dec2ddc2904df96afe3c1388034e5566c",
+      "opaque_root_generation": 12,
+      "sealed_private_key_included": false
+    },
+    {
+      "check": "explicit portable public preferences restore on an empty account without transferring publishing or moderation authority",
+      "result": "pass",
+      "approved_sha256": "bd2c078f8cae7ecd4e4c135fd1a3efc9e92c8ffb6ea83cac16dc1bc125241f43",
+      "imported": true,
+      "owner": 11218089221463998984,
+      "ui": 11218089221463998985,
+      "reexport_sha256": "94cfdb1f5035b17a9a3ab0562fd5351dccd0ae42268547850f0cdfbbf4b4fc4c",
+      "preference_sha256": "6c2b38e011a752ca61fc76a1f6949e9dec2ddc2904df96afe3c1388034e5566c",
+      "author_present": false,
+      "key_generation": 0,
+      "sequence": 0,
+      "signing_seed_or_seal_imported": false,
+      "moderator_authority_imported": false,
+      "identity_created": false,
+      "network_relationship_created": false,
+      "frame": "38d067acb0af8e486be73cf877cc5463755776d5b54c6a0ea86fb261826c9564"
+    }
+  ],
+  "checkpoints": {
+    "approved_profile_sha256": "88f007b2bfe7c7dab8fdd5caffa21edc927101625b78032b1217989659870cb2",
+    "offline_intent": true,
+    "original": "alpha",
+    "offline": true,
+    "offline_original_publisher_read": true,
+    "recovery_intent": {
+      "previous_key_generation": 1,
+      "previous_root_generation": 7,
+      "original_host_offline": true,
+      "selected_preference_sha256": "6c2b38e011a752ca61fc76a1f6949e9dec2ddc2904df96afe3c1388034e5566c"
+    },
+    "ordinary_upgrade": {
+      "old": {
+        "identity": 8117591479108501771,
+        "owner": 8117591479108501772,
+        "ui": 8117591479108501773,
+        "rights": [
+          1024,
+          799
+        ],
+        "federation": "b2a1a86b8b958a613c578692e4c9c9b0e96e87fa676d18326fec1363183b00c3",
+        "selected_peer": "d17d966d66359ea218b908b2d0c1f40452dc74a5d462f9138846c52048647185",
+        "default_retention": "ephemeral",
+        "controls": "native Feed window: create identity, compose, select audience, publish, timeline and reply",
+        "transport": "selected native mode1 circuit and Feed terminal required; no direct fallback"
+      },
+      "old_releases": {
+        "identity": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+        "feed-account": "f50eaa12d7dc69c962584ce34a12d53d9b064970c640d23d594e930d7fc4bc07",
+        "feed": "bfd1a9584b654f8ee4f0c3f1b3703608b452da7a9ad472683821aa8f4f13a635",
+        "feed-federation": "02041c0eeca13f17a62a8913954558d9dc5be7e52f55d5db915dc76b14241526"
+      },
+      "packages": {
+        "identity": {
+          "release_id": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+          "parent": "0000000000000000000000000000000000000000000000000000000000000000",
+          "version": "0.9.0",
+          "code_sha256": "1437162555de9c55c72806039df49d07ead2ed36a267de5bfc7a3f886028bca7",
+          "package_sha256": "d6467b6bf812768f4e25a466c4ce0c425635444f78b4b34fc85c50e1579ea5aa"
+        },
+        "feed-account": {
+          "release_id": "2a1b3d4a12f1383f43228cba37ed717295ff92d7c17f3c78eff94768cd3ce06e",
+          "parent": "f50eaa12d7dc69c962584ce34a12d53d9b064970c640d23d594e930d7fc4bc07",
+          "version": "0.9.2",
+          "code_sha256": "575955507f16547e018f040a7d12031e9bd7012c3ae2a96d4e3ec84b68287190",
+          "package_sha256": "516e45cd5bf25e96c08e1402101f1e4c09298981528ab4cee231f6dba0057b52"
+        },
+        "feed": {
+          "release_id": "dc1bd86bdb90dd7832562d61a8c825fc1418a63582a78d54fab38acf7e365ef5",
+          "parent": "bfd1a9584b654f8ee4f0c3f1b3703608b452da7a9ad472683821aa8f4f13a635",
+          "version": "0.9.3",
+          "code_sha256": "bb4a916a58e14a9bf08b96cfae3161e51caf1c40f9fede027de0beb002ad7a2e",
+          "package_sha256": "57bc1a917c453784a2c7710fce47bf0eea2ac5be0673831290d886f226abe64b"
+        },
+        "feed-federation": {
+          "release_id": "02041c0eeca13f17a62a8913954558d9dc5be7e52f55d5db915dc76b14241526",
+          "parent": "5bb8adb18e7161203a9eec7d6ffebf7ac1e7a0c510f8d74b652642f91c7b9686",
+          "version": "0.9.1",
+          "code_sha256": "59b107b5702c4d231551da67a053543c94e012bd3d70bae4eeb1e2edd26f49e3",
+          "package_sha256": "6cf3b1c142b5e076337575dfd22280760d1c75d95d2e3756c2ade7bbd38df35f"
+        }
+      },
+      "exact_current_native_catalog_verified": true,
+      "locked": true,
+      "stopped": true,
+      "new": {
+        "identity": 8117591479108501771,
+        "owner": 8117591479108502028,
+        "ui": 8117591479108502029,
+        "rights": [
+          1024,
+          799
+        ],
+        "federation": "b2a1a86b8b958a613c578692e4c9c9b0e96e87fa676d18326fec1363183b00c3",
+        "selected_peer": "d17d966d66359ea218b908b2d0c1f40452dc74a5d462f9138846c52048647185",
+        "default_retention": "ephemeral",
+        "controls": "native Feed window: create identity, compose, select audience, publish, timeline and reply",
+        "transport": "selected native mode1 circuit and Feed terminal required; no direct fallback"
+      },
+      "actor_ledger_updated": true
+    },
+    "upgrade_recorded": true,
+    "recovery_root_generation": 8,
+    "upgraded_local_block": {
+      "unblock_intent": true,
+      "unblocked": true,
+      "unblocked_profile_sha256": "d11e16b96dc7e02fa0ea4437019204ef9a1fdbd97c7c1b15879c60307f446e12",
+      "reblock_intent": true,
+      "restored": true,
+      "restored_preference_sha256": "6c2b38e011a752ca61fc76a1f6949e9dec2ddc2904df96afe3c1388034e5566c",
+      "marker_frame": "3a0665abe76b743638d423fd9e8be7c7f9f934e2879564b2ed1287867d69bac1",
+      "next_progress": true,
+      "next_event": "2a715568ea7f486d77e40778801772875a88e87dbd01b35e1b5ed0b8953e8f96",
+      "next_frame": "86fec2869eb8f5f3b94f383e39744d3ad175b0700941b61b4f5a7538c3eff38c"
+    },
+    "recovered": true,
+    "move_audience_intent": "home plus selected peer federation",
+    "move_audience": {
+      "label": "Audience: home plus selected peer federation",
+      "frame": "8caca516466e2ab2a8d1a6a0d5775481ba02d2b3357094fa527565b3bd9d2632",
+      "source": "ordinary native A control and completed rendered footer; no account field setter"
+    },
+    "move_root_before": 11,
+    "move_intent": {
+      "author": "26d3b302e8934ea1b6e4f72a13ffe975bc36b207df5a25c5beef0b92e32320d1",
+      "home": "b2a1a86b8b958a613c578692e4c9c9b0e96e87fa676d18326fec1363183b00c3",
+      "peer": "d17d966d66359ea218b908b2d0c1f40452dc74a5d462f9138846c52048647185",
+      "kind": 1,
+      "content_sha256": "ac8997249e8a42eebf79a3b6cf2a0885ef9e918cd0c7684dcbb21056bfc6e310"
+    },
+    "public_preferences_import": {
+      "approved_sha256": "bd2c078f8cae7ecd4e4c135fd1a3efc9e92c8ffb6ea83cac16dc1bc125241f43",
+      "imported": true,
+      "owner": 11218089221463998984,
+      "ui": 11218089221463998985,
+      "reexport_sha256": "94cfdb1f5035b17a9a3ab0562fd5351dccd0ae42268547850f0cdfbbf4b4fc4c",
+      "preference_sha256": "6c2b38e011a752ca61fc76a1f6949e9dec2ddc2904df96afe3c1388034e5566c",
+      "author_present": false,
+      "key_generation": 0,
+      "sequence": 0,
+      "signing_seed_or_seal_imported": false,
+      "moderator_authority_imported": false,
+      "identity_created": false,
+      "network_relationship_created": false,
+      "frame": "38d067acb0af8e486be73cf877cc5463755776d5b54c6a0ea86fb261826c9564"
+    }
+  },
+  "attempts": [
+    {
+      "started_utc": "2026-11-01T20:41:41Z",
+      "result": "failure",
+      "error": "TimeoutError('complete retained author recovery and fresh reseal with original federation offline')",
+      "seconds": 399.5928038999991
+    },
+    {
+      "started_utc": "2026-11-01T20:49:01Z",
+      "result": "failure",
+      "error": "TimeoutError('native chronological signed row or author-only local block marker')",
+      "seconds": 473.43788451500586
+    },
+    {
+      "started_utc": "2026-11-01T20:57:16Z",
+      "result": "failure",
+      "error": "TimeoutError('native completed audience footer after retained UI recovery')",
+      "seconds": 230.40087050999864
+    },
+    {
+      "started_utc": "2026-11-01T21:02:34Z",
+      "result": "pass",
+      "seconds": 61.558861439989414
+    }
+  ],
+  "result": "pass",
+  "original_author_ephemerality": {
+    "historical_author": "dea81b778d1718c58b487255f80cbd56f0510a5105385e2cfae311aa4953692e",
+    "old_owner": 11218089221463998728,
+    "fresh_owner": 11218089221463998984,
+    "fresh_ui": 11218089221463998985,
+    "ledger_sha256": "f53619eebda80a63834f31237b94137f1ee5971bd5196998fbb6ef5344a96287",
+    "classification": "completed no-vault observation; historical author is not the fresh owner identity"
+  },
+  "configuration": {
+    "image_sha256": "2e5147c4198cf7ec39ab053f2ea8895cfdceb1c9b9dcf79e1b7bb7627314bcdf",
+    "feed": {
+      "identity": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+      "feed-account": "f50eaa12d7dc69c962584ce34a12d53d9b064970c640d23d594e930d7fc4bc07",
+      "feed": "bfd1a9584b654f8ee4f0c3f1b3703608b452da7a9ad472683821aa8f4f13a635",
+      "feed-federation": "02041c0eeca13f17a62a8913954558d9dc5be7e52f55d5db915dc76b14241526"
+    },
+    "messenger": {
+      "identity": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+      "owner": "50f3e3ccb8d3faeaf29c50d6aec24bbc654a30754f26c15dd7585a4a8e64a5b3",
+      "ui": "a0b4294d2331e6704acd69093936339f7c0b8559dd9990d4967a22216f84e6c7",
+      "delivery": "5e166b16eeeed082bb86a246f9a79bec88fb13f097304622c9d33cd51992320a",
+      "mailbox": "24e249a218f52813953b8d204f1c7b3d1129e1b675a9ed8500731cf842049135"
+    },
+    "mixed": true,
+    "history_events": 8,
+    "replication_auto_renew": true
+  },
+  "approved_prior_commitment": {
+    "event": "ec5a50b55824e0347e60d1802e2e046e31df2c028f7b714ca7dff46ac9c20f47",
+    "sequence": 5,
+    "signed_sha256": "ec5a50b55824e0347e60d1802e2e046e31df2c028f7b714ca7dff46ac9c20f47",
+    "original_card": "8caccbed6cdd0973d1f2151cae1132735be4e6563785e41b82f840dd4b25047c"
+  },
+  "seconds": 61.558861439989414,
+  "attempt_archives": [
+    {
+      "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/feed-migrate-account.attempt-1.json",
+      "sha256": "b6ac5eba4573d0c03f6462d4da4400ccb87a5ea05ca18fb489ff1a80aac25e66"
+    },
+    {
+      "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/feed-migrate-account.attempt-2.json",
+      "sha256": "437bfa730d8413755ebd976d6d239b0d471bd69d5fe6dbd104910da1baf4e7b4"
+    },
+    {
+      "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/feed-migrate-account.attempt-3.json",
+      "sha256": "79a49b7d99a803fb83411c48a14077eb97e14927f3a451c17a9f0e7649fac439"
+    }
+  ],
+  "frame": "966b9f1cae8cd7226f89b5cce7f4dddf81784f998998e06e672d087af682674d",
+  "qualification": "same-author hosting move and approved public preference import on common2e with baselineFeedv7 followed by admitted0.9.3UI/0.9.2Owner; discoveredbusy-readbug requires later0.9.4installedqualification",
+  "raw": {
+    "path": "build/campaign009-connected-v7/feed-migrate-account.json",
+    "sha256": "4be9b4244f5647ce727974bda00eb61faf86ddb2c1dfeb267aade35ddd608c0e"
+  },
+  "source_commit": "f7cb8523ea585c878a4d1648ae9ca1af89cc96aa",
+  "native_ui_successor_qualification_pending": "0.9.4 exactparentdc1bd86b\u2026; independentfocusedfixturepasses",
+  "limits": [
+    "No new federation-scoped identity or cross-identity continuity claim. The existing author remains scoped to Alpha.",
+    "The moved publication is durably accepted at Beta, not acknowledged or replicated to offline Alpha.",
+    "Public import copied only explicitly selected preferences and public metadata; Charlie remains without signing/moderator credentials.",
+    "An older whole-backing replacement without an external freshness anchor remains undetectable.",
+    "Attempt1 transientcompletionlabel andattempt3 compositorcoordinate were controllerissues; attempt2 preserved an actualNative0.9.3busy-readownershipbug, correctedbyf7cb852 separately."
+  ],
+  "builtin_image_changed": false
+}

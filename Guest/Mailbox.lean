@@ -16,6 +16,44 @@ def staged : UInt64 := 0x6e0000
 def scratch : UInt64 := 0x6e4000
 def hashed : UInt64 := 0x6e5000
 def serialized : UInt64 := 0x700000
+-- Four independently owned volatile uploads; a finite serial disk writer is
+-- shared. Slow appenders hold their8KiB staging allocation, never the writer.
+def stageBank (i : UInt64) : UInt64 := 0x750000+i*12288
+def stageIndex (t : UInt64) : UInt64 := load64 (st+344) t
+def saveStage (i t : UInt64) : UInt64 :=
+  let b := stageBank i
+  let t := copy (st+48) b 48 t
+  let t := copy (st+128) (b+64) 104 t
+  let t := store64 (b+176) (load64 (st+312) t) t
+  let t := store64 (b+184) (load64 (st+336) t) t
+  let t := store64 (b+192) (load64 (st+360) t) t
+  copy staged (b+256) 8192 t
+def loadStage (i t : UInt64) : UInt64 :=
+  let b := stageBank i
+  let t := copy b (st+48) 48 t
+  let t := copy (b+64) (st+128) 104 t
+  let t := store64 (st+312) (load64 (b+176) t) t
+  let t := store64 (st+336) (load64 (b+184) t) t
+  let t := store64 (st+360) (load64 (b+192) t) t
+  store64 (st+344) i (copy (b+256) staged 8192 t)
+def selectStage (i t : UInt64) : UInt64 :=
+  if stageIndex t == i then t else loadStage i (saveStage (stageIndex t) t)
+def stageWord (i offset t : UInt64) : UInt64 :=
+  load64 (if i == stageIndex t then st+offset else stageBank i+(if offset == 336 then 184 else offset-48)) t
+def sameOrigin (caller expected origin actual : UInt64) : Bool :=
+  caller != 0 && caller == expected && origin == actual
+-- Applied at append/commit/cancel; Network is only a local process identity.
+-- Its authenticated terminal generation is a separate ownership field.
+theorem different_origin_denied (caller expected origin actual : UInt64) (different : origin ≠ actual) :
+    sameOrigin caller expected origin actual = false := by simp [sameOrigin, different]
+def ownsStage (caller t : UInt64) : Bool :=
+  sameOrigin caller (load64 (st+48) t) (load64 (command+48) t) (load64 (st+336) t)
+partial def findStage (caller origin h i t : UInt64) : UInt64 :=
+  if i == 4 then error else
+  if sameOrigin caller (stageWord i 48 t) origin (stageWord i 336 t) &&
+    (h == 0 || h == stageWord i 56 t) then i else findStage caller origin h (i+1) t
+partial def freeStage (i t : UInt64) : UInt64 :=
+  if i == 4 then error else if stageWord i 48 t == 0 then i else freeStage (i+1) t
 def magic : UInt64 := 0x3158424d544c
 def receiptBody : UInt64 := 0x730000
 def bytes : UInt64 := 141312
@@ -164,15 +202,17 @@ def pump (t : UInt64) : UInt64 :=
     let t := copy candidate active bytes r
     let t := store64 (st+16) 0 t
     let t := store64 (st+40) 0 t
-    -- A completed staging handle stays available to its exact local caller for
-    -- poll; restart re-creates authority through a fresh request/token check.
+    let writer := load64 (st+320) t
+    if writer == 0 then t else
+    let t := selectStage (writer-1) t
     let t := store64 (st+96) (load64 (st+48) t) t
     let t := store64 (st+104) (load64 (st+56) t) t
+    let t := store64 (st+320) 0 t
     let t := store64 (st+48) 0 (store64 (st+56) 0 t)
     zero staged 1024 t
 def receiptQuantum (t : UInt64) : UInt64 :=
   let t := Guest.MailboxReceipt.pump t
-  if pending t || load64 (st+48) t != 0 || load64 (active+48) t != 1 then t else
+  if pending t || load64 (active+48) t != 1 then t else
   if Guest.MailboxReceipt.completed t then
     let p := receiptRow 0 t
     if p == error || handle p t != load64 (st+256) t then store64 (st+40) 5 t else
@@ -228,7 +268,7 @@ partial def recover (offset t : UInt64) : UInt64 :=
   let r := Guest.ServerSDK.read (load64 st t) offset 512 t
   if r != 576 || status r != 0 then error else recover (offset+512) (copy (wire+64) (serialized+offset) 512 r)
 def configure (grant t : UInt64) : UInt64 :=
-  if pending t || load64 (st+48) t != 0 then response 4 0 0 0 0 t else
+  if pending t || stageWord 0 48 t != 0 || stageWord 1 48 t != 0 || stageWord 2 48 t != 0 || stageWord 3 48 t != 0 then response 4 0 0 0 0 t else
   let r := Guest.ServerSDK.describe grant t
   if r != 576 || status r != 0 then response 1 0 0 0 0 r else
   let present := load64 (wire+64) r != 0
@@ -259,8 +299,8 @@ def enroll (length t : UInt64) : UInt64 :=
   let t := store64 (p+144) attempts t
   let r := preparePublication 0 t
   if r == error then response 5 0 0 0 0 r else response 6 0 0 0 0 r
--- An inactivity lease is renewed only by authenticated positive byte
--- progress. The existing1000-tick interval and8192-byte limit stay fixed;
+-- Authenticated positive byte progress renews this stage's10000-tick
+-- inactivity deadline, capped by its60000-tick absolute admission deadline.
 -- the volatile renewal count atst312 independently enforces the work bound.
 def stagingProgressAllowed (now deadline total offset count renewals : UInt64) : Bool :=
   now < deadline && count > 0 && count <= 512 && total <= 8192 && offset <= total &&
@@ -287,7 +327,7 @@ theorem staging_positive_progress_within_bounds :
 -- Volatile public expiry diagnostics use six previously unused words in the
 --512-byte service state. They carry no mailbox identifiers or capabilities.
 def expireStaging (now t : UInt64) : UInt64 :=
-  if load64 (st+48) t == 0 || pending t || now < load64 (st+224) t then t else
+  if load64 (st+48) t == 0 || load64 (st+320) t == stageIndex t+1 || now < load64 (st+224) t then t else
   let count := load64 (st+264) t
   let t := store64 (st+264) (if count == error then count else count+1) t
   let t := store64 (st+272) (load64 (st+56) t) t
@@ -296,6 +336,12 @@ def expireStaging (now t : UInt64) : UInt64 :=
   let t := store64 (st+296) (load64 (st+224) t) t
   let t := store64 (st+304) now t
   store64 (st+48) 0 (zero staged 1024 t)
+-- One incomplete deposit per recipient preserves the stable fetch cursor's
+-- allocation order. Other recipients retain independent staging allocations.
+partial def recipientStaged (id i t : UInt64) : Bool :=
+  if i == 4 then false else
+  let p := if stageIndex t == i then st+128 else stageBank i+64
+  (stageWord i 48 t != 0 && i != stageIndex t && eq id p 32 t) || recipientStaged id (i+1) t
 def begin (caller length t : UInt64) : UInt64 :=
   let count := load64 (command+16) t
   let fresh := load64 (command+24) t
@@ -310,25 +356,30 @@ def begin (caller length t : UInt64) : UInt64 :=
     if load64 existing t == 2 && (load64 (active+48) t != 1 || load64 (existing+224) t != 2) then
       response 11 (handle existing t) count 0 (load64 (active+16) t) t else
     acceptance existing (handle existing t) count 0 (load64 (active+16) t) t
-  else if load64 (st+48) t == caller && load64 (st+64) t == count &&
+  else if ownsStage caller t && load64 (st+64) t == count &&
     eq (command+64) (st+128) 32 t && eq (command+128) (st+160) 64 t then
     response (if pending t then 6 else 0) (load64 (st+56) t) (load64 (st+72) t) count 0 t
-  else if pending t || load64 (st+48) t != 0 || receiptRow 0 t != error then response 6 0 0 0 0 t else
+  else if load64 (st+48) t != 0 || recipientStaged (command+64) 0 t then response 6 0 0 0 0 t else
   if load64 (active+40) t != 0 && fresh != 1 then response 11 0 0 0 0 t else
   if !allowance count (load64 (rp+136) t) (load64 (rp+128) t)
       (load64 (rp+152) t) (load64 (rp+144) t) then response 4 0 0 0 0 t else
   if load64 (active+48) t == 2 || (load64 (active+48) t == 1 && !Guest.MailboxReceipt.configured t) then response 9 0 0 0 0 t else
   let slot := vacant 0 error t
-  let serial := load64 (active+32) t+1
+  let serial := (if load64 (st+328) t > load64 (active+32) t then load64 (st+328) t else load64 (active+32) t)+1
   if slot == error || serial == 0 then response 4 0 0 0 0 t else
   let t := zero staged 1024 t
   let t := store64 (st+48) caller t
+  let t := store64 (st+336) (load64 (command+48) t) t
+  let t := store64 (st+328) serial t
   let t := store64 (st+56) serial t
   let t := store64 (st+64) count t
   let t := store64 (st+72) 0 (store64 (st+312) 0 t)
   let t := store64 (st+80) slot t
   let t := store64 (st+88) ((rp-active-512)/256) t
-  let t := store64 (st+224) (Guest.WaitSDK.now t+1000) t
+  -- Measured three-client routed RPCs can exceed the old10s lease. Positive
+  -- progress has100s, capped by an absolute10minute allocation lifetime.
+  let t := store64 (st+224) (Guest.WaitSDK.now t+10000) t
+  let t := store64 (st+360) (Guest.WaitSDK.now t+60000) t
   let t := copy (command+64) (st+128) 32 t
   let t := copy (command+128) (st+160) 64 t
   response 0 serial 0 count 0 t
@@ -336,7 +387,7 @@ def append (caller length t : UInt64) : UInt64 :=
   let h := load64 (command+16) t
   let offset := load64 (command+24) t
   let count := length-128
-  if load64 (st+48) t != caller || load64 (st+56) t != h || pending t ||
+  if !ownsStage caller t || load64 (st+56) t != h ||
     length <= 128 || length > 640 || offset != load64 (st+72) t ||
     !eq (command+64) (st+128) 32 t || authorize (command+64) (command+96) 0 t == error ||
     count > load64 (st+64) t-offset then response 2 h 0 0 0 t else
@@ -345,18 +396,28 @@ def append (caller length t : UInt64) : UInt64 :=
   if !stagingProgressAllowed now (load64 (st+224) now) (load64 (st+64) now) offset count renewals then
     response 2 h 0 0 0 (expireStaging now now) else
   let t := store64 (st+312) (renewals+1) now
-  response 0 h (offset+count) 0 0 (store64 (st+224) (now+1000)
+  response 0 h (offset+count) 0 0 (store64 (st+224) (if now+10000 < load64 (st+360) t then now+10000 else load64 (st+360) t)
     (store64 (st+72) (offset+count) (copy (command+128) (staged+offset) count t)))
 def commit (caller t : UInt64) : UInt64 :=
   let h := load64 (command+16) t
-  if pending t then response 6 h 0 0 0 t else
-  if load64 (st+48) t != caller || load64 (st+56) t != h || h == 0 || load64 (st+72) t != load64 (st+64) t ||
+  let duplicate := findRequest (st+160) (st+128) 0 t
+  if ownsStage caller t && load64 (st+56) t == h && duplicate != error then
+    if load64 (duplicate+128) t != load64 (st+64) t || !eq (duplicate+96) (st+192) 32 t then response 12 h 0 0 0 t else
+    if authorize (command+64) (command+96) 0 t == error then response 1 h 0 0 0 t else
+    acceptance duplicate (handle duplicate t) (load64 (duplicate+128) t) 0 (load64 (active+16) t) (store64 (st+48) 0 (zero staged 1024 t))
+  else
+  if pending t || receiptRow 0 t != error || Guest.MailboxReceipt.pending t then response 6 h 0 0 0 t else
+  if !ownsStage caller t || load64 (st+56) t != h || h == 0 || load64 (st+72) t != load64 (st+64) t ||
     !eq (command+64) (st+128) 32 t || authorize (command+64) (command+96) 0 t == error then response 2 h 0 0 0 t else
   let now := Guest.WaitSDK.now t
   if now >= load64 (st+224) now then response 2 h 0 0 0 (expireStaging now now) else
   let t := hash staged (load64 (st+64) t) t
   if !eq hashed (st+192) 32 t then response 5 h 0 0 0 t else
-  let slot := load64 (st+80) t
+  let slot := vacant 0 error t
+  if slot == error then response 4 h 0 0 0 t else
+  let rp := authorize (command+64) (command+96) 0 t
+  if rp == error || !allowance (load64 (st+64) t) (load64 (rp+136) t) (load64 (rp+128) t) (load64 (rp+152) t) (load64 (rp+144) t) then response 4 h 0 0 0 t else
+  let t := store64 (st+88) ((rp-active-512)/256) t
   let t := copy active candidate bytes t
   let p := row candidate slot
   let t := if load64 p t != 0 then store64 (candidate+40) 1 t else t
@@ -369,12 +430,12 @@ def commit (caller t : UInt64) : UInt64 :=
   let t := copy staged (p+256) count t
   let t := if load64 (active+48) t == 1 then
     store64 (p+224) 1 (store64 (p+232) (self t) (store64 (p+216) (load64 (active+16) t+1) t)) else t
-  let t := store64 (candidate+32) h t
+  let t := store64 (candidate+32) (if h > load64 (candidate+32) t then h else load64 (candidate+32) t) t
   let rp := recipient candidate (load64 (st+88) t)
   let t := store64 (rp+136) (load64 (rp+136) t+count) t
   let t := store64 (rp+152) (load64 (rp+152) t+1) t
   let r := preparePublication h t
-  if r == error then response 5 h 0 0 0 r else response 6 h 0 0 0 r
+  if r == error then response 5 h 0 0 0 r else response 6 h 0 0 0 (store64 (st+320) (stageIndex r+1) r)
 partial def oldest (id after i chosen t : UInt64) : UInt64 :=
   if i == 16 then chosen else
   let p := row active i
@@ -395,7 +456,7 @@ def fetch (length t : UInt64) : UInt64 :=
   let n := if count > total-offset then total-offset else count
   let r := response 0 (handle p t) total offset n t
   64+n+copy (p+256+offset) (wire+64) n r
-def acknowledge (caller length t : UInt64) : UInt64 :=
+def acknowledge (_caller length t : UInt64) : UInt64 :=
   let h := load64 (command+16) t
   if length != 160 then response 2 h 0 0 0 t else
   if authorize (command+64) (command+96) 1 t == error then response 1 h 0 0 0 t else
@@ -403,25 +464,26 @@ def acknowledge (caller length t : UInt64) : UInt64 :=
   if p == error then response 11 h 0 0 0 t else
   if !eq (p+32) (command+64) 32 t || !eq (p+96) (command+128) 32 t then response 1 h 0 0 0 t else
   if load64 p t == 2 then response 0 h 0 0 (load64 (active+16) t) t else
-  if pending t || load64 (st+48) t != 0 then response 6 h 0 0 0 t else
+  if pending t then response 6 h 0 0 0 t else
   let t := copy active candidate bytes t
   let q := candidate+(p-active)
   let t := store64 q 2 (zero (q+256) 1024 t)
-  let t := store64 (st+48) caller (store64 (st+56) h t)
   let r := preparePublication h t
-  if r == error then response 5 h 0 0 0 (store64 (st+48) 0 r) else response 6 h 0 0 0 r
+  if r == error then response 5 h 0 0 0 r else response 6 h 0 0 0 r
 def poll (caller t : UInt64) : UInt64 :=
   let h := load64 (command+16) t
   let p := findHandle h 0 t
   let identity := if p == error then st+128 else p+32
   if h != 0 && ((!eq (command+64) identity 32 t) ||
     (authorize (command+64) (command+96) 0 t == error && authorize (command+64) (command+96) 1 t == error) ||
-    (p == error && (load64 (st+48) t != caller || load64 (st+56) t != h))) then response 1 h 0 0 0 t else
-  if pending t then response 6 h (if p == error then 0 else load64 p t) (load64 (st+24) t) (load64 (active+16) t) t else
-  if p != error && load64 p t != 0 && load64 (active+48) t != 0 then
-    if Guest.MailboxReceipt.failed t then response (if Guest.MailboxReceipt.reason t == 0 then 5 else Guest.MailboxReceipt.reason t) h 0 0 0 t else
+    (p == error && (!ownsStage caller t || load64 (st+56) t != h))) then response 1 h 0 0 0 t else
+  -- A pending deletion/receipt publication for this exact handle must commit
+  -- before its poll settles. Unrelated already accepted rows remain readable.
+  if pending t && (h == 0 || load64 (st+32) t == h) then response 6 h (if p == error then 0 else load64 p t) (load64 (st+24) t) (load64 (active+16) t) t else
+  if p != error && load64 p t != 0 then
+    if load64 (active+48) t != 0 && Guest.MailboxReceipt.failed t then response (if Guest.MailboxReceipt.reason t == 0 then 5 else Guest.MailboxReceipt.reason t) h 0 0 0 t else
     acceptance p h (load64 p t) 0 (load64 (active+16) t) t
-  else response (load64 (st+40) t) h (if p == error then 0 else load64 p t) (load64 (st+24) t) (load64 (active+16) t) t
+  else if pending t then response 6 h 0 (load64 (st+24) t) (load64 (active+16) t) t else response (load64 (st+40) t) h (if p == error then 0 else load64 p t) (load64 (st+24) t) (load64 (active+16) t) t
 def bundleResponse (p withOneTime t : UInt64) : UInt64 :=
   let t := response 0 0 256 0 (load64 (active+16) t) t
   let t := copy p (wire+64) 256 t
@@ -455,7 +517,7 @@ def publishPrekey (length t : UInt64) : UInt64 :=
   if eq old bundle 256 t then response 0 0 0 0 (load64 (active+16) t) t else
   let depleted := oneWayDepletion old bundle t
   if !prekeyGenerationAllowed (load64 (old+16) t) (load64 (bundle+16) t) depleted then response 12 0 0 0 0 t else
-  if pending t || load64 (st+48) t != 0 then response 6 0 0 0 0 t else
+  if pending t then response 6 0 0 0 0 t else
   let t := copy active candidate bytes t
   let t := copy bundle (prekey candidate slot) 256 t
   let t := if depleted then t else zero (recipient candidate slot+160) 4 t
@@ -470,7 +532,7 @@ def claimPrekey (length t : UInt64) : UInt64 :=
   if load64 bundle t == 0 then response 6 0 0 0 0 t else
   if load64 (bundle+24) t == 0 then bundleResponse bundle 0 t else
   if !zeros (p+160) 32 t then bundleResponse bundle (if eq (p+160) (command+128) 32 t then 1 else 0) t else
-  if pending t || load64 (st+48) t != 0 then response 6 0 0 0 0 t else
+  if pending t then response 6 0 0 0 0 t else
   let t := copy active candidate bytes t
   let t := copy (command+128) (recipient candidate slot+160) 32 t
   let r := preparePublication 0 t
@@ -494,7 +556,7 @@ def admin (length t : UInt64) : UInt64 :=
   else if action == 7 && length == 64 then
     64+header 0 (load64 (st+264) t) (load64 (st+272) t) (load64 (st+280) t)
       (load64 (st+288) t) (load64 (st+296) t) (load64 (st+304) t) t
-  else if pending t || load64 (st+48) t != 0 then response 6 0 0 0 0 t else
+  else if pending t then response 6 0 0 0 0 t else
   if action == 4 && length == 480 then
     if load64 (active+48) t != 1 && liveRows 0 t then response 4 0 0 0 0 t else
     let t := Guest.MailboxSDK.receiptTerms (receiptBody+256) t
@@ -524,7 +586,7 @@ def admin (length t : UInt64) : UInt64 :=
     let r := preparePublication 0 t
     if r == error then response 5 0 0 0 0 r else response 6 0 0 0 0 r
   else response 2 0 0 0 0 t
-def dispatch (caller rights token length t : UInt64) : UInt64 :=
+def dispatchSelected (caller rights token length t : UInt64) : UInt64 :=
   let op := load64 command t
   let action := load64 (command+8) t
   if length < 64 || length > 1024 || load64 (command+56) t != 1 || !current token t then response 2 0 0 0 0 t else
@@ -543,11 +605,30 @@ def dispatch (caller rights token length t : UInt64) : UInt64 :=
   if action == 8 then publishPrekey length t else
   if action == 9 then claimPrekey length t else
   if action == 7 && length == 128 then
-    if pending t then response 6 0 0 0 0 t else
-    if load64 (st+48) t != caller || load64 (st+56) t != load64 (command+16) t ||
+    if pending t && load64 (st+320) t == stageIndex t+1 then response 6 0 0 0 0 t else
+    if !ownsStage caller t || load64 (st+56) t != load64 (command+16) t ||
       !eq (command+64) (st+128) 32 t || authorize (command+64) (command+96) 0 t == error then response 3 0 0 0 0 t else
     response 0 0 0 0 0 (store64 (st+48) 0 (zero staged 1024 t))
   else response 7 0 0 0 0 t
+partial def expireStages (i now t : UInt64) : UInt64 :=
+  if i == 4 then t else
+  let deadline := load64 (if stageIndex t == i then st+224 else stageBank i+160) t
+  let t := if stageWord i 48 t != 0 && load64 (st+320) t != i+1 && now >= deadline then
+    expireStaging now (selectStage i t) else t
+  expireStages (i+1) now t
+def dispatch (caller rights token length t : UInt64) : UInt64 :=
+  let action := load64 (command+8) t
+  let h := load64 (command+16) t
+  let remote := load64 command t == 441
+  let stagedAction := remote && (action == 1 || action == 2 || action == 3 || action == 4 || action == 7)
+  let chosen := if stagedAction then findStage caller (load64 (command+48) t) (if action == 1 then 0 else h) 0 t else stageIndex t
+  let chosen := if chosen == error && action == 1 then freeStage 0 t else chosen
+  -- Durable duplicate lookup is independent from transport generation and remains
+  -- possible at full volatile staging capacity, under current capability checks.
+  let committed := remote && action == 1 && length == 192 && findRequest (command+128) (command+64) 0 t != error
+  if stagedAction && chosen == error && !committed && action != 4 then response (if action == 1 then 6 else 3) h 0 0 0 t else
+  let t := if chosen == error then t else selectStage chosen t
+  dispatchSelected caller rights token length t
 partial def loop (t : UInt64) : UInt64 :=
   let n := syscall 36 (self t) incoming 1024 0 t
   let t := if n >= 96 && n <= 1056 then
@@ -557,8 +638,8 @@ partial def loop (t : UInt64) : UInt64 :=
   else n
   let t := receiptQuantum (pump t)
   let now := Guest.WaitSDK.now t
-  let t := expireStaging now now
+  let t := expireStages 0 now now
   let t := zero scratch 80 (zero hashed 4 (zero command 124 (zero wire 128 t)))
   loop (Guest.WaitSDK.deadline (Guest.WaitSDK.now t+(if pending t || Guest.MailboxReceipt.pending t then 1 else 100)) t)
-def main (t : UInt64) : UInt64 := loop (Guest.MailboxReceipt.clear (zero st 64 (zero active (bytes/8) (zero candidate (bytes/8) t))))
+def main (t : UInt64) : UInt64 := loop (Guest.MailboxReceipt.clear (zero 0x750000 6144 (zero st 64 (zero active (bytes/8) (zero candidate (bytes/8) t)))))
 end Guest.Mailbox

@@ -1,33 +1,46 @@
 """Public-only enrollment adapter; node and certification keys stay in guests."""
-import argparse, hashlib, json, struct
+import argparse, hashlib, json, struct, signal
 from pathlib import Path
 import live, identity, network
 
 def call(client,op,h=0,data=b'',a=0,b=0,c=0,d=0,e=0):
-    if 20 <= op <= 47:
+    if 20 <= op <= 48:
         import messenger,time
         target=next(row[0] for row in identity.instances(client) if row[0]&255==6)
-        token=struct.unpack('<Q',client.request(175,struct.pack('<Q8Q',target,op,h,a,b,c,d,e,2)+data))[0]
-        deadline=time.monotonic()+600
-        while time.monotonic()<deadline:
-            raw=client.request(176,struct.pack('<Q',token))
-            if len(raw)==8:time.sleep(.05);continue
-            f=struct.unpack_from('<8Q',raw)
-            if f[0]:raise ValueError(f'native enrollment status{f[0]}')
-            return f,raw[64:]
-        client.request(177,struct.pack('<Q',token));raise TimeoutError('native enrollment completion')
+        prior_mask=signal.pthread_sigmask(signal.SIG_BLOCK,{signal.SIGINT})
+        token=None
+        try:
+            token=struct.unpack('<Q',client.request(175,struct.pack('<Q8Q',target,op,h,a,b,c,d,e,2)+data))[0]
+            signal.pthread_sigmask(signal.SIG_SETMASK,prior_mask)
+            prior_mask=None
+            deadline=time.monotonic()+600
+            while time.monotonic()<deadline:
+                raw=client.request(176,struct.pack('<Q',token))
+                if len(raw)==8:time.sleep(.05);continue
+                f=struct.unpack_from('<8Q',raw)
+                if f[0]:raise ValueError(f'native enrollment status{f[0]}')
+                return f,raw[64:]
+            raise TimeoutError('native enrollment completion')
+        except BaseException:
+            if token is not None:
+                try:client.request(177,struct.pack('<Q',token))
+                except (ValueError,OSError,EOFError):pass
+            raise
+        finally:
+            if prior_mask is not None:signal.pthread_sigmask(signal.SIG_SETMASK,prior_mask)
     return network.call(client,op,h=h,a=a,b=b,c=c,d=d,e=e,data=data,slot=0)
 
 def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--socket',type=Path,required=True)
     sub=p.add_subparsers(dest='command',required=True)
-    q=sub.add_parser('create');q.add_argument('--kind',choices=['relay','mailbox'],required=True)
+    q=sub.add_parser('create');q.add_argument('--kind',choices=['relay','mailbox','feed'],required=True)
     for f in ['federation','scope','family']:q.add_argument('--'+f,required=True)
     q.add_argument('--endpoint',required=True);q.add_argument('--bytes',type=int,default=1048576);q.add_argument('--work',type=int,default=65536);q.add_argument('--generation',type=int,default=1);q.add_argument('--output',required=True,type=Path)
     q=sub.add_parser('stage');q.add_argument('certificate',type=Path);q.add_argument('--peer',type=int,choices=range(4),required=True)
     q=sub.add_parser('approve');q.add_argument('--peer',type=int,choices=range(4),required=True);q.add_argument('--fingerprint',required=True)
     q=sub.add_parser('revoke');q.add_argument('--peer',type=int,choices=range(4),required=True)
-    q=sub.add_parser('listen');q.add_argument('--channel',type=int,choices=(0,2),default=0)
+    q=sub.add_parser('listen');q.add_argument('--channel',type=int,choices=range(12),default=0)
+    q=sub.add_parser('bulk');q.add_argument('--peer',type=int,choices=range(4),required=True);q.add_argument('--role',choices=['client','server'],required=True);q.add_argument('--slot',type=int,choices=range(4),default=0);q.add_argument('--endpoint',help='separately approved numeric bulk server endpoint, identical on both operators')
     sub.add_parser('route');sub.add_parser('status');sub.add_parser('stop');sub.add_parser('lock')
     for name in ('retain','recover'):
         q=sub.add_parser(name);q.add_argument('--key',required=True,type=Path)
@@ -46,7 +59,7 @@ def main(argv=None):
             if len(public)!=64:raise ValueError('truncated native node keys')
             fields,_=identity.invoke(c,400,a=3,data=identity.digest(a.federation)+identity.digest(a.scope))
             key=fields[1];body=bytearray(256)
-            struct.pack_into('<8Q',body,0,identity.NODE_MAGIC,2,7 if a.kind=='relay' else 8,1,1,a.bytes,a.work,1)
+            struct.pack_into('<8Q',body,0,identity.NODE_MAGIC,2,7 if a.kind=='relay' else 8 if a.kind=='mailbox' else 16,1,1,a.bytes,a.work,1)
             body[64:128]=public;body[128:160]=identity.digest(a.family)
             struct.pack_into('<3Q',body,160,a.generation,0,len(endpoint));body[184:184+len(endpoint)]=endpoint
             launcher=next(row[0] for row in identity.instances(c) if row[0]&255==1)
@@ -80,6 +93,10 @@ def main(argv=None):
             f,_=call(c,45);result=dict(locked=True,status=list(f))
         elif a.command in ('listen','route','stop'):
             f,_=call(c,{'listen':30,'route':31,'stop':35}[a.command],h=getattr(a,'channel',0));result=dict(status=list(f),application_fallback=False)
+        elif a.command=='bulk':
+            endpoint=a.endpoint.encode('ascii') if a.endpoint else b''
+            f,_=network.call(c,48,h=a.peer,a=1 if a.role=='client' else 2,b=len(endpoint),data=endpoint,slot=a.slot)
+            result=dict(approved_native_peer=a.peer,slot=a.slot,role=a.role,mode=3,status=list(f),private_keys_exported=False,authentication='native Ed25519 enrollment and X25519 pair possession')
         elif a.command=='terminal':
             f,_=call(c,38,h=a.peer,a=a.stream,b=a.owner,c=a.bytes,d=a.attempts);result=dict(queued=True,owner=a.owner,status=list(f))
         elif a.command=='registry-terminal':

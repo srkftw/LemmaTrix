@@ -396,7 +396,13 @@ def revokeListing (slot expected t : UInt64) : UInt64 :=
   if slot >= 16 || load64 (entry slot+768) t != 2 || load64 (entry slot+48) t != expected then response 3 0 t else
     let vacant := freeEntry 0 t
     if vacant == error then response 4 0 vacant else
-      let sequence := load64 (st+16) vacant+1
+      -- Verified incoming decisions may have a newer sequence than the local
+      -- authoring counter. Supersede the latest known decision for this exact
+      -- listing, rather than issuing a conflicting equal-sequence revocation.
+      let latest := cached (entry slot) 0 slot vacant
+      let localSequence := load64 (st+16) vacant
+      let knownSequence := load64 (entry latest+48) vacant
+      let sequence := (if localSequence > knownSequence then localSequence else knownSequence)+1
       if sequence == 0 then response 4 0 vacant else
         let t := copy (entry slot) (entry vacant) 512 vacant
         let t := copy (consumerEntry slot) (consumerEntry vacant) 768 t

@@ -6,7 +6,7 @@ open Guest.LiveSDK
 -- public certificate and an optional opaque Identity-owned sealed seed blob.
 -- Network cannot unwrap that blob. Live Noise/ntor/circuit state never survives.
 -- Two three-sector records in purpose2's dedicated credential extent1..6.
-def st : UInt64 := 0x720000
+def st : UInt64 := 0x7a0000
 def key : UInt64 := st+32
 def record : UInt64 := st+512
 def second : UInt64 := st+2560

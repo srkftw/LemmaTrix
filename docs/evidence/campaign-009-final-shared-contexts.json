@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "image_sha256": "51f44edc3aff9c33cff88c2a6b89012093af3784cecf01bfe69740c19a90f1eb",
+  "checks": [
+    {
+      "backend": "qemu",
+      "seconds": 0.22787003801204264,
+      "result": "pass"
+    },
+    {
+      "backend": "aarch64",
+      "seconds": 3.291695100997458,
+      "result": "pass"
+    }
+  ],
+  "boundaries": [
+    "same owner old request cannot poll or cancel a newer request, before or after response availability; current request and explicit owner-wide0 close work without altering an unrelated key bank",
+    "saved terminal primary target pins survive context switching; changed target retires only the selected epoch-owned pair before dispatch133, leaving unrelated bank/Registry pin intact; stale epochs cannot close a reused channel",
+    "terminal output link quota exhaustion closes the actual charged pair even when another pair was last pumped",
+    "partial terminal frames and pending typed IPC expire independently; exact cancellation frees the dispatch lane and wipes only the selected key/buffer snapshot",
+    "healthy idle terminal contexts do not expire; deadline addition saturates instead of disabling near clock exhaustion",
+    "relay integrity failure closes only dependent incoming/outgoing pair",
+    "expired idle listener gets a finite setup window only when accepted; outbound and ongoing handshake deadlines do not renew",
+    "failed LISTEN retires only that listener, backs off within32 failures, and explicit operator listen renews its allowance",
+    "terminal keys/buffers banked by channel, stream and epoch; stale epoch rejects",
+    "mailbox sameNetworkcaller different terminalorigin cannot append or collect foreignstaging",
+    "adapterv3 accepts slot15 and rejects slot16",
+    "bulk reconnect attempts remain context-private, finite32 and pending admission does not renew them",
+    "current native Feed relationship preserves exact used allowance and expiry only on link loss; lost jobs and inbox cleared, expired/pin-changed or explicit-stop grants cannot revive"
+  ],
+  "limitations": "Focused compiled RV64 state transitions, including a modeled authenticated client38 state (not a handshake/wire exchange), provisioned predicate inputs for bulk reconnect and a declared128 target-result oracle plus133 dispatch counter; no claim that this oracle implements kernel binding/replacement; no native certificate-admission claim from this fixture. AArch64 assembly emulator runs under qemu-aarch64; no physical hardware or full native Messenger qualification.",
+  "fixture_source_sha256": "8e258749e884bed12190f3d928885b96401b55fe1681f37a531d510679eed124",
+  "production_source_sha256": {
+    "Guest/OnionTerminal.lean": "59305cb66ca0a0f0fac9767a6aa82eac78d34f4579d5badbb6b1a12c6d93cd62",
+    "Guest/Network.lean": "e63e7f0dc9a4e3ccb4198e50b6b3d99ba17ba9e7f94ca7690724d365ffcceb71"
+  },
+  "raw_record": {
+    "path": "build/campaign009-final-v8-shared-contexts/evidence.json",
+    "sha256": "13080ef7d20dc3b41e466d625146ef4a3770e25b6f0998b1e542ec836c7a4a09"
+  },
+  "native_source_commit": "c5147de",
+  "integrated_image_context": "690e8959d79a42d3e61aa6f69df14b4e0c485ad58b015f451685abf014c275ee",
+  "production_oleans_observed": 105,
+  "production_olean_contents_changed": false,
+  "production_recompile_performed": false,
+  "ordinary_package_build_performed": false,
+  "client_requests_only": false,
+  "attempts": 1,
+  "command": "PYTHONPATH=tools python3 tests/native_shared_contexts.py --modules-ready --output build/campaign009-final-v8-shared-contexts --backend qemu --backend aarch64",
+  "installed_wire_qualification": false
+}

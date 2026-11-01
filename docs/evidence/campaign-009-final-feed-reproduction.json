@@ -1,0 +1,181 @@
+{
+  "schema": 1,
+  "campaign": "009",
+  "result": "pass-clean-build-and-fresh-ordinary-packages",
+  "native_feed_source": "4b78702dd2ed6a5a59372992937775645185d692",
+  "package_source": "ffe978f",
+  "native_network_source": "e2dee0a",
+  "native_delivery_source": "40e0930",
+  "artifacts": [
+    {
+      "path": "build/campaign009-final-v10.bin",
+      "bytes": 6291456,
+      "sha256": "2e5147c4198cf7ec39ab053f2ea8895cfdceb1c9b9dcf79e1b7bb7627314bcdf"
+    },
+    {
+      "path": "build/live/network.bin",
+      "bytes": 395140,
+      "sha256": "5551228ea06bbe47cba94bf835e8b8241d7e465b38536dc8732f17266fed0155"
+    },
+    {
+      "path": "build/campaign009-final-v10-clean-build.log",
+      "bytes": 1793,
+      "sha256": "b21e48212cdfaa2572a562370ff8d9ec36912591f2105d42be9faf58ae7a5dc1"
+    },
+    {
+      "path": "build/campaign009-final-v10-feed-package.log",
+      "bytes": 2539,
+      "sha256": "52b02d92e6bc55e0f49ba20d618a0405964f874499d82ae8c3bc33ee1dcd951b"
+    },
+    {
+      "path": "build/campaign009-final-v10-messenger-package.log",
+      "bytes": 2347,
+      "sha256": "87a91609580019b37591d0b8a954d05ab711d715a5a7e899c067eaaf2d5d1462"
+    },
+    {
+      "path": "build/campaign009-final-v10-registry-build.log",
+      "bytes": 210,
+      "sha256": "3d20b97d150c1b160e8a8dc244eb01254d0f0a0423a4250555821e25da47c172"
+    },
+    {
+      "path": "build/live/apps/campaign009-registry-final-v10.bin",
+      "bytes": 97504,
+      "sha256": "55413b5f50bcf07c93b8b9b6bc0ed98d2a289be60821143ffafa7881734c484b"
+    }
+  ],
+  "builtin_image_byte_identical_to_running": true,
+  "prior_clean_record": "campaign-009-final-bulk-reproduction.json",
+  "same_image_layout_record": {
+    "path": "build/campaign009-final-v9-layout.json",
+    "bytes": 3972,
+    "sha256": "373fe480aa003d2ccdecbfc41f2bdcc600afe032eff4511997efc484278ab090"
+  },
+  "feed_manifest": {
+    "schema": 1,
+    "packages": [
+      {
+        "name": "identity",
+        "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v10-feed/identity.ltrel",
+        "rights": 0,
+        "code_bytes": 115952,
+        "code_sha256": "1437162555de9c55c72806039df49d07ead2ed36a267de5bfc7a3f886028bca7",
+        "release_id": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+        "package_sha256": "d6467b6bf812768f4e25a466c4ce0c425635444f78b4b34fc85c50e1579ea5aa"
+      },
+      {
+        "name": "feed-account",
+        "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v10-feed/feed-account.ltrel",
+        "rights": 1024,
+        "code_bytes": 145572,
+        "code_sha256": "575955507f16547e018f040a7d12031e9bd7012c3ae2a96d4e3ec84b68287190",
+        "release_id": "2a1b3d4a12f1383f43228cba37ed717295ff92d7c17f3c78eff94768cd3ce06e",
+        "package_sha256": "516e45cd5bf25e96c08e1402101f1e4c09298981528ab4cee231f6dba0057b52"
+      },
+      {
+        "name": "feed",
+        "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v10-feed/feed.ltrel",
+        "rights": 799,
+        "code_bytes": 181516,
+        "code_sha256": "bb4a916a58e14a9bf08b96cfae3161e51caf1c40f9fede027de0beb002ad7a2e",
+        "release_id": "dc1bd86bdb90dd7832562d61a8c825fc1418a63582a78d54fab38acf7e365ef5",
+        "package_sha256": "57bc1a917c453784a2c7710fce47bf0eea2ac5be0673831290d886f226abe64b"
+      },
+      {
+        "name": "feed-federation",
+        "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v10-feed/feed-federation.ltrel",
+        "rights": 3072,
+        "code_bytes": 167516,
+        "code_sha256": "59b107b5702c4d231551da67a053543c94e012bd3d70bae4eeb1e2edd26f49e3",
+        "release_id": "02041c0eeca13f17a62a8913954558d9dc5be7e52f55d5db915dc76b14241526",
+        "package_sha256": "6cf3b1c142b5e076337575dfd22280760d1c75d95d2e3756c2ade7bbd38df35f"
+      }
+    ],
+    "account_parent": "f50eaa12d7dc69c962584ce34a12d53d9b064970c640d23d594e930d7fc4bc07",
+    "federation_parent": "5bb8adb18e7161203a9eec7d6ffebf7ac1e7a0c510f8d74b652642f91c7b9686",
+    "ui_parent": "bfd1a9584b654f8ee4f0c3f1b3703608b452da7a9ad472683821aa8f4f13a635",
+    "ui_version": "0.9.3",
+    "account_version": "0.9.2",
+    "publisher": "existing disclosed host RSA release bootstrap",
+    "feed_private_keys_exported": false,
+    "authoritative_host_database": false
+  },
+  "package_comparison": [
+    {
+      "name": "identity",
+      "previous": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v7-feed/identity.ltrel",
+      "fresh": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v10-feed/identity.ltrel",
+      "byte_identical": true,
+      "old_release": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+      "new_release": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee"
+    },
+    {
+      "name": "feed-account",
+      "previous": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v7-feed/feed-account.ltrel",
+      "fresh": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v10-feed/feed-account.ltrel",
+      "byte_identical": false,
+      "old_release": "f50eaa12d7dc69c962584ce34a12d53d9b064970c640d23d594e930d7fc4bc07",
+      "new_release": "2a1b3d4a12f1383f43228cba37ed717295ff92d7c17f3c78eff94768cd3ce06e"
+    },
+    {
+      "name": "feed",
+      "previous": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v7-feed/feed.ltrel",
+      "fresh": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v10-feed/feed.ltrel",
+      "byte_identical": false,
+      "old_release": "bfd1a9584b654f8ee4f0c3f1b3703608b452da7a9ad472683821aa8f4f13a635",
+      "new_release": "dc1bd86bdb90dd7832562d61a8c825fc1418a63582a78d54fab38acf7e365ef5"
+    },
+    {
+      "name": "feed-federation",
+      "previous": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v7-feed/feed-federation.ltrel",
+      "fresh": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-final-v10-feed/feed-federation.ltrel",
+      "byte_identical": true,
+      "old_release": "02041c0eeca13f17a62a8913954558d9dc5be7e52f55d5db915dc76b14241526",
+      "new_release": "02041c0eeca13f17a62a8913954558d9dc5be7e52f55d5db915dc76b14241526"
+    },
+    {
+      "name": "identity",
+      "previous": "build/campaign009-final-v4-messenger/identity.ltrel",
+      "fresh": "build/campaign009-final-v5-messenger/identity.ltrel",
+      "byte_identical": true,
+      "release": "f1c5934089942fbbd2fee060c10a257d6937022ffc076c354f3db77f2b2d05c2"
+    },
+    {
+      "name": "messenger-session",
+      "previous": "build/campaign009-final-v4-messenger/messenger-session.ltrel",
+      "fresh": "build/campaign009-final-v5-messenger/messenger-session.ltrel",
+      "byte_identical": true,
+      "release": "50f3e3ccb8d3faeaf29c50d6aec24bbc654a30754f26c15dd7585a4a8e64a5b3"
+    },
+    {
+      "name": "messenger",
+      "previous": "build/campaign009-final-v4-messenger/messenger.ltrel",
+      "fresh": "build/campaign009-final-v5-messenger/messenger.ltrel",
+      "byte_identical": true,
+      "release": "a0b4294d2331e6704acd69093936339f7c0b8559dd9990d4967a22216f84e6c7"
+    },
+    {
+      "name": "messenger-delivery",
+      "previous": "build/campaign009-final-v4-messenger/messenger-delivery.ltrel",
+      "fresh": "build/campaign009-final-v5-messenger/messenger-delivery.ltrel",
+      "byte_identical": true,
+      "release": "5e166b16eeeed082bb86a246f9a79bec88fb13f097304622c9d33cd51992320a"
+    },
+    {
+      "name": "mailbox",
+      "previous": "build/campaign009-final-v4-messenger/mailbox.ltrel",
+      "fresh": "build/campaign009-final-v5-messenger/mailbox.ltrel",
+      "byte_identical": true,
+      "release": "24e249a218f52813953b8d204f1c7b3d1129e1b675a9ed8500731cf842049135"
+    }
+  ],
+  "registry_comparison": {
+    "previous": "build/live/apps/campaign009-registry-final-v4.bin",
+    "fresh": "build/live/apps/campaign009-registry-final-v10.bin",
+    "bytes": 97504,
+    "byte_identical": true,
+    "sha256": "55413b5f50bcf07c93b8b9b6bc0ed98d2a289be60821143ffafa7881734c484b"
+  },
+  "ordinary_code_limit": 262144,
+  "installed_successor_workflow": "pending explicit Bob retained-account upgrade during connected migration; current core remains qualified with original v7 Feed package identities",
+  "authority": "Existing disclosed host RSA package publisher; native Feed events, policy decisions and operator identities remain signed inside their native owners."
+}

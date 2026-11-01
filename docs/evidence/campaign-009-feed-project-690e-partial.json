@@ -1,0 +1,302 @@
+{
+  "schema": 1,
+  "result": "partial-native-edit-accepted-replication-blocked",
+  "scope": "Strict project stage on identified690e image; no application lifecycle pass and no Fork in this stage.",
+  "image": {
+    "path": "build/campaign009-final-v8.bin",
+    "bytes": 6291456,
+    "sha256": "690e8959d79a42d3e61aa6f69df14b4e0c485ad58b015f451685abf014c275ee",
+    "native_source_commit": "c5147de0ac976cd631e864b8460b04c44c5ccd6b"
+  },
+  "configuration": {
+    "image_sha256": "690e8959d79a42d3e61aa6f69df14b4e0c485ad58b015f451685abf014c275ee",
+    "feed": {
+      "identity": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+      "feed-account": "f50eaa12d7dc69c962584ce34a12d53d9b064970c640d23d594e930d7fc4bc07",
+      "feed": "bfd1a9584b654f8ee4f0c3f1b3703608b452da7a9ad472683821aa8f4f13a635",
+      "feed-federation": "02041c0eeca13f17a62a8913954558d9dc5be7e52f55d5db915dc76b14241526"
+    },
+    "messenger": {
+      "identity": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+      "owner": "50f3e3ccb8d3faeaf29c50d6aec24bbc654a30754f26c15dd7585a4a8e64a5b3",
+      "ui": "a0b4294d2331e6704acd69093936339f7c0b8559dd9990d4967a22216f84e6c7",
+      "delivery": "f8f9a0c572e691398008ab13e3aa852a12eeec06344715f593bf8a921d07c20b",
+      "mailbox": "24e249a218f52813953b8d204f1c7b3d1129e1b675a9ed8500731cf842049135"
+    },
+    "mixed": true,
+    "history_events": 17,
+    "replication_auto_renew": true
+  },
+  "native_feed_packages": [
+    {
+      "name": "identity",
+      "rights": 0,
+      "code_bytes": 115952,
+      "code_sha256": "1437162555de9c55c72806039df49d07ead2ed36a267de5bfc7a3f886028bca7",
+      "release_id": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+      "package_sha256": "d6467b6bf812768f4e25a466c4ce0c425635444f78b4b34fc85c50e1579ea5aa"
+    },
+    {
+      "name": "feed-account",
+      "rights": 1024,
+      "code_bytes": 145376,
+      "code_sha256": "fb1f2e8e34a47263d3450898a6f800d3f72a79081644413180b44b574951ccd8",
+      "release_id": "f50eaa12d7dc69c962584ce34a12d53d9b064970c640d23d594e930d7fc4bc07",
+      "package_sha256": "9d9be1ad2238d6e5063ac5664786939c2c186a08b4f613ed8912e2f9eb985b50"
+    },
+    {
+      "name": "feed",
+      "rights": 799,
+      "code_bytes": 176848,
+      "code_sha256": "fbe5f9cf983464432ae4781bb7533a7182341d796d16e4bd20f4603cf3d2706f",
+      "release_id": "bfd1a9584b654f8ee4f0c3f1b3703608b452da7a9ad472683821aa8f4f13a635",
+      "package_sha256": "964a4a92a901520a151a7e7eb9f56c33733302fd8672b9109dd707eb51a4313d"
+    },
+    {
+      "name": "feed-federation",
+      "rights": 3072,
+      "code_bytes": 167516,
+      "code_sha256": "59b107b5702c4d231551da67a053543c94e012bd3d70bae4eeb1e2edd26f49e3",
+      "release_id": "02041c0eeca13f17a62a8913954558d9dc5be7e52f55d5db915dc76b14241526",
+      "package_sha256": "6cf3b1c142b5e076337575dfd22280760d1c75d95d2e3756c2ade7bbd38df35f"
+    }
+  ],
+  "command": "python3 tests/native_feed_project_account.py --attach build/campaign009-connected-v6 --stage project --person bob",
+  "prerequisite_evidence": "docs/evidence/campaign-009-community-690e.json",
+  "completed": {
+    "personal_three_hop_alpha_route": "ordinary personal destination switch completed without operator reset",
+    "retention": {
+      "author": "c2123300a3daccccfc4b2219d273684ed1d281a887dd985d639e7a68bf579be2",
+      "owner": 5386664127701713164,
+      "selection": {
+        "identity": true,
+        "exact_signed_outbox": true,
+        "local_follows_blocks": true,
+        "unpublished_drafts": false,
+        "cached_content": false,
+        "history": false
+      }
+    },
+    "opaque_retained_roots": [
+      {
+        "slot": 0,
+        "generation": 2,
+        "bytes": 19456,
+        "header_sha256": "de48564da9502c6000271bf9a6f9ab38fef3358493497bc7c37d51d5efc242aa"
+      },
+      {
+        "slot": 1,
+        "generation": 1,
+        "bytes": 19456,
+        "header_sha256": "f6959a973947f9d33acd3c25e8088e3683df34e1a5710a452f9b77df7aa07243"
+      }
+    ],
+    "edit": {
+      "event": "408da403804f611731b3b5babfbf92b61320ce675e3f757d75ab909825ea3d71",
+      "author": "c2123300a3daccccfc4b2219d273684ed1d281a887dd985d639e7a68bf579be2",
+      "sequence": 5,
+      "key_generation": 1,
+      "kind": 4,
+      "target": "38fa00bd17532d34b0c06bec494912e7d6736e4f0c44acffbca41a72f8aa3ae9",
+      "body_bytes": 188,
+      "content_sha256": "41d53d091acc9863662c7bde3bb08cb0542838fe5850ba2e8a2a6ad91a2c4cae",
+      "home": "b2a1a86b8b958a613c578692e4c9c9b0e96e87fa676d18326fec1363183b00c3",
+      "peer": "d17d966d66359ea218b908b2d0c1f40452dc74a5d462f9138846c52048647185",
+      "native_signed_envelope_sha256": "408da403804f611731b3b5babfbf92b61320ce675e3f757d75ab909825ea3d71",
+      "alpha_durably_accepted": true,
+      "beta_replication_observed": false,
+      "personal_ui": [
+        0,
+        1,
+        0,
+        188,
+        10,
+        6,
+        0,
+        1
+      ]
+    }
+  },
+  "native_replication_diagnostic": {
+    "alpha": {
+      "replication": [
+        0,
+        1,
+        19,
+        0,
+        19,
+        1,
+        0,
+        1
+      ],
+      "budget": [
+        0,
+        16777216,
+        4854960,
+        5242880,
+        262144,
+        16533,
+        1,
+        1
+      ],
+      "policy_hash": "97dc8c95d6000db8d10ddef99dd029c035a8cee1fec670058120ae23edd23e62",
+      "authority": [
+        0,
+        2,
+        1,
+        0,
+        0,
+        128,
+        14805465147983790085,
+        1
+      ],
+      "mode3_context0": [
+        0,
+        0,
+        2,
+        34359738368,
+        614255,
+        10,
+        0,
+        1
+      ],
+      "exact_edit_row": {
+        "fields": [
+          0,
+          20,
+          2,
+          1,
+          345276,
+          1179,
+          0,
+          1
+        ],
+        "event": "408da403804f611731b3b5babfbf92b61320ce675e3f757d75ab909825ea3d71"
+      },
+      "exact_publication": [
+        0,
+        20,
+        2,
+        52,
+        0,
+        0,
+        0,
+        1
+      ],
+      "bound_service": 17536424337983144200,
+      "cached_feed_instance": 17536424337983144200
+    },
+    "beta": {
+      "replication": [
+        0,
+        0,
+        0,
+        0,
+        17,
+        0,
+        0,
+        1
+      ],
+      "budget": [
+        0,
+        16777216,
+        2069514,
+        5242880,
+        262144,
+        7074,
+        1,
+        1
+      ],
+      "policy_hash": "acc2e2b5e6eb3cc5f8c4bccede07df192f2f2a2eeb4f7068289a9c14dfd1bd5c",
+      "authority": [
+        0,
+        2,
+        1,
+        0,
+        0,
+        128,
+        10253123740657254405,
+        1
+      ],
+      "mode3_context0": [
+        0,
+        0,
+        1,
+        47244640256,
+        614296,
+        10,
+        0,
+        1
+      ],
+      "exact_edit_row": null,
+      "exact_publication": [
+        6,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "bound_service": 7174966949296734472,
+      "cached_feed_instance": 7174966949296734472
+    }
+  },
+  "interruption": {
+    "controller_only": true,
+    "reason": "Bounded replication stall inspection after local durable acceptance; protected async cancellation retained exact request ownership.",
+    "exception": "KeyboardInterrupt()",
+    "seconds": 454.0446258459997,
+    "native_guests_reset": false,
+    "accepted_event_resigned": false,
+    "host_renewal_or_mode3_reset": false
+  },
+  "observed_failure": "Both approved mode3 contexts were session0/last_error10 while Alpha remained in native replication phase1 with a charged attempt; Beta did not admit the edit.",
+  "source_investigation": "Native async CONNECT failure left transport pendingintent1, preventing a fresh connect. Native transport/bulk creation-deadline repair is being qualified separately on a new image; it is not a passed result of this trial.",
+  "not_completed": [
+    "edit replication to Beta",
+    "tombstone",
+    "project card",
+    "Library Fork and lineage/picker visibility",
+    "fresh Fork/Inspect revocation refusal",
+    "final account public export",
+    "moderation/appeal and restart continuation",
+    "offline hosting migration"
+  ],
+  "preserved": {
+    "backing": "build/campaign009-connected-v6/bob.img",
+    "keys_unwrapped": false,
+    "private_record_decrypted": false,
+    "exact_accepted_event_and_pending_outbox_preserved": true,
+    "all_guests_at_diagnostic": "preserved; subsequent retirement is a separate explicit NativeLauncher70 operation"
+  },
+  "evidence": {
+    "feed-project-account.json": {
+      "path": "build/campaign009-connected-v6/feed-project-account.json",
+      "sha256": "b97ab6ba1dbc7858f7ffd6022a31e777066aeb07668777c8c20ca393949a046b"
+    },
+    "feed-author-actions.json": {
+      "path": "build/campaign009-connected-v6/feed-author-actions.json",
+      "sha256": "c04af1afea60b83471c6e0a4811e02df0f638cfa6c4d50dc5a044c7d25c465e9"
+    },
+    "project-replication-diagnostic-1.json": {
+      "path": "build/campaign009-connected-v6/project-replication-diagnostic-1.json",
+      "sha256": "31c71595df45e9aeb626d2d8597d5e49d4335312e217340a285338c6a921be17"
+    },
+    "project-replication-diagnostic-2.json": {
+      "path": "build/campaign009-connected-v6/project-replication-diagnostic-2.json",
+      "sha256": "f9a767796846b8b0d86a12e24e1116b8c32b028dad9fef43bde72dc3e11cc16a"
+    },
+    "project-strict.log": {
+      "path": "build/campaign009-connected-v6/project-strict.log",
+      "sha256": "69502649070da0fb416030fb85061cc4ed2d96ae5f0375e97d3d080b5a764d1c"
+    }
+  },
+  "limits": [
+    "Previousf597 project success is distinct evidence and is not inherited by this690e strict stage.",
+    "Messenger health is not inferred from installed processes; its later abandoned Delivery request failure is recorded separately.",
+    "No manual renewal, transport reset, host replication, direct client fallback, or replacement publication was used to overcome this stall.",
+    "The published diagnostic contains public state/commitments only; the protected retained record remains opaque."
+  ]
+}

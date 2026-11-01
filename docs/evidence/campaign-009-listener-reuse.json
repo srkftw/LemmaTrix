@@ -1,0 +1,133 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "adapter": {
+    "initial": {
+      "op": 9,
+      "slot": 0,
+      "epoch": 0,
+      "value": 0
+    },
+    "repeated_listen": [
+      {
+        "op": 5,
+        "slot": 0,
+        "epoch": 1,
+        "value": 0
+      },
+      {
+        "op": 9,
+        "slot": 0,
+        "epoch": 1,
+        "value": 0
+      }
+    ],
+    "close_then_listen": [
+      {
+        "op": 5,
+        "slot": 0,
+        "epoch": 2,
+        "value": 0
+      },
+      {
+        "op": 9,
+        "slot": 0,
+        "epoch": 2,
+        "value": 0
+      }
+    ]
+  },
+  "image_sha256": "cc38bdc8605d08687d796ff4a222857fcdf2d859dcf236862e798fff8735ae68",
+  "checks": [
+    {
+      "backend": "qemu",
+      "seconds": 0.17233462000149302,
+      "result": "pass"
+    },
+    {
+      "backend": "aarch64",
+      "seconds": 0.42213318598805927,
+      "result": "pass"
+    }
+  ],
+  "boundaries": [
+    "cleanup5/new9 and old9/cleanup5/new9 preserve owned listener intent",
+    "older9 and9 after explicit close cannot restore intent",
+    "LISTEN failure6 clears intent and enters scoped bounded backoff",
+    "fresh CONNECTED4/ACCEPTED8 end intent; actual HUP5 retires only its own link",
+    "pending creation expires51; acknowledged healthy idle listener remains available"
+  ],
+  "limits": "Real opaque adapter event order plus compiled RV64 Transport and TorRouter state transitions. Explicit syscall103 completion and110 monotonic-clock oracle; no complete kernel/socket or active-community causal-trace claim. AArch64 assembly emulator runs under qemu-aarch64.",
+  "raw_record": {
+    "path": "build/native-listener-reuse-final/evidence.json",
+    "sha256": "9cda132904fb3f8f131144d9753871d56220600e7fcf92581252ce9df2b40f4a"
+  },
+  "prior_reproduced_defect": {
+    "path": "build/listener-reuse-probe/evidence.json",
+    "sha256": "7af2556754920d8a14eabca0180b17d5110f4ba2d2bc6a04859e624281a9cc4b",
+    "record": {
+      "result": "reproduced-native-listener-reuse-failure",
+      "adapter": {
+        "initial": {
+          "op": 9,
+          "slot": 0,
+          "length": 0,
+          "epoch": 0,
+          "value": 0
+        },
+        "repeated_listen": [
+          {
+            "op": 5,
+            "slot": 0,
+            "length": 0,
+            "epoch": 1,
+            "value": 0
+          },
+          {
+            "op": 9,
+            "slot": 0,
+            "length": 0,
+            "epoch": 1,
+            "value": 0
+          }
+        ],
+        "close_then_listen": [
+          {
+            "op": 5,
+            "slot": 0,
+            "length": 0,
+            "epoch": 2,
+            "value": 0
+          },
+          {
+            "op": 9,
+            "slot": 0,
+            "length": 0,
+            "epoch": 2,
+            "value": 0
+          }
+        ]
+      },
+      "native": {
+        "backend": "qemu",
+        "seconds": 0.1829519659950165,
+        "result": "pass"
+      },
+      "image_sha256": "b55a842538f39dce71ec0e24bbff1d9740fb875a9b98be35e20517f7480c6ef0",
+      "source_sha256": "01e400c37bae3ceca3c4326a95650ca8e9aaa012c77a818e0ffe81dd9011aed2",
+      "scope": "Actual current Lean Transport.event plus TorRouter.openChannel/pumpChannel compiled toRV64; explicit oracle103 accepts entire frame,110 supplies100ticks. Native event input uses observed realadapter5/9 ordering with an allowed stream-quantum boundary. No cryptographic or complete kernel proof; no active community portals or production source edits."
+    }
+  },
+  "current_guest_source": {
+    "Guest/Transport.lean": "1fff86eee5203d3fd1ccf2235fee6939302d4bdae13a627a304fbaa3c44dafda",
+    "Guest/TorRouter.lean": "dd75c532e0de2288c7aa6d139c1f467c5f3eff5feaec320de256fd4d4dc4f39b"
+  },
+  "integrated_image_sha256": "f5978d3b335e699b55bf76453a5d5063d816e15bef382df9e33c8d67d01473df",
+  "integrated_network": {
+    "bytes": 393176,
+    "ceiling": 393216,
+    "spare": 40,
+    "sha256": "f96b489549926c4b1460787c8cca588676db93976adc6b2f5e084de3feb804dd"
+  },
+  "command": "PYTHONPATH=tools python3 tests/native_listener_reuse.py --output build/native-listener-reuse-final --backend qemu --backend aarch64"
+}

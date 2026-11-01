@@ -219,7 +219,7 @@ def chrome (t : UInt64) : UInt64 :=
   let t := hex (load64 st t) 16 520 34 fg bg t
   upload 0 0 122880 1 t
 partial def chooseFocus (slot after t : UInt64) : UInt64 :=
-  if slot == 12 then 0 else
+  if slot == 15 then 0 else
     let row := 0x415000+slot*32
     let who := load64 row t
     if slot > after && load64 (row+8) t > 0 && load64 (row+8) t < 5 && Guest.syscall 82 who 0 0 0 t != error then who
@@ -235,7 +235,7 @@ def focus (who t : UInt64) : UInt64 :=
   chrome t
 
 def nextFocus (t : UInt64) : UInt64 :=
-  let t := Guest.syscall 91 0 0x415000 384 0 t
+  let t := Guest.syscall 91 0 0x415000 480 0 t
   let after := load64 st t &&& 255
   let who := chooseFocus 5 after t
   focus (if who == 0 then chooseFocus 5 0 t else who) t
@@ -1497,7 +1497,7 @@ def lifecycleRefresh (t : UInt64) : UInt64 :=
   let t := lifecycleCatalog 0 0 t
   let t := if load64 (st+264) t >= load64 (st+256) t then store64 (st+264) 0 t else t
   let r := management 2 0 t
-  if r == 384 then copy wire 0x718000 384 r else zero 0x718000 48 r
+  if r == 480 then copy wire 0x718000 480 r else zero 0x718000 60 r
 
 partial def lifecycleRows (i t : UInt64) : UInt64 :=
   if i == load64 (st+256) t then t else
@@ -1520,9 +1520,9 @@ partial def lifecycleRows (i t : UInt64) : UInt64 :=
     lifecycleRows (i+1) t
 
 partial def lifecycleProcesses (i t : UInt64) : UInt64 :=
-  if i == 12 then t else
+  if i == 15 then t else
     let row := 0x718000+i*32
-    let y := 278+(i-1)*9
+    let y := 270+(i-1)*8
     let who := load64 row t
     let t := char 4 y (if who == load64 (st+48) t && who != 0 then 62 else 32) fg bg t
     let t := hex who 16 20 y fg bg t

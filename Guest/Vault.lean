@@ -11,6 +11,7 @@ import Guest.IndexedContent
 import Guest.IndexedImport
 import Guest.ServiceJobs
 import Guest.PrivateRecords
+import Guest.FeedRecords
 namespace Guest.Vault
 open Guest.LiveSDK
 -- One explicitly authorized Objects record per vault. Dual authenticated roots select
@@ -62,7 +63,7 @@ def wipePlain (t : UInt64) : UInt64 :=
   store64 (state+16) 0 t
 
 def wipeSecrets (t : UInt64) : UInt64 :=
-  let t := PrivateRecords.clear t
+  let t := FeedRecords.clear (PrivateRecords.clear t)
   let t := IndexedImport.lockPersonal t
   let t := IndexedContent.lockPersonal t
   let t := ContentVault.abandonPersonal t
@@ -246,6 +247,7 @@ def dispatch (caller rights length t : UInt64) : UInt64 :=
     let domain := load64 (command+16) t
     if op == 267 || op == 269 || op == 270 then IndexedImport.dispatch caller rights length t else
     if op >= 274 && op <= 276 then PrivateRecords.dispatch caller rights length t else
+    if op >= 277 && op <= 279 then FeedRecords.dispatch caller length t else
     if op >= 260 && op <= 279 then IndexedContent.dispatch caller rights length t else
     if op >= 280 && op <= 299 then ServiceJobs.dispatch caller rights length t else
     if op >= 230 && op <= 239 then ServerStore.dispatch caller rights length t else

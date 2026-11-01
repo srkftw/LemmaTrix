@@ -1,0 +1,344 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "scope": "Installed shipping Feed UI0.9.4 / Account0.9.3 recovery, reader, local filtering and publication on the preserved common-image actors; Alpha remains offline. This is a focused continuation of the connected campaign, not another full nine-guest boot.",
+  "native_source_commit": "c4160228dcec3ec3f5712d8899f43f0a110b69d0",
+  "image": {
+    "path": "build/campaign009-final-v13.bin",
+    "sha256": "2e5147c4198cf7ec39ab053f2ea8895cfdceb1c9b9dcf79e1b7bb7627314bcdf",
+    "common_image_byte_identical": true
+  },
+  "packages": [
+    {
+      "name": "identity",
+      "path": "build/campaign009-final-v13-feed/identity.ltrel",
+      "rights": 0,
+      "code_bytes": 115952,
+      "code_sha256": "1437162555de9c55c72806039df49d07ead2ed36a267de5bfc7a3f886028bca7",
+      "release_id": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+      "package_sha256": "d6467b6bf812768f4e25a466c4ce0c425635444f78b4b34fc85c50e1579ea5aa"
+    },
+    {
+      "name": "feed-account",
+      "path": "build/campaign009-final-v13-feed/feed-account.ltrel",
+      "rights": 1024,
+      "code_bytes": 146620,
+      "code_sha256": "b261266702f6bb334fd31575f4d4f8c3c1fec354b75634ae336e3e2332615cdf",
+      "release_id": "137979d9533c23df7baf8f0143025fd2ccea025d8cfb468f723284f9aa45f837",
+      "package_sha256": "3df6209c8a586bba87c0e1d806da767349fe88fff7c3ff6a06d3e6e7953d5552"
+    },
+    {
+      "name": "feed",
+      "path": "build/campaign009-final-v13-feed/feed.ltrel",
+      "rights": 799,
+      "code_bytes": 182140,
+      "code_sha256": "53fcdfd01148b1e16502560ec4d50e768be93f577db3086b2f8d539dd78292af",
+      "release_id": "d8185a4497fc7b07c5e75c688b82ea09cf9eec0801edc75425ff513da6daee50",
+      "package_sha256": "4a1a7a7573e417e7d7a7caf86807c1ea44624a797c8ed1bcf24274cc764f265b"
+    },
+    {
+      "name": "feed-federation",
+      "path": "build/campaign009-final-v13-feed/feed-federation.ltrel",
+      "rights": 3072,
+      "code_bytes": 167516,
+      "code_sha256": "59b107b5702c4d231551da67a053543c94e012bd3d70bae4eeb1e2edd26f49e3",
+      "release_id": "02041c0eeca13f17a62a8913954558d9dc5be7e52f55d5db915dc76b14241526",
+      "package_sha256": "6cf3b1c142b5e076337575dfd22280760d1c75d95d2e3756c2ade7bbd38df35f"
+    }
+  ],
+  "native_sources": [
+    {
+      "path": "Guest/Feed.lean",
+      "sha256": "8523f3cbad71ac4891b2f8b703dc13a001be6a8900fc1277d1ae2b5b88c62851"
+    },
+    {
+      "path": "Guest/FeedAccount.lean",
+      "sha256": "7d1e8806e48a8c27f87fd5148625ce82b19745f7c1e35ed87c8f83850cfc696b"
+    }
+  ],
+  "normal_admission": {
+    "account_version": "0.9.3",
+    "account_parent": "2a1b3d4a12f1383f43228cba37ed717295ff92d7c17f3c78eff94768cd3ce06e",
+    "ui_version": "0.9.4",
+    "ui_exact_reused_release": "d8185a4497fc7b07c5e75c688b82ea09cf9eec0801edc75425ff513da6daee50",
+    "identity_exact_reused_release": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+    "old_owner": 8117591479108502284,
+    "old_ui": 8117591479108502285,
+    "new_owner": 8117591479108502540,
+    "new_ui": 8117591479108502541,
+    "current_native_catalog_verified": true,
+    "only_bob_personal_pair_replaced": true,
+    "fresh_retention_authorization": true,
+    "old_live_grants_revived": false
+  },
+  "raw": {
+    "path": "build/campaign009-connected-v7/feed-shipping-final.json",
+    "sha256": "11323d083b1c642a482e210a0f05af2d6c29eee191d79d46f5655c018c44362f"
+  },
+  "controller": {
+    "path": "tests/native_feed_shipping_reader.py",
+    "sha256": "5b25ae382f6705f7bd4faccb6ede4e3409d41c02bc786c2a68d9e0644b83ac79"
+  },
+  "controllers": {
+    "retained_lifecycle_and_navigation": {
+      "path": "tests/native_feed_project_account.py",
+      "sha256": "464d415dc83746399d3899a3918a9ca2449486a2332d91a2e70cd8757e481dab"
+    },
+    "project_controls": {
+      "path": "tests/feed_project_controls.py",
+      "sha256": "412d50ddef421d8cf7dfa9cc876e648a2f98f257350cafa4b9998167ca042a28"
+    }
+  },
+  "commands": [
+    "PYTHONPATH=tools python3 tests/native_feed_shipping_reader.py --attach build/campaign009-connected-v7 --packages build/campaign009-final-v13-feed --record-name feed-shipping-final.json",
+    "PYTHONPATH=tools python3 tests/native_feed_shipping_visible_next.py"
+  ],
+  "checks": [
+    {
+      "check": "shipping successor recovers same author and approved preferences with fresh authority and reconciles one exact prior committed copy",
+      "result": "pass",
+      "prior_event": "a60b5c0c76b60da64f77c83a116bdf3ddda424c1f23b4cfdd8ec0223b576605c",
+      "prior_sequence": 6,
+      "key_generation": 4,
+      "preference_sha256": "6c2b38e011a752ca61fc76a1f6949e9dec2ddc2904df96afe3c1388034e5566c",
+      "old_copy_count": 1,
+      "original_host_offline": true
+    },
+    {
+      "check": "shipping UI reads original checked long through Beta while Alpha remains offline",
+      "result": "pass",
+      "event": "1ed503591deb1fd6b2f953b9aabe138fd9444bc720ee42dbd085a22acff7a489",
+      "bytes": 1330,
+      "content_sha256": "da933b261f757e2e3556bd30c008f04fbdd90ce29e277d65883d4e3c0ca9e557",
+      "frames": [
+        "da3aab7cc036fafdde120da7893019b7432994ec87a3f96c6927c9a7010fe667",
+        "6065ba3807d1d50de1fd829ea76562c7153ea282703d49c6a694f8e83e6c0f3a"
+      ]
+    },
+    {
+      "check": "shipping UI reads original checked card through Beta while Alpha remains offline",
+      "result": "pass",
+      "event": "8caccbed6cdd0973d1f2151cae1132735be4e6563785e41b82f840dd4b25047c",
+      "bytes": 1683,
+      "content_sha256": "26eaceb10b20ed74a72f4d54153946446ace576394f4ce7e7ef7240120384485",
+      "frames": [
+        "3318b892be34e9a57ecf16ea67c197969fc28cb0abd1580d5420aeee65c32215"
+      ]
+    },
+    {
+      "check": "shipping UI original card still refuses current Registry revocation at action time",
+      "result": "pass",
+      "native_status": [
+        0,
+        1,
+        0,
+        0,
+        65,
+        6,
+        11,
+        1
+      ],
+      "new_fork": false,
+      "execution_approved": false
+    },
+    {
+      "check": "shipping successor recovers same author and approved preferences with fresh authority and reconciles one exact prior committed copy",
+      "result": "pass",
+      "prior_event": "a60b5c0c76b60da64f77c83a116bdf3ddda424c1f23b4cfdd8ec0223b576605c",
+      "prior_sequence": 6,
+      "key_generation": 4,
+      "preference_sha256": "6c2b38e011a752ca61fc76a1f6949e9dec2ddc2904df96afe3c1388034e5566c",
+      "old_copy_count": 1,
+      "original_host_offline": true
+    },
+    {
+      "check": "shipping UI publishes distinct checked follow-up with same retained author and selected preferences within unchanged finite operator authority",
+      "result": "pass",
+      "event": "df34ef47cbbd8279a2299c0b623df743ad192aa722c8f0f0e93f7f6ac8e18292",
+      "bytes": 219,
+      "sequence": 7,
+      "key_generation": 4,
+      "ui_publication_phase": 6,
+      "replication_claim": false,
+      "profile_sha256": "acb81aa800e626c13ec5faabd481b535723ed52f613eb324b76d908d2992ee63",
+      "preference_sha256": "6c2b38e011a752ca61fc76a1f6949e9dec2ddc2904df96afe3c1388034e5566c",
+      "opaque_root_generation": 19,
+      "operator_refill": false
+    }
+  ],
+  "native_local_block": {
+    "unblock_intent": true,
+    "unblocked": true,
+    "unblocked_profile_sha256": "ed3002007a5582f684bdc9b0edbb82974ef3fccc239110484d80141b51fba9d0",
+    "reblock_intent": true,
+    "restored": true,
+    "restored_preference_sha256": "6c2b38e011a752ca61fc76a1f6949e9dec2ddc2904df96afe3c1388034e5566c",
+    "marker_frame": "189a04e48e0c7c25d8bc58547aa1ee9491db603c3df2cb195354a14f3fefc43e",
+    "next_navigation": [],
+    "next_progress": true,
+    "next_event": "c0a8f93eed9cf3ed8ecf1852ac982d525a745c3cca346c285ff45c109ab9e3c5",
+    "next_frame": "d1500627bce1871ca7397810e50a93e66e39677ee33e6d2d234e3d2455183048",
+    "qualification": "Explicit unblock/reblock restores the exact approved preferences. The first resumed Next advanced to an author-withdrawn signed marker; the separate continuation below establishes a checked readable successor."
+  },
+  "readable_successor": {
+    "raw": {
+      "path": "build/campaign009-connected-v7/feed-shipping-final-visible-next.json",
+      "sha256": "65154b21d3ca50b154ca5ea30d0a1d85ff0376231aadd560c29202368cc5a31e"
+    },
+    "controller": {
+      "path": "tests/native_feed_shipping_visible_next.py",
+      "sha256": "afe6cb412eb8e88bae492c60247f48212ad83cbf4e29e4c80902cd889b2cef8f"
+    },
+    "exact_executed_controller": {
+      "path": "build/qualify-feed-shipping-visible-next.py",
+      "sha256": "afe6cb412eb8e88bae492c60247f48212ad83cbf4e29e4c80902cd889b2cef8f"
+    },
+    "seconds": 48.39731939700141,
+    "checks": [
+      {
+        "check": "ordinary NativeNext passes blocked and withdrawn markers to checked readable body without changing author/outbox/preferences",
+        "result": "pass",
+        "selected_event": "2a715568ea7f486d77e40778801772875a88e87dbd01b35e1b5ed0b8953e8f96",
+        "native_status": [
+          0,
+          1,
+          0,
+          219,
+          15,
+          6,
+          0,
+          1
+        ],
+        "pref_sha256": "6c2b38e011a752ca61fc76a1f6949e9dec2ddc2904df96afe3c1388034e5566c",
+        "public_profile_sha256": "acb81aa800e626c13ec5faabd481b535723ed52f613eb324b76d908d2992ee63"
+      }
+    ],
+    "native_navigation": {
+      "unblocked": true,
+      "restored": true,
+      "marker_frame": "77487713f95ce28c959b90e69c8923ff3de3d6b7510f5b97c8cdff915713164e",
+      "next_navigation": [],
+      "next_progress": true,
+      "next_event": "2a715568ea7f486d77e40778801772875a88e87dbd01b35e1b5ed0b8953e8f96",
+      "next_frame": "272400258572e75149cb022662534da5001b27a160514fdaa1c8c7587eaf8126"
+    },
+    "author_outbox_preferences_unchanged": true
+  },
+  "policy_audit": {
+    "raw": {
+      "path": "build/campaign009-connected-v7/feed-shipping-final-policy-audit.json",
+      "sha256": "5dd80ec08b645694aaaed012fe06d3456fbeeb6d491aab55cfb49cffc2803488"
+    },
+    "policy_hash": "f4e26aed85f86fee00a69f4161ae6e12dcdd56d3ba2ba289c76bd70b6cb5be45",
+    "policy_variant": 2,
+    "before": [
+      0,
+      16777216,
+      1380402,
+      16777216,
+      262144,
+      4716,
+      1,
+      1
+    ],
+    "after": [
+      0,
+      16777216,
+      1380402,
+      16777216,
+      262144,
+      4716,
+      1,
+      1
+    ],
+    "byte_total": 16777216,
+    "work_total": 262144,
+    "policy_present": 1,
+    "operator_configure_calls": 0,
+    "operator_refills": 0,
+    "existing_row_attempts_and_reservations_monotonic": true,
+    "atomic_snapshot_claim": false
+  },
+  "fixture_links": [
+    {
+      "path": "docs/evidence/campaign-009-feed-busy-read.json",
+      "sha256": "96d767b82f64dd3f1dbc32dc72f4b60cf1d412b8722f4f8f7e8646eb5e1e8547"
+    },
+    {
+      "path": "docs/evidence/campaign-009-feed-account-cadence.json",
+      "sha256": "624eb23bce2748fbb5b6f88c2ecea3d45c1f01ef50891102fedd0478be52c2ad"
+    },
+    {
+      "path": "docs/evidence/campaign-009-feed-local-block.json",
+      "sha256": "eb3826884e2817fb32c7f629e8d570da3337172d623c420f21793f298dde1836"
+    }
+  ],
+  "preserved_attempts": {
+    "final_reader_attempts": [
+      {
+        "started_utc": "2026-11-01T21:33:41Z",
+        "result": "failure",
+        "error": "KeyboardInterrupt()",
+        "seconds": 584.8044196529954
+      },
+      {
+        "started_utc": "2026-11-01T21:44:44Z",
+        "result": "pass",
+        "seconds": 123.07607475899567
+      }
+    ],
+    "raw_archives": [
+      {
+        "path": "build/campaign009-connected-v7/feed-shipping-final-attempt-1.json",
+        "sha256": "a6605cfef621c50de1f9d01cb132871d1f7e630d5bb764bcdac0ee187fc200c8"
+      }
+    ],
+    "controller_position_failure": "First attempt preserved after an obsolete controller assumption required review-0 after any blocked marker. No native package error, second key recovery or new publication occurred during this controller correction. The same generation4 owner resumed.",
+    "prior_ui4_account2": {
+      "raw": {
+        "path": "build/campaign009-connected-v7/feed-shipping-reader.json",
+        "sha256": "f1bb7f1fdda87ebd0e57599ce9276543df378b7125c756d0dd9afb5757865995"
+      },
+      "attempts": [
+        {
+          "started_utc": "2026-11-01T21:09:23Z",
+          "result": "failure",
+          "error": "RuntimeError('bounded native reader retry allowance exhausted')",
+          "seconds": 317.87022304700804
+        },
+        {
+          "started_utc": "2026-11-01T21:16:17Z",
+          "result": "failure",
+          "error": "RuntimeError('bounded native reader retry allowance exhausted')",
+          "seconds": 49.139914134997525
+        },
+        {
+          "started_utc": "2026-11-01T21:18:02Z",
+          "result": "failure",
+          "error": "RuntimeError('bounded native reader retry allowance exhausted')",
+          "seconds": 30.3682572109974
+        }
+      ],
+      "qualification": "Repeated completed busy reads established the Account0.9.2 receipt-cadence starvation. UI0.9.4 safely cleared rejected reads. This prior failure was not relabeled as success; Account0.9.3 native completion cadence fixes it."
+    }
+  },
+  "timings": {
+    "successful_resumed_attempt_seconds": 123.07607475899567,
+    "all_reader_attempt_seconds": 707.8804944119911,
+    "readable_successor_seconds": 48.39731939700141,
+    "qualification": "The main record retains the initial recovery/read checks and interrupted controller-position wait plus its same-owner resumed completion; the resumed duration alone is not total setup latency."
+  },
+  "release": {
+    "all_eight_portals_closed": true,
+    "eight_native_actors_left_running": true,
+    "alpha_intentionally_offline": true,
+    "no_actor_calls_after_release": true
+  },
+  "limits": [
+    "One-host mixed QEMU/native-x86 common-image evidence; this continuation uses QEMU personal guest and does not establish independent administration or physical hardware behavior.",
+    "Sequence7 is durably accepted only at willing Beta while Alpha is offline. It is not labeled replicated or a cross-federation new-identity continuity proof.",
+    "The existing original project Fork and admission lifecycle remain qualified by the earlier exact project record; this continuation repeats original metadata read and known revocation refusal, not another Fork.",
+    "500tick query handoff is bounded cadence, not a weighted fairness guarantee under an endless foreground query stream.",
+    "Whole-store external freshness, security review, global correlation resistance and post-quantum security remain outside this evidence."
+  ]
+}

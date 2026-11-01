@@ -1,0 +1,282 @@
+"""Fill the final native relay's six paired routes, refuse one and reuse one.
+
+This continuation preserves existing community actors. Extra bare native
+clients explicitly select public certificates and Launcher-owned terminal
+contexts through the supported operator API; they only read real Feed status.
+No application identity, event, private key, operator handoff or host relay is
+created. A full OS listener backlog can delay native refusal to the existing
+100000-tick handshake deadline; that latency is measured, not shortened here.
+"""
+import argparse
+import contextlib
+import hashlib
+import json
+from pathlib import Path
+import struct
+import sys
+import time
+ROOT = Path(__file__).resolve().parents[1]
+sys.path[:0] = [str(ROOT/'tools'), str(ROOT/'tests')]
+import feed
+import messenger
+from messenger_journey import Guest, enroll, net, role, wait
+from native_community_campaign import attach_campaign, select_destination, selected_delivery_package
+
+
+def main():
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument('--attach', type=Path, required=True)
+    p.add_argument('--refusal-timeout', type=int, default=1500,
+                   help='wall-clock bound; native setup deadline remains100000 local ticks')
+    a = p.parse_args()
+    out = a.attach.resolve()
+    evidence = out/'relay-capacity'
+    evidence.mkdir(exist_ok=False)
+    started, probes, checks = time.monotonic(), [], []
+    serials = {}
+    def save():
+        (evidence/'progress.json').write_text(json.dumps(dict(checks=checks,
+            elapsed_seconds=time.monotonic()-started), indent=2)+'\n')
+    def passed(label, **fields):
+        checks.append(dict(check=label, result='pass', **fields));save()
+        print('PASS', label, json.dumps(fields), flush=True)
+    with attach_campaign(out, graphical=()) as campaign:
+        actors = campaign.actors
+        alice, bob, charlie = (actors[n] for n in ('alice', 'bob', 'charlie'))
+        relays = [actors['relay'+str(i)] for i in (1, 2, 3)]
+        alpha = actors['alpha']
+        original = {}
+        def delivery_observation(require_healthy=True):
+            """Only the admitted0.8.2 release defines read-only464/action5.
+
+            Older releases treat this subaction as configuration. Verify the
+            selected public package and current native catalog before it.
+            """
+            result = {}
+            for g in (alice, bob):
+                package, info, source = selected_delivery_package(out, campaign.state, g.name)
+                active = g.client.request(14, bytes.fromhex(info['project_id']))
+                assert active[64:96].hex() == info['release_id']
+                assert messenger.endpoint(g.client, 4, 464) == g.delivery
+                fields, _ = role(g, 4, 464, a=5)
+                assert fields[0] == 0, (g.name, list(fields))
+                terminal = net(g, 41)[0]
+                if require_healthy:
+                    assert fields[1] <= 512 and fields[4] != 7, (g.name, list(fields))
+                    assert terminal[1:3] == (1, 3), (g.name, list(terminal))
+                result[g.name] = dict(instance=g.delivery, release=info['release_id'],
+                    package_path=str(package), package_selection=source,
+                    raw=list(fields), workflow_rpc_guard=fields[1], rpc_serial=fields[2],
+                    current_rpc=fields[3], receive_phase=fields[4], receive_reason=fields[5],
+                    completed_empty_probes=fields[6], parent_terminal=list(terminal))
+            return result
+        def replication_observation():
+            """Read finite native authority; this controller never renews it."""
+            result = {}
+            for name in ('alpha', 'beta'):
+                g = actors[name]
+                budget, policy = feed.invoke(g.client, 490, action=12)
+                authority = feed.invoke(g.client, 490, action=13)[0]
+                count = feed.invoke(g.client, 490, action=9)[0][1]
+                rows = []
+                for i in range(count):
+                    fields, event = feed.invoke(g.client, 490, action=14, handle=i)
+                    rows.append(dict(event=event.hex(), fields=list(fields)))
+                result[name] = dict(budget=list(budget), policy_hash=policy.hex(),
+                                    authority=list(authority), rows=rows)
+            return result
+        def unaffected():
+            current = {}
+            for g in (alice, bob):
+                f, pin = net(g, 41)
+                assert f[1] == 1 and f[2] == 3, (g.name, f)
+                if g.name in original:
+                    assert pin.hex() == original[g.name]['pin'], (g.name, 'terminal pin changed')
+                current[g.name] = dict(terminal=list(f), pin=pin.hex())
+            return current
+        def observe():
+            return dict(personal=unaffected(), relays={g.name:list(net(g, 32)[0]) for g in relays})
+        def circuit(g, label):
+            net(g, 31)
+            last = [0.0]
+            def ready():
+                f, _ = net(g, 32)
+                if time.monotonic()-last[0] >= 30:
+                    last[0] = time.monotonic()
+                    print('Native capacity route', label, list(f), flush=True)
+                    unaffected()
+                if f[1] == 0 and f[3] != 0:
+                    raise RuntimeError((label, 'native route failed before six-pair capacity', f))
+                return f if f[2] == 3 else None
+            return wait(ready, 900, label+' native selected three-hop circuit')
+        def terminal(g, owner, label):
+            net(g, 38, h=3, a=31, b=owner, cword=1048576, d=256)
+            def ready():
+                f, pin = net(g, 41)
+                if f[2] == 4:
+                    raise RuntimeError((label, 'native terminal refused', f))
+                if f[2] != 3:return None
+                assert pin == hashlib.sha256(alpha.certificate).digest()
+                return dict(terminal=list(f), pin=pin.hex())
+            return wait(ready, 600, label+' authenticated Alpha terminal')
+        def rpc(g):
+            serials[g.name] = serials.get(g.name, 0)+1
+            serial = serials[g.name]
+            # Public typed491/status is served by the actual role16 operator.
+            # The remote Network injects its own transport origin as usual.
+            net(g, 39, h=serial, data=struct.pack('<8Q', 491, 8, 0, 0, 0, 0, 0, 1))
+            def complete():
+                f, raw = net(g, 40, h=serial, allow=(6,))
+                if f[0] == 6:return None
+                assert len(raw) == 64
+                answer = struct.unpack('<8Q', raw)
+                assert answer[0] == 0
+                return list(answer)
+            return wait(complete, 180, g.name+' native Feed status round trip')
+        def owned_close(g):
+            # These are only this independent personal guest's Network roles.
+            # No relay, terminal operator or shared service receives stop/listen.
+            net(g, 42);net(g, 35)
+        try:
+            before_delivery = delivery_observation()
+            (evidence/'delivery-before.json').write_text(json.dumps(before_delivery, indent=2)+'\n')
+            print('Native0.8.2 finite workflow and empty-probe counters at capacity takeover', json.dumps(before_delivery), flush=True)
+            before_replication = replication_observation()
+            (evidence/'replication-before.json').write_text(json.dumps(before_replication, indent=2)+'\n')
+            print('Native finite replication authority at capacity takeover', json.dumps(before_replication), flush=True)
+            original.update(unaffected())
+            f, _ = net(charlie, 41)
+            restored_charlie = False
+            if f[2] != 3:
+                # The preceding no-vault case deliberately closed Charlie's
+                # route before replacing its owner. Re-establish transport only;
+                # no new account key or retained state is created here.
+                owned_close(charlie)
+                for slot, relay in enumerate(relays):enroll(charlie, slot, relay.certificate)
+                select_destination(charlie, alpha.certificate)
+                circuit(charlie, 'fresh no-vault Charlie')
+                terminal(charlie, charlie.feed_owner, 'fresh no-vault Charlie')
+                restored_charlie = True
+            passed('three existing personal guests remain concurrently admitted on the selected relays',
+                   restored_only_charlie_transport=restored_charlie,
+                   charlie_terminal=list(net(charlie, 41)[0]), observed=observe())
+            for i in range(4):
+                g = Guest('capacity-probe'+str(i+1), 'qemu', evidence, out/'guest.bin').start()
+                probes.append(g)
+                for slot, relay in enumerate(relays):enroll(g, slot, relay.certificate)
+                enroll(g, 3, alpha.certificate)
+                g.capacity_owner = messenger.launcher(g.client)
+                if i == 3:continue
+                began = time.monotonic()
+                route = circuit(g, g.name)
+                admitted = terminal(g, g.capacity_owner, g.name)
+                status = rpc(g)
+                passed('independent headless native client joins the same three relays and real Alpha service',
+                       client=g.name, selected_owner=g.capacity_owner, owner='current native Launcher',
+                       circuit=list(route), **admitted, feed_status=status,
+                       simultaneous_complete_routes=4+i, seconds=time.monotonic()-began,
+                       unrelated=unaffected())
+            active = probes[:3]
+            six = {g.name:dict(terminal=list(net(g, 41)[0]), feed_status=rpc(g)) for g in active}
+            assert all(record['terminal'][2] == 3 for record in six.values())
+            assert net(charlie, 41)[0][2] == 3
+            passed('six complete native routes coexist across twelve channels per selected relay',
+                   extra_clients=six, observed=observe(),
+                   accounting='Each admitted route owns an incoming/outgoing pair in each relay; six authenticated client terminals imply twelve occupied channels. Existing read-only32 exposes channels0/1 only, so no unimplemented full census is claimed.')
+            overflow = probes[3]
+            began = time.monotonic()
+            initial, _ = net(overflow, 31)
+            observations, last = [], [0.0]
+            def refused():
+                f, _ = net(overflow, 32)
+                now = time.monotonic()
+                if now-last[0] >= 30:
+                    last[0] = now
+                    sample = dict(seconds=now-began, overflow=list(f), unrelated=unaffected(),
+                                  six_extra_terminals={g.name:list(net(g, 41)[0]) for g in active})
+                    observations.append(sample)
+                    (evidence/'overflow-observations.json').write_text(json.dumps(observations, indent=2)+'\n')
+                    print('Native full-capacity admission remains pending', json.dumps(sample), flush=True)
+                if f[2] == 3:
+                    raise AssertionError(('seventh route unexpectedly admitted before any owned release', f))
+                if f[1] == 0 and f[3] != 0:return f
+                return None
+            rejected = wait(refused, a.refusal_timeout, 'actual native seventh-client refusal at unchanged setup deadline')
+            assert rejected[3] in (38, 51), ('unexpected native capacity refusal reason', rejected)
+            assert all(net(g, 41)[0][2] == 3 for g in active)
+            assert net(charlie, 41)[0][2] == 3
+            passed('seventh incoming client receives an actual bounded native refusal while six admitted clients remain healthy',
+                   initial=list(initial), refusal=list(rejected), seconds=time.monotonic()-began,
+                   native_setup_deadline_ticks=100000,
+                   pending_probe_application_requests_submitted=0,
+                   feed_round_trips={g.name:rpc(g) for g in active}, observed=observe(),
+                   material_limit='The retained OS listener can queue an overflow TCP connection until the native handshake deadline; this is measured native refusal latency, not a controller cancellation.')
+            # Close one probe's own circuit. The other five routes and operators
+            # keep their keys, contexts and listener operation throughout.
+            victim = active[0]
+            owned_close(victim)
+            began = time.monotonic()
+            route = circuit(overflow, overflow.name+' retry after one owned close')
+            admitted = terminal(overflow, overflow.capacity_owner, overflow.name+' reused capacity')
+            status = rpc(overflow)
+            passed('the refused independent client reuses one released pair without operator reset',
+                   closed_only=victim.name, reused_by=overflow.name,
+                   circuit=list(route), **admitted, feed_status=status,
+                   survivors={g.name:dict(terminal=list(net(g, 41)[0]), feed_status=rpc(g)) for g in active[1:]},
+                   observed=observe(), seconds=time.monotonic()-began)
+            after_replication = replication_observation()
+            for name, before in before_replication.items():
+                after = after_replication[name]
+                assert after['policy_hash'] == before['policy_hash']
+                assert after['authority'][1] == before['authority'][1]
+                assert after['budget'][1] == before['budget'][1]
+                assert after['budget'][4] == before['budget'][4]
+                assert before['budget'][3] <= after['budget'][3] <= after['budget'][1]
+                for earlier in before['rows']:
+                    later = next(row for row in after['rows'] if row['event'] == earlier['event'])
+                    assert earlier['fields'][3] <= later['fields'][3] <= 9
+                    if earlier['fields'][4]:assert later['fields'][4:6] == earlier['fields'][4:6]
+            (evidence/'replication-after.json').write_text(json.dumps(after_replication, indent=2)+'\n')
+            after_delivery = delivery_observation()
+            for name, before in before_delivery.items():
+                after = after_delivery[name]
+                assert after['instance'] == before['instance'] and after['release'] == before['release']
+                assert after['rpc_serial'] >= before['rpc_serial']
+                assert after['completed_empty_probes'] >= before['completed_empty_probes']
+                assert after['parent_terminal'][4] <= before['parent_terminal'][4]
+                assert after['parent_terminal'][5] <= before['parent_terminal'][5]
+                if after['completed_empty_probes'] > before['completed_empty_probes']:
+                    assert after['parent_terminal'][4] < before['parent_terminal'][4]
+                    assert after['parent_terminal'][5] < before['parent_terminal'][5]
+                if after['completed_empty_probes'] >= 513:
+                    passed('native empty mailbox probes continue beyond512 without replacing the coordinator or renewing its finite parent allowance',
+                           person=name, before=before, after=after, additional_idle_wait=False)
+            (evidence/'delivery-after.json').write_text(json.dumps(after_delivery, indent=2)+'\n')
+            report = dict(schema=1, result='pass', image_sha256=hashlib.sha256((out/'guest.bin').read_bytes()).hexdigest(),
+                          selected_public_certificates={g.name:hashlib.sha256(g.certificate).hexdigest() for g in (*relays, alpha)},
+                          checks=checks, elapsed_seconds=time.monotonic()-started,
+                          declared_capacity=dict(onion_channels_per_relay=12, complete_paired_routes_per_relay=6,
+                                                 independent_extra_native_guests=4, terminal_bytes=1048576, terminal_requests=256),
+                          private_keys_exported=False, host_data_plane=False, operator_stop_listen_handoffs=False,
+                          replication_before=before_replication, replication_after=after_replication,
+                          delivery_before=before_delivery, delivery_after=after_delivery,
+                          host_replication_authority_renewals=0,
+                          limits=['Local common-image continuation; relay2 may use the RV64 interpreter on native-x86.',
+                                  'Headless clients explicitly use native Launcher-owned read-only typed Feed transport contexts; they are not new graphical Feed authors.',
+                                  'Native32 lacks a full per-channel census; exact pairing is evidenced by six independently authenticated three-hop terminals and the implementation resource contract.'])
+            (out/'relay-capacity.json').write_text(json.dumps(report, indent=2)+'\n')
+        except BaseException as error:
+            with contextlib.suppress(Exception):
+                failed_delivery = delivery_observation(require_healthy=False)
+                (evidence/'delivery-failure.json').write_text(json.dumps(failed_delivery, indent=2)+'\n')
+            (out/'relay-capacity-failure.json').write_text(json.dumps(dict(schema=1, result='failed',
+                error=repr(error), checks=checks, elapsed_seconds=time.monotonic()-started), indent=2)+'\n')
+            raise
+        finally:
+            for g in probes:
+                if g.client:
+                    with contextlib.suppress(Exception):owned_close(g)
+                g.stop()
+
+
+if __name__ == '__main__':main()

@@ -1,0 +1,56 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "scope": "Installed ordinary rights799 application exercises actual native Objects SDK and kernel IPC; graph entries remain uncommitted stages.",
+  "image_sha256": "90fdde98b45bd9828b1d53a8d7c22e5d361480116ccef08ded5bf1c2f8f668a3",
+  "runtime_source_head": "efa14205b3dc0715521975035b0ff82816877708",
+  "production_fix": "624ee19",
+  "probe_release": "f3dfa44c1f1e768b0d87c3f9e4061a9159666a1222318043f9f9797a7ba87c7d",
+  "probe_code_sha256": "df618da00aacec2cff78c6a36346bd52ee4ac017425d50c21da69f9938b90c81",
+  "command": "python tests/native_object_quota.py --image build/campaign009-final-v4.bin --output build/campaign009-final-v4-object-quota --backend qemu --backend aarch64",
+  "run_record": "build/campaign009-final-v4-object-quota/evidence.json",
+  "run_record_sha256": "a4b1878abfba1327f884ea2ae5f2511a66d3a81cbab81b2f944022433d0e71f3",
+  "sources": {
+    "tests/fixtures/ObjectQuotaProbe.lean": "85a7da1d1780335602597d32fcd3dec76d32a587c235a8a78ee07ee882e50b71",
+    "tests/native_object_quota.py": "b0b869238b98bf7c67bcf5cef1b810baeff33394902d38e69a7d037bf41178b2"
+  },
+  "backends": [
+    {
+      "backend": "qemu",
+      "aarch64_emulated": false,
+      "seconds": 7.07878544000414,
+      "passed_checks": 7
+    },
+    {
+      "backend": "aarch64",
+      "aarch64_emulated": true,
+      "seconds": 215.86306229299953,
+      "passed_checks": 7
+    }
+  ],
+  "checks": [
+    "eight graph stages do not prevent native commit/read of an ordinary public profile",
+    "eight ordinary records retain their independent record ceiling",
+    "mixed ordinary and graph records retain the aggregate24 ceiling",
+    "explicit abort and profile drop reclaim the accepted reservations",
+    "graph256KiB does not consume the ordinary256KiB allowance; its own next byte refuses",
+    "mixed reservations retain the aggregate1MiB byte ceiling below the24-record ceiling",
+    "aggregate byte exhaustion reclaims and reuses exactly one aborted reservation"
+  ],
+  "observations": {
+    "profile_bytes": 2048,
+    "profile_sha256": "dcba30bbb3e27025b46ed0ec8837dc661268de9444fdbb43c3a9151a8eec52ec",
+    "graph_stages_before_profile": 8,
+    "ordinary_record_limit": 8,
+    "aggregate_record_limit": 24,
+    "ordinary_byte_limit": 262144,
+    "aggregate_byte_limit": 1048576,
+    "aggregate_byte_limit_reached_at_records": 16,
+    "quota_refusal": 4
+  },
+  "limits": [
+    "Installed ordinary app and actual native Objects SDK/IPC; graph records are uncommitted reservations, not fabricated project evidence.",
+    "The committed opaque profile proves ordinary storage remains available, not Feed identity recovery or project Fork itself.",
+    "AArch64 backend, if selected, is emulated; no physical hardware qualification."
+  ]
+}

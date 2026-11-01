@@ -1,0 +1,60 @@
+{
+  "schema": 1,
+  "campaign": "009",
+  "result": "pass",
+  "component": "opaque host transport command cleanup",
+  "changes": "Only a command-local candidate socket may be closed on CONNECT/LISTEN setup failure; no old readiness-loop remote is reused.",
+  "tests": {
+    "evidence": {
+      "path": "build/transport-command-cleanup/evidence.json",
+      "sha256": "774efc7ac45002955cf2531d36667da2ca1cfbe2c8c16f76af66a160990ba745",
+      "record": {
+        "schema": 1,
+        "result": "pass",
+        "checks": [
+          "shared listener, native admission ownership, independent clients, epoch isolation and surviving writes",
+          "invalid endpoint rejects only its command while independent established sockets remain bidirectionally usable at the same epochs",
+          "invalid receive window rejects only its command while independent established sockets remain bidirectionally usable at the same epochs"
+        ],
+        "seconds": 0.10695511399535462,
+        "adapter_sha256": "684f9a9507b39c3a4af7e9b1fb2c3287c6e849cdc787a687624072e2b557f0c7",
+        "scope": "isolated opaque host adapter commands and socket ownership only; no Native, cryptography, connected community or current Alice failure causality claim"
+      }
+    },
+    "fault-regression": {
+      "path": "build/transport-command-cleanup/fault-regression.json",
+      "sha256": "98862520176b208bcbf9606b8e70037c338b9bac61b7401e2b10db31bf605582",
+      "record": {
+        "schema": 1,
+        "result": "pass",
+        "profile": "opt-in-local-opaque-tx-fault-v1",
+        "checks": [
+          "exact-epoch pause barrier, opaque pending bytes, independent send, incoming traffic and resume",
+          "unchanged64KiB pending limit, overflow disconnect, epoch invalidation and no queued-byte reuse",
+          "bounded malformed-input rejection, strict field types and existing-path protection"
+        ],
+        "buffer_limit": 65536,
+        "control_clients": 4,
+        "command_limit": 512,
+        "security_scope": "Opaque socket adapter only; no native cryptographic or delivery assurance claimed."
+      }
+    },
+    "pre-fix-failure": {
+      "path": "build/transport-command-cleanup/pre-fix-failure.json",
+      "sha256": "c91dae708e1452df2831c00570dfdb0e22fff4c2da08c2485e486d30241f0105",
+      "record": {
+        "schema": 1,
+        "result": "expected-regression-failure",
+        "adapter_sha256": "82a3820f98b70b8ccae002b5c0fd6265c830e95aa75a2459e28705c137670038",
+        "error": "AssertionError('adapter closed the opaque event stream')",
+        "adapter_error": "file descriptor cannot be a negative integer (-1)",
+        "scope": "isolated pre-fix source; malformed endpoint cleanup closes unrelated socket and ends opaque event stream; no common actors involved"
+      }
+    }
+  },
+  "native_image_changed": false,
+  "lt_transport_version": 3,
+  "epoch_and_queue_semantics_changed": false,
+  "current_community_relation": "The current nine actors keep their already loaded adapter code. This isolated boundary repair is not attributed to the observed Alice failure; all nine transport threads were healthy at diagnosis.",
+  "limits": "Host adapter fixture only. No Native code, cryptographic correctness, installed package, live actor reset or connected community completion claim."
+}

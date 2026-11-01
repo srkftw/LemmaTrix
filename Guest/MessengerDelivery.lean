@@ -175,6 +175,11 @@ def ready (descriptor t : UInt64) : Bool :=
   r == 96 && status r == 0 && load64 (wire+16) r == 3 && eq descriptor (wire+64) 32 r
 def makeRequest (action a b c t : UInt64) : UInt64 :=
   copy wire request 64 (header 441 action a b c 0 0 t)
+-- The parent terminal bounds whole requests to100000 ticks. Leave10000
+-- ticks for exact owned cleanup; a ready response wins the deadline boundary.
+def rpcWaitBudget : UInt64 := 90000
+def rpcDeadline (clock : UInt64) : UInt64 :=
+  if clock > 0xffffffffffffffff-rpcWaitBudget then 0xffffffffffffffff else clock+rpcWaitBudget
 def rpc (length purpose t : UInt64) : UInt64 :=
   if load64 (st+88) t != 0 || length < 64 || length > 960 || load64 (st+216) t >= 512 then error else
   let serial := load64 (st+80) t+1
@@ -186,18 +191,25 @@ def rpc (length purpose t : UInt64) : UInt64 :=
   if r != 64 || status r != 0 then error else
   let t := store64 (st+88) serial r
   let t := store64 (st+96) purpose t
-  let t := store64 (st+232) (Guest.WaitSDK.now t+5000) t
+  let t := store64 (st+232) (rpcDeadline (Guest.WaitSDK.now t)) t
   store64 (st+216) (load64 (st+216) t+1) t
 def mailboxAuth (p fetch dst t : UInt64) : UInt64 :=
   let t := copy p dst 32 t
   copy (p+(if fetch == 1 then 64 else 32)) (dst+32) 32 t
+def syncForgeSerial (t : UInt64) : UInt64 :=
+  let routed := load64 (Guest.ForgeRouted.st+16) t
+  let current := load64 (st+80) t
+  store64 (st+80) (if routed > current then routed else current) t
 def configure (token length t : UInt64) : UInt64 :=
   let owner := load64 (command+8) t
   let selected := syscall 128 2 434 0 0 t
   if owner == 0 || owner != selected || syscall 131 token 0 0 0 selected != 0 then response 1 0 0 0 selected else
   if length == 64 && owner == load64 st selected && load64 (st+152) selected == 1 then response 0 0 0 0 (clearAttachmentHint selected) else
-  if length != 64 || load64 (st+8) selected != 0 || load64 (st+88) selected != 0 then response 4 0 0 0 selected else
-  let t := zero foreground 20 (zero st 64 (zero preflight 128 selected))
+  if length != 64 || load64 (st+8) selected != 0 || load64 (st+88) selected != 0 ||
+    forgePending selected || Guest.MessengerForge.active selected then response 4 0 0 0 selected else
+  let selected := syncForgeSerial selected
+  let serial := load64 (st+80) selected
+  let t := store64 (st+80) serial (zero foreground 20 (zero st 64 (zero preflight 128 selected)))
   let t := store64 (preflight+128) 1 (store64 st owner t)
   let r := ownerSubmit 434 0 11 0 0 11 t
   if r == error then response 1 0 0 0 r else response 0 0 0 0 r
@@ -208,7 +220,9 @@ def queuePreflight (caller length t : UInt64) : UInt64 :=
   if load64 preflight t != 0 && load64 (preflight+8) t == caller && load64 (preflight+16) t == h && load64 (preflight+24) t == contact then
     if load64 preflight t == 8 then response 0 h 6 0 t else
     if load64 preflight t != 9 then response 0 h 1 0 t else
-    response 0 h 1 0 (store64 preflight 1 (store64 (preflight+32) 0 t))
+    -- A new explicit user retry admits another finite claim attempt budget.
+    -- The owner's exact claim identity remains unchanged across uncertainty.
+    response 0 h 1 0 (store64 preflight 1 (store64 (preflight+40) 0 (store64 (preflight+32) 0 t)))
   else
   if (load64 preflight t > 0 && load64 preflight t < 8) ||
     (load64 (st+24) t > 0 && load64 (st+24) t <= 6) || load64 (st+24) t == 9 || load64 (st+24) t == 10 then response 6 h 1 0 t else
@@ -377,6 +391,16 @@ def accepted (length t : UInt64) : UInt64 :=
   let t := store64 (receiptArgs+32) (load64 (st+48) t) (store64 (receiptArgs+40) 0 t)
   if !Guest.ReceiptSDK.verify receiptArgs (answer+64) (answer+256) receiptProfile t then failSend 9 t else
   store64 (st+24) 6 (copy (answer+64) receiptCache 256 t)
+def completedIdleFetch (length t : UInt64) : Bool :=
+  -- Mailbox.fetch's no-row response is exactly64 bytes with no handle,
+  -- body or offset. A pending deposit, partial read or selected attachment
+  -- is workflow work and retains its existing finite charge.
+  length == 64 && load64 answer t == 6 && load64 (answer+8) t == 0 &&
+  load64 (answer+16) t == 0 && load64 (answer+24) t == 0 && load64 (answer+32) t == 0 &&
+  load64 (answer+40) t == 0 && load64 (answer+48) t == 0 && load64 (answer+56) t == 1 &&
+  load64 request t == 441 && load64 (request+8) t == 5 && load64 (request+16) t == 0 &&
+  load64 (request+24) t == 0 && load64 (request+32) t == 512 && load64 (request+56) t == 1 &&
+  load64 (st+88) t == 0 && load64 (st+160) t == 0 && load64 (st+136) t == 0 && load64 (st+280) t == 0
 def rpcCompleted (purpose length t : UInt64) : UInt64 :=
   let code := load64 answer t
   let h := load64 (answer+8) t
@@ -417,7 +441,15 @@ def rpcCompleted (purpose length t : UInt64) : UInt64 :=
   else if purpose == 7 then
     if code == 0 || code == 3 then store64 (st+24) 8 t else if code == 6 then t else failSend code t
   else if purpose == 10 then
-    if code == 6 then t else if code != 0 then failReceive code t else
+    if code == 6 then
+      -- Return only this completed idle probe's one local workflow charge.
+      -- Network bytes/attempts and the monotonically increasing RPC serial
+      -- remain spent; other sender, preflight and receive work is untouched.
+      if completedIdleFetch length t && load64 (st+216) t > 0 then
+        let count := load64 (st+328) t
+        store64 (st+328) (if count == 0xffffffffffffffff then count else count+1)
+          (store64 (st+216) (load64 (st+216) t-1) t) else t
+    else if code != 0 then failReceive code t else
     let total := load64 (answer+16) t
     let offset := load64 (answer+24) t
     let count := load64 (answer+32) t
@@ -458,20 +490,25 @@ def rpcFailure (reason t : UInt64) : UInt64 :=
   if load64 (st+96) t == 30 then publicationFailure reason t else
   if load64 (st+96) t == 31 then preflightFailure reason t else
   if load64 (st+96) t >= 10 then failReceive reason t else failSend reason t
+def abandonRPC (reason t : UInt64) : UInt64 :=
+  let id := load64 (st+88) t
+  -- A timeout cannot retract remote acceptance. Release only this exact
+  -- transport request before dropping its local handle; stale cancellation
+  -- cannot clear a replacement relationship. Ciphertext retry state remains.
+  let t := if id == 0 then t else network 42 id t
+  rpcFailure reason t
 def collectRPC (t : UInt64) : UInt64 :=
   let id := load64 (st+88) t
   if id == 0 then t else
-  let now := Guest.WaitSDK.now t
-  if now >= load64 (st+232) now then
-    rpcFailure 14 now
-  else
   let r := network 40 id t
   if r == error || r < 64 || status r != 0 then
-    if r != error && r >= 64 && status r == 6 then r else
-    rpcFailure 14 r
+    if r != error && r >= 64 && status r == 6 then
+      let now := Guest.WaitSDK.now r
+      if now >= load64 (st+232) now then abandonRPC 14 now else now
+    else abandonRPC 14 r
   else
     let n := load64 (wire+16) r
-    if n < 64 || n > 960 || r != 64+n then rpcFailure 9 r else
+    if n < 64 || n > 960 || r != 64+n then abandonRPC 9 r else
     let purpose := load64 (st+96) r
     let t := copy (wire+64) answer n r
     rpcCompleted purpose n (store64 (st+88) 0 t)
@@ -659,6 +696,12 @@ def dispatch (caller rights token length t : UInt64) : UInt64 :=
       64+header 0 (load64 (st+96) t) (load64 (st+24) t)
         (load64 (st+48) t) (load64 (st+56) t)
         (load64 (st+72) t) (load64 (st+232) t) t
+    else if load64 (command+16) t == 5 && length == 64 then
+      -- Existing Launcher-only diagnostic grant; no workflow or parent
+      -- budget mutation. Available from Delivery0.8.2 onward.
+      64+header 0 (load64 (st+216) t) (load64 (st+80) t)
+        (load64 (st+88) t) (load64 (st+160) t)
+        (load64 (st+200) t) (load64 (st+328) t) t
     else configure token length t
   else
   if op == 460 then if load64 (command+48) t == 3 then queuePreflight caller length t else
@@ -724,7 +767,7 @@ partial def loop (t : UInt64) : UInt64 :=
   else n
   let t := attachmentHintQuantum t
   let t := if forgePending t then queuedForgeQuantum t else
-    if Guest.MessengerForge.active t then Guest.MessengerForge.pump t else receiveQuantum (sendQuantum (prekeyQuantum (collectRPC (collectOwner t))))
+    if Guest.MessengerForge.active t then syncForgeSerial (Guest.MessengerForge.pump t) else receiveQuantum (sendQuantum (prekeyQuantum (collectRPC (collectOwner t))))
   let t := zero command 124 (zero wire 128 (zero scratch 80 t))
   let work := attachmentWaiting t || forgePending t || (load64 preflight t > 0 && load64 preflight t < 8) ||
     (load64 (preflight+128) t > 0 && load64 (preflight+128) t < 5) || load64 (st+8) t != 0 || load64 (st+88) t != 0 ||

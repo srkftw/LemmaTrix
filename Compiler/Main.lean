@@ -163,7 +163,8 @@ def epilogue (c : FnContext) : EmitM Unit := do
   -- This is an explicit namespace policy, not inferred binary constant time.
   let sensitive := ["Guest.Ed25519.", "Guest.Noise25519.", "Guest.SHA512.", "Guest.SignerEntropy.",
     "Guest.NoiseNK.", "Guest.Noise.", "Guest.VaultCrypto.",
-    "Guest.Mailbox.", "Guest.Identity.", "Guest.MailboxReceipt.", "Guest.MessengerProject.", "Guest.MessengerDelivery.", "Guest.Messenger.", "Guest.MessengerVault.", "Guest.MessengerAttachment.", "Guest.LiveSDK.copy", "Guest.XEdDSA.", "Guest.MessengerCrypto.",
+    "Guest.Feed.", "Guest.FeedAccount.", "Guest.FeedFederation.", "Guest.FeedRecords.", "Guest.FeedRetentionSDK.",
+    "Guest.Network.configureFeedPeer", "Guest.Mailbox.", "Guest.Identity.", "Guest.MailboxReceipt.", "Guest.MessengerProject.", "Guest.MessengerDelivery.", "Guest.Messenger.", "Guest.MessengerVault.", "Guest.MessengerAttachment.", "Guest.LiveSDK.copy", "Guest.XEdDSA.", "Guest.MessengerCrypto.",
     "Guest.MessengerSession.", "Guest.MessengerRatchet.", "Guest.TorNtor.",
     "Guest.NodeStore.", "Guest.ServiceHash.", "Guest.OnionTerminal.", "Guest.TorRouter.", "Guest.TorCells.", "Guest.AES.", "Guest.SHA1.", "Guest.SHA3."].any
     (fun namespaceName => c.fn.toString.startsWith namespaceName)

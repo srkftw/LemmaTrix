@@ -1,0 +1,572 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "image_sha256": "2e5147c4198cf7ec39ab053f2ea8895cfdceb1c9b9dcf79e1b7bb7627314bcdf",
+  "raw_evidence": {
+    "path": "build/campaign009-connected-v7/relay-capacity.json",
+    "sha256": "ef46141809b3c803b7e6bb91d7043706f1f91211b7d4aff14ed60221e434810d"
+  },
+  "elapsed_seconds": 2189.3167703459912,
+  "declared_capacity": {
+    "onion_channels_per_relay": 12,
+    "complete_paired_routes_per_relay": 6,
+    "independent_extra_native_guests": 4,
+    "terminal_bytes": 1048576,
+    "terminal_requests": 256
+  },
+  "admission_seconds": [
+    194.88476013099717,
+    209.53872940900328,
+    213.88298283499898
+  ],
+  "native_seventh_refusal": {
+    "check": "seventh incoming client receives an actual bounded native refusal while six admitted clients remain healthy",
+    "result": "pass",
+    "initial": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "refusal": [
+      0,
+      0,
+      0,
+      51,
+      0,
+      0,
+      0,
+      1
+    ],
+    "seconds": 1025.1015548489959,
+    "native_setup_deadline_ticks": 100000,
+    "pending_probe_application_requests_submitted": 0,
+    "feed_round_trips": {
+      "capacity-probe1": [
+        0,
+        10,
+        3490,
+        64,
+        917504,
+        0,
+        0,
+        1
+      ],
+      "capacity-probe2": [
+        0,
+        10,
+        3490,
+        64,
+        917504,
+        0,
+        0,
+        1
+      ],
+      "capacity-probe3": [
+        0,
+        10,
+        3490,
+        64,
+        917504,
+        0,
+        0,
+        1
+      ]
+    },
+    "observed": {
+      "personal": {
+        "alice": {
+          "terminal": [
+            0,
+            1,
+            3,
+            0,
+            8287927,
+            64754,
+            0,
+            1
+          ],
+          "pin": "a456dd562224c6b13301a1eef29864ce5753c04a69518083b1dea531770ea529"
+        },
+        "bob": {
+          "terminal": [
+            0,
+            1,
+            3,
+            0,
+            8292261,
+            64790,
+            0,
+            1
+          ],
+          "pin": "a456dd562224c6b13301a1eef29864ce5753c04a69518083b1dea531770ea529"
+        }
+      },
+      "relays": {
+        "relay1": [
+          0,
+          1,
+          0,
+          38,
+          4,
+          4,
+          0,
+          1
+        ],
+        "relay2": [
+          0,
+          1,
+          0,
+          38,
+          4,
+          4,
+          0,
+          1
+        ],
+        "relay3": [
+          0,
+          1,
+          0,
+          38,
+          4,
+          4,
+          0,
+          1
+        ]
+      }
+    },
+    "material_limit": "The retained OS listener can queue an overflow TCP connection until the native handshake deadline; this is measured native refusal latency, not a controller cancellation."
+  },
+  "reuse": {
+    "check": "the refused independent client reuses one released pair without operator reset",
+    "result": "pass",
+    "closed_only": "capacity-probe1",
+    "reused_by": "capacity-probe4",
+    "circuit": [
+      0,
+      1,
+      3,
+      0,
+      4,
+      0,
+      0,
+      1
+    ],
+    "terminal": [
+      0,
+      1,
+      3,
+      0,
+      1048576,
+      256,
+      0,
+      1
+    ],
+    "pin": "b01e9601440ce7c46c076ed8b98790c8be5554d0ba5a5ae5de806a355d91e42b",
+    "feed_status": [
+      0,
+      10,
+      3490,
+      64,
+      917504,
+      0,
+      0,
+      1
+    ],
+    "survivors": {
+      "capacity-probe2": {
+        "terminal": [
+          0,
+          1,
+          3,
+          0,
+          1048384,
+          253,
+          0,
+          1
+        ],
+        "feed_status": [
+          0,
+          10,
+          3490,
+          64,
+          917504,
+          0,
+          0,
+          1
+        ]
+      },
+      "capacity-probe3": {
+        "terminal": [
+          0,
+          1,
+          3,
+          0,
+          1048384,
+          253,
+          0,
+          1
+        ],
+        "feed_status": [
+          0,
+          10,
+          3490,
+          64,
+          917504,
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    "observed": {
+      "personal": {
+        "alice": {
+          "terminal": [
+            0,
+            1,
+            3,
+            0,
+            8285111,
+            64732,
+            0,
+            1
+          ],
+          "pin": "a456dd562224c6b13301a1eef29864ce5753c04a69518083b1dea531770ea529"
+        },
+        "bob": {
+          "terminal": [
+            0,
+            1,
+            3,
+            0,
+            8289573,
+            64769,
+            0,
+            1
+          ],
+          "pin": "a456dd562224c6b13301a1eef29864ce5753c04a69518083b1dea531770ea529"
+        }
+      },
+      "relays": {
+        "relay1": [
+          0,
+          1,
+          0,
+          38,
+          4,
+          4,
+          0,
+          1
+        ],
+        "relay2": [
+          0,
+          1,
+          0,
+          38,
+          4,
+          4,
+          0,
+          1
+        ],
+        "relay3": [
+          0,
+          1,
+          0,
+          38,
+          4,
+          4,
+          0,
+          1
+        ]
+      }
+    },
+    "seconds": 229.7590275859984
+  },
+  "native_delivery_release": "0c0b6ff146660c532730f842b3e81462dcd6eb61cb202357085745965135a0fa",
+  "delivery_observations": {
+    "alice": {
+      "instance": 10565884165390074633,
+      "empty_before": 269,
+      "empty_after": 791,
+      "guard_before": 1,
+      "guard_after": 1,
+      "terminal_before": [
+        0,
+        1,
+        3,
+        0,
+        8351927,
+        65254,
+        0,
+        1
+      ],
+      "terminal_after": [
+        0,
+        1,
+        3,
+        0,
+        8285111,
+        64732,
+        0,
+        1
+      ]
+    },
+    "bob": {
+      "instance": 8117591479108502281,
+      "empty_before": 238,
+      "empty_after": 753,
+      "guard_before": 8,
+      "guard_after": 8,
+      "terminal_before": [
+        0,
+        1,
+        3,
+        0,
+        8355365,
+        65283,
+        0,
+        1
+      ],
+      "terminal_after": [
+        0,
+        1,
+        3,
+        0,
+        8289445,
+        64768,
+        0,
+        1
+      ]
+    }
+  },
+  "replication_observations": {
+    "alpha": {
+      "before": [
+        0,
+        16777216,
+        2440350,
+        6291456,
+        262144,
+        8280,
+        1,
+        1
+      ],
+      "after": [
+        0,
+        16777216,
+        2440350,
+        9437184,
+        262144,
+        8280,
+        1,
+        1
+      ],
+      "same_policy_hash": true,
+      "event_reservations_and_attempts_unchanged": true
+    },
+    "beta": {
+      "before": [
+        0,
+        16777216,
+        1034676,
+        7340032,
+        262144,
+        3537,
+        1,
+        1
+      ],
+      "after": [
+        0,
+        16777216,
+        1034676,
+        9437184,
+        262144,
+        3537,
+        1,
+        1
+      ],
+      "same_policy_hash": true,
+      "event_reservations_and_attempts_unchanged": true
+    }
+  },
+  "original_nine_preserved": true,
+  "four_extra_probe_guests_stopped_after_case": true,
+  "host_replication_renewals": 0,
+  "operator_stop_listen_handoffs": false,
+  "opaque_adapter_provenance": {
+    "original_nine_sha256": "82a3820f98b70b8ccae002b5c0fd6265c830e95aa75a2459e28705c137670038",
+    "extra_probe_sha256": "684f9a9507b39c3a4af7e9b1fb2c3287c6e849cdc787a687624072e2b557f0c7",
+    "disclosure": "Original nine long-lived adapter provenance supplied by the integrator. Newly launched probe processes load the current opaque byte adapter. No causal claim about the preserved earlier Alice route loss."
+  },
+  "qualification": [
+    "Local common-image continuation; relay2 may use the RV64 interpreter on native-x86.",
+    "Headless clients explicitly use native Launcher-owned read-only typed Feed transport contexts; they are not new graphical Feed authors.",
+    "Native32 lacks a full per-channel census; exact pairing is evidenced by six independently authenticated three-hop terminals and the implementation resource contract.",
+    "Seventh-client refusal took1025.1 seconds under the unchanged100000-tick native handshake deadline; graceful refusal has substantial latency.",
+    "The prior scoped Alice link loss and explicit personal recovery remain separate evidence; continuous admission is asserted only over this capacity segment."
+  ],
+  "post512_useful_messenger": {
+    "result": "pass",
+    "raw_evidence": {
+      "path": "build/campaign009-connected-v7/delivery-idle-useful-work.json",
+      "sha256": "ecfd40138ef4af81b318a3fbe15f55d9ebfe57083e093cddc8cc0f43ade13b69"
+    },
+    "elapsed_seconds": 66.77910233300645,
+    "text": {
+      "sender": "alice",
+      "recipient": "bob",
+      "serial": 4,
+      "prior_ui_serial": 3,
+      "body_sha256": "171addaa27100a6c051c0b65324534cfab2a1177f8e48281da8a43b2838f2f6a",
+      "native_inbox": [
+        0,
+        4,
+        66,
+        1,
+        1,
+        0,
+        0,
+        1
+      ],
+      "seconds": 32.884180858993204
+    },
+    "reply": {
+      "sender": "bob",
+      "recipient": "alice",
+      "serial": 3,
+      "prior_ui_serial": 2,
+      "body_sha256": "ed349eeb436f042486b2e93be4f625879b74a0c069c1d4acd65f201e1e1307d3",
+      "native_inbox": [
+        0,
+        3,
+        58,
+        1,
+        1,
+        0,
+        0,
+        1
+      ],
+      "seconds": 32.08792919199914
+    },
+    "before": {
+      "alice": {
+        "delivery": 10565884165390074633,
+        "owner": 10565884165390074119,
+        "ui": 10565884165390074120,
+        "counters": [
+          0,
+          1,
+          813,
+          813,
+          0,
+          0,
+          800,
+          1
+        ],
+        "terminal": [
+          0,
+          1,
+          3,
+          0,
+          8283959,
+          64723,
+          0,
+          1
+        ],
+        "pin": "a456dd562224c6b13301a1eef29864ce5753c04a69518083b1dea531770ea529"
+      },
+      "bob": {
+        "delivery": 8117591479108502281,
+        "owner": 8117591479108501767,
+        "ui": 8117591479108501768,
+        "counters": [
+          0,
+          8,
+          776,
+          776,
+          0,
+          0,
+          761,
+          1
+        ],
+        "terminal": [
+          0,
+          1,
+          3,
+          0,
+          8288421,
+          64760,
+          0,
+          1
+        ],
+        "pin": "a456dd562224c6b13301a1eef29864ce5753c04a69518083b1dea531770ea529"
+      }
+    },
+    "after": {
+      "alice": {
+        "delivery": 10565884165390074633,
+        "owner": 10565884165390074119,
+        "ui": 10565884165390074120,
+        "counters": [
+          0,
+          1,
+          840,
+          840,
+          0,
+          0,
+          815,
+          1
+        ],
+        "terminal": [
+          0,
+          1,
+          3,
+          0,
+          8280197,
+          64696,
+          0,
+          1
+        ],
+        "pin": "a456dd562224c6b13301a1eef29864ce5753c04a69518083b1dea531770ea529"
+      },
+      "bob": {
+        "delivery": 8117591479108502281,
+        "owner": 8117591479108501767,
+        "ui": 8117591479108501768,
+        "counters": [
+          0,
+          7,
+          802,
+          802,
+          0,
+          0,
+          777,
+          1
+        ],
+        "terminal": [
+          0,
+          1,
+          3,
+          0,
+          8284795,
+          64734,
+          0,
+          1
+        ],
+        "pin": "a456dd562224c6b13301a1eef29864ce5753c04a69518083b1dea531770ea529"
+      }
+    },
+    "idle_wait_added": false,
+    "process_or_route_replacement": false,
+    "authority_renewal": false,
+    "qualification": [
+      "Local integration on the identified common image; previous scoped route loss and authorized recovery remain separate evidence.",
+      "This test neither renews terminal allowances nor asserts unlimited unattended operation."
+    ]
+  }
+}

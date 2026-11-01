@@ -2,7 +2,7 @@
 Host moves public certificates and opaque socket bytes. Every operator generates
 its own private keys inside its own guest through supported native commands.
 """
-import argparse,hashlib,json,os,signal,socket,struct,subprocess,sys,tempfile,time
+import argparse,contextlib,hashlib,json,os,signal,socket,struct,subprocess,sys,tempfile,time
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/'tools'));sys.path.insert(0,str(ROOT/'tests'))
 import driver,identity,live,network,releases,onion
@@ -17,15 +17,27 @@ def wait(check,seconds=180):
 
 def route(client,op,h=0,a=0,b=0,c=0,d=0,e=0,data=b'',slot=0,allow_error=False):
  target=next(row[0] for row in identity.instances(client) if row[0]&255==6)
- token=struct.unpack('<Q',client.request(175,struct.pack('<Q8Q',target,op,h,a,b,c,d,e,2)+data))[0]
- until=time.monotonic()+600
- while time.monotonic()<until:
-  raw=client.request(176,struct.pack('<Q',token))
-  if len(raw)==8:time.sleep(.05);continue
-  f=struct.unpack_from('<8Q',raw)
-  if f[0] and not allow_error:raise ValueError(f'native circuit status{f[0]}')
-  return f,raw[64:]
- client.request(177,struct.pack('<Q',token));raise TimeoutError('native circuit completion')
+ prior_mask=signal.pthread_sigmask(signal.SIG_BLOCK,{signal.SIGINT})
+ token=None
+ try:
+  token=struct.unpack('<Q',client.request(175,struct.pack('<Q8Q',target,op,h,a,b,c,d,e,2)+data))[0]
+  signal.pthread_sigmask(signal.SIG_SETMASK,prior_mask)
+  prior_mask=None
+  if token==2**64-1:raise ValueError('native circuit async admission refused')
+  until=time.monotonic()+600
+  while time.monotonic()<until:
+   raw=client.request(176,struct.pack('<Q',token))
+   if len(raw)==8:time.sleep(.05);continue
+   f=struct.unpack_from('<8Q',raw)
+   if f[0] and not allow_error:raise ValueError(f'native circuit status{f[0]}')
+   return f,raw[64:]
+  raise TimeoutError('native circuit completion')
+ except BaseException:
+  if token is not None:
+   with contextlib.suppress(Exception):client.request(177,struct.pack('<Q',token))
+  raise
+ finally:
+  if prior_mask is not None:signal.pthread_sigmask(signal.SIG_SETMASK,prior_mask)
 
 def create(c,endpoint,family,kind=7):
  _,public=onion.call(c,20)

@@ -1,0 +1,55 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "image_sha256": "c32c549ddc0e660a375a6d3c02b5ed3f9fccc99fe45cdb768796deec99f091cb",
+  "delivery_source_sha256": "d7c2301a765a504d79b7a642720e00b6721d1301af375c828999f1e72175bf96",
+  "fixture_source_sha256": "d506ed4a4ef9a27aedcc9ab0c27b5bf4d79bd74b2314fcc0a22ef1a564169340",
+  "checks": [
+    {
+      "backend": "qemu",
+      "seconds": 0.1228209200053243,
+      "result": "pass"
+    },
+    {
+      "backend": "aarch64",
+      "seconds": 0.03882029699161649,
+      "result": "pass"
+    }
+  ],
+  "boundaries": [
+    "actual rpc admits90000tick bounded deadline with10000tick margin before parent100000; addition saturates",
+    "late response available beyond old5000tick limit and ready at harddeadline both complete without cancellation",
+    "pending read does not renew its deadline; expiry polls then cancels exact nonzero current request before dropping its local handle",
+    "malformed or failed network results also cancel the exact owned request before failure; ciphertext commitment and stable request state survive",
+    "no pending local request causes no poll or cancellation",
+    "actual valid configuration preserves the maximum live RPC serial across a session-owner change; completed Forge counter synchronization cannot rewind it",
+    "configuration refuses active or queued foreground work without discarding its ownership"
+  ],
+  "limits": "Actual compiled MessengerDelivery rpc/collectRPC transitions. Declared Network/clock and current Owner endpoint/grant/admission oracles supply response bytes, permit configuration, and record exact42 request/local handle; it does not implement a kernel grant, real Network cancellation, mailbox, wire, durability or AEAD. The separate c514 terminal-request fixture verifies actual stale42 refusal/isolation. AArch64 assembly backend is emulated under qemu-aarch64.",
+  "command": "python tests/native_messenger_rpc_ownership.py",
+  "production_binary": {
+    "path": "build/live/apps/campaign009-delivery-request-safe.bin",
+    "bytes": 209036,
+    "sha256": "f8d4e502a2708553e15bf7eb503ae50c715aba6b287c707f5eeb5968664f473e"
+  },
+  "parent_terminal_cancellation_evidence": {
+    "path": "docs/evidence/campaign-009-terminal-request.json",
+    "sha256": "1ca41a175e9bce8af084f87d2a99ed279fdcae7c156e585eb634ecb2129b971d"
+  },
+  "existing_delivery_transition_regression": {
+    "source": "tests/native_messenger_delivery.py",
+    "checks": [
+      {
+        "backend": "qemu",
+        "result": "pass",
+        "seconds": 0.22111653900356032
+      },
+      {
+        "backend": "aarch64",
+        "result": "pass",
+        "seconds": 0.89560276598786
+      }
+    ],
+    "raw_record_sha256": "41b69a033f4858b21ea324aea32b178774e4ec5a9d10df991232c45aa3cf3db1"
+  }
+}

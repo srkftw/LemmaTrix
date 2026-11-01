@@ -1,0 +1,87 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "adapter": {
+    "initial": {
+      "op": 9,
+      "slot": 0,
+      "epoch": 0,
+      "value": 0
+    },
+    "repeated_listen": [
+      {
+        "op": 5,
+        "slot": 0,
+        "epoch": 1,
+        "value": 0
+      },
+      {
+        "op": 9,
+        "slot": 0,
+        "epoch": 1,
+        "value": 0
+      }
+    ],
+    "close_then_listen": [
+      {
+        "op": 5,
+        "slot": 0,
+        "epoch": 2,
+        "value": 0
+      },
+      {
+        "op": 9,
+        "slot": 0,
+        "epoch": 2,
+        "value": 0
+      }
+    ]
+  },
+  "image_sha256": "e155f7ccb65275df2408fb2737cddba4ea754e9f02e847b2480eba211fd2321c",
+  "checks": [
+    {
+      "backend": "qemu",
+      "seconds": 0.15528654400259256,
+      "result": "pass"
+    },
+    {
+      "backend": "aarch64",
+      "seconds": 0.42265762900933623,
+      "result": "pass"
+    }
+  ],
+  "boundaries": [
+    "cleanup5/new9 and old9/cleanup5/new9 preserve owned listener intent",
+    "older9 and9 after explicit close cannot restore intent",
+    "LISTEN failure6 clears intent and enters scoped bounded backoff",
+    "fresh CONNECTED4/ACCEPTED8 end intent; actual HUP5 retires only its own link",
+    "pending creation expires51; acknowledged healthy idle listener remains available",
+    "acceptance after an old idle deadline refreshes its finite100000-tick window before expiry; explicit entropy refusal follows with6, never51"
+  ],
+  "limits": "Real opaque adapter event order plus compiled RV64 Transport and TorRouter state transitions. Explicit syscall103 completion,110 monotonic-clock oracle, and104 records the setup deadline then returns no entropy; this does not qualify cryptographic handshake success. No complete kernel/socket or active-community causal-trace claim. AArch64 assembly emulator runs under qemu-aarch64.",
+  "raw_record": {
+    "path": "build/native-listener-reuse-late-acceptance/evidence.json",
+    "sha256": "b0a18501c496fd310790f9685ae575b4c9329a5c30c4678003842706ce4e8057"
+  },
+  "prior_evidence_preserved": {
+    "path": "docs/evidence/campaign-009-listener-reuse.json",
+    "sha256": "d56cfc681390ab7064bc86a7ed04b4fda541f4ea2d1e83aea447324566c77f23",
+    "fixture_image_sha256": "cc38bdc8605d08687d796ff4a222857fcdf2d859dcf236862e798fff8735ae68",
+    "coverage_limit": "That fixture covered listener reuse and idle/pending deadlines, but did not exercise acceptance after an old idle deadline."
+  },
+  "late_acceptance_observation": {
+    "old_deadline": 100100,
+    "idle_clock": 900000,
+    "acceptance_clock": 900001,
+    "deadline_recorded_before_entropy": 1000001,
+    "expected_post_window_entropy_refusal": 6,
+    "premature_deadline_refusal_51": false,
+    "unrelated_channel_preserved": true
+  },
+  "module_oleans": {
+    "Guest/Transport.olean": "914f9836c62c8742ca2acfd29421692684a35eb7f09420d827dcb61ffbc2fab2",
+    "Guest/TorRouter.olean": "ef6727d8778a646cbfc5038f886a82448753bd7d81d2a7ca668aaa71444dea59"
+  },
+  "installed_image_qualified": false,
+  "command": "PYTHONPATH=tools python3 tests/native_listener_reuse.py --output build/native-listener-reuse-late-acceptance --backend qemu --backend aarch64"
+}

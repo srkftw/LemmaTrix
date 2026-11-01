@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "adapter": {
+    "op": 5,
+    "slot": 12,
+    "epoch": 1,
+    "errno": 111,
+    "endpoint_class": "localhost bound non-listening opaque byte adapter fixture"
+  },
+  "image_sha256": "6e32594f4fc5e069dda8fd2d420f3fdc4aa8962b704c1c6ca7fda9f96ea72309",
+  "fixture_source_sha256": "db2614e9057c9628a250c529ec6884f89c61a7ff1d2672bb168fa6bfd587a9ec",
+  "production_source_sha256": {
+    "Guest/Transport.lean": "c279ee6babc2713fb02ea40490a79902cbd3ce7f079979b81d62462c253a63bf",
+    "Guest/Network.lean": "f8738343614042c716d58f96f4a888ceb6d4682bf099d25e3c514dc7cce07c27"
+  },
+  "checks": [
+    {
+      "backend": "qemu",
+      "seconds": 0.17559621900727507,
+      "result": "pass"
+    },
+    {
+      "backend": "aarch64",
+      "seconds": 0.39819305000128224,
+      "result": "pass"
+    }
+  ],
+  "boundaries": [
+    "real adapter failed asynchronous CONNECT emits5 with nonzero errno",
+    "cleanup5(0) preserves intent; failure5(errno) clears it and permits finite native reconnect",
+    "pending creation deadline arms once and expires only its selected channel; pending CLOSE blocks premature retry",
+    "late ACK2 and connected state clear creation deadline; healthy idle listener does not expire",
+    "152-byte bank preserves independent creation deadlines, grants, jobs and unrelated transport channel",
+    "pure link loss preserves exact consumed grant bytes/rate/expiry and fails only active local jobs; expired or revoked authority cannot revive;32 attempts remain finite"
+  ],
+  "limits": "Actual opaque adapter failure plus compiled RV64 Transport.event/Network.reconnectBulk/maintainBulkCreation state transitions. Native Feed peer predicates are provisioned with public sentinel inputs, not admitted certificates; output completion is explicitly modeled. No complete kernel/socket handshake, cryptographic authentication, installed Feed restart, or current-community recovery claim. AArch64 assembly emulator runs under qemu-aarch64.",
+  "production_olean_files_unchanged": 105,
+  "raw_evidence": {
+    "path": "build/campaign009-native-bulk-creation-2/evidence.json",
+    "sha256": "1d7c8a2add838a92715bb0cab2d37f08714b6fe5e5fb96ae195c84927db874ef"
+  },
+  "fixture": "tests/native_bulk_creation.py",
+  "source_provenance": "Root-owned uncommitted Transport/Network patch following c5147de; exact source hashes above. No production image linked or installed by this fixture.",
+  "prior_attempt": {
+    "path": "build/campaign009-native-bulk-creation.log",
+    "result": "fixture source compile error: untyped numeric shift literal; corrected with explicit UInt64; no native runtime result."
+  }
+}

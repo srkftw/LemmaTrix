@@ -5,6 +5,7 @@ import Guest.ServiceHash
 import Guest.LiveMemory
 import Guest.VaultCrypto
 import Guest.ReceiptSDK
+import Guest.WaitSDK
 namespace Guest.Identity
 open Guest.LiveSDK
 -- Installed profile2, rights EXACTLY zero. Kernel role1 grants narrow entropy;
@@ -83,7 +84,7 @@ def create (token t : UInt64) : UInt64 :=
   let role := load64 (command+16) t
   let slot := freeKey 0 t
   let handle := serial t
-  if role == 0 || role > 4 || zeros (command+64) 32 t || zeros (command+96) 32 t then fail 2 t else
+  if role == 0 || role > 6 || zeros (command+64) 32 t || zeros (command+96) 32 t then fail 2 t else
   if slot == error || handle == error then fail 4 t else
   let k := keyAt slot
   let t := zero k 32 (takeSerial t)
@@ -123,11 +124,19 @@ def validBody (role purpose p n t : UInt64) : Bool :=
     load64 (p+16) t > 0 && load64 (p+24) t <= 7 &&
     !zeros (p+32) 32 t && !zeros (p+64) 32 t && !zeros (p+96) 32 t
   else if purpose == 3 then n == 128 && Guest.ReceiptSDK.declarationBody p t else
+  if purpose == 4 || purpose == 5 then
+    let kind := load64 (p+16) t
+    n == 256 && load64 p t == 0x3144564546544c && load64 (p+8) t == 1 &&
+    load64 (p+24) t > 0 && load64 (p+96) t <= 16384 && load64 (p+248) t == 0 &&
+    !zeros (p+64) 32 t && !zeros (p+112) 32 t &&
+    (if purpose == 4 then kind >= 1 && kind <= 9 && kind != 8 else
+      kind == 8 && !zeros (p+208) 32 t && load64 (p+240) t > 0 && load64 (p+240) t <= 3)
+  else
     let endpointLength := load64 (p+176) t
     let legacy := load64 (p+8) t == 1 && load64 (p+16) t >= 1 &&
       load64 (p+16) t <= 6 && load64 (p+24) t == 3
     let publicNode := load64 (p+8) t == 2 &&
-      (load64 (p+16) t == 7 || load64 (p+16) t == 8) && load64 (p+24) t == 1
+      (load64 (p+16) t == 7 || load64 (p+16) t == 8 || load64 (p+16) t == 16) && load64 (p+24) t == 1
     n == 256 && load64 p t == nodeMagic && (legacy || publicNode) && load64 (p+32) t == 1 &&
     load64 (p+40) t > 0 && load64 (p+40) t <= 1073741824 &&
     load64 (p+48) t > 0 && load64 (p+48) t <= 1000000000 &&
@@ -175,7 +184,9 @@ def certify (caller token length t : UInt64) : UInt64 :=
   let exactBody := bodyLength == load64 (g+40) t && eq hashed (g+64) 32 t
   if !Guest.IdentityPolicy.permits (load64 g t) (load64 (g+24) t) caller
       (load64 (g+48) t) (load64 (k+24) t) (load64 (g+56) t) exactBody ||
-      !validBody (load64 (k+16) t) purpose (command+64) bodyLength t then fail 1 t else
+      !validBody (load64 (k+16) t) purpose (command+64) bodyLength t ||
+      ((purpose == 4 || purpose == 5) && (!eq (command+176) (k+32) 32 t ||
+        load64 (k+160) t != caller || syscall 146 (load64 (k+16) t) 0 0 0 t != caller)) then fail 1 t else
   let t := zero canonical 64 t
   let t := store64 canonical signingMagic t
   let t := store64 (canonical+8) 1 t
@@ -325,19 +336,113 @@ def signReceipt (caller token t : UInt64) : UInt64 :=
   if t == error || !current token t then receiptFail 3 t else
   let t := header 0 (load64 (g+8) t) (load64 (g+56) t) (load64 (k+24) t) 1 0 0 t
   128+clearReceipt (clearScratch (copy signature (wire+64) 64 t))
+-- Typed Feed lifecycle: current exact consumer bindings determine key role.
+-- It cannot select another purpose, enumerate another owner's keys, or sign
+-- arbitrary bytes. The installed account owner mediates the publication gesture.
+def feedRole (caller t : UInt64) : UInt64 :=
+  if syscall 146 5 0 0 0 t == caller then 5 else
+  if syscall 146 6 0 0 0 t == caller then 6 else 0
+def feedSealMagic : UInt64 := 0x314c414553464c
+partial def lockFeedOwner (caller i t : UInt64) : UInt64 :=
+  if i == 8 then t else
+  let k := keyAt i
+  let t := if load64 k t == 1 && load64 (k+160) t == caller then
+    zero k 32 (revokeGrants (load64 (k+8) t) 0 t) else t
+  lockFeedOwner caller (i+1) t
+def feedRetentionKey (credential t : UInt64) : UInt64 :=
+  let t := copy credential (receiptWork+512) 32 t
+  let t := store64 (receiptWork+544) feedSealMagic t
+  let t := store64 (receiptWork+552) 3 t
+  hash (receiptWork+512) 48 (receiptWork+768) t
+def feedSeal (caller key token t : UInt64) : UInt64 :=
+  let k := findKey key 0 t
+  if k == error || load64 (k+160) t != caller || zeros (command+64) 32 t then receiptFail 1 t else
+  let p := receiptWork
+  let b := receiptWork+256
+  let t := zero p 18 t
+  let t := copy (k+96) p 32 t
+  let t := copy (k+32) (p+32) 64 t
+  let t := store64 (p+96) (load64 (k+24) t) t
+  let t := store64 (p+104) (load64 (k+16) t) t
+  let t := feedRetentionKey (command+64) t
+  let r := syscall 130 0 (receiptWork+1024) 32 0 t
+  if r != 0 || !current token r then receiptFail 6 r else
+  let t := zero b 24 r
+  let t := store64 b feedSealMagic t
+  let t := store64 (b+8) 1 t
+  let t := copy (receiptWork+1024) (b+16) 12 t
+  let t := Guest.VaultCrypto.encrypt (receiptWork+768) (b+16) b 32 p 144 (b+32) t
+  if t == error || !current token t then receiptFail 3 t else
+  256+clearReceipt (copy b (wire+64) 192 (header 0 key 192 3 0 0 0 t))
+def feedRecover (caller role token t : UInt64) : UInt64 :=
+  let slot := freeKey 0 t
+  let b := command+128
+  if slot == error || load64 b t != feedSealMagic || load64 (b+8) t != 1 ||
+    !zeros (b+28) 4 t || zeros (command+64) 32 t || zeros (command+96) 32 t then receiptFail 2 t else
+  let t := feedRetentionKey (command+64) t
+  let r := Guest.VaultCrypto.decrypt (receiptWork+768) (b+16) b 32 (b+32) 144 receiptWork t
+  if r == error || zeros (receiptWork+32) 32 r || zeros (receiptWork+64) 32 r ||
+    load64 (receiptWork+104) r != role || load64 (receiptWork+96) r == 0 ||
+    load64 (receiptWork+96) r >= 0xffffffff then receiptFail 9 r else
+  let t := Guest.Ed25519.publicKey receiptWork (receiptWork+1024) r
+  if !eq (receiptWork+1024) (command+96) 32 t || !current token t then receiptFail 8 t else
+  -- Fresh key generation; old approvals are never restored. Reconciliation of
+  -- supported backups remains the account owner's required pre-publication step.
+  let t := recoveredKey slot role receiptWork (load64 (receiptWork+96) t+1) (receiptWork+32) t
+  if t == error || !current token t then receiptFail 3 (zero (keyAt slot) 32 t) else
+  exportKey (keyAt slot) token (clearReceipt (store64 (keyAt slot+160) caller t))
+def feedLifecycle (caller token length t : UInt64) : UInt64 :=
+  let role := feedRole caller t
+  let action := load64 (command+8) t
+  let key := load64 (command+16) t
+  let k := findKey key 0 t
+  if role == 0 then receiptFail 1 t else
+  if action == 0 && length == 128 then
+    let t := store64 (command+16) role t
+    let r := create token t
+    if load64 wire r != 0 then r else
+    let created := findKey (load64 (wire+8) r) 0 r
+    if created == error then receiptFail 3 r else 352+store64 (created+160) caller r
+  else if action == 1 && length == 96 then
+    if k == error || load64 (k+160) t != caller || load64 (k+16) t != role then receiptFail 1 t else
+    let t := store64 (command+8) key t
+    let t := store64 (command+16) caller t
+    let t := store64 (command+24) (if role == 5 then 4 else 5) t
+    authorize token (store64 (command+32) 256 t)
+  else if action == 2 && length == 64 then
+    if k == error || load64 (k+160) t != caller then receiptFail 1 t else
+    response 0 key 0 0 (zero k 32 (revokeGrants key 0 t))
+  else if action == 3 && length == 96 then feedSeal caller key token t
+  else if action == 4 && length == 320 then feedRecover caller role token t
+  else if action == 5 && length == 64 then response 0 0 0 0 (clearReceipt (lockFeedOwner caller 0 t))
+  else receiptFail 2 t
+-- A replaced or dead consumer must not leave accessible keys or consume the
+-- finite table forever. Native current-role queries authenticate incarnation;
+-- no durable record recreates these IPC grants during reclamation.
+partial def reapFeedOwners (i t : UInt64) : UInt64 :=
+  if i == 8 then t else
+  let k := keyAt i
+  let owner := load64 (k+160) t
+  let role := load64 (k+16) t
+  let t := if load64 k t == 1 && owner != 0 && (role == 5 || role == 6) &&
+      syscall 146 role 0 0 0 t != owner then zero k 32 (revokeGrants (load64 (k+8) t) 0 t) else t
+  reapFeedOwners (i+1) t
 def dispatch (caller rights token length t : UInt64) : UInt64 :=
   let op := load64 command t
   let admin := Guest.IdentityPolicy.administrative rights
   if length < 64 || length > 320 || load64 (command+56) t != 1 ||
     load64 (command+40) t != 0 || load64 (command+48) t != 0 || !current token t then fail 2 t else
-  if op == 400 then if admin && length == 128 then create token t else fail 1 t
+  if op == 410 then feedLifecycle caller token length t
+  else if op == 400 then
+    if admin && length == 128 && load64 (command+16) t <= 4 then create token t else fail 1 t
   else if op == 401 then
     let k := findKey (load64 (command+8) t) 0 t
     if !admin then fail 1 t else if length != 64 then fail 2 t else if k == error then fail 3 t else exportKey k token t
   else if op == 402 then certify caller token length t
   else if op == 403 then if admin && length == 64 then revokeKey t else fail 1 t
   else if op == 404 then if admin && length == 64 then lock t else fail 1 t
-  else if op == 405 then if admin && length == 96 then authorize token t else fail 1 t
+  else if op == 405 then
+    if admin && length == 96 && load64 (command+24) t <= 3 then authorize token t else fail 1 t
   else if op == 406 then if admin && length == 64 then
     64+header 0 1 8 16 (countKeys 0 0 t) (countGrants 0 0 t) 0 t else fail 2 t
   else if op == 407 then if length == 64 then
@@ -350,8 +455,11 @@ def dispatch (caller rights token length t : UInt64) : UInt64 :=
     if !admin && length == 256 then signReceipt caller token t else receiptFail 2 t
   else fail 7 t
 partial def serve (t : UInt64) : UInt64 :=
-  let n := receive (self t) t
+  let t := reapFeedOwners 0 t
+  let n := syscall 36 (self t) incoming 1024 0 t
+  if n == 0 then serve (Guest.WaitSDK.deadline (Guest.WaitSDK.now n+100) (clearScratch n)) else
   if n == error then serve (clearScratch n) else
+  let n := reapFeedOwners 0 n
   let token := load64 (incoming+8) n
   let result := if n >= 96 && load64 (incoming+24) n == 2 then
     dispatch (load64 incoming n) (load64 (incoming+16) n) token (n-32) n else fail 2 n

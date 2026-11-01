@@ -1,21 +1,23 @@
 namespace Guest.ServiceBindingPolicy
 -- Registry-v1 is local authority: role numbers are never caller authentication.
-def roleValid (role : UInt64) : Bool := role > 0 && role <= 4
+def roleValid (role : UInt64) : Bool := role > 0 && role <= 6
 def operationValid (role operation : UInt64) : Bool :=
   operation > 0 && operation < 1024 &&
-  (role != 1 || (operation >= 400 && operation <= 409)) &&
+  (role != 1 || (operation >= 400 && operation <= 410)) &&
   (role != 2 || (operation >= 420 && operation <= 435)) &&
   (role != 3 || operation == 440 || operation == 441) &&
-  (role != 4 || (operation >= 460 && operation <= 464))
+  (role != 4 || (operation >= 460 && operation <= 464)) &&
+  (role != 5 || operation == 480 || operation == 481) &&
+  (role != 6 || operation == 490 || operation == 491)
 def serviceRightsValid (role rights : UInt64) : Bool :=
   ((role != 1 && role != 2) || rights == 0) &&
-  (role != 3 || rights == 2048) && (role != 4 || rights == 1024)
+  (role != 3 || rights == 2048) && (role != 4 || rights == 1024) && (role != 5 || rights == 1024) && (role != 6 || rights == 3072)
 def currentGrant (caller target operation generation expectedCaller expectedTarget expectedOperation expectedGeneration : UInt64) : Bool :=
   generation != 0 && caller == expectedCaller && target == expectedTarget &&
   operation == expectedOperation && generation == expectedGeneration
 
 def builtInAsyncAllowed (caller service operation generation : UInt64) : Bool :=
-  caller == 1 && service == 6 && operation >= 20 && operation <= 47 && generation == 0
+  caller == 1 && service == 6 && operation >= 20 && operation <= 48 && generation == 0
 def terminalRegistryRead (caller service operation generation : UInt64) : Bool :=
   caller == 6 && service != 0 && (operation == 6 || operation == 7) && generation == 0
 def receiptConsumer (role rights : UInt64) : Bool := role == 3 && rights == 2048

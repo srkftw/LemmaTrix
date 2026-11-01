@@ -1,0 +1,58 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "account_source_sha256": "7d1e8806e48a8c27f87fd5148625ce82b19745f7c1e35ed87c8f83850cfc696b",
+  "fixture_image_bytes": 121440,
+  "fixture_image_sha256": "38c0fd31246d44a81bb65322a05d3a52dd9bb17b0ae7daf798cbe0b6f4b2853d",
+  "public_native_envelope_sha256": "1ed503591deb1fd6b2f953b9aabe138fd9444bc720ee42dbd085a22acff7a489",
+  "checks": [
+    {
+      "backend": "qemu",
+      "result": "pass",
+      "seconds": 2.239237531000981,
+      "emulated_aarch64": false
+    },
+    {
+      "backend": "aarch64",
+      "result": "pass",
+      "seconds": 115.26833890700073,
+      "emulated_aarch64": true
+    }
+  ],
+  "production_guest_oleans_unchanged": true,
+  "boundaries": [
+    "receipt RTT longer than500ticks starts a new500tick interval after completion",
+    "real signed timeline and partial-body completions postpone due receipts for GUIhandoff",
+    "body requests are admitted during that interval",
+    "later due receipt still runs; serials/work/pollcount remain charged",
+    "64receipt guard unchanged"
+  ],
+  "limits": "Compiled actual owner functions with exact test-only monotonic-clock/Network39-admission trap. The public envelope is original native common-image event1ed50359\u2026; supplied partial bytes are never displayed or claimed as a complete verified body. No installed Nativekernel grants, storage, policy or network claim; AArch64 assembly backend execution is emulated.",
+  "raw": {
+    "path": "build/native-feed-account-cadence/evidence.json",
+    "sha256": "ae1cb99ad37b2a068ae50fb916265cf4273631e1a09603c5ed7d99986b2ada43"
+  },
+  "controller": {
+    "path": "tests/native_feed_account_cadence.py",
+    "sha256": "2261e756fcf3da0a30dd54211441dc31fb8ebfe48512473639ea0852431891bc"
+  },
+  "public_fixture": {
+    "path": "tests/fixtures/campaign009-native-feed-long-event.bin",
+    "bytes": 480,
+    "sha256": "1ed503591deb1fd6b2f953b9aabe138fd9444bc720ee42dbd085a22acff7a489",
+    "provenance": "Exact original native-signed common-image long-post envelope fetched read-only from Beta after the preserved UI4 reader failure; event1ed50359\u2026/same2e. It is a public signature vector, not authoritative application history."
+  },
+  "previous_source": {
+    "path": "build/FeedAccount-before-cadence.lean",
+    "sha256": "a3770a5cb554d68f32acdfdebbc5d2d05ae7e6009a22c79685c8dae10b452175",
+    "commit": "f7cb852",
+    "same_fixture_qemu_exit": 1,
+    "output_sha256": "9bc85b7a5360297063316e5a81aa3c2e0bd1f5c872221ab98187ea1f3a9be0f3"
+  },
+  "observed_reader_failure": {
+    "path": "build/campaign009-connected-v7/feed-shipping-reader.json",
+    "sha256": "f1bb7f1fdda87ebd0e57599ce9276543df378b7125c756d0dd9afb5757865995",
+    "qualification": "Installed UI4 correctly aborts busy reads; repeated phase6 owner auto-receipts prevent ordinary body admission in the prior Account0.9.2. No subsequent publication or operator reset occurred."
+  },
+  "fairness_limit": "A continuously active foreground query stream may defer automatic receipts until a500tickgap. This is a bounded handoff interval, not a weighted scheduling guarantee; manual charged receipt polling remains available."
+}

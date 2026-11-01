@@ -1,0 +1,60 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "scope": "Standalone public Feed operator/user CLI and guide correction; no native image or package changes, live guest queries, actors, signatures, replication, or retention operation executed.",
+  "changes": [
+    "Document three independent relay setup parameters, explicit next-hop/exit Feed approvals, all personal path pins, federation peer approval, circuit/terminal readiness and guest lifetime after management exit.",
+    "Release only the UI794 borrowed Launcher read capability in export-profile on success or read failure, before writing the public export."
+  ],
+  "guide_sha256": "7d35cbf466788689c4ff54160ddca244b759fad79dfa34c031208dcee81f5381",
+  "tools_feed_sha256": "588cf2e7e50d9a82a06b4fb4e84cddeb1962ffed11535f5b471541145328f476",
+  "parser_checks": {
+    "commands": 64,
+    "raw_record": "build/campaign009-feed-guide-parser.json",
+    "raw_record_sha256": "98651f690ea3fa294c1f2a2c4261a9c25b1bb63fd276613ade183ec0c9c2ae81",
+    "command_actions_executed": false,
+    "native_build_executed": false
+  },
+  "mock_export_test": {
+    "command": "python tests/feed_operator_export.py",
+    "source_sha256": "30e14b373b1084c56c1ff625f1b69c44ebe5565930cac573fc4374c8776efe96",
+    "checks": [
+      {
+        "case": "success",
+        "calls": [
+          "export-cap",
+          "read",
+          "drop-borrowed-cap",
+          "write",
+          "close"
+        ],
+        "result": "pass"
+      },
+      {
+        "case": "read failure",
+        "calls": [
+          "export-cap",
+          "read",
+          "drop-borrowed-cap",
+          "close"
+        ],
+        "result": "pass"
+      },
+      {
+        "case": "write failure",
+        "calls": [
+          "export-cap",
+          "read",
+          "drop-borrowed-cap",
+          "write",
+          "close"
+        ],
+        "result": "pass"
+      }
+    ]
+  },
+  "limits": [
+    "Parser/help validation does not execute or qualify a standalone deployment; native common-image service evidence remains separately identified.",
+    "Public pins and full live instance handles must be supplied after explicit operator/user inspection; placeholders are not trust decisions."
+  ]
+}

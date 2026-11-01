@@ -1,0 +1,1644 @@
+{
+  "schema": 2,
+  "result": "pass-for-recorded-segments-with-explicit-personal-recovery",
+  "recorded_utc": "2026-11-01T19:08:15Z",
+  "native_source_commits": {
+    "builtin_network": "e2dee0a",
+    "initial_delivery": "40e0930",
+    "recovered_delivery": "c4056be2a84cf24c89870b55fd3785882244f554",
+    "initial_feed_ui": "05ca3c4",
+    "registry": "983f523"
+  },
+  "image": {
+    "path": "build/campaign009-final-v9.bin",
+    "sha256": "2e5147c4198cf7ec39ab053f2ea8895cfdceb1c9b9dcf79e1b7bb7627314bcdf",
+    "bytes": 6291456,
+    "network_code_bytes": 395140,
+    "network_code_sha256": "5551228ea06bbe47cba94bf835e8b8241d7e465b38536dc8732f17266fed0155",
+    "builtin_network_code_profile_bytes": 425984,
+    "physical_network_slot_bytes": 524288,
+    "ordinary_package_code_limit_bytes": 262144
+  },
+  "initial_configuration": {
+    "image_sha256": "2e5147c4198cf7ec39ab053f2ea8895cfdceb1c9b9dcf79e1b7bb7627314bcdf",
+    "feed": {
+      "identity": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+      "feed-account": "f50eaa12d7dc69c962584ce34a12d53d9b064970c640d23d594e930d7fc4bc07",
+      "feed": "bfd1a9584b654f8ee4f0c3f1b3703608b452da7a9ad472683821aa8f4f13a635",
+      "feed-federation": "02041c0eeca13f17a62a8913954558d9dc5be7e52f55d5db915dc76b14241526"
+    },
+    "messenger": {
+      "identity": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+      "owner": "50f3e3ccb8d3faeaf29c50d6aec24bbc654a30754f26c15dd7585a4a8e64a5b3",
+      "ui": "a0b4294d2331e6704acd69093936339f7c0b8559dd9990d4967a22216f84e6c7",
+      "delivery": "5e166b16eeeed082bb86a246f9a79bec88fb13f097304622c9d33cd51992320a",
+      "mailbox": "24e249a218f52813953b8d204f1c7b3d1129e1b675a9ed8500731cf842049135"
+    },
+    "mixed": true,
+    "history_events": 8,
+    "replication_auto_renew": true
+  },
+  "current_runtime_packages_after_recovery": {
+    "messenger_by_person": {
+      "alice": {
+        "identity": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+        "owner": "50f3e3ccb8d3faeaf29c50d6aec24bbc654a30754f26c15dd7585a4a8e64a5b3",
+        "ui": "a0b4294d2331e6704acd69093936339f7c0b8559dd9990d4967a22216f84e6c7",
+        "delivery": "0c0b6ff146660c532730f842b3e81462dcd6eb61cb202357085745965135a0fa",
+        "mailbox": "24e249a218f52813953b8d204f1c7b3d1129e1b675a9ed8500731cf842049135"
+      },
+      "bob": {
+        "identity": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+        "owner": "50f3e3ccb8d3faeaf29c50d6aec24bbc654a30754f26c15dd7585a4a8e64a5b3",
+        "ui": "a0b4294d2331e6704acd69093936339f7c0b8559dd9990d4967a22216f84e6c7",
+        "delivery": "0c0b6ff146660c532730f842b3e81462dcd6eb61cb202357085745965135a0fa",
+        "mailbox": "24e249a218f52813953b8d204f1c7b3d1129e1b675a9ed8500731cf842049135"
+      }
+    }
+  },
+  "topology": {
+    "personal_guests": 3,
+    "relay_guests": 3,
+    "mailbox_guests": 1,
+    "federation_guests": 2,
+    "mixed_execution": "relay2 is the native-x86 RV64 interpreter; the other eight guests use QEMU",
+    "initialization": "Independent native operator credentials/backings; long-running native listeners replenished admission. No shared operator restart, stop/listen handoff, host renewal or host private Feed/moderator/replication key in these segments."
+  },
+  "raw_records": {
+    "evidence.json": {
+      "path": "build/campaign009-connected-v7/evidence.json",
+      "sha256": "c6ee1ace6b738b5bf1b30185c0bacf034b919c3f675b92c76c3be9084136acc6"
+    },
+    "active-forge.json": {
+      "path": "build/campaign009-connected-v7/active-forge.json",
+      "sha256": "230ab8566afb5716d484ffb8f75f43d2bca3a67c48f252fa9f9f68a96ba49bfa"
+    },
+    "reconnect-first-peer-failure.json": {
+      "path": "build/campaign009-connected-v7/reconnect-first-peer-failure.json",
+      "sha256": "bd6738b6015245fa326a7290031f23d25650a6ac11fcd44be5bbabaa41909b58"
+    },
+    "reconnect-peer-diagnostic.json": {
+      "path": "build/campaign009-connected-v7/reconnect-peer-diagnostic.json",
+      "sha256": "dc00746e563da42d1ed684c98bddcded3792d76803644f8fc2e9829d0b4944ee"
+    },
+    "reconnect-os-thread-diagnostic.json": {
+      "path": "build/campaign009-connected-v7/reconnect-os-thread-diagnostic.json",
+      "sha256": "4130ed652c07ec075bfc8e9fe1c0f791839791a3ac116420d75540defe4d859c"
+    },
+    "recovery-os-socket-diagnostic.json": {
+      "path": "build/campaign009-connected-v7/recovery-os-socket-diagnostic.json",
+      "sha256": "041563bb563fb44a4bcf049c249dcfbf0c65c877088950dfe1b5fead5935b8c2"
+    },
+    "recovery-public-clock-diagnostic.json": {
+      "path": "build/campaign009-connected-v7/recovery-public-clock-diagnostic.json",
+      "sha256": "e5809d457dfc0d979fff05d9e36e37de3efd74fb2e173268a59f0ecaf4356d44"
+    },
+    "selected-route-recovery-controller-interruption.json": {
+      "path": "build/campaign009-connected-v7/selected-route-recovery-controller-interruption.json",
+      "sha256": "787087200580632232aa51f60aaeddc17fadac7242090ae5ee89fde10fb291b5"
+    },
+    "personal-network-recovery.json": {
+      "path": "build/campaign009-connected-v7/personal-network-recovery.json",
+      "sha256": "333b7c9129a13a3a0e14df71418f66614ab219447ce79a4dc070d4917d845b97"
+    },
+    "selected-route-recovery.json": {
+      "path": "build/campaign009-connected-v7/selected-route-recovery.json",
+      "sha256": "fa877d048cbb62ef924f7172f0fca9f16451cfce7a1f76e22e64aa2a770c68aa"
+    },
+    "selected-route-recovery-raw-success.json": {
+      "path": "build/campaign009-connected-v7/selected-route-recovery-raw-success.json",
+      "sha256": "e61aabc6447204a1b1c8e05dc726885feb85dcf9e46c675f855042ed0015e9c5"
+    },
+    "reconnect.json": {
+      "path": "build/campaign009-connected-v7/reconnect.json",
+      "sha256": "3ae366f2314d4fbf57cb3f743a2f5d9fa2655de7cc94f29dce50f53b5d19874a"
+    },
+    "reconnect-progress.json": {
+      "path": "build/campaign009-connected-v7/reconnect-progress.json",
+      "sha256": "3ae366f2314d4fbf57cb3f743a2f5d9fa2655de7cc94f29dce50f53b5d19874a"
+    },
+    "reconnect-raw-success.json": {
+      "path": "build/campaign009-connected-v7/reconnect-raw-success.json",
+      "sha256": "2514f49142540f0d74bbe498e1f9bc51a6f5e564c31cb8a7beb2d6a281cd33f6"
+    },
+    "commit-retry-budget.json": {
+      "path": "build/campaign009-connected-v7/commit-retry-budget.json",
+      "sha256": "fdb538690f3ccc899b43d0a6b6ae7619c7fafdbdacc89e607ccf57f79be12f86"
+    },
+    "no-vault-public-ledger.json": {
+      "path": "build/campaign009-connected-v7/no-vault-public-ledger.json",
+      "sha256": "f53619eebda80a63834f31237b94137f1ee5971bd5196998fbb6ef5344a96287"
+    },
+    "infra-portals-release.json": {
+      "path": "build/campaign009-connected-v7/infra-portals-release.json",
+      "sha256": "8ceb5c873cd836988187086005ddf219f82606b4663aeb453b823791d87ebf24"
+    },
+    "native-long-frame.json": {
+      "path": "build/campaign009-connected-v7/native-long-frame.json",
+      "sha256": "bb8621b5a68382a5511950ebbd2f601800c2afe81481a619d9d8b25b82955e80"
+    }
+  },
+  "controllers": {
+    "core": [
+      {
+        "git_head": "c493e400f792c443a4e58f74fea73a3c993009f9",
+        "controller_sha256": "269d6ef118d7212888a906d69ea8883fc8331abe24a73c10f8c42d8af6e4d569",
+        "controller_snapshot": "controller-1.py",
+        "started_time_utc": "2026-11-01T17:04:35.649977+00:00",
+        "prior_failure_sha256": null
+      }
+    ],
+    "active_forge": {
+      "sha256": "ae98456db052b3c03b8bd2b0b5c5d2421a5f5236ef74404c5adc2c54c4d25e6e",
+      "source": "tests/native_community_active_forge.py"
+    },
+    "recovery": {
+      "initial_sha256": "ec3b6f6ec6f53e4eb7f02720fb7301fcb224dd275ead6454e6748dbb34f220c7",
+      "segments": [
+        {
+          "controller_sha256": "c9513881e5edac55e0cf07772b6df56ddbe864d72a071758413f681c5262a7ad",
+          "started_utc": "2026-11-01T18:41:27Z",
+          "resumed": true,
+          "prior_record_sha256": "787087200580632232aa51f60aaeddc17fadac7242090ae5ee89fde10fb291b5"
+        }
+      ],
+      "executed_resume_snapshot": {
+        "path": "build/campaign009-connected-v7/route-recovery-controller-2.py",
+        "sha256": "c9513881e5edac55e0cf07772b6df56ddbe864d72a071758413f681c5262a7ad"
+      }
+    },
+    "reconnect": {
+      "source_snapshot": "build/campaign009-connected-v7/reconnect-controller-1.py",
+      "sha256": "e945e587b4e442a2502535d3631a3237a5ed2c3caa3bb78389c094a1c6bb51c6",
+      "original_failure_segment_seconds": 416.6175056140055,
+      "resumed_segment_seconds": 766.3885485909996,
+      "source_cleanup_commit_after_execution": "c7219c4"
+    },
+    "commit_retry": {
+      "source": "tests/native_community_commit_retry.py",
+      "sha256": "812941338dcebd7d3381f2fa43d2728b17e73c1fdc99710e2eed0539c4721b8e"
+    }
+  },
+  "completed": {
+    "core_elapsed_seconds": 2767.130888699001,
+    "core_checks": [
+      {
+        "check": "native durable Mailbox and receipt authority configured",
+        "result": "pass"
+      },
+      {
+        "check": "public approved relay and destination policies configured independently",
+        "result": "pass"
+      },
+      {
+        "check": "native federation alpha owns its independent backing, policy and moderator",
+        "result": "pass"
+      },
+      {
+        "check": "native federation beta owns its independent backing, policy and moderator",
+        "result": "pass"
+      },
+      {
+        "check": "two native graphical Messenger identities retain separate domain2 state and approve certified contacts",
+        "result": "pass"
+      },
+      {
+        "check": "actual existing signed project admitted through native Registry with disclosed existing RSA bootstrap",
+        "result": "pass"
+      },
+      {
+        "check": "native operators listen once and replenish their own bounded admission",
+        "result": "pass"
+      },
+      {
+        "check": "three independent Feed clients concurrently admitted; two share alpha and all share relays without operator handoff",
+        "result": "pass"
+      },
+      {
+        "check": "native signed enrollment derives separately approved inter-operator mode3 relationship; personal traffic still requires mode1",
+        "result": "pass"
+      },
+      {
+        "check": "independent native Feed reader paginates chronologically and validates the useful multi-payload long post before displaying it",
+        "result": "pass",
+        "event": "1ed503591deb1fd6b2f953b9aabe138fd9444bc720ee42dbd085a22acff7a489",
+        "bytes": 1330
+      },
+      {
+        "check": "native ordinary and useful long post preserve original signed bytes across two operators; independent reader follows locally and replies across permitted scope",
+        "result": "pass"
+      },
+      {
+        "check": "meaningful discussion continues beyond the native UI single resident row; original history remains paginated and body commitments remain readable",
+        "result": "pass",
+        "ui_resident_events": 1,
+        "service_committed_index_bound": 64,
+        "body_segment_cache_bytes": 131072
+      },
+      {
+        "check": "native Feed backfill waits on one exact paused opaque transport epoch while two independent Messenger clients share mailbox",
+        "result": "pass"
+      },
+      {
+        "check": "native graphical text and reply decrypt through shared Mailbox while Feed transport remains paused",
+        "result": "pass",
+        "text": {
+          "serial": 1,
+          "seconds": 52.280234965001
+        },
+        "reply": {
+          "serial": 1,
+          "seconds": 34.35154647901072
+        },
+        "stalled_feed_ui": [
+          0,
+          1,
+          0,
+          145,
+          6,
+          7,
+          6,
+          1
+        ]
+      },
+      {
+        "check": "actual received reference completes existing routed Forge inspection while the independent Feed transfer remains paused, including after its terminal was reclaimed",
+        "result": "pass",
+        "verified_fields": [
+          0,
+          6,
+          2,
+          0,
+          1,
+          0,
+          1,
+          1
+        ],
+        "execution_approved": false,
+        "stall": {
+          "stage": "routed Forge completion observed",
+          "elapsed_seconds": 153.04367638799886,
+          "channel": {
+            "slot": 0,
+            "epoch": 2,
+            "connected": true,
+            "connecting": false,
+            "tx_paused": true,
+            "pending_bytes": 532,
+            "tx_bytes": 27714,
+            "rx_bytes": 23990
+          },
+          "terminal": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1
+          ],
+          "original_epoch_transport_paused": true,
+          "original_epoch_still_paused": false
+        },
+        "interpretation": {
+          "original_paused_transport_remains_pending": true,
+          "terminal_active_at_observation": false,
+          "terminal_reclamation_cause": "not directly observed; elapsed native deadline or owner cancellation is inferred",
+          "predicate": "Messenger requires the original authenticated terminal at completion; Forge requires the same paused transport epoch and pending bytes, and permits the independent terminal to have been reclaimed (user G stalled/disconnected work)."
+        }
+      },
+      {
+        "check": "native Feed cancellation and circuit disconnect preserve both unrelated authenticated Messenger sessions",
+        "result": "pass",
+        "other_sessions": [
+          [
+            0,
+            1,
+            3,
+            0,
+            8377778,
+            65461,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            3,
+            0,
+            8379600,
+            65472,
+            0,
+            1
+          ]
+        ],
+        "stalled_seconds": 153.46813431599003,
+        "before_input_cancel": {
+          "stage": "before native input cancellation",
+          "elapsed_seconds": 153.06316076200164,
+          "channel": {
+            "slot": 0,
+            "epoch": 2,
+            "connected": true,
+            "connecting": false,
+            "tx_paused": true,
+            "pending_bytes": 532,
+            "tx_bytes": 27714,
+            "rx_bytes": 23990
+          },
+          "terminal": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1
+          ],
+          "original_epoch_transport_paused": true,
+          "original_epoch_still_paused": false
+        },
+        "cleanup": {
+          "stage": "owned cleanup",
+          "elapsed_seconds": 153.1819872269989,
+          "channel": {
+            "slot": 0,
+            "epoch": 2,
+            "connected": true,
+            "connecting": false,
+            "tx_paused": true,
+            "pending_bytes": 532,
+            "tx_bytes": 27714,
+            "rx_bytes": 23990
+          },
+          "terminal": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1
+          ],
+          "original_epoch_transport_paused": true,
+          "original_epoch_still_paused": false
+        }
+      }
+    ],
+    "original_events": {
+      "ordinary": {
+        "id": "3f7ccee79369e00ca2f6007ef272d47fc163d71a7b4059bdbeec340d7a1a301e",
+        "author": "dea81b778d1718c58b487255f80cbd56f0510a5105385e2cfae311aa4953692e",
+        "kind": 1,
+        "bytes": 126,
+        "content_sha256": "541c88ecfd5e37d6e433746b0e38ce252c25c94a6874966ab975cee0c2cbb22b",
+        "signed_sha256": "3f7ccee79369e00ca2f6007ef272d47fc163d71a7b4059bdbeec340d7a1a301e"
+      },
+      "long": {
+        "id": "1ed503591deb1fd6b2f953b9aabe138fd9444bc720ee42dbd085a22acff7a489",
+        "author": "dea81b778d1718c58b487255f80cbd56f0510a5105385e2cfae311aa4953692e",
+        "kind": 1,
+        "bytes": 1330,
+        "content_sha256": "da933b261f757e2e3556bd30c008f04fbdd90ce29e277d65883d4e3c0ca9e557",
+        "signed_sha256": "1ed503591deb1fd6b2f953b9aabe138fd9444bc720ee42dbd085a22acff7a489"
+      },
+      "reply": {
+        "id": "c301623010b29b84e772914f6ee76a8095db20ab0727a1be6955e3c5c9b04e06",
+        "author": "3f87a78f0610986febe095dfa0e036922559e3cb74de9a7cd257c6c52bd9d35a",
+        "kind": 2,
+        "bytes": 142,
+        "content_sha256": "c3b55f0ac6d9e6debdb353279f57693aa8ebf54b34411829709e63efb183235a",
+        "signed_sha256": "c301623010b29b84e772914f6ee76a8095db20ab0727a1be6955e3c5c9b04e06"
+      },
+      "review-0": {
+        "id": "2a715568ea7f486d77e40778801772875a88e87dbd01b35e1b5ed0b8953e8f96",
+        "author": "dea81b778d1718c58b487255f80cbd56f0510a5105385e2cfae311aa4953692e",
+        "kind": 1,
+        "bytes": 135,
+        "content_sha256": "4ca22c1ff9a33c74c8e2e918c7b8be5ea1382b0703951397ced9aded8eed69c9",
+        "signed_sha256": "2a715568ea7f486d77e40778801772875a88e87dbd01b35e1b5ed0b8953e8f96"
+      },
+      "review-1": {
+        "id": "df3d727f235f25d97ead6e5e79a385902151e1666d021f0600c24d83938c2416",
+        "author": "3f87a78f0610986febe095dfa0e036922559e3cb74de9a7cd257c6c52bd9d35a",
+        "kind": 1,
+        "bytes": 147,
+        "content_sha256": "7478de5c67a7b4b76250e7afe14a88be663b9ef070a95e5357e1604df5048d12",
+        "signed_sha256": "df3d727f235f25d97ead6e5e79a385902151e1666d021f0600c24d83938c2416"
+      },
+      "review-2": {
+        "id": "c0a8f93eed9cf3ed8ecf1852ac982d525a745c3cca346c285ff45c109ab9e3c5",
+        "author": "26d3b302e8934ea1b6e4f72a13ffe975bc36b207df5a25c5beef0b92e32320d1",
+        "kind": 1,
+        "bytes": 149,
+        "content_sha256": "6232aff56fca73d062dd25c9c17cb783935dac3ce41b9e33a9596dc4f1fd81c4",
+        "signed_sha256": "c0a8f93eed9cf3ed8ecf1852ac982d525a745c3cca346c285ff45c109ab9e3c5"
+      },
+      "review-3": {
+        "id": "7bb1ab1c70f4cdc11f5dce72dbd05c72bf126f9a6c3c76cb55c06257a2e31b54",
+        "author": "dea81b778d1718c58b487255f80cbd56f0510a5105385e2cfae311aa4953692e",
+        "kind": 1,
+        "bytes": 145,
+        "content_sha256": "e1ab90a478d350a70c33be1a9c31ac7b4f871b83b970ee2e8d23f01570bf8f22",
+        "signed_sha256": "7bb1ab1c70f4cdc11f5dce72dbd05c72bf126f9a6c3c76cb55c06257a2e31b54"
+      },
+      "review-4": {
+        "id": "20c13784f3af81f6f373b1b8bd234592af69b9bda91c6e5bbc4876df5459821d",
+        "author": "3f87a78f0610986febe095dfa0e036922559e3cb74de9a7cd257c6c52bd9d35a",
+        "kind": 1,
+        "bytes": 147,
+        "content_sha256": "82d52ac7efdcbc0bf777772c06cfee2f6c25bbecdcc540c00a20ddbdfb701dce",
+        "signed_sha256": "20c13784f3af81f6f373b1b8bd234592af69b9bda91c6e5bbc4876df5459821d"
+      }
+    },
+    "fresh_active_forge": {
+      "schema": 1,
+      "checks": [
+        "ordinary native F1 exposed fresh in-flight Forge work before its verified completion",
+        "native terminal byte and request allowances both decreased while exact original release/admission fields were returned",
+        "same fresh Feed transport epoch remained paused with pending bytes and authenticated terminal phase3 at Forge completion",
+        "native cancellation and only Charlie route teardown preserved unrelated Alice/Bob phase3"
+      ],
+      "started_monotonic": 82386.283317847,
+      "controller_sha256": "ae98456db052b3c03b8bd2b0b5c5d2421a5f5236ef74404c5adc2c54c4d25e6e",
+      "unrelated_before": [
+        [
+          0,
+          1,
+          3,
+          0,
+          8374194,
+          65433,
+          0,
+          1
+        ],
+        [
+          0,
+          1,
+          3,
+          0,
+          8375888,
+          65443,
+          0,
+          1
+        ]
+      ],
+      "bob_before": [
+        0,
+        1,
+        3,
+        0,
+        8373968,
+        65428,
+        0,
+        1
+      ],
+      "epoch": 6,
+      "stall_before": {
+        "channel": {
+          "slot": 0,
+          "epoch": 6,
+          "connected": true,
+          "connecting": false,
+          "tx_paused": true,
+          "pending_bytes": 532,
+          "tx_bytes": 2710,
+          "rx_bytes": 2710
+        },
+        "terminal": [
+          0,
+          1,
+          3,
+          0,
+          8388544,
+          65535,
+          0,
+          1
+        ]
+      },
+      "fresh_busy_fields": [
+        0,
+        6,
+        0,
+        0,
+        0,
+        1,
+        1,
+        1
+      ],
+      "verified": {
+        "fields": [
+          0,
+          6,
+          2,
+          0,
+          1,
+          0,
+          1,
+          1
+        ],
+        "bob_after": [
+          0,
+          1,
+          3,
+          0,
+          8373744,
+          65426,
+          0,
+          1
+        ],
+        "reference": "92daee22b2b8ed1f4de2b1354701a07742de03065c36ecc716c0a5e60624a7c2da551ef420d34f0926267676a49c3d15816250f9d1e8e1900233dcbcebce1228"
+      },
+      "elapsed_stall_seconds": 6.225732298000366,
+      "stall_after": {
+        "channel": {
+          "slot": 0,
+          "epoch": 6,
+          "connected": true,
+          "connecting": false,
+          "tx_paused": true,
+          "pending_bytes": 532,
+          "tx_bytes": 2710,
+          "rx_bytes": 2710
+        },
+        "terminal": [
+          0,
+          1,
+          3,
+          0,
+          8388544,
+          65535,
+          0,
+          1
+        ]
+      },
+      "unrelated_after": [
+        [
+          0,
+          1,
+          3,
+          0,
+          8371762,
+          65414,
+          0,
+          1
+        ],
+        [
+          0,
+          1,
+          3,
+          0,
+          8373744,
+          65426,
+          0,
+          1
+        ]
+      ],
+      "result": "pass"
+    },
+    "recovery": {
+      "schema": 1,
+      "result": "pass",
+      "controller_sha256": "ec3b6f6ec6f53e4eb7f02720fb7301fcb224dd275ead6454e6748dbb34f220c7",
+      "recoveries": {
+        "alice": {
+          "old_delivery": 10565884165390074377,
+          "session_owner": 10565884165390074119,
+          "ui": 10565884165390074120,
+          "owner_public_sha256": "a0546afcd28fdd4ab9ff85ca0f0bde774a2de0498ccdb705650256ba9c934d50",
+          "router_before": [
+            0,
+            0,
+            0,
+            38,
+            0,
+            0,
+            0,
+            1
+          ],
+          "terminal_before": [
+            0,
+            0,
+            0,
+            26,
+            0,
+            0,
+            0,
+            1
+          ],
+          "delivery_before": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            11,
+            7,
+            1
+          ],
+          "previous_release": "5e166b16eeeed082bb86a246f9a79bec88fb13f097304622c9d33cd51992320a",
+          "successor_release": "0c0b6ff146660c532730f842b3e81462dcd6eb61cb202357085745965135a0fa",
+          "upstream_loss_cause": "unknown; prior public observations preserve the scoped loss",
+          "new_delivery": 10565884165390074633,
+          "normal_parent_linked_admission": true,
+          "session_owner_ui_unchanged": true,
+          "personal_network_recovery_sha256": "333b7c9129a13a3a0e14df71418f66614ab219447ce79a4dc070d4917d845b97",
+          "router_after": [
+            0,
+            1,
+            3,
+            0,
+            4,
+            0,
+            0,
+            1
+          ],
+          "terminal_after": [
+            0,
+            1,
+            3,
+            0,
+            8388096,
+            65534,
+            0,
+            1
+          ],
+          "coordinator_counters": [
+            0,
+            2,
+            2,
+            2,
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        "bob": {
+          "old_delivery": 8117591479108502025,
+          "session_owner": 8117591479108501767,
+          "ui": 8117591479108501768,
+          "owner_public_sha256": "129a631dab06e9aeed225ca326d27cb6690009eebce4dc96a503d507832ec288",
+          "router_before": [
+            0,
+            1,
+            3,
+            0,
+            4,
+            0,
+            0,
+            1
+          ],
+          "terminal_before": [
+            0,
+            1,
+            3,
+            0,
+            8314096,
+            64960,
+            0,
+            1
+          ],
+          "delivery_before": [
+            0,
+            3,
+            0,
+            0,
+            0,
+            11,
+            7,
+            1
+          ],
+          "previous_release": "5e166b16eeeed082bb86a246f9a79bec88fb13f097304622c9d33cd51992320a",
+          "successor_release": "0c0b6ff146660c532730f842b3e81462dcd6eb61cb202357085745965135a0fa",
+          "upstream_loss_cause": "no router loss observed; local coordinator receive failure only",
+          "new_delivery": 8117591479108502281,
+          "normal_parent_linked_admission": true,
+          "session_owner_ui_unchanged": true,
+          "router_after": [
+            0,
+            1,
+            3,
+            0,
+            4,
+            0,
+            0,
+            1
+          ],
+          "terminal_after": [
+            0,
+            1,
+            3,
+            0,
+            8387712,
+            65533,
+            0,
+            1
+          ],
+          "coordinator_counters": [
+            0,
+            3,
+            3,
+            3,
+            0,
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      "prior_failure_sha256": "bd6738b6015245fa326a7290031f23d25650a6ac11fcd44be5bbabaa41909b58",
+      "prior_failure_snapshot": "reconnect-first-peer-failure.json",
+      "package": {
+        "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/delivery-recovery-0.8.2.ltrel",
+        "sha256": "4b752f1739375159f5b00140261cb66542a99493229b6760dfaa92c3013fe7f0",
+        "version": "0.8.2",
+        "release_id": "0c0b6ff146660c532730f842b3e81462dcd6eb61cb202357085745965135a0fa",
+        "parent": "5e166b16eeeed082bb86a246f9a79bec88fb13f097304622c9d33cd51992320a",
+        "rights": 1024
+      },
+      "stage": "actual recovered private-session text and reply",
+      "elapsed_seconds": 580.5459987580107,
+      "controller_segments": [
+        {
+          "controller_sha256": "c9513881e5edac55e0cf07772b6df56ddbe864d72a071758413f681c5262a7ad",
+          "started_utc": "2026-11-01T18:41:27Z",
+          "resumed": true,
+          "prior_record_sha256": "787087200580632232aa51f60aaeddc17fadac7242090ae5ee89fde10fb291b5"
+        }
+      ],
+      "before_stall": [
+        [
+          0,
+          1,
+          3,
+          0,
+          8384128,
+          65503,
+          0,
+          1
+        ],
+        [
+          0,
+          1,
+          3,
+          0,
+          8387712,
+          65533,
+          0,
+          1
+        ]
+      ],
+      "coordinator_counters_before": {
+        "alice": [
+          0,
+          2,
+          33,
+          33,
+          0,
+          0,
+          31,
+          1
+        ],
+        "bob": [
+          0,
+          3,
+          3,
+          3,
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "stall_before": {
+        "channel": {
+          "slot": 0,
+          "epoch": 17,
+          "connected": true,
+          "connecting": false,
+          "tx_paused": true,
+          "pending_bytes": 532,
+          "tx_bytes": 2710,
+          "rx_bytes": 2710
+        },
+        "terminal": [
+          0,
+          1,
+          3,
+          0,
+          8388544,
+          65535,
+          0,
+          1
+        ]
+      },
+      "text": {
+        "serial": 3,
+        "prior_serial": 2,
+        "seconds": 37.25912611800595,
+        "text_sha256": "98351263948095187ec38646159276b227d12ac6a25ee3eb577ad931c625de70",
+        "recipient": [
+          0,
+          3,
+          89,
+          1,
+          1,
+          0,
+          0,
+          1
+        ]
+      },
+      "reply": {
+        "serial": 2,
+        "prior_serial": 1,
+        "seconds": 33.76291157399828,
+        "text_sha256": "7de536cf78094ea855e9ebe0b1bfe36b0bc967c85995abf8a1eb91737ec8c716",
+        "recipient": [
+          0,
+          2,
+          107,
+          1,
+          1,
+          0,
+          0,
+          1
+        ]
+      },
+      "stall_after": {
+        "channel": {
+          "slot": 0,
+          "epoch": 17,
+          "connected": true,
+          "connecting": false,
+          "tx_paused": true,
+          "pending_bytes": 532,
+          "tx_bytes": 2710,
+          "rx_bytes": 2710
+        },
+        "terminal": [
+          0,
+          1,
+          3,
+          0,
+          8388544,
+          65535,
+          0,
+          1
+        ],
+        "elapsed_seconds": 72.01964668899018
+      },
+      "coordinator_counters_after": {
+        "alice": [
+          0,
+          1,
+          76,
+          76,
+          0,
+          0,
+          63,
+          1
+        ],
+        "bob": [
+          0,
+          8,
+          50,
+          50,
+          0,
+          0,
+          35,
+          1
+        ]
+      },
+      "unrelated_after": [
+        [
+          0,
+          1,
+          3,
+          0,
+          8378295,
+          65460,
+          0,
+          1
+        ],
+        [
+          0,
+          1,
+          3,
+          0,
+          8381349,
+          65486,
+          0,
+          1
+        ]
+      ]
+    },
+    "reconnect_checks": [
+      {
+        "check": "native committed storage serves earliest and latest original signed bodies beyond its one verified read page on both federations",
+        "result": "pass",
+        "events": 8,
+        "padded_content_bytes": 5120,
+        "server_store_read_page_bytes": 4096,
+        "segment_writer_workspace_bytes": 131072,
+        "reads": [
+          {
+            "operator": "alpha",
+            "event": "3f7ccee79369e00ca2f6007ef272d47fc163d71a7b4059bdbeec340d7a1a301e",
+            "bytes": 126,
+            "content_sha256": "541c88ecfd5e37d6e433746b0e38ce252c25c94a6874966ab975cee0c2cbb22b"
+          },
+          {
+            "operator": "beta",
+            "event": "3f7ccee79369e00ca2f6007ef272d47fc163d71a7b4059bdbeec340d7a1a301e",
+            "bytes": 126,
+            "content_sha256": "541c88ecfd5e37d6e433746b0e38ce252c25c94a6874966ab975cee0c2cbb22b"
+          },
+          {
+            "operator": "alpha",
+            "event": "1ed503591deb1fd6b2f953b9aabe138fd9444bc720ee42dbd085a22acff7a489",
+            "bytes": 1330,
+            "content_sha256": "da933b261f757e2e3556bd30c008f04fbdd90ce29e277d65883d4e3c0ca9e557"
+          },
+          {
+            "operator": "beta",
+            "event": "1ed503591deb1fd6b2f953b9aabe138fd9444bc720ee42dbd085a22acff7a489",
+            "bytes": 1330,
+            "content_sha256": "da933b261f757e2e3556bd30c008f04fbdd90ce29e277d65883d4e3c0ca9e557"
+          },
+          {
+            "operator": "alpha",
+            "event": "20c13784f3af81f6f373b1b8bd234592af69b9bda91c6e5bbc4876df5459821d",
+            "bytes": 147,
+            "content_sha256": "82d52ac7efdcbc0bf777772c06cfee2f6c25bbecdcc540c00a20ddbdfb701dce"
+          },
+          {
+            "operator": "beta",
+            "event": "20c13784f3af81f6f373b1b8bd234592af69b9bda91c6e5bbc4876df5459821d",
+            "bytes": 147,
+            "content_sha256": "82d52ac7efdcbc0bf777772c06cfee2f6c25bbecdcc540c00a20ddbdfb701dce"
+          }
+        ],
+        "unrelated_sessions": [
+          [
+            0,
+            1,
+            3,
+            0,
+            8368178,
+            65386,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            3,
+            0,
+            8370160,
+            65398,
+            0,
+            1
+          ]
+        ]
+      },
+      {
+        "check": "accepted publication uncertainty reconciles the exact original through its replication receipt before route closure or new composition",
+        "result": "pass",
+        "prior_ui": [
+          0,
+          1,
+          0,
+          145,
+          5,
+          8,
+          0,
+          1
+        ],
+        "profile": {
+          "sequence": 4,
+          "public": "dea81b778d1718c58b487255f80cbd56f0510a5105385e2cfae311aa4953692e",
+          "event": "7bb1ab1c70f4cdc11f5dce72dbd05c72bf126f9a6c3c76cb55c06257a2e31b54",
+          "generation": 1,
+          "sha256": "325af70f01f3dec1f91aa268580a1327cbbf7cc28624b96f77cac51ac63b23c9"
+        },
+        "author_usage": {
+          "author_events": 4,
+          "author_content_bytes": 1736
+        },
+        "unrelated_sessions": [
+          [
+            0,
+            1,
+            3,
+            0,
+            8365234,
+            65363,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            3,
+            0,
+            8367344,
+            65376,
+            0,
+            1
+          ]
+        ]
+      },
+      {
+        "check": "required mode1 failure remains visible; signed pending event is absent from both federations and no direct fallback occurs",
+        "result": "pass",
+        "profile": {
+          "sequence": 5,
+          "public": "dea81b778d1718c58b487255f80cbd56f0510a5105385e2cfae311aa4953692e",
+          "event": "0c60bc4389999e13daa0b1e52f39edb23ecc23dd28e0e6d150ca3703e3f077a1",
+          "generation": 1,
+          "sha256": "31a076a7f38c33de2d9e0e91f678fbfe0aa8086ebe0c0129fd29f1331eaa4e91"
+        },
+        "unrelated_sessions": [
+          [
+            0,
+            1,
+            3,
+            0,
+            8364210,
+            65355,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            3,
+            0,
+            8366320,
+            65368,
+            0,
+            1
+          ]
+        ]
+      },
+      {
+        "check": "fresh approved route publishes exactly the original pending event, author and sequence",
+        "result": "pass",
+        "event": "0c60bc4389999e13daa0b1e52f39edb23ecc23dd28e0e6d150ca3703e3f077a1",
+        "unrelated_sessions": [
+          [
+            0,
+            1,
+            3,
+            0,
+            8371767,
+            65409,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            3,
+            0,
+            8374949,
+            65436,
+            0,
+            1
+          ]
+        ]
+      },
+      {
+        "check": "one exhausted terminal allowance refuses its own request; a fresh selected context reuses resources while other admitted sessions continue",
+        "result": "pass",
+        "limited_context": [
+          0,
+          1,
+          3,
+          0,
+          1,
+          1,
+          0,
+          1
+        ],
+        "unrelated_sessions": [
+          [
+            0,
+            1,
+            3,
+            0,
+            8369847,
+            65394,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            3,
+            0,
+            8373029,
+            65421,
+            0,
+            1
+          ]
+        ]
+      },
+      {
+        "check": "native publication gate preserves or reconciles the exact accepted commitment after a bounded query refusal without a new event or renewed author allowance",
+        "result": "pass",
+        "prior_ui": [
+          0,
+          1,
+          0,
+          180,
+          5,
+          7,
+          0,
+          1
+        ],
+        "exact_retry_requested": false,
+        "profile": {
+          "sequence": 5,
+          "public": "dea81b778d1718c58b487255f80cbd56f0510a5105385e2cfae311aa4953692e",
+          "event": "0c60bc4389999e13daa0b1e52f39edb23ecc23dd28e0e6d150ca3703e3f077a1",
+          "generation": 1,
+          "sha256": "31a076a7f38c33de2d9e0e91f678fbfe0aa8086ebe0c0129fd29f1331eaa4e91"
+        },
+        "author_usage": {
+          "author_events": 5,
+          "author_content_bytes": 1916
+        },
+        "unrelated_sessions": [
+          [
+            0,
+            1,
+            3,
+            0,
+            8367415,
+            65375,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            3,
+            0,
+            8370469,
+            65401,
+            0,
+            1
+          ]
+        ]
+      },
+      {
+        "check": "operator commits exact signed event while author cannot obtain final receipt; only that circuit is disconnected",
+        "result": "pass",
+        "pending_ui": [
+          0,
+          1,
+          0,
+          989,
+          9,
+          4,
+          0,
+          1
+        ],
+        "profile": {
+          "sequence": 6,
+          "public": "dea81b778d1718c58b487255f80cbd56f0510a5105385e2cfae311aa4953692e",
+          "event": "1eea62a373a286fac91d303b0711f77a8fccca31171358796bcd062d4056e220",
+          "generation": 1,
+          "sha256": "d9e7815ba394d1426b118610f0234c0f82f19c1a87c1e41dfee19796aeca7a7d"
+        },
+        "accepted_budget": {
+          "author_events": 6,
+          "author_content_bytes": 2905
+        },
+        "unrelated_sessions": [
+          [
+            0,
+            1,
+            3,
+            0,
+            8361399,
+            65328,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            3,
+            0,
+            8364453,
+            65354,
+            0,
+            1
+          ]
+        ]
+      },
+      {
+        "check": "exact retry has one visible publication and unchanged committed author event/byte usage; original signed bytes remain on both federations",
+        "result": "pass",
+        "profile": {
+          "sequence": 6,
+          "public": "dea81b778d1718c58b487255f80cbd56f0510a5105385e2cfae311aa4953692e",
+          "event": "1eea62a373a286fac91d303b0711f77a8fccca31171358796bcd062d4056e220",
+          "generation": 1,
+          "sha256": "d9e7815ba394d1426b118610f0234c0f82f19c1a87c1e41dfee19796aeca7a7d"
+        },
+        "budget": {
+          "author_events": 6,
+          "author_content_bytes": 2905
+        },
+        "unrelated_sessions": [
+          [
+            0,
+            1,
+            3,
+            0,
+            8358583,
+            65306,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            3,
+            0,
+            8362021,
+            65335,
+            0,
+            1
+          ]
+        ]
+      },
+      {
+        "check": "no-vault author process death removes local publishing state; freshly admitted owner/UI has no identity while authorized replica keeps deliberately published copies",
+        "result": "pass",
+        "old_owner": 11218089221463998728,
+        "new_owner": 11218089221463998984,
+        "historical_feed_public": "dea81b778d1718c58b487255f80cbd56f0510a5105385e2cfae311aa4953692e",
+        "current_feed_identity_present": false,
+        "current_feed_public": null,
+        "unrelated_sessions": [
+          [
+            0,
+            1,
+            3,
+            0,
+            8358583,
+            65306,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            3,
+            0,
+            8362021,
+            65335,
+            0,
+            1
+          ]
+        ]
+      }
+    ],
+    "positive_retry_budget": {
+      "schema": 2,
+      "result": "pass",
+      "image_sha256": "2e5147c4198cf7ec39ab053f2ea8895cfdceb1c9b9dcf79e1b7bb7627314bcdf",
+      "event": "1eea62a373a286fac91d303b0711f77a8fccca31171358796bcd062d4056e220",
+      "signed_sha256": "1eea62a373a286fac91d303b0711f77a8fccca31171358796bcd062d4056e220",
+      "duplicate_reply": [
+        0,
+        10,
+        2,
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "before_durable_budget": [
+        0,
+        16777216,
+        2440350,
+        6291456,
+        262144,
+        8280,
+        1,
+        1
+      ],
+      "after_durable_budget": [
+        0,
+        16777216,
+        2440350,
+        6291456,
+        262144,
+        8280,
+        1,
+        1
+      ],
+      "policy_hash": "ab4c557edae6924a6f7ca4b2065e759849fe71b4c0d1c77d47909ea0aec4268a",
+      "transport_allocation": {
+        "state": "unchanged",
+        "before_bytes": 6291456,
+        "after_bytes": 6291456,
+        "additional_bytes": 0,
+        "finite_ceiling": 16777216,
+        "attribution": "Transport allocations may roll independently under existing consent; this probe does not attribute a roll to the duplicate event."
+      },
+      "per_event_before": {
+        "available": true,
+        "event": "1eea62a373a286fac91d303b0711f77a8fccca31171358796bcd062d4056e220",
+        "fields": [
+          0,
+          10,
+          3,
+          1,
+          355077,
+          1188,
+          0,
+          1
+        ],
+        "flags": 3,
+        "attempts": 1,
+        "reserved_bytes": 355077,
+        "reserved_work": 1188
+      },
+      "per_event_after": {
+        "available": true,
+        "event": "1eea62a373a286fac91d303b0711f77a8fccca31171358796bcd062d4056e220",
+        "fields": [
+          0,
+          10,
+          3,
+          1,
+          355077,
+          1188,
+          0,
+          1
+        ],
+        "flags": 3,
+        "attempts": 1,
+        "reserved_bytes": 355077,
+        "reserved_work": 1188
+      },
+      "copies_per_federation": 1,
+      "elapsed_seconds": 9.438148032000754,
+      "scope": "One exact native already-committed envelope admission after its replica acknowledgement, with no append, commit, new author signature, route, policy or grant. The preceding GUI continuation separately exercises a fresh-context exact event retry.",
+      "limits": "Aggregate event byte/work reservations remain unchanged. Where action14 is supported, the exact event flags, attempts and reserved byte/work also remain unchanged. Status2 explicitly records unavailable per-event counters on a legacy service. Existing finite native transport allocation may roll independently; no causal claim about that roll is made."
+    },
+    "no_vault_public_ledger": {
+      "schema": 2,
+      "result": "pass",
+      "scope": "Public observation ledger bound to the completed native NoVault branch. Historical published author is not a live identity in the newly admitted owner; this annotation performs no Native action.",
+      "image_sha256": "2e5147c4198cf7ec39ab053f2ea8895cfdceb1c9b9dcf79e1b7bb7627314bcdf",
+      "historical_feed_public": "dea81b778d1718c58b487255f80cbd56f0510a5105385e2cfae311aa4953692e",
+      "current_feed_identity_present": false,
+      "current_feed_public": null,
+      "current_feed_owner": 11218089221463998984,
+      "current_feed_ui": 11218089221463998985,
+      "completed_native_checks": {
+        "check": "no-vault author process death removes local publishing state; freshly admitted owner/UI has no identity while authorized replica keeps deliberately published copies",
+        "result": "pass",
+        "old_owner": 11218089221463998728,
+        "new_owner": 11218089221463998984,
+        "historical_feed_public": "dea81b778d1718c58b487255f80cbd56f0510a5105385e2cfae311aa4953692e",
+        "current_feed_identity_present": false,
+        "current_feed_public": null,
+        "unrelated_sessions": [
+          [
+            0,
+            1,
+            3,
+            0,
+            8358583,
+            65306,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            3,
+            0,
+            8362021,
+            65335,
+            0,
+            1
+          ]
+        ]
+      },
+      "reconnect_sha256": "3ae366f2314d4fbf57cb3f743a2f5d9fa2655de7cc94f29dce50f53b5d19874a",
+      "final_reconnect_sha256": "3ae366f2314d4fbf57cb3f743a2f5d9fa2655de7cc94f29dce50f53b5d19874a",
+      "native_actors_sha256": "85730923d3667fbd047712f6d674954ac56b94d02ea46848d10fef099128d958",
+      "executed_controller_sha256": "e945e587b4e442a2502535d3631a3237a5ed2c3caa3bb78389c094a1c6bb51c6",
+      "evidence_source": "Completed native branch observed fresh UI identity0 and96zero public/scopes and original committed replica unchanged before recording pass."
+    }
+  },
+  "preserved_failure_and_recovery": {
+    "first_reconnect_stage": "required-mode1 route refusal",
+    "first_reconnect_elapsed_seconds": 416.6175056140055,
+    "error": "AssertionError([[0, 0, 0, 26, 0, 0, 0, 1], [0, 1, 3, 0, 8360816, 65325, 0, 1]])",
+    "observed_peer_states": [
+      [
+        0,
+        0,
+        0,
+        26,
+        0,
+        0,
+        0,
+        1
+      ],
+      [
+        0,
+        1,
+        3,
+        0,
+        8360816,
+        65325,
+        0,
+        1
+      ]
+    ],
+    "initial_origin": "Unexplained scoped Alice link loss; public latest router reason38 means adjacent disconnect and terminal26 follows disabled routing. No originating reason was captured.",
+    "later_fresh_attempt": "Alice own route remained phase1 with no TCP socket; authorized public Native7 reported global Transport statusMAX. This established a personal transport fatal state, not relay saturation. The relation to the earlier HUP is not proven.",
+    "personal_network_recovery": {
+      "schema": 1,
+      "result": "native-restart-completed-route-unqualified",
+      "time_utc": "2026-11-01T18:40:57Z",
+      "scope": "explicit existing personal-only builtinNetwork33 recovery after public transport fatal; no operator or host adapter reset",
+      "prior_diagnostic_sha256": "e5809d457dfc0d979fff05d9e36e37de3efd74fb2e173268a59f0ecaf4356d44",
+      "other_network_incarnations": {
+        "mailbox": 17179136174816493830,
+        "relay1": 5812658667954110726,
+        "relay2": 10521910851399581958,
+        "relay3": 1904556973433553158,
+        "alpha": 5830235864562663686,
+        "beta": 9165551361754923270,
+        "bob": 8117591479108501766,
+        "charlie": 11218089221463998726
+      },
+      "old_network": 10565884165390074118,
+      "session_owner": 10565884165390074119,
+      "ui": 10565884165390074120,
+      "delivery": 10565884165390074633,
+      "personal_processes_before": [
+        [
+          10565884165390074119,
+          3,
+          0,
+          0
+        ],
+        [
+          10565884165390074120,
+          4,
+          799,
+          0
+        ],
+        [
+          10565884165390074633,
+          2,
+          1024,
+          0
+        ]
+      ],
+      "new_network": 10565884165390074374,
+      "personal_processes_after": [
+        [
+          10565884165390074119,
+          3,
+          0,
+          0
+        ],
+        [
+          10565884165390074120,
+          4,
+          799,
+          0
+        ],
+        [
+          10565884165390074633,
+          2,
+          1024,
+          0
+        ]
+      ],
+      "stale_full_endpoint_refusal": "guest rejected command150, status1",
+      "initial_public_status": [
+        0,
+        0,
+        0,
+        0,
+        572813,
+        10,
+        0,
+        0
+      ],
+      "accepted_public_certificate_sha256": {
+        "relay1": "087a0eba3e7ff40f0ba42f1f076bd532204525ee31458ab4eae61e6d28e03e77",
+        "relay2": "37d91a21052b1230171d45c5e1d2b8d4c0f5c85faad1e4b110dcdf369af69b55",
+        "relay3": "1f8697f992b64d20e626aac72e2eec4fc85d4c1746d3185514261d41e1cab7ec",
+        "mailbox": "a456dd562224c6b13301a1eef29864ce5753c04a69518083b1dea531770ea529"
+      },
+      "immutable_image": true,
+      "all_other_network_incarnations_unchanged": true,
+      "private_keys_exported": false
+    },
+    "coordinator_recovery": "Both failed local coordinators received the normal parent-linked0.8.2 successor, fresh full instances/exact grants, unchanged original SessionOwner/UI/public identity. Successful empty polls no longer spend the local512 workflow counter; native parent bytes/attempts stay spent.",
+    "interruption": "Only the observing controller was interrupted for public diagnostics. Its immutable failure and raw resumed-success snapshots remain identified. Obsolete inherited exception fields were removed after observed success without changing Native outcomes.",
+    "continuous_admission_claim": false
+  },
+  "resource_observations": {
+    "actual_simultaneous_personal_clients": 3,
+    "transport_channels": 16,
+    "onion_channels": 12,
+    "bulk_channels": 4,
+    "relay_complete_pairs_bound": 6,
+    "full_pair_saturation_exercised_here": false,
+    "terminal_banks": 16,
+    "mailbox_stages": 4,
+    "mailbox_stage_bytes": 8192,
+    "history_events": 8,
+    "history_padded_bytes": 5120,
+    "verified_server_store_read_page_bytes": 4096,
+    "ui_resident_events": 1,
+    "committed_index_bound": 64,
+    "segment_workspace_bytes": 131072,
+    "history_qualification": "The early/late exact signed bodies exceed one UI selected row and one committed read page; this does not exhaust the64-event index or128KiB segment workspace."
+  },
+  "native_frame": {
+    "schema": 1,
+    "image_sha256": "2e5147c4198cf7ec39ab053f2ea8895cfdceb1c9b9dcf79e1b7bb7627314bcdf",
+    "source": "build/campaign009-connected-v7/bob-native-long-review.ppm",
+    "source_ppm_sha256": "b8116c113c9cb9b1ffa83177c4f6ca2bd9c99d290565b7410f662c13327a8e77",
+    "png": "build/campaign009-connected-v7/bob-native-long-review.png",
+    "png_sha256": "7476b652f631d1b0e0e7e8d5e5c431433c068d77a141cc4b7f855ce654d290cf",
+    "width": 640,
+    "height": 400,
+    "mode": "RGB8",
+    "pixel_sha256": "5fc91707c9d536e8083321d7a3c28e30758b432b1a6ef0d5bd58f80d8b21a66b",
+    "lossless_pixels_verified": true,
+    "method": "Native compositor PPM already captured by core after Bob verified/paginated long read. Standard-library PNG RGB8/filter0/zlib encoding; CRCs/decompressed exact pixel equality verified. No new UI input, crop, annotation or synthesis."
+  },
+  "reproduction_commands": [
+    "python -u tests/native_community_campaign.py --image build/campaign009-final-v9.bin --feed-packages build/campaign009-final-v7-feed --messenger-ready build/campaign009-final-v4-messenger/ready.json --registry build/live/apps/campaign009-registry-final-v4.bin --public-graph tests/fixtures/campaign008-existing-forge-closure.json --publisher tests/fixtures/campaign008-existing-forge-publisher.pub --output build/campaign009-connected-v7 --mixed --replication-auto-renew --history-events 8",
+    "python -u tests/native_community_active_forge.py --attach build/campaign009-connected-v7",
+    "python -u tests/native_community_reconnect.py --attach build/campaign009-connected-v7 --feed-packages build/campaign009-final-v7-feed",
+    "python -u tests/native_community_route_recovery.py --attach build/campaign009-connected-v7 --recover alice --recover bob --delivery build/campaign009-final-v6-messenger/messenger-delivery.ltrel",
+    "After the preserved personal fatal diagnosis only: existing Launcher33 against Alice exact old full Network IID; record the new IID and reject the stale old endpoint, then resume native_community_route_recovery.py with --resume and the same exact delivery package. This was executed through the existing Native management client, not a host adapter reset.",
+    "python -u tests/native_community_reconnect.py --attach build/campaign009-connected-v7 --feed-packages build/campaign009-final-v7-feed --resume",
+    "python -u tests/native_community_commit_retry.py --attach build/campaign009-connected-v7"
+  ],
+  "reproduction_scope": "Commands use fresh independent actors/backings. Recovery commands belong to the preserved failure and explicit approval record, not an automatic mandatory reset or a claim that every run will fail the same way. The one personal builtin restart used existing Launcher33 against its exact old full Network instance, then re-enrolled only the same accepted public certificates. Equivalent standalone personal service operation is: ./lt ctl --socket <Alice.sock> service-restart <exact-current-Network-IID>; its returned IID replaces the local public handle record before ordinary same-pin route enrollment.",
+  "handoff": {
+    "path": "build/campaign009-connected-v7/infra-portals-release.json",
+    "sha256": "8ceb5c873cd836988187086005ddf219f82606b4663aeb453b823791d87ebf24",
+    "all_management_clients_closed": true,
+    "nine_adapters_still_running": true,
+    "last_native_other_sessions": [
+      [
+        0,
+        1,
+        3,
+        0,
+        8358583,
+        65306,
+        0,
+        1
+      ],
+      [
+        0,
+        1,
+        3,
+        0,
+        8362021,
+        65335,
+        0,
+        1
+      ]
+    ],
+    "next_connected_steps": "Service capacity, native project-card Fork/revocation, moderation/appeal, operator restart, approved retention/migration continuations use the same actors with exclusive management ownership."
+  },
+  "limits": [
+    "One-host local integration, not independent administration, physical hardware, Tor interoperability, post-quantum security, correlation resistance or hostile-government resilience.",
+    "An unexplained personal transport failure required explicit same-policy recovery and the local builtin Network replacement. Continuous admission across this failure is not claimed.",
+    "The original long Forge episode observed the same paused pending transport after its terminal had been reclaimed. A separate fresh6.226-second episode established real new wire-consumer work with all three terminals active.",
+    "The initial0.8.1 Messenger results stay attributed to that package. The later0.8.2 text/reply and native counter checks are separately identified; current Feed UI0.9.2 is not relabeled as its later0.9.3 successor.",
+    "Eight meaningful original events exceed a committed read page. Earlier17-event evidence is a distinct identified trial; this run does not exhaust the service index or segment workspace.",
+    "Finite native rolling bulk allocation is preserved and no host lease refill occurs. Resource/peer allowance exhaustion still reports unavailable.",
+    "This focused record does not claim completed capacity saturation, project-card actions, moderation/appeals, server restart, personal retention or federation migration; their connected continuations are separately identified.",
+    "Existing project-release/Registry RSA host signing bootstrap remains disclosed. New Feed-author, moderator and replication identities were generated/used natively."
+  ]
+}

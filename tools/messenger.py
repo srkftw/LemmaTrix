@@ -1,6 +1,6 @@
 """Install and invoke native Messenger owners; host handles public adapter bytes."""
 from __future__ import annotations
-import argparse,hashlib,json,struct,time,os,resource
+import argparse,hashlib,json,struct,time,os,resource,signal
 from pathlib import Path
 import live,nodes,releases,server_store
 
@@ -26,9 +26,16 @@ def endpoint(client,role,operation):
 def invoke(client,role,operation,h=0,a=0,b=0,c=0,data=b'',timeout=600,allowed_status=(0,)):
     who=endpoint(client,role,operation)
     request=struct.pack('<Q8Q',who,operation,h,a,b,c,0,0,1)+data
-    token=struct.unpack('<Q',client.request(175,request))[0]
-    until=time.monotonic()+timeout
+    # Preserve ownership across Ctrl-C during the submit response. Deliver the
+    # signal only after its exact native token can enter the cancellation path.
+    # These host tools run on POSIX; this does not alter native IPC or authority.
+    prior_mask=signal.pthread_sigmask(signal.SIG_BLOCK,{signal.SIGINT})
+    token=None
     try:
+        token=struct.unpack('<Q',client.request(175,request))[0]
+        signal.pthread_sigmask(signal.SIG_SETMASK,prior_mask)
+        prior_mask=None
+        until=time.monotonic()+timeout
         while time.monotonic()<until:
             raw=client.request(176,struct.pack('<Q',token))
             if len(raw)==8:time.sleep(.05);continue
@@ -37,9 +44,12 @@ def invoke(client,role,operation,h=0,a=0,b=0,c=0,data=b'',timeout=600,allowed_st
             return f,raw[64:]
         raise TimeoutError('bounded native completion wait; operation remains separately committed if already accepted')
     except BaseException:
-        try:client.request(177,struct.pack('<Q',token))
-        except (ValueError,OSError,EOFError):pass
+        if token is not None:
+            try:client.request(177,struct.pack('<Q',token))
+            except (ValueError,OSError,EOFError):pass
         raise
+    finally:
+        if prior_mask is not None:signal.pthread_sigmask(signal.SIG_SETMASK,prior_mask)
 
 def install(client,path,public,rights):
     raw=path.read_bytes();info=releases.inspect(raw)
@@ -47,10 +57,31 @@ def install(client,path,public,rights):
     service=nodes.start_package(client,nodes.approved_package(path,public,info['release_id'],rights),raw)
     return service,bytes.fromhex(info['release_id'])
 
+def delivery_start(client,a):
+    """Bind a new coordinator to the current owner/UI without replacing them."""
+    owner=endpoint(client,2,434);who=launcher(client)
+    ui_info=releases.inspect(a.ui_release.read_bytes());owner_info=releases.inspect(a.owner_release.read_bytes())
+    uid=bytes.fromhex(ui_info['release_id']);owner_sid=bytes.fromhex(owner_info['release_id'])
+    if ui_info['rights']!=799 or owner_info['rights']!=0:raise ValueError('exact native Messenger UI799 and rights-zero owner releases required')
+    delivery,did=install(client,a.release,a.public,1024)
+    try:
+        for op in (427,428,434):bind(client,2,owner,delivery,op,owner_sid,did)
+        for op in range(460,464):bind(client,4,delivery,a.ui,op,did,uid)
+        bind(client,4,delivery,who,464,did)
+        invoke(client,4,464,h=owner)
+    except BaseException:
+        client.request(26,struct.pack('<Q',delivery));raise
+    return dict(owner=owner,ui=a.ui,delivery=delivery,delivery_release=did.hex(),route_configured=False,exact_grant_count=32)
+
+def delivery_parent(value):
+    if len(value)!=64 or any(c not in'0123456789abcdefABCDEF'for c in value)or not any(bytes.fromhex(value)):
+        raise argparse.ArgumentTypeError('delivery parent must be a nonzero exact32-byte release hash')
+    return value.lower()
+
 def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--socket',type=Path)
     sub=p.add_subparsers(dest='command',required=True)
-    q=sub.add_parser('package');q.add_argument('--publisher-private',type=Path,required=True);q.add_argument('--output',type=Path,required=True)
+    q=sub.add_parser('package');q.add_argument('--publisher-private',type=Path,required=True);q.add_argument('--output',type=Path,required=True);q.add_argument('--delivery-version',choices=('0.8.0','0.8.1','0.8.2'),default='0.8.2',help='Delivery release version (default0.8.2); other components remain0.8.0');q.add_argument('--delivery-parent',type=delivery_parent,help='exact active Delivery release hash for a normal native upgrade')
     q=sub.add_parser('vault-init');q.add_argument('image',type=Path)
     q=sub.add_parser('start');q.add_argument('--owner',type=Path,required=True);q.add_argument('--public',type=Path,required=True);q.add_argument('--ui',type=Path);q.add_argument('--delivery',type=Path)
     q=sub.add_parser('certify-contact');q.add_argument('--identity-release',type=Path,required=True);q.add_argument('--public',type=Path,required=True);q.add_argument('--scope',required=True);q.add_argument('--output',type=Path,required=True)
@@ -88,10 +119,12 @@ def main(argv=None):
         items=[]
         for name,module,entry,rights in [('identity','Guest.Identity','main',0),('messenger-session','Guest.MessengerSession','main',0),('messenger','Guest.Messenger','main',799),('messenger-delivery','Guest.MessengerDelivery','main',1024),('mailbox','Guest.Mailbox','main',2048)]:
             binary=live_build.app(module,module+'.'+entry,name,2)
-            raw,_=releases.make(binary,name,'0.8.0',rights,a.publisher_private,profile=2,license='NOASSERTION')
+            version=a.delivery_version if name=='messenger-delivery'else'0.8.0'
+            parent=a.delivery_parent if name=='messenger-delivery'else None
+            raw,_=releases.make(binary,name,version,rights,a.publisher_private,parent=parent,profile=2,license='NOASSERTION')
             path=a.output/(name+'.ltrel');path.write_bytes(raw)
             items.append(dict(name=name,path=str(path),rights=rights,code_bytes=binary.stat().st_size,code_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),package_sha256=hashlib.sha256(raw).hexdigest(),release_id=releases.inspect(raw)['release_id']))
-        report=dict(schema=1,packages=items,publisher='explicit host RSA bootstrap',messaging_private_keys_generated=False)
+        report=dict(schema=1,packages=items,publisher='explicit host RSA bootstrap',messaging_private_keys_generated=False,delivery_version=a.delivery_version,delivery_parent=a.delivery_parent)
         (a.output/'packages.json').write_text(json.dumps(report,indent=2)+'\n')
         ready={key:str((a.output/(name+'.ltrel')).resolve())for key,name in
                [('identity','identity'),('owner','messenger-session'),('ui','messenger'),
@@ -151,20 +184,7 @@ def main(argv=None):
                 a.output.write_bytes(invitation)
                 result=dict(public_invitation=str(a.output),bytes=len(invitation),certificate_sha256=hashlib.sha256(certificate).hexdigest(),fingerprint=hashlib.sha256(subject).hexdigest(),private_keys_exported=False,certification_seed_retention='ephemeral; temporary signer is stopped after its public certificate is committed')
             finally:client.request(26,struct.pack('<Q',signer))
-        elif a.command=='delivery-start':
-            owner=endpoint(client,2,434);who=launcher(client)
-            ui_info=releases.inspect(a.ui_release.read_bytes());owner_info=releases.inspect(a.owner_release.read_bytes())
-            uid=bytes.fromhex(ui_info['release_id']);owner_sid=bytes.fromhex(owner_info['release_id'])
-            if ui_info['rights']!=799 or owner_info['rights']!=0:raise ValueError('exact native Messenger UI799 and rights-zero owner releases required')
-            delivery,did=install(client,a.release,a.public,1024)
-            try:
-                for op in (427,428,434):bind(client,2,owner,delivery,op,owner_sid,did)
-                for op in range(460,464):bind(client,4,delivery,a.ui,op,did,uid)
-                bind(client,4,delivery,who,464,did)
-                invoke(client,4,464,h=owner)
-            except BaseException:
-                client.request(26,struct.pack('<Q',delivery));raise
-            result=dict(owner=owner,ui=a.ui,delivery=delivery,delivery_release=did.hex(),route_configured=False,exact_grant_count=32)
+        elif a.command=='delivery-start':result=delivery_start(client,a)
         elif a.command=='delivery-status':
             f,_=invoke(client,4,464,a=1)
             result=dict(status=list(f),publication_phase=f[1],publication_reason=f[2],

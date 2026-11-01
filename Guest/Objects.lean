@@ -56,6 +56,27 @@ partial def ownedLoop (caller i acc t : UInt64) : UInt64 :=
     let n := if load64 r t != 0 && load64 (r+8) t == caller then 1 else 0
     ownedLoop caller (i+1) (acc+n) t
 def ownedCount (caller i t : UInt64) : UInt64 := ownedLoop caller i 0 t
+-- Ordinary records retain their smaller allowance inside the aggregate graph
+-- allowance. A project fork must not consume the account-export subquota.
+-- The low word cannot carry: at most 64 records reserve at most 64KiB each.
+partial def ordinaryUsage (caller i packed t : UInt64) : UInt64 :=
+  if i == 64 then packed else
+    let r := recordAt i
+    let own := load64 r t != 0 && load64 (r+8) t == caller && load64 (r+40) t < 10
+    let next := if own then packed+0x100000000+load64 (r+32) t else packed
+    ordinaryUsage caller (i+1) next t
+
+def creationQuotaAllowed (totalCount totalBytes ordinaryCount ordinaryBytes grants kind bytes : UInt64) : Bool :=
+  totalCount < 24 && totalBytes <= 1048576 && bytes <= 1048576-totalBytes && grants < 64 &&
+  (kind >= 10 || (ordinaryCount < 8 && ordinaryBytes <= 262144 && bytes <= 262144-ordinaryBytes))
+
+theorem aggregate_record_bound (totalBytes ordinaryCount ordinaryBytes grants kind bytes : UInt64) :
+    creationQuotaAllowed 24 totalBytes ordinaryCount ordinaryBytes grants kind bytes = false := by
+  simp [creationQuotaAllowed]
+
+theorem ordinary_record_bound (totalCount totalBytes ordinaryBytes grants bytes : UInt64) :
+    creationQuotaAllowed totalCount totalBytes 8 ordinaryBytes grants 6 bytes = false := by
+  simp [creationQuotaAllowed]
 partial def capLoop (caller i acc t : UInt64) : UInt64 :=
   if i == 256 then acc else
     let c := capAt i
@@ -133,7 +154,8 @@ def beginObject (caller rights length t : UInt64) : UInt64 :=
   else
     let count := ownedCount caller 0 t
     let reserved := reservedBytes caller 0 t
-    if (!admin rights && (count >= (if kind >= 10 then 24 else 8) || reserved+n > (if kind >= 10 then 1048576 else 262144) || capCount caller 0 t >= 64)) then respond 4 0 0 0 t
+    let ordinary := if kind < 10 then ordinaryUsage caller 0 0 t else 0
+    if !admin rights && !creationQuotaAllowed count reserved (ordinary >>> 32) (ordinary &&& 0xffffffff) (capCount caller 0 t) kind n then respond 4 0 0 0 t
     else
       let first := findRecord 0 t
       let t := if first == error then collectDead 0 (ProjectGraph.markAll (cleanDeadGrants 0 t)) else t

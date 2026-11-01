@@ -1,7 +1,7 @@
-"""LT-Transport-v2 opaque socket adapter. No content, credentials or policies.
+"""LT-Transport-v3 opaque socket adapter. No content, credentials or policies.
 
 The guest explicitly requests numeric TCP/UNIX connect or numeric TCP listen.
-Each of four channels has its own socket, epoch, bounded buffers and failures.
+Each of sixteen channels has its own socket, epoch, bounded buffers and failures.
 All cryptography and relationship authorization remain inside the Lean broker.
 
 The optional0600 UNIX fault-control socket accepts one JSON line (<=512 bytes)
@@ -13,7 +13,7 @@ At most four control clients are resident, each with a two-second deadline.
 """
 import errno,ipaddress,json,os,select,socket,struct,threading,time
 from pathlib import Path
-MAGIC=b'LTM2';HEADER=struct.Struct('<4sBBHII');LIMIT=65536;CHANNELS=4
+MAGIC=b'LTM3';HEADER=struct.Struct('<4sBBHII');LIMIT=65536;CHANNELS=16
 
 class MultiplexStream:
  def __init__(self,fault_control=None):
@@ -49,7 +49,7 @@ class MultiplexStream:
     if self.control_path.lstat().st_ino==self.control_inode:self.control_path.unlink()
    except FileNotFoundError:pass
  def run(self):
-  channels=[dict(sock=None,listener=None,pending=bytearray(),epoch=0,connecting=False,endpoint=None,deadline=0,rxcredit=0,flow=False,txpaused=False,txbytes=0,rxbytes=0) for _ in range(CHANNELS)]
+  channels=[dict(sock=None,listener=None,accepting=False,pending=bytearray(),epoch=0,connecting=False,endpoint=None,deadline=0,rxcredit=0,flow=False,txpaused=False,txbytes=0,rxbytes=0) for _ in range(CHANNELS)]
   incoming=bytearray();outgoing=bytearray()
   controls={}
   def new_epoch(ch):
@@ -65,7 +65,7 @@ class MultiplexStream:
     if op=='status' and slot is None:
      if 'epoch' in command:raise ValueError('status does not select an epoch')
      return dict(version=1,ok=True,channels=[public_channel(i) for i in range(CHANNELS)])
-    if type(slot) is not int or not 0<=slot<CHANNELS:raise ValueError('slot must be within0..3')
+    if type(slot) is not int or not 0<=slot<CHANNELS:raise ValueError('slot must be within0..15')
     ch=channels[slot]
     if op=='status':
      if 'epoch' in command:raise ValueError('status does not select an epoch')
@@ -86,7 +86,7 @@ class MultiplexStream:
    # can never be interpreted as the start of a replacement TCP connection.
    new_epoch(ch);event(5,slot,reason)
    if remove and ch['listener']:
-    old=ch['listener'];ch['listener']=None
+    old=ch['listener'];ch['listener']=None;ch['accepting']=False
     if not any(other['listener'] is old for other in channels):old.close()
   def endpoint(raw,listen):
    text=raw.decode('ascii')
@@ -105,7 +105,7 @@ class MultiplexStream:
      if state['output'] is None:reads.append(conn)
      else:writes.append(conn)
     for ch in channels:
-     if ch['listener'] and ch['sock'] is None and len(outgoing)<LIMIT and ch['listener'] not in reads:reads.append(ch['listener'])
+     if ch['listener'] and ch['accepting'] and ch['sock'] is None and len(outgoing)<LIMIT and ch['listener'] not in reads:reads.append(ch['listener'])
      if ch['sock']:
       if ch['connecting'] and time.monotonic()>=ch['deadline']:
        disconnect(channels.index(ch),errno.ETIMEDOUT);continue
@@ -148,28 +148,31 @@ class MultiplexStream:
     for _ in range(16):
      if len(incoming)<HEADER.size:break
      magic,op,slot,n,epoch,value=HEADER.unpack_from(incoming)
-     if magic!=MAGIC or slot>=CHANNELS or n>1008:raise ValueError('invalid LT-Transport-v2 command')
+     if magic!=MAGIC or slot>=CHANNELS or n>1008:raise ValueError('invalid LT-Transport-v3 command')
      if len(incoming)<HEADER.size+n:break
      ch=channels[slot]
      data=bytes(incoming[HEADER.size:HEADER.size+n]);del incoming[:HEADER.size+n]
      if op in (1,2):
       if ch['sock'] or ch['listener']:disconnect(slot,remove=True)
+      candidate=None
       try:
        family,address=endpoint(data,op==2);ch['endpoint']=address
        if value not in (0,1008):raise ValueError('unsupported receive window')
        ch['flow']=value==1008;ch['rxcredit']=value
        shared=next((other['listener'] for other in channels if other is not ch and other['listener'] and other['endpoint']==address),None) if op==2 else None
-       remote=shared or socket.socket(family,socket.SOCK_STREAM);remote.setblocking(False)
+       candidate=shared or socket.socket(family,socket.SOCK_STREAM);candidate.setblocking(False)
        if op==2:
-        if shared is None:remote.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1);remote.bind(address);remote.listen(CHANNELS)
-        ch['listener']=remote;event(9,slot)
+        if shared is None:candidate.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1);candidate.bind(address);candidate.listen(CHANNELS)
+        ch['listener']=candidate;ch['accepting']=True;event(9,slot)
        else:
-        result=remote.connect_ex(address)
-        if result not in (0,errno.EINPROGRESS,errno.EWOULDBLOCK):remote.close();raise OSError(result,'connect failed')
-        ch['sock']=remote;ch['connecting']=bool(result);ch['deadline']=time.monotonic()+5
+        result=candidate.connect_ex(address)
+        if result not in (0,errno.EINPROGRESS,errno.EWOULDBLOCK):candidate.close();raise OSError(result,'connect failed')
+        ch['sock']=candidate;ch['connecting']=bool(result);ch['deadline']=time.monotonic()+5
         if result==0:new_epoch(ch);event(4,slot,LIMIT)
       except (OSError,ValueError,UnicodeError) as error:
-       if 'remote' in locals() and remote is not ch['sock'] and not any(other['listener'] is remote for other in channels):remote.close()
+       # Failure before socket allocation cannot own a previous readiness
+       # iteration's remote. Only this command's candidate may be reclaimed.
+       if candidate is not None and candidate is not ch['sock'] and not any(other['listener'] is candidate for other in channels):candidate.close()
        event(6,slot,getattr(error,'errno',None) or errno.EINVAL)
      elif op==3:disconnect(slot,remove=True)
      elif op==7:
@@ -183,9 +186,9 @@ class MultiplexStream:
      else:event(6,slot,errno.ENOSYS)
     for slot,ch in enumerate(channels):
      listener=ch['listener'];remote=ch['sock']
-     if listener in ready and ch['sock'] is None:
+     if listener in ready and ch['accepting'] and ch['sock'] is None:
       try:
-       remote,_=listener.accept();remote.setblocking(False);ch['sock']=remote;ch['rxcredit']=1008 if ch['flow'] else 0;new_epoch(ch);event(8,slot,LIMIT)
+       remote,_=listener.accept();remote.setblocking(False);ch['sock']=remote;ch['accepting']=False;ch['rxcredit']=1008 if ch['flow'] else 0;new_epoch(ch);event(8,slot,LIMIT)
       except BlockingIOError:pass
      if remote is None:continue
      try:
