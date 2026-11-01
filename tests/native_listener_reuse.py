@@ -90,7 +90,15 @@ def check (t : UInt64) : UInt64 :=
  let t := store64 0x718220 900000 t
  let t := Guest.TorRouter.pumpChannel 0 t
  if load64 (Guest.TorRouter.channel 0) t != 1 || load64 (Guest.Transport.channel 0+24) t != 2 ||
-  load64 (Guest.TorRouter.channel 2) t != 4 then 16 else 0
+  load64 (Guest.TorRouter.channel 2) t != 4 then 16 else
+ -- A real arrival after that old deadline must acquire its finite window
+ -- before the setup-expiry test. The declared entropy stub records the
+ -- window and refuses RNG, so the expected later error is6, never51.
+ let t := incoming 8 14 t
+ let t := store64 0x718220 900001 (store64 0x718228 0 t)
+ let t := Guest.TorRouter.pumpChannel 0 t
+ if load64 0x718228 t != 1000001 || load64 (Guest.TorRouter.state+48) t != 6 ||
+  load64 (Guest.TorRouter.channel 2) t != 4 then 17 else 0
 end build.NativeListenerReuse
 '''
 
@@ -137,6 +145,8 @@ fixtureTrap:
  bne t0,t1,fatal
  li t1,110
  beq a7,t1,fixtureClock
+ li t1,104
+ beq a7,t1,fixtureEntropyRefusal
  li t1,103
  bne a7,t1,fatal
  mv a0,a2
@@ -144,6 +154,13 @@ fixtureTrap:
 fixtureClock:
  li t1,0x80518220
  ld a0,0(t1)
+ j fixtureReturn
+fixtureEntropyRefusal:
+ li t1,0x80520058
+ ld t2,0(t1)
+ li t1,0x80518228
+ sd t2,0(t1)
+ li a0,0
 fixtureReturn:
  csrr t0,mepc
  addi t0,t0,4
@@ -161,8 +178,9 @@ fixtureReturn:
                               'older9 and9 after explicit close cannot restore intent',
                               'LISTEN failure6 clears intent and enters scoped bounded backoff',
                               'fresh CONNECTED4/ACCEPTED8 end intent; actual HUP5 retires only its own link',
-                              'pending creation expires51; acknowledged healthy idle listener remains available'],
-                  limits='Real opaque adapter event order plus compiled RV64 Transport and TorRouter state transitions. Explicit syscall103 completion and110 monotonic-clock oracle; no complete kernel/socket or active-community causal-trace claim. AArch64 assembly emulator runs under qemu-aarch64.')
+                              'pending creation expires51; acknowledged healthy idle listener remains available',
+                              'acceptance after an old idle deadline refreshes its finite100000-tick window before expiry; explicit entropy refusal follows with6, never51'],
+                  limits='Real opaque adapter event order plus compiled RV64 Transport and TorRouter state transitions. Explicit syscall103 completion,110 monotonic-clock oracle, and104 records the setup deadline then returns no entropy; this does not qualify cryptographic handshake success. No complete kernel/socket or active-community causal-trace claim. AArch64 assembly emulator runs under qemu-aarch64.')
     (out/'evidence.json').write_text(json.dumps(report, indent=2)+'\n');print(json.dumps(report, indent=2))
 
 
