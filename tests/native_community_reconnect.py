@@ -83,7 +83,7 @@ def main():
       checked.append(dict(operator=operator.name,event=event['id'],bytes=len(original),content_sha256=event['content_sha256']))
     record('history-read','native committed storage serves earliest and latest original signed bodies beyond its one verified read page on both federations',events=len(events),padded_content_bytes=footprint,server_store_read_page_bytes=4096,segment_writer_workspace_bytes=131072,reads=checked,unrelated_sessions=peers())
    stage='reconcile prior accepted publication after own backfill timeout'
-   if not state['done'].get('ready'):
+   if not state['done'].get('ready')or feed_ui(charlie)[0][5]==8:
     prior=list(feed_ui(charlie)[0])
     if prior[5]==8:
      # A bounded backfill timeout may conservatively require reconciliation
@@ -92,10 +92,11 @@ def main():
      known=export('prior-backfill');charlie.device.press(1)
      assert len(lookup(alpha,event_id=bytes.fromhex(known['event'])))==1
      before=stats();select_feed_route(charlie,alpha,relays);charlie.device.press(63)
-     wait(lambda:feed_ui(charlie)[0][5]in(6,7),600,'native prior accepted commitment reconciliation')
+     wait(lambda:feed_ui(charlie)[0][5]==7,600,'native prior accepted commitment and replication receipt reconciliation')
+     wait(lambda:struct.unpack_from('<Q',feed_ui(charlie)[1],104)[0]==0,120,'native reconciliation UI request collected')
      assert stats()==before
      net(charlie,42);net(charlie,35)
-     record('ready','own backfill timeout warning reconciles the exact previously accepted publication before new composition',prior_ui=prior,profile=known,author_usage=before,unrelated_sessions=peers())
+     record('ready','accepted publication uncertainty reconciles the exact original through its replication receipt before route closure or new composition',prior_ui=prior,profile=known,author_usage=before,unrelated_sessions=peers())
     else:record('ready','prior publication is settled before required-route refusal test',prior_ui=prior,unrelated_sessions=peers())
    stage='required-mode1 route refusal'
    if not state['done'].get('unavailable'):
