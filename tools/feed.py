@@ -34,9 +34,9 @@ def install_or_launch(client,path,public,rights):
             return struct.unpack_from('<Q',answer,8)[0],selected
     return messenger.install(client,path,public,rights)
 
-def package(output, publisher, account_parent=None, federation_parent=None, ui_parent=None, ui_version='0.9.3', account_version='0.9.2'):
+def package(output, publisher, account_parent=None, federation_parent=None, ui_parent=None, ui_version='0.9.4', account_version='0.9.2'):
     import live_build
-    if ui_version not in('0.9.1','0.9.2','0.9.3'):raise ValueError('unsupported Feed UI version')
+    if ui_version not in('0.9.1','0.9.2','0.9.3','0.9.4'):raise ValueError('unsupported Feed UI version')
     if account_version not in('0.9.1','0.9.2'):raise ValueError('unsupported Feed account version')
     if account_parent is not None:
         if not isinstance(account_parent,str)or len(account_parent)!=64 or any(c not in'0123456789abcdefABCDEF'for c in account_parent)or not any(bytes.fromhex(account_parent)):
@@ -172,7 +172,7 @@ def replication(client,a):
 def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--socket',type=Path)
     sub=p.add_subparsers(dest='command',required=True)
-    q=sub.add_parser('package');q.add_argument('--publisher-private',type=Path,required=True);q.add_argument('--output',type=Path,required=True);q.add_argument('--account-parent',help='nonzero exact previous Feed account release hash for a normal native upgrade');q.add_argument('--federation-parent',help='nonzero exact previous Feed federation release hash for a normal native upgrade');q.add_argument('--ui-parent',help='nonzero exact previous Feed UI release hash for a normal native upgrade');q.add_argument('--ui-version',choices=('0.9.1','0.9.2','0.9.3'),default='0.9.3',help='Feed UI version (default0.9.3); older versions require explicit selection');q.add_argument('--account-version',choices=('0.9.1','0.9.2'),default='0.9.2',help='Feed account version (default0.9.2);0.9.1 requires explicit selection')
+    q=sub.add_parser('package');q.add_argument('--publisher-private',type=Path,required=True);q.add_argument('--output',type=Path,required=True);q.add_argument('--account-parent',help='nonzero exact previous Feed account release hash for a normal native upgrade');q.add_argument('--federation-parent',help='nonzero exact previous Feed federation release hash for a normal native upgrade');q.add_argument('--ui-parent',help='nonzero exact previous Feed UI release hash for a normal native upgrade');q.add_argument('--ui-version',choices=('0.9.1','0.9.2','0.9.3','0.9.4'),default='0.9.4',help='Feed UI version (default0.9.4); older versions require explicit selection');q.add_argument('--account-version',choices=('0.9.1','0.9.2'),default='0.9.2',help='Feed account version (default0.9.2);0.9.1 requires explicit selection')
     q=sub.add_parser('vault-init');q.add_argument('image',type=Path)
     q=sub.add_parser('authorize-retention');q.add_argument('--owner',type=int,required=True)
     q=sub.add_parser('ui-status');q.add_argument('--ui',type=int,required=True)

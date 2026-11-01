@@ -771,6 +771,17 @@ def paintPump (surface t : UInt64) : UInt64 :=
   let r := upload surface offset bytes 0 t
   if r == error then notice 12 (store64 (st+368) 0 r) else
   store64 (st+368) (if offset+bytes == 901120 then 0 else offset+bytes+1) r
+ def hideSelection (keepAuthor t : UInt64) : UInt64 :=
+  -- A filtered row must not leave old text, an event reference or a project
+  -- action selected. Keep only its public author when F8 can undo a block.
+  let a := if keepAuthor == 1 then load64 (selected+112) t else 0
+  let b := if keepAuthor == 1 then load64 (selected+120) t else 0
+  let c := if keepAuthor == 1 then load64 (selected+128) t else 0
+  let d := if keepAuthor == 1 then load64 (selected+136) t else 0
+  let t := zero content 2048 (zero selected 60 (zero eventId 4
+    (store64 (st+176) 0 (store64 (st+72) 0 (store64 (st+80) 0 (store64 (st+200) 0 t))))))
+  store64 (selected+112) a (store64 (selected+120) b
+    (store64 (selected+128) c (store64 (selected+136) d t)))
  def submit (action h a b c payload bytes t : UInt64) : UInt64 :=
   -- A status read cannot consume an explicit keyboard/pointer gesture.
   let pending := load64 (st+8) t
@@ -780,7 +791,7 @@ def paintPump (surface t : UInt64) : UInt64 :=
     else t
   if load64 (st+8) t != 0 then notice 6 t else
   let token := Guest.FeedAccountSDK.submit action h a b c payload bytes t
-  if token == error then notice 14 token else
+  if token == error then notice 14 (if action == 5 || action == 6 || action == 16 then hideSelection 0 token else token) else
   let t := store64 (st+352) h (store64 (st+8) token (store64 (st+16) action token))
   if action == 0 then t else notice 6 t
  def inspect (t : UInt64) : UInt64 := submit 0 0 0 0 0 0 0 t
@@ -913,17 +924,6 @@ partial def readPortable (object offset t : UInt64) : UInt64 :=
   if r != 96 || status r != 0 || load64 (wire+16) r != 2048 || load64 (wire+32) r != 6 then notice 12 r else
   let r := readPortable object 0 r
   if r == error then notice 12 r else submit 13 0 0 0 0 portable 512 (store64 (st+264) 0 r)
- def hideSelection (keepAuthor t : UInt64) : UInt64 :=
-  -- A filtered row must not leave old text, an event reference or a project
-  -- action selected. Keep only its public author when F8 can undo a block.
-  let a := if keepAuthor == 1 then load64 (selected+112) t else 0
-  let b := if keepAuthor == 1 then load64 (selected+120) t else 0
-  let c := if keepAuthor == 1 then load64 (selected+128) t else 0
-  let d := if keepAuthor == 1 then load64 (selected+136) t else 0
-  let t := zero content 2048 (zero selected 60 (zero eventId 4
-    (store64 (st+176) 0 (store64 (st+72) 0 (store64 (st+80) 0 (store64 (st+200) 0 t))))))
-  store64 (selected+112) a (store64 (selected+120) b
-    (store64 (selected+128) c (store64 (selected+136) d t)))
  def completed (action n t : UInt64) : UInt64 :=
   let code := status t
   let t := store64 (st+8) 0 t
@@ -934,8 +934,11 @@ partial def readPortable (object offset t : UInt64) : UInt64 :=
     let t := if load64 (wire+24) t == 0 && n == 96 then copy (wire+64) (selected+112) 32 t else t
     if load64 (wire+24) t == 1 && load64 (wire+16) t != 0 then timeline (load64 (wire+16) t) t else notice 16 t
   else if code != 0 && code != 6 then
-    let t := if action == 16 then
-        zero content 2048 (zero selected 60 (zero eventId 4 (store64 (st+176) 0 (store64 (st+72) 0 (store64 (st+200) 0 t)))))
+    -- A refused query start owns no completion. In particular a busy body
+    -- request must not leave collection armed against the previous timeline
+    -- response. Hide partial content and keep only the native page cursors;
+    -- ordinary navigation can retry without consuming stale response bytes.
+    let t := if action == 5 || action == 6 || action == 16 then hideSelection 0 t
       else t
     if action == 14 then notice 64 (store64 (st+344) 0 t) else
     if action == 20 then notice 65 (store64 (st+312) 0 t) else
@@ -1041,7 +1044,10 @@ partial def readPortable (object offset t : UInt64) : UInt64 :=
   if token == 0 then t else
   let r := Guest.FeedAccountSDK.collect token t
   if r == 0 then r else
-  if r == error || r < 64 || r > 1024 then notice 12 (store64 (st+8) 0 r) else
+  if r == error || r < 64 || r > 1024 then
+    let action := load64 (st+16) r
+    let t := store64 (st+8) 0 r
+    notice 12 (if action == 5 || action == 6 || action == 16 then hideSelection 0 t else t) else
   completed (load64 (st+16) r) r r
 def digit (c : UInt64) : UInt64 :=
   if c >= 48 && c <= 57 then c-48 else if c >= 97 && c <= 102 then c-87 else

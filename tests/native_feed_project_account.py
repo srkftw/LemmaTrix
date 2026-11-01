@@ -194,14 +194,17 @@ def retained_pair_packages(bundle,old_releases,*,relaunch=False):
     selected={name:releases.inspect(path.read_bytes(),modulus)for name,path in paths.items()}
     for name in('identity','feed-federation'):
         assert selected[name]['release_id']==old_releases[name],name+' must remain the exact existing service release'
-    for name,version,rights in(('feed-account','0.9.2',1024),('feed','0.9.3',799)):
+    changed=False
+    for name,versions,rights in(('feed-account',('0.9.2',),1024),('feed',('0.9.3','0.9.4'),799)):
         info=selected[name]
         assert info['project']==name and info['rights']==rights
-        if relaunch:
+        if relaunch or info['release_id']==old_releases[name]:
             assert info['release_id']==old_releases[name],'relaunch requires the exact already admitted release'
         else:
-            assert info['version']==version
+            assert info['version']in versions
             assert info['parent']==old_releases[name]and info['release_id']!=old_releases[name],'normal exact-parent upgrade required'
+            changed=True
+    assert relaunch or changed,'upgrade requires at least one strictly newer component; use exact relaunch for unchanged packages'
     return paths,{name:dict(release_id=info['release_id'],parent=info['parent'],version=info['version'],
                            code_sha256=info['executable_sha256'],
                            package_sha256=hashlib.sha256(paths[name].read_bytes()).hexdigest())for name,info in selected.items()}
@@ -223,7 +226,7 @@ def check_admitted_pair(client,paths,packages,old_releases,*,relaunch):
                 if str(error)!='guest rejected command13, status1':raise
                 continue
             if len(header)==512 and header[160:192].hex()==old_releases[name]:
-                if relaunch or name=='identity':
+                if relaunch or name=='identity'or packages[name]['release_id']==old_releases[name]:
                     assert header==raw[:512],name+' current native header/hash differs from the selected exact package'
                 else:
                     assert tuple(map(int,packages[name]['version'].split('.')))>struct.unpack_from('<3Q',header,72),'normal upgrade requires a strictly newer component version'
@@ -500,7 +503,7 @@ def main():
     parser.add_argument('--stage',choices=('project','migrate','ephemeral'),required=True)
     parser.add_argument('--person',choices=('alice','bob'),default='bob')
     parser.add_argument('--feed-packages',type=Path,help='exact frozen bundle required for ephemeral or retained same-release relaunch')
-    parser.add_argument('--upgrade-feed-packages',type=Path,help='parent-linked Account0.9.2/UI0.9.3 bundle for explicit retained migration upgrade')
+    parser.add_argument('--upgrade-feed-packages',type=Path,help='normal per-component exact reuse or parent-linked Account0.9.2/UI0.9.3/0.9.4 retained migration upgrade')
     parser.add_argument('--relaunch-retained-feed',action='store_true',help='normally relaunch the exact current --feed-packages account/UI during retained migration')
     parser.add_argument('--alpha-offline-approved',action='store_true',help='select only after connected moderation/restart checks finish')
     parser.add_argument('--local-project-only',action='store_true',help='preserve measured replication failure while completing unaffected native project actions; never a full pass')
@@ -816,7 +819,7 @@ def main():
                 assert public[256:1792]==approved[256:1792]and preference_bits(public,project_id)&4
                 if block_was_selected:assert preference_bits(public,blocked_author)&2
                 passed('native recovery restores exactly the explicitly approved local preferences independently of federation policy',preference_bytes=1536,preference_sha256=hashlib.sha256(public[256:1792]).hexdigest(),stable_project_follow=True,previously_selected_local_block=block_was_selected,local_block_preserved=True if block_was_selected else None,complete_graph_published=False)
-                if lifecycle is not None and lifecycle['packages']['feed']['version']=='0.9.3'and lifecycle['packages']['feed-account']['version']=='0.9.2':
+                if lifecycle is not None and lifecycle['packages']['feed']['version']in('0.9.3','0.9.4')and lifecycle['packages']['feed-account']['version']=='0.9.2':
                     check_upgraded_local_block(g,state,approved,checkpoint,save,observed)
                 event=match(destination,author,1,hashlib.sha256(MOVED.encode()).digest())
                 assert public[32:64]==author and public[128:160]in(prior_event,event[:32]if event else prior_event)and struct.unpack_from('<Q',public,160)[0]>1
