@@ -117,7 +117,7 @@
     }
   ],
   "common_run": {
-    "result": "core pass; fresh active Forge/reconnect and later continuations in progress",
+    "result": "core and fresh active-terminal Forge pass; reconnect and later continuations in progress",
     "output": "build/campaign009-connected-v6",
     "raw_evidence": "build/campaign009-connected-v6/evidence.json",
     "raw_sha256": "b0e461169889663ebdf4eaf967f0abb4663a6b786abfaf870fe055e38403f5f6",
@@ -487,7 +487,7 @@
       }
     ],
     "elapsed_seconds": 3315.918975085995,
-    "scope": "One identified common image; Forge completion at139.306s preserved the original paused transport epoch after its terminal was observed reclaimed; fresh active-context Forge check pending."
+    "scope": "One identified common image. Messenger finished while the independent Feed terminal was authenticated and paused. At the later core Forge observation its terminal was reclaimed while its original transport epoch stayed paused. The separate fresh active-terminal Forge case passed on these same live actors."
   },
   "component_record": "campaign-009-components.json",
   "capacity": {
@@ -822,12 +822,6 @@
       "segment_record_sha256": "f0f44dc366f99f2e67aef0694feedcd7d49180a1dcb50aeadf82ac87e91d7a8e"
     }
   ],
-  "image_layout": {
-    "local_record": "build/campaign009-final-v2-layout.json",
-    "record_sha256": "f88dcef3551868badb0efa65cad22f0a9fabfe4e1ae44127af4037db1607dbc9",
-    "network_code_bytes": 388624,
-    "network_limit_bytes": 393216
-  },
   "aarch64_final": {
     "path": "docs/evidence/campaign-009-final-aarch64-storage.json",
     "sha256": "a14aa4252bc7ea4e94552af7d475035660ee7b74cb060e91ad5e22c924de4129",
@@ -1116,5 +1110,126 @@
       "path": "docs/evidence/campaign-009-terminal-request.json",
       "sha256": "1ca41a175e9bce8af084f87d2a99ed279fdcae7c156e585eb634ecb2129b971d"
     }
+  },
+  "active_forge": {
+    "result": "pass",
+    "raw_record": "build/campaign009-connected-v6/active-forge.json",
+    "raw_sha256": "fab4939f0768cdf60a28bf223fb7e998d463c737f43c5281ae70bbfd3236493c",
+    "configuration": {
+      "image_sha256": "690e8959d79a42d3e61aa6f69df14b4e0c485ad58b015f451685abf014c275ee",
+      "feed": {
+        "identity": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+        "feed-account": "f50eaa12d7dc69c962584ce34a12d53d9b064970c640d23d594e930d7fc4bc07",
+        "feed": "bfd1a9584b654f8ee4f0c3f1b3703608b452da7a9ad472683821aa8f4f13a635",
+        "feed-federation": "02041c0eeca13f17a62a8913954558d9dc5be7e52f55d5db915dc76b14241526"
+      },
+      "messenger": {
+        "identity": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+        "owner": "50f3e3ccb8d3faeaf29c50d6aec24bbc654a30754f26c15dd7585a4a8e64a5b3",
+        "ui": "a0b4294d2331e6704acd69093936339f7c0b8559dd9990d4967a22216f84e6c7",
+        "delivery": "f8f9a0c572e691398008ab13e3aa852a12eeec06344715f593bf8a921d07c20b",
+        "mailbox": "24e249a218f52813953b8d204f1c7b3d1129e1b675a9ed8500731cf842049135"
+      },
+      "mixed": true,
+      "history_events": 17,
+      "replication_auto_renew": true
+    },
+    "checks": [
+      "ordinary native F1 exposed fresh in-flight Forge work before its verified completion",
+      "native terminal byte and request allowances both decreased while exact original release/admission fields were returned",
+      "same fresh Feed transport epoch remained paused with pending bytes and authenticated terminal phase3 at Forge completion",
+      "native cancellation and only Charlie route teardown preserved unrelated Alice/Bob phase3"
+    ],
+    "elapsed_seconds": 6.209440205988358,
+    "verified": {
+      "fields": [
+        0,
+        6,
+        2,
+        0,
+        1,
+        0,
+        1,
+        1
+      ],
+      "bob_after": [
+        0,
+        1,
+        3,
+        0,
+        8374000,
+        65428,
+        0,
+        1
+      ],
+      "reference": "92daee22b2b8ed1f4de2b1354701a07742de03065c36ecc716c0a5e60624a7c2eca69a0fbc36a60c601594528cd39253adecff887616c8cc04509e99b5881c41"
+    },
+    "stall_after": {
+      "channel": {
+        "slot": 0,
+        "epoch": 6,
+        "connected": true,
+        "connecting": false,
+        "tx_paused": true,
+        "pending_bytes": 532,
+        "tx_bytes": 2710,
+        "rx_bytes": 2710
+      },
+      "terminal": [
+        0,
+        1,
+        3,
+        0,
+        8388544,
+        65535,
+        0,
+        1
+      ]
+    },
+    "unrelated_after": [
+      [
+        0,
+        1,
+        3,
+        0,
+        8371762,
+        65414,
+        0,
+        1
+      ],
+      [
+        0,
+        1,
+        3,
+        0,
+        8374000,
+        65428,
+        0,
+        1
+      ]
+    ],
+    "limits": [
+      "One-host mixed QEMU/native-x86 integration; x86 executes the RV64 guest through its native interpreter.",
+      "Budget consumption plus UI busy-to-complete and exact reference evidence establish a fresh existing consumer request; this does not decrypt captured transport.",
+      "The original longer episode separately records terminal reclamation, without asserting it remained active there."
+    ]
+  },
+  "aarch64_transport_final": {
+    "path": "docs/evidence/campaign-009-final-aarch64-transport.json",
+    "sha256": "50d4980053ce55ff1a3414d98da109abf599ed1652600b3a7d94c14be3e079e1",
+    "result": "pass generic installed mode3 transport under emulation; disclosed legacy Host fixture credentials; no Feed authority claim"
+  },
+  "image_layout_prior_582": {
+    "local_record": "build/campaign009-final-v2-layout.json",
+    "record_sha256": "f88dcef3551868badb0efa65cad22f0a9fabfe4e1ae44127af4037db1607dbc9",
+    "network_code_bytes": 388624,
+    "network_limit_bytes": 393216
+  },
+  "image_layout": {
+    "local_record": "build/campaign009-final-v8-layout.json",
+    "record_sha256": "abe2d8880a373b9aaee4e7c77cc274f15e71a1f6a47862843b245617fbfd0e33",
+    "network_code_bytes": 393816,
+    "network_limit_bytes": 425984,
+    "image_sha256": "690e8959d79a42d3e61aa6f69df14b4e0c485ad58b015f451685abf014c275ee"
   }
 }
