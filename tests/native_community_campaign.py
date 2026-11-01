@@ -176,7 +176,8 @@ def main():
   public=dict(schema=1,configuration=expected,actors=state['actors'],personal=state['personal'],events=state['events'],project=state.get('project'),federations=feds,bulk_endpoint=state.get('bulk_endpoint'),helpers=dict(module='tests/native_community_campaign.py',attach='attach_campaign',personal_feed_destination='select_feed_route',graphical_focus='focus_application'),pending_connected_steps=['native project-card Add/Fork with current revocation','federation report/decision/appeal and independent local block','operator restart and replication recovery','approved account retention/portability with original federation offline'],authority='Public configuration and live native handles only; all actions, signatures, persistence and policy decisions remain native.')
   (out/'continuations.json').write_text(json.dumps(public,indent=2)+'\n')
  def record(key,label,**extra):
-  state['done'][key]=True;state['checks'].append(dict(check=label,result='pass',**extra));save();print('PASS',label,flush=True)
+  observation=dict(check=label,result='pass',**extra)
+  state['checks'].append(observation);state['done'][key]=True;save();print('PASS',label,flush=True)
  def actor(name,personal=False,fault=False,store=False):
   backend='x86_64'if a.mixed and name=='relay2'else'qemu'
   backing=out/(name+'.img')
@@ -387,7 +388,7 @@ def main():
   stage='actual routed Forge during Feed stall'
   project=state['project'];text='LT-PROJECT1 '+project['root']+' '+project['federation']+' 1'
   send_once(alice,bob,'project_message',text,True)
-  if not state['done'].get('forge'):
+  if not state['done'].get('forge')or not state.get('forge_verified_fields'):
    if inspect(bob)[0][2]!=6:
     focus(bob,'messenger')
     state.setdefault('forge_roots_before',projects.roots(bob.client));save()
@@ -406,7 +407,8 @@ def main():
     assert f[2]==2 and f[3]==0 and f[4]==project['decision']['sequence']and selected==bytes.fromhex(project['root']+project['federation']),(f,selected)
     return f
    result=wait(verified,900,'native existing routed Forge signature/admission');assert projects.roots(bob.client)==roots_before
-   record('forge','actual received reference completes existing routed Forge inspection while independent Feed link remains paused',result=list(result),execution_approved=False)
+   state['forge_verified_fields']=list(result)
+   record('forge','actual received reference completes existing routed Forge inspection while independent Feed link remains paused',verified_fields=list(result),execution_approved=False)
   stage='native cancellation and independent cleanup'
   if not state['done'].get('cancel'):
    charlie.device.press(1);wait(lambda:feed_ui(charlie)[0][2]==0,120,'native Feed input cancellation while link paused')
