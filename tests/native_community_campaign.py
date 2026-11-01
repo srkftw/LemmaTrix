@@ -81,12 +81,12 @@ def attach_campaign(output,graphical=('alice','bob','charlie')):
    if g.device:g.device.close()
    if g.client:g.client.close()
 
-def select_feed_route(g,destination,relays):
+def select_feed_route(g,destination,relays,*,budget=8388608,attempts=65536):
  """Explicit personal destination selection; operators keep serving peers."""
  close_route(g)
  for slot,certificate in enumerate([*(r.certificate for r in relays),destination.certificate]):enroll(g,slot,certificate)
  net(g,31);wait(lambda:net(g,32)[0][2]==3,900,g.name+' selected Feed circuit')
- net(g,38,h=3,a=21,b=g.feed_owner,cword=8388608,d=65536)
+ net(g,38,h=3,a=21,b=g.feed_owner,cword=budget,d=attempts)
  wait(lambda:net(g,41)[0][2]==3,600,g.name+' selected Feed terminal')
  focus_application(g,'feed')
 
