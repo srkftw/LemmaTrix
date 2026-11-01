@@ -34,7 +34,7 @@ def install_or_launch(client,path,public,rights):
             return struct.unpack_from('<Q',answer,8)[0],selected
     return messenger.install(client,path,public,rights)
 
-def package(output, publisher, account_parent=None, federation_parent=None):
+def package(output, publisher, account_parent=None, federation_parent=None, ui_parent=None):
     import live_build
     if account_parent is not None:
         if not isinstance(account_parent,str)or len(account_parent)!=64 or any(c not in'0123456789abcdefABCDEF'for c in account_parent)or not any(bytes.fromhex(account_parent)):
@@ -44,18 +44,23 @@ def package(output, publisher, account_parent=None, federation_parent=None):
         if not isinstance(federation_parent,str)or len(federation_parent)!=64 or any(c not in'0123456789abcdefABCDEF'for c in federation_parent)or not any(bytes.fromhex(federation_parent)):
             raise ValueError('federation parent must be a nonzero exact32-byte release hash')
         federation_parent=federation_parent.lower()
+    if ui_parent is not None:
+        if not isinstance(ui_parent,str)or len(ui_parent)!=64 or any(c not in'0123456789abcdefABCDEF'for c in ui_parent)or not any(bytes.fromhex(ui_parent)):
+            raise ValueError('UI parent must be a nonzero exact32-byte release hash')
+        ui_parent=ui_parent.lower()
     output.mkdir(parents=True, exist_ok=False)
     rows=[]
     for name,module,rights in [('identity','Guest.Identity',0),('feed-account','Guest.FeedAccount',1024),
                               ('feed','Guest.Feed',799),('feed-federation','Guest.FeedFederation',3072)]:
         binary=live_build.app(module,module+'.main',name,2)
-        version='0.9.1'if name in('feed-account','feed-federation')else'0.9.0'
-        raw,_=releases.make(binary,name,version,rights,publisher,parent=account_parent if name=='feed-account'else federation_parent if name=='feed-federation'else None,profile=2,license='NOASSERTION')
+        version='0.9.1'if name in('feed-account','feed-federation','feed')else'0.9.0'
+        parent=account_parent if name=='feed-account'else federation_parent if name=='feed-federation'else ui_parent if name=='feed'else None
+        raw,_=releases.make(binary,name,version,rights,publisher,parent=parent,profile=2,license='NOASSERTION')
         path=output/(name+'.ltrel');path.write_bytes(raw)
         rows.append(dict(name=name,path=str(path.resolve()),rights=rights,code_bytes=binary.stat().st_size,
                          code_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),
                          release_id=releases.inspect(raw)['release_id'],package_sha256=hashlib.sha256(raw).hexdigest()))
-    report=dict(schema=1,packages=rows,account_parent=account_parent,federation_parent=federation_parent,publisher='existing disclosed host RSA release bootstrap',
+    report=dict(schema=1,packages=rows,account_parent=account_parent,federation_parent=federation_parent,ui_parent=ui_parent,publisher='existing disclosed host RSA release bootstrap',
                 feed_private_keys_exported=False,authoritative_host_database=False)
     (output/'packages.json').write_text(json.dumps(report,indent=2)+'\n')
     return report
@@ -165,7 +170,7 @@ def replication(client,a):
 def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--socket',type=Path)
     sub=p.add_subparsers(dest='command',required=True)
-    q=sub.add_parser('package');q.add_argument('--publisher-private',type=Path,required=True);q.add_argument('--output',type=Path,required=True);q.add_argument('--account-parent',help='nonzero exact previous Feed account release hash for a normal native upgrade');q.add_argument('--federation-parent',help='nonzero exact previous Feed federation release hash for a normal native upgrade')
+    q=sub.add_parser('package');q.add_argument('--publisher-private',type=Path,required=True);q.add_argument('--output',type=Path,required=True);q.add_argument('--account-parent',help='nonzero exact previous Feed account release hash for a normal native upgrade');q.add_argument('--federation-parent',help='nonzero exact previous Feed federation release hash for a normal native upgrade');q.add_argument('--ui-parent',help='nonzero exact previous Feed UI release hash for a normal native upgrade')
     q=sub.add_parser('vault-init');q.add_argument('image',type=Path)
     q=sub.add_parser('authorize-retention');q.add_argument('--owner',type=int,required=True)
     q=sub.add_parser('ui-status');q.add_argument('--ui',type=int,required=True)
@@ -182,7 +187,7 @@ def main(argv=None):
         q=sub.add_parser(name)
         if name=='timeline':q.add_argument('--cursor',type=int,default=0);q.add_argument('--moderator',action='store_true')
     a=p.parse_args(argv)
-    if a.command=='package':result=package(a.output,a.publisher_private,a.account_parent,a.federation_parent)
+    if a.command=='package':result=package(a.output,a.publisher_private,a.account_parent,a.federation_parent,a.ui_parent)
     elif a.command=='vault-init':
         import os,resource
         sectors=5396132;size=sectors*512

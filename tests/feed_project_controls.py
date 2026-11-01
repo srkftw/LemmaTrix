@@ -250,13 +250,20 @@ def inspect_and_fork(g,ui,record,chosen):
     journal=json.loads(journal_path.read_text())if journal_path.exists()else dict(intent=intent,before_heads=[r['head']for r in projects.roots(g.client)],first_ui_incarnation=ui)
     if journal['intent']!=intent:raise ValueError('normal Fork intent changed on resume')
     write_record(journal_path,journal)
+    awaiting_commit=[False]
     def committed():
+        observer=getattr(g,'project_observer',None)
+        if observer is not None:observer('native Objects Fork completion',event_id=chosen[:32].hex())
         for row in projects.roots(g.client):
             if row['head']in journal['before_heads']or not row['name'].startswith('feedfork'):continue
             try:lineage=verify_fork(g.client,row,record,publisher)
             except (AssertionError,StopIteration):continue
             return dict(event_id=chosen[:32].hex(),upstream_root=record['root']['head'],fork=row,publisher=publisher,**lineage,
                         action='existing Objects.forkProject; independent local lineage, no install or execution consent')
+        if awaiting_commit[0]:
+            fields,_=ui_call(g,ui,791)
+            if fields[4]==12 and complete_read(g,ui):
+                raise RuntimeError(('native project Fork or bounded delegation refused',list(fields)))
         return None
     wait(lambda:complete_read(g,ui),180,'previous native Feed request completed before project action')
     prior=committed()
@@ -271,6 +278,7 @@ def inspect_and_fork(g,ui,record,chosen):
     # root that matches the card is eligible when the owner rechecks admission.
     wait(lambda:ui_call(g,ui,791)[0][4]==49,90,'native trusted project picker is open')
     journal['picker']=approve_exact_picker(g,record['root']['head']);write_record(journal_path,journal)
+    awaiting_commit[0]=True
     result=wait(committed,180,'existing Objects graph Fork commits independent source and Library grants')
     journal['result']=result;write_record(journal_path,journal);return result
 
