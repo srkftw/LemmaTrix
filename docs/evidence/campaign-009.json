@@ -118,7 +118,7 @@
     }
   ],
   "common_run": {
-    "result": "Recorded infrastructure segments passed with explicit personal recovery: concurrent native Feed, original signed replication, active-stall Messenger/Forge, exact lost-response retry, unchanged positive reservations and no-vault ephemerality. Six-pair capacity and application continuations are still running; no full-campaign completion claim.",
+    "result": "Infrastructure and saturation/reuse passed with explicit earlier personal recovery: concurrent native Feed, original signed replication, active-stall Messenger/Forge, exact lost-response retry, unchanged positive reservations, no-vault ephemerality, six actual routes/native seventh refusal/reuse and useful Messenger work after more than750 completed empty probes. Strict project, moderation, restart and migration remain pending.",
     "output": "build/campaign009-connected-v7",
     "configuration": {
       "image_sha256": "2e5147c4198cf7ec39ab053f2ea8895cfdceb1c9b9dcf79e1b7bb7627314bcdf",
@@ -274,6 +274,182 @@
       "path": "docs/evidence/campaign-009-community-2e514.json",
       "sha256": "9ea6074ac05dae2f0873d22b0d19970fde2a1004f7ef5c3eb2b7ce1fa00c8003",
       "result": "pass-for-recorded-segments-with-explicit-personal-recovery"
+    },
+    "capacity_checkpoint": {
+      "record": "docs/evidence/campaign-009-capacity-2e514.json",
+      "sha256": "90516cdb799d0574a31b71dc98d9ff178b1a813e8df163491c58af22971be840",
+      "result": "pass",
+      "native_operator_resets": 0,
+      "authenticated_routes": 6,
+      "elapsed_seconds": 2189.3167703459912,
+      "admission_seconds": [
+        194.88476013099717,
+        209.53872940900328,
+        213.88298283499898
+      ],
+      "native_seventh_refusal_seconds": 1025.1015548489959,
+      "native_reason": 51,
+      "reuse_seconds": 229.7590275859984,
+      "host_replication_renewals": 0
+    },
+    "post512_messenger": {
+      "result": "pass",
+      "raw_evidence": {
+        "path": "build/campaign009-connected-v7/delivery-idle-useful-work.json",
+        "sha256": "ecfd40138ef4af81b318a3fbe15f55d9ebfe57083e093cddc8cc0f43ade13b69"
+      },
+      "elapsed_seconds": 66.77910233300645,
+      "text": {
+        "sender": "alice",
+        "recipient": "bob",
+        "serial": 4,
+        "prior_ui_serial": 3,
+        "body_sha256": "171addaa27100a6c051c0b65324534cfab2a1177f8e48281da8a43b2838f2f6a",
+        "native_inbox": [
+          0,
+          4,
+          66,
+          1,
+          1,
+          0,
+          0,
+          1
+        ],
+        "seconds": 32.884180858993204
+      },
+      "reply": {
+        "sender": "bob",
+        "recipient": "alice",
+        "serial": 3,
+        "prior_ui_serial": 2,
+        "body_sha256": "ed349eeb436f042486b2e93be4f625879b74a0c069c1d4acd65f201e1e1307d3",
+        "native_inbox": [
+          0,
+          3,
+          58,
+          1,
+          1,
+          0,
+          0,
+          1
+        ],
+        "seconds": 32.08792919199914
+      },
+      "before": {
+        "alice": {
+          "delivery": 10565884165390074633,
+          "owner": 10565884165390074119,
+          "ui": 10565884165390074120,
+          "counters": [
+            0,
+            1,
+            813,
+            813,
+            0,
+            0,
+            800,
+            1
+          ],
+          "terminal": [
+            0,
+            1,
+            3,
+            0,
+            8283959,
+            64723,
+            0,
+            1
+          ],
+          "pin": "a456dd562224c6b13301a1eef29864ce5753c04a69518083b1dea531770ea529"
+        },
+        "bob": {
+          "delivery": 8117591479108502281,
+          "owner": 8117591479108501767,
+          "ui": 8117591479108501768,
+          "counters": [
+            0,
+            8,
+            776,
+            776,
+            0,
+            0,
+            761,
+            1
+          ],
+          "terminal": [
+            0,
+            1,
+            3,
+            0,
+            8288421,
+            64760,
+            0,
+            1
+          ],
+          "pin": "a456dd562224c6b13301a1eef29864ce5753c04a69518083b1dea531770ea529"
+        }
+      },
+      "after": {
+        "alice": {
+          "delivery": 10565884165390074633,
+          "owner": 10565884165390074119,
+          "ui": 10565884165390074120,
+          "counters": [
+            0,
+            1,
+            840,
+            840,
+            0,
+            0,
+            815,
+            1
+          ],
+          "terminal": [
+            0,
+            1,
+            3,
+            0,
+            8280197,
+            64696,
+            0,
+            1
+          ],
+          "pin": "a456dd562224c6b13301a1eef29864ce5753c04a69518083b1dea531770ea529"
+        },
+        "bob": {
+          "delivery": 8117591479108502281,
+          "owner": 8117591479108501767,
+          "ui": 8117591479108501768,
+          "counters": [
+            0,
+            7,
+            802,
+            802,
+            0,
+            0,
+            777,
+            1
+          ],
+          "terminal": [
+            0,
+            1,
+            3,
+            0,
+            8284795,
+            64734,
+            0,
+            1
+          ],
+          "pin": "a456dd562224c6b13301a1eef29864ce5753c04a69518083b1dea531770ea529"
+        }
+      },
+      "idle_wait_added": false,
+      "process_or_route_replacement": false,
+      "authority_renewal": false,
+      "qualification": [
+        "Local integration on the identified common image; previous scoped route loss and authorized recovery remain separate evidence.",
+        "This test neither renews terminal allowances nor asserts unlimited unattended operation."
+      ]
     }
   },
   "component_record": "campaign-009-components.json",
@@ -306,7 +482,7 @@
     "replication_allocation_bytes_max": 1048576,
     "replication_attempts_per_event": 9,
     "polls_per_attempt": 128,
-    "actual_concurrent_clients_in_common_run": 3,
+    "actual_concurrent_clients_in_common_run": 6,
     "mailbox_progress_ticks": 10000,
     "mailbox_absolute_stage_ticks": 60000,
     "relay_setup_ticks": 100000,
@@ -324,7 +500,8 @@
     "network_code_limit_bytes": 425984,
     "network_code_spare_bytes": 30844,
     "bulk_creation_ticks": 100000,
-    "messenger_rpc_ticks": 90000
+    "messenger_rpc_ticks": 90000,
+    "saturation_reuse_qualification": "Pass: six independent authenticated three-hop routes; seventh native reason51 after1025.102s. One owned pair released; the same overflow guest reused capacity in229.759s. Substantial saturation refusal latency remains a material limit."
   },
   "source_predicates": {
     "Guest.FeedPolicy.stageOwned": [
@@ -376,7 +553,8 @@
     "Inter-operator grants expire after at most100000 local work ticks. Explicit opt-in rolling consent permits Native renewal only after charging another bounded allocation from the same durable finite total; idle allocations can exhaust it. Legacy manual policy does not gain this authority.",
     "Terminal partial/IPC and handshake/request deadlines are implemented; their compiled state fixture is distinct from installed wire admission. Six paired routes have not been simultaneously saturated on the wire.",
     "Each personal guest currently selects one outgoing routed destination/terminal owner at a time; app destination changes affect only its own route, while independent clients share uninterrupted native operators.",
-    "Feed audiences bound open federation-public storage/replication scope; no private reader-membership ACL. An operator acting as an ordinary approved mode1 reader may join the other public feed."
+    "Feed audiences bound open federation-public storage/replication scope; no private reader-membership ACL. An operator acting as an ordinary approved mode1 reader may join the other public feed.",
+    "Full saturation can queue an overflow TCP connection until the native100000-work-tick setup deadline; actual seventh refusal took1025.102seconds. New route admission194.885\u2013213.883seconds, reuse229.759seconds in this emulated profile."
   ],
   "prior_common_attempts": [
     {
@@ -716,7 +894,7 @@
     "scope": "Installed exact-role native signer authority gate and actual Feed service conflict/quota refusals on isolated purpose2 backing. No valid wrong-federation moderator signature admission is claimed."
   },
   "connected_continuations": {
-    "result": "Current2e514 infrastructure passed with explicit personal recovery. Capacity, strictproject, moderation, restart and offline migration remain pending."
+    "result": "Current2e514 infrastructure, six-route capacity/native seventh refusal/reuse and post512 useful Messenger passed. Strict project, moderation/restart and offline migration remain pending."
   },
   "operator_interrupt_ownership": {
     "source_commit": "63fc11bcfe7a9f7c94f06b680d6e8b3e085478ed",
@@ -744,7 +922,7 @@
     "application_deadlines": true,
     "terminal_fragment_deadline": true,
     "terminal_ipc_elapsed_deadline": true,
-    "observed": "Compiled RV64/emulatedAArch64 state fixture uses mocked clock/cancellation trap; exact token, selected-bank wiping, stale epoch and unrelated-pair checks passed. Installed current wire journey pending; no six-pair wire saturation claim.",
+    "observed": "Compiled scoped bank/token fixture passed. Installed2e514 admission reached six routes; native seventh setup reason51 at1025.102s preserved all six. The same refused guest reused one freed pair in229.759s. Earlier personal fatal/recovery remains separate.",
     "source_revision": "3208877",
     "compiled_fixture_record": "build/native-shared-contexts-before-primary-pin-3cfc22467d8c/evidence.json",
     "compiled_fixture_sha256": "3cfc22467d8c1c5b0e93ed9208d47ca512893944f9e05df630e5258fb1bdead4"
@@ -928,7 +1106,7 @@
     "network_limit_bytes": 425984,
     "image_sha256": "2e5147c4198cf7ec39ab053f2ea8895cfdceb1c9b9dcf79e1b7bb7627314bcdf"
   },
-  "current_integration_work": "Capacity now owns all9 management portals after completed infrastructure controllers released them. Native guests and shared operators remain running; no backing reset. Next: strict project then moderation/restart then approved offline hosting move.",
+  "current_integration_work": "Feed app agent owns all nine portals for strict project. Capacity/idle-useful controllers released all nine; native guests/operators continue. Federation moderation/restart and approved offline hosting move follow.",
   "prior_690_active_forge": {
     "result": "pass",
     "raw_record": "build/campaign009-connected-v6/active-forge.json",
@@ -1356,7 +1534,7 @@
     "messenger-delivery": "0.8.2",
     "parent": "5e166b16eeeed082bb86a246f9a79bec88fb13f097304622c9d33cd51992320a",
     "other_components": "0.8.0",
-    "workflow": "Alice and Bob normal parent-linked admissions preserve original SessionOwner/UI. Repeated native Messenger text/reply passed with Charlie exactepoch17 paused532B and authenticated3 throughcompletion; no installed>512empty-probe claim yet."
+    "workflow": "Alice/Bob normal parent-linked0.8.2 admissions preserve original SessionOwner/UI. Repeated stalled text/reply passed, then new32.884s text/32.088s reply after800/761 completed empty probes without process/route replacement, budget renewal or idle padding."
   },
   "final_clean_idle_reproduction": "campaign-009-final-idle-reproduction.json",
   "native_idle_poll_fixture": "campaign-009-native-idle-poll.json",
