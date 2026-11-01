@@ -17,7 +17,7 @@ from messenger_journey import PUB,net,wait
 from native_community_campaign import attach_campaign,feed_ui,focus_application
 
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--attach',type=Path,required=True);p.add_argument('--feed-packages',type=Path,required=True);p.add_argument('--resume',action='store_true');a=p.parse_args()
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--attach',type=Path,required=True);p.add_argument('--feed-packages',type=Path,required=True);p.add_argument('--resume',action='store_true');p.add_argument('--rejected-account',type=Path,help='preserve an unadmitted same-code package before retrying its correctly linked upgrade');a=p.parse_args()
  out=a.attach.resolve();ledger=out/'feed-prepublication-upgrade.json';mainstate=out/'native-actors.json'
  assert a.resume or not ledger.exists(),'use --resume to preserve exact lifecycle progress'
  before=json.loads(mainstate.read_text());assert not before['events'],'this repair is only for an unpublished community'
@@ -29,7 +29,17 @@ def main():
   snapshot=out/'native-actors-before-status-wire-fix.json';assert not snapshot.exists();snapshot.write_bytes(mainstate.read_bytes())
   state=dict(schema=1,result='pending',started_time_utc=datetime.now(timezone.utc).isoformat(),prior_state_sha256=hashlib.sha256(snapshot.read_bytes()).hexdigest(),prior_failure_sha256=hashlib.sha256((out/'failure-before-status-wire-fix.json').read_bytes()).hexdigest(),old_feed_releases=previous,new_feed_releases=selected,done={},personal={},operations='Native26 stops only unused personal Feed UI/owner; normal admission/relaunch creates current grants; Native42/35/31/38 rebuilds only that personal route and terminal under unchanged approved peers. No operator stop, listen or reset.',authority_reused=False)
  else:
-  state=json.loads(ledger.read_text());assert state['new_feed_releases']==selected
+  state=json.loads(ledger.read_text())
+  if state['new_feed_releases']!=selected:
+   assert a.rejected_account is not None and not any('new'in entry for entry in state['personal'].values()),'an admitted owner cannot be replaced by a packaging retry'
+   rejected=releases.inspect(a.rejected_account.read_bytes());corrected=releases.inspect((a.feed_packages/'feed-account.ltrel').read_bytes())
+   assert rejected['release_id']==state['new_feed_releases']['feed-account']
+   assert corrected['parent']==state['old_feed_releases']['feed-account']
+   assert all(corrected[key]==rejected[key]for key in('project_id','publisher_key_id','version','rights','executable_sha256')),'only the exact predecessor commitment may change'
+   assert all(selected[name]==state['new_feed_releases'][name]for name in('identity','feed','feed-federation'))
+   failure=out/'feed-prepublication-upgrade-rejected-parentless.json';assert not failure.exists();failure.write_bytes(ledger.read_bytes())
+   state['rejected_package_attempt']=dict(snapshot=failure.name,sha256=hashlib.sha256(failure.read_bytes()).hexdigest(),release=rejected['release_id'],corrected_release=corrected['release_id'],executable_unchanged=True,native_owner_admitted=False,reason='Native Launcher correctly refused an upgrade without the exact current predecessor release.')
+   state['new_feed_releases']=selected
   assert previous in(state['old_feed_releases'],selected),'unexpected package selection during explicit upgrade'
  started=time.monotonic();stage='attach unpublished native actors'
  def save():ledger.write_text(json.dumps(state,indent=2)+'\n')
