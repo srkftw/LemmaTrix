@@ -352,8 +352,14 @@ def choose_move_audience(g,checkpoint,save):
     def audience():
         frame=g.device.frame()
         if frame is None:return None
-        value=project.rendered_text(frame,14,324,44,foreground=0x8cdec6).rstrip()
-        return value if value in(home,expected)else None
+        # Surface-local y324 is presented below the native compositor chrome.
+        # Locate the literal visible footer; do not infer or toggle intent
+        # from a blank patch at the unshifted surface coordinate.
+        for y in range(300,frame.height-7):
+            if project.rendered_text(frame,14,y,9,foreground=0x8cdec6)!='Audience:':continue
+            value=project.rendered_text(frame,14,y,44,foreground=0x8cdec6).rstrip()
+            if value in(home,expected):return value
+        return None
     selected=wait(audience,180,'native completed audience footer after retained UI recovery')
     if selected==home:
         checkpoint['move_audience_intent']='home plus selected peer federation';save()
