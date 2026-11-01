@@ -26,6 +26,12 @@ def contexts : UInt64 := 0x650000
 def control : UInt64 := 0x64f000
 def activeSlot (t : UInt64) : UInt64 := load64 control t
 def bank (i : UInt64) : UInt64 := contexts+i*65536
+-- Explicit mode3 relationships retain four distinct adapter slots while the
+-- mode1 router owns0..11. Mode contracts and grants never change on coexistence.
+def transportSlot (i t : UInt64) : UInt64 := if load64 (control+128) t == 1 then 12+i else i
+def saveCrypto (t : UInt64) : UInt64 := copy Guest.Noise.state (bank (activeSlot t)) 416 t
+def restoreCrypto (t : UInt64) : UInt64 :=
+  Guest.Transport.choose (transportSlot (activeSlot t) t) (copy (bank (activeSlot t)) Guest.Noise.state 416 t)
 -- Bounded aggregate operator diagnostics: no identities, roots, payloads or
 -- history. Durations are local monotonic ticks including preemption, not CPU
 -- cycles, billing units or a real-time throughput guarantee.
@@ -63,7 +69,7 @@ def loadContext (i t : UInt64) : UInt64 :=
   let t := copy (b+14336) 0x60b000 4096 t
   let t := copy (b+19456) Guest.PeerDescription.publicKey 1792 t
   let t := store64 control i t
-  Guest.Transport.choose i t
+  Guest.Transport.choose (transportSlot i t) t
 -- Keep the selected relationship resident. A context is saved only when an
 -- operation really switches relationships; dispatch and pump share residency.
 -- Plaintext crypto scratch is fully overwritten by seal/open and is not state.
@@ -78,7 +84,7 @@ def networkRead (p n t : UInt64) : UInt64 :=
 def networkWrite (p n t : UInt64) : UInt64 :=
   if Guest.Transport.enabled t then Guest.Transport.write p n t else syscall 103 0 p n 0 t
 def networkReset (t : UInt64) : UInt64 :=
-  if Guest.Transport.enabled t then Guest.Transport.close (activeSlot t) t else syscall 105 0 0 0 0 t
+  if Guest.Transport.enabled t then Guest.Transport.close (transportSlot (activeSlot t) t) t else syscall 105 0 0 0 0 t
 def protocol2 (t : UInt64) : Bool := load64 (st+128) t == 2
 def session (t : UInt64) : UInt64 := load64 (Guest.Noise.state+8) t
 -- Grant layout: active,handle,owner,direction,budget,used,rate,expiry,
@@ -308,8 +314,19 @@ partial def expireGrants (i t : UInt64) : UInt64 :=
     let t := if load64 g alive == 1 && (now alive >= load64 (g+56) alive || alive == error) then store64 g 0 alive else alive
     expireGrants (i+1) t
 
+def nativePeerCurrent (t : UInt64) : Bool :=
+  let stamp := Guest.PeerDescription.st
+  let selected := load64 (stamp+8) t
+  if selected == 0 then true else
+  let own := Guest.NodeEnrollment.localNode
+  let peer := Guest.NodeEnrollment.peer (selected-1)
+  selected <= 4 && load64 own t == 1 && Guest.TorRouter.peerValid peer t &&
+    Guest.NodeEnrollment.eq (own+512) (stamp+32) 32 t &&
+    Guest.NodeEnrollment.eq (peer+512) (stamp+64) 32 t
+
 def pump (initial : UInt64) : UInt64 :=
   let t := store64 st (syscall 110 0 0 0 0 initial) initial
+  let t := if nativePeerCurrent t then t else disconnect 17 t
   let t := expireGrants 0 t
   let t := cancelRevoked 0 t
   let t := reclaimInbox 0 t
@@ -347,6 +364,54 @@ def configure (role length t : UInt64) : UInt64 :=
     let t := store64 (st+8) role t
     failure 0 t
 
+-- Native inter-federation mode3 enrollment uses already approved Ed25519
+-- node declarations and X25519 possession, never host-held pairwise secrets.
+-- The explicit admin choice authorizes mode3; it cannot satisfy mode1 calls.
+def nativePeerWork : UInt64 := 0x7a8000
+def configureFeedPeer (role slot t : UInt64) : UInt64 :=
+  let own := Guest.NodeEnrollment.localNode
+  let peer := Guest.NodeEnrollment.peer slot
+  if slot >= 4 || (role != 1 && role != 2) || !Guest.TorRouter.peerValid peer t ||
+    load64 own t != 1 || load64 (own+208) t != 16 || load64 (peer+208) t != 16 ||
+    Guest.NodeEnrollment.eq (own+144) (peer+144) 32 t then failure 1 t else
+  let client := if role == 1 then own else peer
+  let server := if role == 1 then peer else own
+  let d := Guest.PeerDescription.description
+  let t := zero nativePeerWork 512 t
+  let t := Guest.Noise25519.x25519 Guest.NodeEnrollment.keys (peer+256) nativePeerWork t
+  if nonzero nativePeerWork 32 0 t == 0 then failure 9 (zero nativePeerWork 512 t) else
+  let t := copy (client+512) (nativePeerWork+32) 32 t
+  let t := copy (server+512) (nativePeerWork+64) 32 t
+  let t := store64 (nativePeerWork+96) 0x31504c455246544c t
+  let t := Guest.ServiceHash.sha256At (nativePeerWork+512) nativePeerWork 104 (nativePeerWork+128) t
+  let t := zero Guest.PeerDescription.publicKey 224 t
+  let t := store64 d Guest.PeerDescription.magic t
+  let t := store64 (d+8) 4 t
+  let t := store64 (d+16) 7 t
+  let t := store64 (d+24) 3 t
+  let t := store64 (d+32) 8 t -- only typed Feed replication operation3
+  let t := store64 (d+40) 720 t
+  let t := store64 (d+48) 16777216 t
+  let t := store64 (d+56) 65536 t
+  let t := copy (client+144) (d+64) 32 t
+  let t := copy (server+144) (d+96) 32 t
+  let endpointBytes := load64 (server+368) t
+  let t := store64 (d+160) endpointBytes t
+  let t := copy (server+376) (d+168) endpointBytes t
+  let t := copy (server+144) Guest.PeerDescription.publicKey 32 t
+  let t := copy (server+144) Guest.PeerDescription.hashes 32 t
+  let t := Guest.ServiceHash.sha256At (nativePeerWork+512) d 512 (Guest.PeerDescription.hashes+32) t
+  let t := store64 (Guest.PeerDescription.st+8) (slot+1) t
+  let t := copy (own+512) (Guest.PeerDescription.st+32) 32 t
+  let t := copy (peer+512) (Guest.PeerDescription.st+64) 32 t
+  let t := store64 Guest.PeerDescription.st 2 t
+  let t := copy (d+64) (command+64) 64 t
+  let t := copy (Guest.PeerDescription.hashes+32) (command+128) 32 t
+  let t := copy (nativePeerWork+128) (command+160) 32 t
+  let t := store64 (st+128) 2 t
+  let r := configure role 192 t
+  Guest.Effects.effectValue r (zero (command+160) 4 (zero nativePeerWork 512 r))
+
 partial def ambiguousReceive (root operation stream i t : UInt64) : Bool :=
   if i == 4 then false else
     let g := grantAt i
@@ -354,7 +419,7 @@ partial def ambiguousReceive (root operation stream i t : UInt64) : Bool :=
       load64 (g+80) t == operation && load64 (g+88) t == stream && equal root (g+160) 32 t) ||
       ambiguousReceive root operation stream (i+1) t
 
-def grant (caller length t : UInt64) : UInt64 :=
+@[noinline] def grantCurrent (caller length t : UInt64) : UInt64 :=
   if length != (if protocol2 t then 176 else 168) then failure 2 t else
   let direction := load64 (command+16) t
   let mode := load64 (command+24) t
@@ -389,6 +454,11 @@ def grant (caller length t : UInt64) : UInt64 :=
       let t := copy (command+64) (g+96) 96 t
       let t := zero wire 8 t
       64+store64 (wire+8) id t
+
+-- Keep the current-certificate guard outside the substantial admission body;
+-- this avoids duplicated continuation lowering while preserving the same check.
+def grant (caller length t : UInt64) : UInt64 :=
+  if !nativePeerCurrent t then failure 3 t else grantCurrent caller length t
 
 def sendMessage (caller handle operation n t : UInt64) : UInt64 :=
   let selected := findGrant handle caller 0 t
@@ -453,16 +523,22 @@ def dispatchSelected (caller rights length t : UInt64) : UInt64 :=
     Guest.NodeStore.retain (command+64) (if length == 288 then command+96 else 0) t else
   if op == 44 && admin && length == 96 then Guest.NodeStore.recover (command+64) t else
   if op == 45 && admin && length == 64 then
-    let t := Guest.TorRouter.stop 0 (Guest.OnionTerminal.clear t)
+    let t := Guest.TorRouter.stop 0 (Guest.OnionTerminal.clearAll t)
     let t := zero Guest.NodeEnrollment.keys 32 (zero Guest.NodeEnrollment.localNode 68 t)
     let t := syscall 145 0 0 0 2 (Guest.NodeStore.clear t)
     failure 0 t
   else if (op >= 38 && op <= 42) || op == 46 || op == 47 then Guest.OnionTerminal.dispatch caller (if admin then 1 else 0) op length t else
-  if op >= 30 && op <= 37 && admin then Guest.TorRouter.dispatch op handle length t else
+  if (op == 30 || op == 31) && admin && !Guest.TorRouter.enabled t &&
+    (load64 (st+8) t != 0 || load64 (bank 0+520) t != 0 || load64 (bank 1+520) t != 0 || load64 (bank 2+520) t != 0 || load64 (bank 3+520) t != 0) then failure 8 t else
+  if op >= 30 && op <= 37 && admin then
+    let t := if op == 31 || op == 35 then Guest.OnionTerminal.clearAll t else t
+    let t := if op == 30 || op == 31 then store64 (control+128) 1 t else t
+    Guest.TorRouter.dispatch op handle length t else
   if op >= 20 && op <= 25 && admin then Guest.NodeEnrollment.dispatch op handle length t else
+  if op == 48 && admin && length == 64 then configureFeedPeer (load64 (command+16) t) handle t else
   if op == 13 && (admin || (rights &&& 1024) != 0) && length == 64 then
     if !Guest.PeerDescription.verified t || load64 (st+8) t == 0 then failure 1 t else
-      let r := Guest.Transport.connect (activeSlot t) (load64 (st+8) t) (Guest.PeerDescription.description+168) (load64 (Guest.PeerDescription.description+160) t) t
+      let r := Guest.Transport.connect (transportSlot (activeSlot t) t) (load64 (st+8) t) (Guest.PeerDescription.description+168) (load64 (Guest.PeerDescription.description+160) t) t
       if r == error then failure 6 r else failure 0 r
   else if op == 14 && (admin || caller == syscall 119 0 0 0 0 t) && length == 64 then
     let r := networkReset t
@@ -526,7 +602,10 @@ def dispatch (caller rights length t : UInt64) : UInt64 :=
   let t := store64 st clock clock
   let t := store64 (command+56) 1 t
   let t := if load64 command t == 1 then store64 (st+128) (if version == 1 then 1 else 2) t else t
-  dispatchSelected caller rights length t
+  let onionOperation := load64 command t >= 20 && load64 command t <= 47
+  let t := if onionOperation then saveCrypto t else t
+  let result := dispatchSelected caller rights length t
+  if onionOperation then Guest.Effects.effectValue result (restoreCrypto result) else result
 
 -- Idle authenticated peers need bounded lease/owner maintenance, not a full
 -- context copy each broker turn. Actual adapter input, epoch changes and queued
@@ -538,7 +617,7 @@ partial def contextQueued (i j t : UInt64) : Bool :=
   let p := (if activeSlot t == i then jobAt j else bank i+6144+j*1024)
   load64 p t == 1 || load64 p t == 2 || contextQueued i (j+1) t
 def contextReady (i clock t : UInt64) : Bool :=
-  let p := Guest.Transport.channel i
+  let p := Guest.Transport.channel (transportSlot i t)
   let phase := load64 ((if activeSlot t == i then Guest.Noise.state else bank i)+8) t
   clock >= load64 (bank i+21504) t ||
     load64 (p+32) t != 0 || load64 p t != contextWord i 24 t ||
@@ -559,8 +638,9 @@ partial def serveReady (endpoint remaining t : UInt64) : UInt64 :=
   let deviceBefore := load64 (Guest.Transport.st+56) t
   let began := syscall 110 0 0 0 0 t
   let t := Guest.Transport.pump began
-  let t := if Guest.TorRouter.enabled t then Guest.OnionTerminal.pump (Guest.TorRouter.pump t) else
-    if Guest.Transport.enabled t then
+  let t := if Guest.TorRouter.enabled t then
+    restoreCrypto (Guest.OnionTerminal.pump (Guest.TorRouter.pump (saveCrypto t))) else t
+  let t := if Guest.Transport.enabled t then
       let clock := syscall 110 0 0 0 0 t
       pumpContexts 0 clock clock
     else pump (selectContext 0 t)
@@ -596,8 +676,8 @@ def main (initial : UInt64) : UInt64 :=
   let t := zero 0x600000 16384 initial
   let t := zero Guest.PeerDescription.publicKey 224 t
   let t := zero Guest.Transport.st 512 t
-  let t := zero 0x641000 1024 t
-  let t := zero control 16 t
+  let t := zero 0x641000 4096 t
+  let t := zero control 17 t
   let t := zero contexts 32768 t
   let brokerInstance := self t
   let incarnation := (brokerInstance >>> 8) &&& 0xffffff

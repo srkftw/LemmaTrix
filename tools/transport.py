@@ -1,7 +1,7 @@
-"""LT-Transport-v2 opaque socket adapter. No content, credentials or policies.
+"""LT-Transport-v3 opaque socket adapter. No content, credentials or policies.
 
 The guest explicitly requests numeric TCP/UNIX connect or numeric TCP listen.
-Each of four channels has its own socket, epoch, bounded buffers and failures.
+Each of sixteen channels has its own socket, epoch, bounded buffers and failures.
 All cryptography and relationship authorization remain inside the Lean broker.
 
 The optional0600 UNIX fault-control socket accepts one JSON line (<=512 bytes)
@@ -13,7 +13,7 @@ At most four control clients are resident, each with a two-second deadline.
 """
 import errno,ipaddress,json,os,select,socket,struct,threading,time
 from pathlib import Path
-MAGIC=b'LTM2';HEADER=struct.Struct('<4sBBHII');LIMIT=65536;CHANNELS=4
+MAGIC=b'LTM3';HEADER=struct.Struct('<4sBBHII');LIMIT=65536;CHANNELS=16
 
 class MultiplexStream:
  def __init__(self,fault_control=None):
@@ -65,7 +65,7 @@ class MultiplexStream:
     if op=='status' and slot is None:
      if 'epoch' in command:raise ValueError('status does not select an epoch')
      return dict(version=1,ok=True,channels=[public_channel(i) for i in range(CHANNELS)])
-    if type(slot) is not int or not 0<=slot<CHANNELS:raise ValueError('slot must be within0..3')
+    if type(slot) is not int or not 0<=slot<CHANNELS:raise ValueError('slot must be within0..15')
     ch=channels[slot]
     if op=='status':
      if 'epoch' in command:raise ValueError('status does not select an epoch')
@@ -148,7 +148,7 @@ class MultiplexStream:
     for _ in range(16):
      if len(incoming)<HEADER.size:break
      magic,op,slot,n,epoch,value=HEADER.unpack_from(incoming)
-     if magic!=MAGIC or slot>=CHANNELS or n>1008:raise ValueError('invalid LT-Transport-v2 command')
+     if magic!=MAGIC or slot>=CHANNELS or n>1008:raise ValueError('invalid LT-Transport-v3 command')
      if len(incoming)<HEADER.size+n:break
      ch=channels[slot]
      data=bytes(incoming[HEADER.size:HEADER.size+n]);del incoming[:HEADER.size+n]

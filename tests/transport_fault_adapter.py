@@ -2,7 +2,7 @@
 import argparse,json,os,socket,struct,sys,tempfile,time
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'tools'))
-from transport import MultiplexStream,HEADER,MAGIC,LIMIT
+from transport import MultiplexStream,HEADER,MAGIC,CHANNELS,LIMIT
 
 def run(output=None):
  checks=[]
@@ -37,7 +37,7 @@ def run(output=None):
    try:MultiplexStream(path)
    except ValueError:pass
    else:raise AssertionError('existing control path was replaced')
-   assert control(op='status')['channels']==[dict(slot=i,epoch=0,connected=False,connecting=False,tx_paused=False,pending_bytes=0,tx_bytes=0,rx_bytes=0)for i in range(4)]
+   assert control(op='status')['channels']==[dict(slot=i,epoch=0,connected=False,connecting=False,tx_paused=False,pending_bytes=0,tx_bytes=0,rx_bytes=0)for i in range(CHANNELS)]
    for slot in (0,1):
     send(2,slot,endpoint);assert event()[0][1:3]==(9,slot)
     remote=socket.create_connection(address);remote.settimeout(3);remotes.append(remote)

@@ -3,8 +3,9 @@ namespace Guest.OnionTerminal
 open Guest.LiveSDK
 -- Bounded authenticated terminal stream inside the three-hop circuit. The last
 -- relay forwards these opaque Noise records; it never owns terminal keys.
--- At most one request and one response, fragmented into400-byte plaintext
--- pieces. No application header/token is outside this inner authenticated link.
+-- Sixteen isolated server contexts each retain one request and response,
+-- fragmented into400-byte plaintext pieces. One finite IPC writer is shared.
+-- Per-context transport ownership is independent from application authority. No application header/token is outside this inner authenticated link.
 def st : UInt64 := 0x710000
 def noiseBank : UInt64 := 0x711000
 def received : UInt64 := 0x712000
@@ -13,16 +14,43 @@ def fragment : UInt64 := 0x714000
 def sealed : UInt64 := 0x715000
 def fresh : UInt64 := 0x716000
 def incomingCopy : UInt64 := 0x717000
+-- Serialized crypto uses this fixed scratch; only owned state is banked.
+-- No yield occurs between restore/save. Buffers and IPC tokens remain private.
+def control : UInt64 := 0x718000
+def bank (i : UInt64) : UInt64 := 0x770000+i*4096
+def selected (t : UInt64) : UInt64 := load64 control t
+def saveContext (i t : UInt64) : UInt64 :=
+  let b := bank i
+  let t := copy st b 512 t
+  let t := copy noiseBank (b+512) 416 t
+  let t := copy received (b+1024) 1024 t
+  copy outgoing (b+2048) 1024 t
+def loadContext (i t : UInt64) : UInt64 :=
+  let b := bank i
+  let t := copy b st 512 t
+  let t := copy (b+512) noiseBank 416 t
+  let t := copy (b+1024) received 1024 t
+  let t := copy (b+2048) outgoing 1024 t
+  store64 control i t
+def selectContext (i t : UInt64) : UInt64 :=
+  if selected t == i then t else loadContext i (saveContext (selected t) t)
+def terminalRole (role : UInt64) : Bool := role == 8 || role == 16
 def active (t : UInt64) : Bool := load64 st t != 0
 def response (code value t : UInt64) : UInt64 := 64+header code value (load64 (st+8) t) 0 0 0 0 t
 def save (t : UInt64) : UInt64 := copy Guest.Noise.state noiseBank 416 t
 def restore (t : UInt64) : UInt64 := copy noiseBank Guest.Noise.state 416 t
-def clear (t : UInt64) : UInt64 := zero st 4096 (Guest.Noise.disconnect t)
-def fail (reason t : UInt64) : UInt64 :=
+def clear (t : UInt64) : UInt64 :=
   let token := load64 (st+112) t
   let t := if token != 0 then syscall 135 token 0 0 0 t else t
-  let t := clear t
-  store64 (st+160) reason t
+  let t := if load64 (control+32) t == load64 (st+176) t then store64 (control+32) 0 t else t
+  zero st 4096 (Guest.Noise.disconnect t)
+partial def clearAllContexts (i t : UInt64) : UInt64 :=
+  if i == 16 then t else clearAllContexts (i+1) (clear (selectContext i t))
+def clearAll (t : UInt64) : UInt64 :=
+  let t := clearAllContexts 0 t
+  let t := zero 0x770000 8192 t
+  zero control 64 (selectContext 0 t)
+def fail (reason t : UInt64) : UInt64 := store64 (st+160) reason (clear t)
 
 def writeOpaque (source n t : UInt64) : UInt64 :=
   if load64 st t == 1 then Guest.TorRouter.clientRelay 2 (load64 (st+24) t) source n 0 t else
@@ -32,8 +60,8 @@ def writeOpaque (source n t : UInt64) : UInt64 :=
 def beginClient (peer stream owner budget attempts t : UInt64) : UInt64 :=
   let p := Guest.NodeEnrollment.peer peer
   if peer >= 4 || stream == 0 || stream > 65535 || owner == 0 || budget == 0 || budget > 8388608 || attempts == 0 || attempts > 65536 ||
-    !Guest.TorRouter.peerValid p t || load64 (p+208) t != 8 || budget > load64 (p+232) t || attempts > load64 (p+240) t || load64 (Guest.TorRouter.state+24) t != 3 then response 8 0 t else
-  let t := clear t
+    !Guest.TorRouter.peerValid p t || !terminalRole (load64 (p+208) t) || budget > load64 (p+232) t || attempts > load64 (p+240) t || load64 (Guest.TorRouter.state+24) t != 3 then response 8 0 t else
+  let t := clear (selectContext 0 t)
   let t := store64 st 1 t
   let t := store64 (st+8) 1 t
   let t := store64 (st+16) peer t
@@ -108,21 +136,44 @@ def receiveRecord (n t : UInt64) : UInt64 :=
     let t := copy (fragment+32) (received+offset) count t
     store64 (st+56) (offset+count) t
 
+def contextMatches (i source stream epoch t : UInt64) : Bool :=
+  let p := if selected t == i then st else bank i
+  load64 p t == 2 && load64 (p+24) t == stream &&
+    load64 (p+32) t == source && load64 (p+168) t == epoch
+partial def findContext (source stream epoch i t : UInt64) : UInt64 :=
+  if i == 16 then error else
+  if contextMatches i source stream epoch t then i else findContext source stream epoch (i+1) t
+partial def freeContext (i t : UInt64) : UInt64 :=
+  if i == 16 then error else
+  let p := if selected t == i then st else bank i
+  if load64 p t == 0 then i else freeContext (i+1) t
+
 def processInput (t : UInt64) : UInt64 :=
   let n := load64 (Guest.TorRouter.state+80) t
-  if n == 0 || (!active t && load64 (Guest.NodeEnrollment.localNode+208) t != 8) then t else
+  let own := Guest.NodeEnrollment.localNode
+  if n == 0 then t else
   let stream := load64 (Guest.TorRouter.state+88) t
   let source := load64 (Guest.TorRouter.state+96) t
+  let epoch := load64 (Guest.TorRouter.channel source+24) t
+  let client := load64 (Guest.TorRouter.state+8) t == 1
+  let index := if client then 0 else findContext source stream epoch 0 t
+  let chosen := if index == error then freeContext 0 t else index
   let t := copy Guest.TorRouter.inbox incomingCopy n t
   let t := store64 (Guest.TorRouter.state+80) 0 (zero Guest.TorRouter.inbox 64 t)
-  let own := Guest.NodeEnrollment.localNode
-  let t := if !active t && load64 own t == 1 && load64 (own+208) t == 8 then
+  if chosen == error || (!client && !terminalRole (load64 (own+208) t)) then t else
+  let t := selectContext chosen t
+  let t := if !active t && !client && load64 own t == 1 then
+    let r := syscall 104 0 fresh 32 0 t
+    if r != 32 || load64 fresh r == 0 then r else
+    let t := store64 (st+176) (load64 fresh r) r
+    let t := zero fresh 4 t
     let t := store64 st 2 t
     let t := store64 (st+8) 1 t
     let t := store64 (st+24) stream t
+    let t := store64 (st+168) epoch t
     store64 (st+32) source t else t
   if !active t || n < 24 || load64 incomingCopy t != 1 || load64 (incomingCopy+16) t != n-24 || stream != load64 (st+24) t ||
-    (load64 st t == 2 && source != load64 (st+32) t) then fail 16 t else
+    (load64 st t == 2 && (source != load64 (st+32) t || epoch != load64 (st+168) t)) then fail 16 t else
   let kind := load64 (incomingCopy+8) t
   if kind == 1 || kind == 2 then receiveHandshake kind (n-24) t else
   if kind == 3 then receiveRecord (n-24) t else fail 17 t
@@ -155,32 +206,56 @@ def serverQuantum (t : UInt64) : UInt64 :=
     let r := syscall 134 token wire 1024 0 t
     if r == error || r > 960 then fail 20 r else
     if r == 0 then r else
-    let t := store64 (st+112) 0 r
+    let t := store64 (control+32) 0 (store64 (st+112) 0 r)
     let t := copy wire outgoing r t
     let t := store64 (st+64) (load64 (st+40) t) t
     store64 (st+72) r t
   else
   let n := load64 (st+48) t
-  if n == 0 || load64 (st+56) t != n || load64 (st+72) t != 0 then t else
+  if n == 0 || load64 (st+56) t != n || load64 (st+72) t != 0 || load64 (control+32) t != 0 then t else
   let operation := load64 received t
   let registryRead := (operation == 6 || operation == 7) && n == 96 &&
-    load64 (st+224) t != 0 && Guest.NodeEnrollment.eq (received+64) (st+256) 32 t
-  if (operation != 441 && !registryRead) || load64 (received+56) t != 1 then fail 21 t else
-  let target := if registryRead then syscall 113 0 0 0 0 t else syscall 128 3 441 0 0 t
-  if registryRead && target != load64 (st+224) target then fail 25 target else
+    load64 (control+48) t != 0 && Guest.NodeEnrollment.eq (received+64) (control+64) 32 t
+  let ownRole := load64 (Guest.NodeEnrollment.localNode+208) t
+  let mailbox := operation == 441 && ownRole == 8
+  let feed := operation == 491 && ownRole == 16
+  if (!mailbox && !feed && !registryRead) || load64 (received+56) t != 1 then fail 21 t else
+  let target := if registryRead then syscall 113 0 0 0 0 t else syscall 128 (if feed then 6 else 3) operation 0 0 t
+  if registryRead && target != load64 (control+48) target then fail 25 target else
   if target == error then fail 22 target else
   let count := if registryRead then 64 else n
   let t := copy received wire count target
+  -- The remote header cannot choose its origin. This is a transport generation,
+  -- never a human identity; the application additionally validates its authority.
+  let t := store64 (wire+48) (load64 (st+176) t) t
   let token := syscall 133 target wire count 1024 t
-  if token == error then fail 23 token else store64 (st+112) token token
+  if token == error then fail 23 token else
+  store64 (control+32) (load64 (st+176) token) (store64 (st+112) token token)
 
-def pump (t : UInt64) : UInt64 :=
+def pumpContext (i t : UInt64) : UInt64 :=
+  let t := selectContext i t
   let p := Guest.NodeEnrollment.peer (load64 (st+16) t)
   let t := if active t && !Guest.TorRouter.enabled t then fail 26 t else t
+  let t := if load64 st t == 2 &&
+    (!Guest.TorRouter.ready (load64 (st+32) t) t ||
+      load64 (Guest.TorRouter.channel (load64 (st+32) t)+24) t != load64 (st+168) t) then fail 27 t else t
   let t := if load64 st t == 1 && (!Guest.TorRouter.peerValid p t || !Guest.NodeEnrollment.eq (p+512) (st+192) 32 t) then fail 24 t else t
-  let t := processInput t
   let t := if load64 st t == 1 && load64 (st+8) t == 1 && load64 (Guest.TorRouter.state+112) t == 1 && Guest.TorRouter.idleOutput 0 t then handshakeFirst t else t
   if !active t then t else sendQuantum (serverQuantum t)
+partial def pumpContexts (n t : UInt64) : UInt64 :=
+  if n == 16 then t else
+  let i := (load64 (control+8) t+n)%16
+  let p := if selected t == i then st else bank i
+  let role := load64 p t
+  let ch := load64 (p+32) t
+  let work := role == 1 || (role == 2 &&
+    (load64 (p+112) t != 0 || load64 (p+72) t != 0 || load64 (p+48) t != 0 ||
+     !Guest.TorRouter.ready ch t || load64 (Guest.TorRouter.channel ch+24) t != load64 (p+168) t))
+  pumpContexts (n+1) (if work then pumpContext i t else t)
+def pump (t : UInt64) : UInt64 :=
+  let t := processInput t
+  let t := pumpContexts 0 t
+  store64 (control+8) ((load64 (control+8) t+1)%16) t
 
 def submitRequest (caller length t : UInt64) : UInt64 :=
   if caller != load64 (st+128) t || load64 st t != 1 || load64 (st+8) t != 3 then response 8 0 t else
@@ -189,7 +264,7 @@ def submitRequest (caller length t : UInt64) : UInt64 :=
   let operation := load64 (command+64) t
   let metadataRead := (operation == 6 || operation == 7) && n == 96
   if length < 128 || length > 1024 || request == 0 || load64 (st+72) t != 0 || load64 (st+48) t != 0 ||
-    (operation != 441 && !metadataRead) || n > load64 (st+136) t || load64 (st+144) t == 0 then response 4 0 t else
+    (operation != 441 && operation != 491 && !metadataRead) || n > load64 (st+136) t || load64 (st+144) t == 0 then response 4 0 t else
   let t := copy (command+64) outgoing n t
   let t := store64 (st+64) request t
   let t := store64 (st+72) n t
@@ -211,18 +286,19 @@ def statusResponse (t : UInt64) : UInt64 :=
   96+copy (st+192) (wire+64) 32 t
 
 def dispatch (caller admin op length t : UInt64) : UInt64 :=
+  let t := selectContext 0 t
   if op == 47 && length == 64 then
     let p := Guest.NodeEnrollment.peer (load64 (st+16) t)
     if load64 st t != 1 || (admin != 1 && caller != load64 (st+128) t) ||
       !Guest.TorRouter.peerValid p t || !Guest.NodeEnrollment.eq (p+512) (st+192) 32 t then response 8 0 t else
     let t := header 0 (load64 (p+352) t) 480 1 0 0 0 t
     544+copy (p+32) (wire+64) 480 t
-  else if op == 46 && admin == 1 && length == 96 && !active t then
+  else if op == 46 && admin == 1 && length == 96 then
     let target := syscall 113 0 0 0 0 t
     if target == error || target != load64 (command+8) target ||
       Guest.Identity.zeros (command+64) 32 target then response 8 0 target else
-    let t := store64 (st+224) target target
-    response 0 target (copy (command+64) (st+256) 32 t)
+    let t := store64 (control+48) target target
+    response 0 target (copy (command+64) (control+64) 32 t)
   else if op == 38 && admin == 1 && length == 64 then
     beginClient (load64 (command+8) t) (load64 (command+16) t) (load64 (command+24) t)
       (load64 (command+32) t) (load64 (command+40) t) t
@@ -232,7 +308,7 @@ def dispatch (caller admin op length t : UInt64) : UInt64 :=
     if admin == 1 then statusResponse t else
     if caller == load64 (st+128) t then statusResponse t else response 8 0 t
   else if op == 42 && length == 64 then
-    if admin == 1 then response 0 0 (clear t) else
+    if admin == 1 then response 0 0 (clearAll t) else
     if caller == load64 (st+128) t then response 0 0 (clear t) else response 8 0 t
   else response 8 0 t
 end Guest.OnionTerminal
