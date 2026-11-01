@@ -60,6 +60,9 @@ def main():
    assert len(raw)==2048 and struct.unpack_from('<3Q',raw)==(0x3154524f5046544c,1,0),'public-only profile expected'
    result=dict(sequence=struct.unpack_from('<Q',raw,24)[0],public=raw[32:64].hex(),event=raw[128:160].hex(),generation=struct.unpack_from('<Q',raw,160)[0],sha256=hashlib.sha256(raw).hexdigest())
    (out/(label+'-public-profile.bin')).write_bytes(raw);return result
+  def receipt(label,timeout=600):
+   wait(lambda:feed_ui(charlie)[0][5]==7,timeout,label)
+   wait(lambda:struct.unpack_from('<Q',feed_ui(charlie)[1],104)[0]==0,120,'native completed publication UI request collected')
   def compose(text):
    focus_application(charlie,'feed');wait(lambda:feed_ui(charlie)[0][5]in(0,6,7),180,'native prior publication settled')
    charlie.device.press(61);wait(lambda:feed_ui(charlie)[0][2]==1,120,'native ordinary compose');charlie.device.textASCII(text,delay=.035)
@@ -83,7 +86,7 @@ def main():
       checked.append(dict(operator=operator.name,event=event['id'],bytes=len(original),content_sha256=event['content_sha256']))
     record('history-read','native committed storage serves earliest and latest original signed bodies beyond its one verified read page on both federations',events=len(events),padded_content_bytes=footprint,server_store_read_page_bytes=4096,segment_writer_workspace_bytes=131072,reads=checked,unrelated_sessions=peers())
    stage='reconcile prior accepted publication after own backfill timeout'
-   if not state['done'].get('ready')or feed_ui(charlie)[0][5]==8:
+   if not state['done'].get('unavailable')and(not state['done'].get('ready')or feed_ui(charlie)[0][5]==8):
     prior=list(feed_ui(charlie)[0])
     if prior[5]==8:
      # A bounded backfill timeout may conservatively require reconciliation
@@ -92,8 +95,7 @@ def main():
      known=export('prior-backfill');charlie.device.press(1)
      assert len(lookup(alpha,event_id=bytes.fromhex(known['event'])))==1
      before=stats();select_feed_route(charlie,alpha,relays);charlie.device.press(63)
-     wait(lambda:feed_ui(charlie)[0][5]==7,600,'native prior accepted commitment and replication receipt reconciliation')
-     wait(lambda:struct.unpack_from('<Q',feed_ui(charlie)[1],104)[0]==0,120,'native reconciliation UI request collected')
+     receipt('native prior accepted commitment and replication receipt reconciliation')
      assert stats()==before
      net(charlie,42);net(charlie,35)
      record('ready','accepted publication uncertainty reconciles the exact original through its replication receipt before route closure or new composition',prior_ui=prior,profile=known,author_usage=before,unrelated_sessions=peers())
@@ -109,7 +111,7 @@ def main():
     select_feed_route(charlie,alpha,relays);charlie.device.press(63)
     event=wait(lambda:lookup(alpha,event_id=bytes.fromhex(state['pending']['event'])),600,'same native pending event accepted after explicit approved reconnect')
     replica=wait(lambda:lookup(beta,event_id=bytes.fromhex(state['pending']['event'])),600,'same pending event native replication');assert event==replica and len(event)==1
-    wait(lambda:feed_ui(charlie)[0][5]in(6,7),180,'native accepted reconciliation result')
+    receipt('native accepted reconciliation result and original replication receipt')
     record('reconnected','fresh approved route publishes exactly the original pending event, author and sequence',event=state['pending']['event'],unrelated_sessions=peers())
    stage='finite terminal allowance refusal and reuse'
    if not state['done'].get('allowance'):
@@ -117,6 +119,16 @@ def main():
     wait(lambda:feed_ui(charlie)[0][6]==14,180,'native finite terminal allowance refusal');limited=list(net(charlie,41)[0]);assert limited[2]==3 and limited[4]==1 and limited[5]==1,limited
     before=peers();select_feed_route(charlie,alpha,relays);charlie.device.press(104);wait(lambda:feed_ui(charlie)[0][4]==15,600,'fresh context reads after bounded allowance refusal')
     record('allowance','one exhausted terminal allowance refuses its own request; a fresh selected context reuses resources while other admitted sessions continue',limited_context=limited,unrelated_sessions=before)
+   stage='reconcile accepted publication after bounded query refusal'
+   if not state['done'].get('cut')and not state['done'].get('allowance-reconciled'):
+    # A refused query conservatively leaves a publication warning. Resolve it
+    # using the exact accepted author commitment before composing another event.
+    known=export('quota-publication');charlie.device.press(1)
+    assert known['event']==state['pending']['event']and known['sequence']==state['pending']['sequence'],known
+    assert len(lookup(alpha,event_id=bytes.fromhex(known['event'])))==1
+    before=stats();charlie.device.press(63);receipt('native exact accepted publication reconciliation after query refusal')
+    assert stats()==before
+    record('allowance-reconciled','explicit native retry reconciles the existing accepted commitment after a bounded query refusal without a new event or renewed author allowance',profile=known,author_usage=before,unrelated_sessions=peers())
    stage='publication response lost around durable native acceptance'
    if not state['done'].get('cut'):
     compose(UNCERTAIN)
@@ -133,7 +145,7 @@ def main():
     wait(lambda:feed_ui(charlie)[0][5]==8,180,'native missing receipt reconciliation required')
     record('cut','operator commits exact signed event while author cannot obtain final receipt; only that circuit is disconnected',pending_ui=list(observed),profile=state['cut_profile'],accepted_budget=state['accepted_budget'],unrelated_sessions=peers())
    if not state['done'].get('retry'):
-    select_feed_route(charlie,alpha,relays);charlie.device.press(63);wait(lambda:feed_ui(charlie)[0][5]in(6,7),600,'native exact event retry reconciles durable acceptance')
+    select_feed_route(charlie,alpha,relays);charlie.device.press(63);receipt('native exact event retry reconciles durable acceptance and original replication receipt')
     rows=lookup(alpha,event_id=bytes.fromhex(state['cut_profile']['event']));assert rows==[bytes.fromhex(state['accepted_row'])]
     replica=wait(lambda:lookup(beta,event_id=bytes.fromhex(state['cut_profile']['event'])),600,'authorized replica serves exact original event');assert replica==rows
     after=stats();assert after==state['accepted_budget'],(state['accepted_budget'],after)
