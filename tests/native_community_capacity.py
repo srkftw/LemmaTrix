@@ -17,6 +17,7 @@ import sys
 import time
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT/'tools'), str(ROOT/'tests')]
+import feed
 import messenger
 from messenger_journey import Guest, enroll, net, wait
 from native_community_campaign import attach_campaign, select_destination
@@ -45,6 +46,21 @@ def main():
         relays = [actors['relay'+str(i)] for i in (1, 2, 3)]
         alpha = actors['alpha']
         original = {}
+        def replication_observation():
+            """Read finite native authority; this controller never renews it."""
+            result = {}
+            for name in ('alpha', 'beta'):
+                g = actors[name]
+                budget, policy = feed.invoke(g.client, 490, action=12)
+                authority = feed.invoke(g.client, 490, action=13)[0]
+                count = feed.invoke(g.client, 490, action=9)[0][1]
+                rows = []
+                for i in range(count):
+                    fields, event = feed.invoke(g.client, 490, action=14, handle=i)
+                    rows.append(dict(event=event.hex(), fields=list(fields)))
+                result[name] = dict(budget=list(budget), policy_hash=policy.hex(),
+                                    authority=list(authority), rows=rows)
+            return result
         def unaffected():
             current = {}
             for g in (alice, bob):
@@ -98,6 +114,9 @@ def main():
             # No relay, terminal operator or shared service receives stop/listen.
             net(g, 42);net(g, 35)
         try:
+            before_replication = replication_observation()
+            (evidence/'replication-before.json').write_text(json.dumps(before_replication, indent=2)+'\n')
+            print('Native finite replication authority at capacity takeover', json.dumps(before_replication), flush=True)
             original.update(unaffected())
             f, _ = net(charlie, 41)
             restored_charlie = False
@@ -156,6 +175,7 @@ def main():
                 if f[1] == 0 and f[3] != 0:return f
                 return None
             rejected = wait(refused, a.refusal_timeout, 'actual native seventh-client refusal at unchanged setup deadline')
+            assert rejected[3] in (38, 51), ('unexpected native capacity refusal reason', rejected)
             assert all(net(g, 41)[0][2] == 3 for g in active)
             assert net(charlie, 41)[0][2] == 3
             passed('seventh incoming client receives an actual bounded native refusal while six admitted clients remain healthy',
@@ -177,12 +197,27 @@ def main():
                    circuit=list(route), **admitted, feed_status=status,
                    survivors={g.name:dict(terminal=list(net(g, 41)[0]), feed_status=rpc(g)) for g in active[1:]},
                    observed=observe(), seconds=time.monotonic()-began)
+            after_replication = replication_observation()
+            for name, before in before_replication.items():
+                after = after_replication[name]
+                assert after['policy_hash'] == before['policy_hash']
+                assert after['authority'][1] == before['authority'][1]
+                assert after['budget'][1] == before['budget'][1]
+                assert after['budget'][4] == before['budget'][4]
+                assert before['budget'][3] <= after['budget'][3] <= after['budget'][1]
+                for earlier in before['rows']:
+                    later = next(row for row in after['rows'] if row['event'] == earlier['event'])
+                    assert earlier['fields'][3] <= later['fields'][3] <= 9
+                    if earlier['fields'][4]:assert later['fields'][4:6] == earlier['fields'][4:6]
+            (evidence/'replication-after.json').write_text(json.dumps(after_replication, indent=2)+'\n')
             report = dict(schema=1, result='pass', image_sha256=hashlib.sha256((out/'guest.bin').read_bytes()).hexdigest(),
                           selected_public_certificates={g.name:hashlib.sha256(g.certificate).hexdigest() for g in (*relays, alpha)},
                           checks=checks, elapsed_seconds=time.monotonic()-started,
                           declared_capacity=dict(onion_channels_per_relay=12, complete_paired_routes_per_relay=6,
                                                  independent_extra_native_guests=4, terminal_bytes=1048576, terminal_requests=256),
                           private_keys_exported=False, host_data_plane=False, operator_stop_listen_handoffs=False,
+                          replication_before=before_replication, replication_after=after_replication,
+                          host_replication_authority_renewals=0,
                           limits=['Local common-image continuation; relay2 may use the RV64 interpreter on native-x86.',
                                   'Headless clients explicitly use native Launcher-owned read-only typed Feed transport contexts; they are not new graphical Feed authors.',
                                   'Native32 lacks a full per-channel census; exact pairing is evidenced by six independently authenticated three-hop terminals and the implementation resource contract.'])
