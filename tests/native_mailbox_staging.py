@@ -50,52 +50,63 @@ def progressChecks (t : UInt64) : UInt64 :=
   let t := copy hashed (p+64) 32 (hash testToken 32 t)
   let t := store64 (p+128) 8388608 (store64 (p+144) 65536 t)
   let r := dispatch 55 0x100000000 10 192 (beginCommand 1536 t)
-  if status r != 0 || load64 (wire+8) r != 1 || load64 (st+224) r != 1100 || load64 (st+312) r != 0 then 20 else
-  let r := dispatch 55 0x100000000 11 640 (appendCommand 1 0 512 (store64 (calls+24) 1000 r))
-  if status r != 0 || load64 (st+72) r != 512 || load64 (st+224) r != 2000 || load64 (st+312) r != 1 then 21 else
-  let r := dispatch 55 0x100000000 12 640 (appendCommand 1 0 512 (store64 (calls+24) 1500 r))
-  if status r != 2 || load64 (st+224) r != 2000 || load64 (st+312) r != 1 then 22 else
-  let r := dispatch 56 0x100000000 13 640 (appendCommand 1 512 512 r)
-  if status r != 2 || load64 (st+224) r != 2000 then 23 else
+  if status r != 0 || load64 (wire+8) r != 1 || load64 (st+224) r != 10100 || load64 (st+312) r != 0 then 20 else
+  let r := dispatch 55 0x100000000 11 640 (appendCommand (load64 (st+56) r) 0 512 (store64 (calls+24) 1000 r))
+  if status r != 0 || load64 (st+72) r != 512 || load64 (st+224) r != 11000 || load64 (st+312) r != 1 then 21 else
+  let r := dispatch 55 0x100000000 12 640 (appendCommand (load64 (st+56) r) 0 512 (store64 (calls+24) 1500 r))
+  if status r != 2 || load64 (st+224) r != 11000 || load64 (st+312) r != 1 then 22 else
+  let r := dispatch 56 0x100000000 13 640 (appendCommand (load64 (st+56) r) 512 512 r)
+  if status r != 3 || load64 (st+224) r != 11000 then 23 else
   let r := dispatch 55 0x100000000 14 640 (appendCommand 2 512 512 r)
-  if status r != 2 || load64 (st+224) r != 2000 then 24 else
-  let r := dispatch 55 0x100000000 15 640 (store64 (command+96) 23 (appendCommand 1 512 512 r))
-  if status r != 2 || load64 (st+224) r != 2000 then 25 else
-  let r := dispatch 55 0x100000000 16 640 (store64 (command+64) 12 (appendCommand 1 512 512 r))
-  if status r != 2 || load64 (st+224) r != 2000 then 26 else
-  let r := dispatch 55 0x100000000 17 128 (appendCommand 1 512 0 r)
-  if status r != 2 || load64 (st+224) r != 2000 || load64 (st+312) r != 1 then 27 else
-  let r := dispatch 55 0x100000000 18 641 (appendCommand 1 512 513 r)
-  if status r != 2 || load64 (st+224) r != 2000 then 28 else
-  let r := dispatch 55 0x100000000 19 640 (appendCommand 1 513 512 r)
-  if status r != 2 || load64 (st+224) r != 2000 then 29 else
-  let r := dispatch 55 0x100000000 20 640 (appendCommand 1 512 512 (store64 (calls+24) 1900 r))
-  if status r != 0 || load64 (st+72) r != 1024 || load64 (st+224) r != 2900 || load64 (st+312) r != 2 then 30 else
-  let r := dispatch 55 0x100000000 21 640 (appendCommand 1 1024 512 (store64 (calls+24) 2800 r))
-  if status r != 0 || load64 (st+72) r != 1536 || load64 (st+224) r != 3800 || load64 (st+312) r != 3 then 31 else
-  let r := dispatch 55 0x100000000 22 128 (terminalCommand 3 1 0 (store64 (calls+24) 3800 r))
+  if status r != 3 || load64 (st+224) r != 11000 then 24 else
+  let r := dispatch 55 0x100000000 15 640 (store64 (command+96) 23 (appendCommand (load64 (st+56) r) 512 512 r))
+  if status r != 2 || load64 (st+224) r != 11000 then 25 else
+  let r := dispatch 55 0x100000000 16 640 (store64 (command+64) 12 (appendCommand (load64 (st+56) r) 512 512 r))
+  if status r != 2 || load64 (st+224) r != 11000 then 26 else
+  let r := dispatch 55 0x100000000 17 128 (appendCommand (load64 (st+56) r) 512 0 r)
+  if status r != 2 || load64 (st+224) r != 11000 || load64 (st+312) r != 1 then 27 else
+  let r := dispatch 55 0x100000000 18 641 (appendCommand (load64 (st+56) r) 512 513 r)
+  if status r != 2 || load64 (st+224) r != 11000 then 28 else
+  let r := dispatch 55 0x100000000 19 640 (appendCommand (load64 (st+56) r) 513 512 r)
+  if status r != 2 || load64 (st+224) r != 11000 then 29 else
+  let r := dispatch 55 0x100000000 20 640 (appendCommand (load64 (st+56) r) 512 512 (store64 (calls+24) 1900 r))
+  if status r != 0 || load64 (st+72) r != 1024 || load64 (st+224) r != 11900 || load64 (st+312) r != 2 then 30 else
+  let r := dispatch 55 0x100000000 21 640 (appendCommand (load64 (st+56) r) 1024 512 (store64 (calls+24) 2800 r))
+  if status r != 0 || load64 (st+72) r != 1536 || load64 (st+224) r != 12800 || load64 (st+312) r != 3 then 31 else
+  let r := dispatch 55 0x100000000 22 128 (terminalCommand 3 1 0 (store64 (calls+24) 12800 r))
   if status r != 2 || load64 (st+48) r != 0 || load64 (st+264) r != 1 ||
-    load64 (st+288) r != 1536 || load64 (st+296) r != 3800 || load64 (st+304) r != 3800 then 32 else
-  let r := dispatch 55 0x100000000 23 192 (beginCommand 512 (store64 (calls+24) 4000 r))
-  if status r != 0 || load64 (st+224) r != 5000 || load64 (st+312) r != 0 then 33 else
-  let r := dispatch 55 0x100000000 24 384 (appendCommand 1 0 256 (store64 (calls+24) 4100 r))
-  if status r != 0 || load64 (st+224) r != 5100 || load64 (st+72) r != 256 then 34 else
-  let r := dispatch 55 0x100000000 25 192 (beginCommand 512 (store64 (calls+24) 5100 r))
+    load64 (st+288) r != 1536 || load64 (st+296) r != 12800 || load64 (st+304) r != 12800 then 32 else
+  let r := dispatch 55 0x100000000 23 192 (beginCommand 512 (store64 (calls+24) 13000 r))
+  if status r != 0 || load64 (st+224) r != 23000 || load64 (st+312) r != 0 then 33 else
+  let r := dispatch 55 0x100000000 24 384 (appendCommand (load64 (st+56) r) 0 256 (store64 (calls+24) 13100 r))
+  if status r != 0 || load64 (st+224) r != 23100 || load64 (st+72) r != 256 then 34 else
+  let r := dispatch 55 0x100000000 25 192 (beginCommand 512 (store64 (calls+24) 23100 r))
   if status r != 0 || load64 (wire+16) r != 0 || load64 (st+72) r != 0 ||
-    load64 (st+224) r != 6100 || load64 (st+312) r != 0 || load64 (st+264) r != 2 then 35 else
-  let r := dispatch 55 0x100000000 26 192 (beginCommand 512 (store64 (calls+24) 5200 r))
-  if status r != 0 || load64 (st+224) r != 6100 || load64 (st+312) r != 0 then 36 else
-  let r := dispatch 55 0x100000000 27 160 (appendCommand 1 0 32 (store64 (calls+24) 6100 r))
-  if status r != 2 || load64 (st+48) r != 0 || load64 (st+296) r != 6100 || load64 (st+304) r != 6100 then 37 else
-  let r := dispatch 55 0x100000000 28 192 (beginCommand 512 (store64 (calls+24) 7000 r))
-  let r := dispatch 55 0x100000000 29 129 (appendCommand 1 0 1 (store64 (st+312) 8192 (store64 (calls+24) 7001 r)))
-  if status r != 2 || load64 (st+224) r != 8000 || load64 (st+312) r != 8192 || load64 (st+72) r != 0 then 38 else
-  let r := dispatch 55 0x100000000 30 129 (appendCommand 1 0 1 (store64 (st+312) 8191 (store64 (calls+24) 7002 r)))
-  if status r != 0 || load64 (st+224) r != 8002 || load64 (st+312) r != 8192 || load64 (st+72) r != 1 then 39 else
-  let r := dispatch 55 0x100000000 31 129 (appendCommand 1 1 1 (store64 (calls+24) 7003 r))
-  if status r != 2 || load64 (st+224) r != 8002 || load64 (st+312) r != 8192 then 40 else 0
+    load64 (st+224) r != 33100 || load64 (st+312) r != 0 || load64 (st+264) r != 2 then 35 else
+  let r := dispatch 55 0x100000000 26 192 (beginCommand 512 (store64 (calls+24) 23200 r))
+  if status r != 0 || load64 (st+224) r != 33100 || load64 (st+312) r != 0 then 36 else
+  let r := dispatch 55 0x100000000 27 160 (appendCommand (load64 (st+56) r) 0 32 (store64 (calls+24) 33100 r))
+  if status r != 2 || load64 (st+48) r != 0 || load64 (st+296) r != 33100 || load64 (st+304) r != 33100 then 37 else
+  let r := dispatch 55 0x100000000 28 192 (beginCommand 512 (store64 (calls+24) 34000 r))
+  let r := dispatch 55 0x100000000 29 129 (appendCommand (load64 (st+56) r) 0 1 (store64 (st+312) 8192 (store64 (calls+24) 34001 r)))
+  if status r != 2 || load64 (st+224) r != 44000 || load64 (st+312) r != 8192 || load64 (st+72) r != 0 then 38 else
+  let r := dispatch 55 0x100000000 30 129 (appendCommand (load64 (st+56) r) 0 1 (store64 (st+312) 8191 (store64 (calls+24) 34002 r)))
+  if status r != 0 || load64 (st+224) r != 44002 || load64 (st+312) r != 8192 || load64 (st+72) r != 1 then 39 else
+  let r := dispatch 55 0x100000000 31 129 (appendCommand (load64 (st+56) r) 1 1 (store64 (calls+24) 34003 r))
+  if status r != 2 || load64 (st+224) r != 44002 || load64 (st+312) r != 8192 then 40 else
+  -- An allocation has an absolute60000tick bound even with positive progress.
+  let h := load64 (st+56) r
+  let r := dispatch 55 0x100000000 32 128 (terminalCommand 7 h 0 r)
+  let r := dispatch 55 0x100000000 33 192 (beginCommand 512 (store64 (calls+24) 45000 r))
+  if status r != 0 || load64 (st+360) r != 105000 then 41 else
+  let h := load64 (st+56) r
+  let r := dispatch 55 0x100000000 34 129 (appendCommand h 0 1 (store64 (st+224) 105000 (store64 (calls+24) 104999 r)))
+  if status r != 0 || load64 (st+224) r != 105000 then 42 else
+  let r := dispatch 55 0x100000000 35 129 (appendCommand h 1 1 (store64 (calls+24) 105000 r))
+  if status r != 2 || load64 (st+48) r != 0 then 43 else 0
 def check (t : UInt64) : UInt64 :=
   let t := zero st 64 (zero calls 4 (zero staged 1024 t))
+  let t := store64 (st+320) 1 t
   let t := store64 st 77 (store64 (st+16) 1 (store64 (st+48) 55 (store64 (st+56) 123
     (store64 (st+64) 7680 (store64 (st+72) 512 (store64 (st+224) 1000 (store64 (calls+16) 1 (store64 (calls+24) 4096 t))))))))
   let t := store64 staged 0xaabb t
@@ -110,7 +121,7 @@ def check (t : UInt64) : UInt64 :=
   if status r != 0 || load64 (wire+8) r != 0 || load64 (wire+16) r != 0 || load64 (wire+48) r != 0 then 4 else
   let t := expireStaging 1000 r
   if load64 (st+48) t != 55 || load64 (st+264) t != 0 || load64 staged t != 0xaabb then 5 else
-  let t := expireStaging 999 (store64 (st+16) 0 t)
+  let t := expireStaging 999 (store64 (st+320) 0 (store64 (st+16) 0 t))
   if load64 (st+48) t != 55 || load64 (st+264) t != 0 then 6 else
   let t := expireStaging 1000 t
   if load64 (st+48) t != 0 || load64 (st+264) t != 1 || load64 (st+272) t != 123 ||
@@ -227,15 +238,15 @@ def main():
             'ordinary rights and rejected current-token denied',
             'current staging query remains read-only while publication pending',
             'last-expiration query available before busy gate',
-            'pending or predeadline staging is not expired',
+            'only the admitted writer stage and predeadline staging are protected from expiry',
             'original exact deadline clears staged8192bytes and records only public scalars',
             'repeated no-stage check does not increment count',
             'next expiration updates bounded volatile scalar metadata',
-            'authenticated exact positive appends renew only the existing1000ticks and make progress beyond initial absolute deadline',
+            'authenticated positive appends renew10000ticks within the fixed60000tick allocation lifetime',
             'wrong caller handle token id offset replay zero or oversize count cannot renew',
             'expired commit and append reject before loop maintenance and clear staged data',
             'matching begin after expiry starts from offsetzero; unchanged live retry never renews',
-            'live8192renewal guard denies another increment while8191may advance exactly once',
+            'live8192renewal guard denies another increment while8191may advance exactly once; positive progress cannot extend the absolute lifetime',
         ],
         limits=('Compiled native Mailbox transition fixture. Guest trap supplies current-token '
                 'success/rejection and explicit monotonic readings; it does not test installed kernel '

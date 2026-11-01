@@ -43,7 +43,10 @@ def check (t : UInt64) : UInt64 :=
   let t := Guest.OnionTerminal.selectContext 0 t
   if load64 Guest.OnionTerminal.noiseBank t != 0xaa || load64 Guest.OnionTerminal.received t != 0xbb ||
     load64 Guest.OnionTerminal.outgoing t != 0xcc || load64 (Guest.OnionTerminal.st+176) t != 123 then 4 else
-  let t := zero Guest.Mailbox.st 64 (zero 0x740000 6144 t)
+  let t := store64 (Guest.OnionTerminal.control+16) 9 t
+  let t := Guest.OnionTerminal.clearAll t
+  if load64 (Guest.OnionTerminal.control+16) t != 9 then 14 else
+  let t := zero Guest.MailboxReceipt.st 512 (zero Guest.Mailbox.st 64 (zero 0x750000 6144 t))
   let t := store64 (Guest.Mailbox.st+48) 77 (store64 (Guest.Mailbox.st+56) 100
     (store64 (Guest.Mailbox.st+336) 123 (store64 Guest.Mailbox.staged 0xaabb t)))
   let t := Guest.Mailbox.selectStage 1 t
@@ -56,7 +59,9 @@ def check (t : UInt64) : UInt64 :=
   let t := store64 (command+48) 123 t
   if !Guest.Mailbox.ownsStage 77 t || Guest.Mailbox.ownsStage 88 t || load64 Guest.Mailbox.staged t != 0xaabb then 7 else
   let t := Guest.Mailbox.selectStage 1 t
-  if load64 Guest.Mailbox.staged t != 0xccdd then 8 else
+  if load64 Guest.Mailbox.staged t != 0xccdd || load64 Guest.MailboxReceipt.st t != 0 || load64 (Guest.MailboxReceipt.st+8) t != 0 then 8 else
+  let t := Guest.MailboxReceipt.pump t
+  if Guest.Mailbox.findStage 77 123 100 0 t != 0 then 13 else
   let t := zero Guest.Transport.st 4096 t
   let t := Guest.Transport.queue 3 15 1 0 Guest.Transport.input 0 t
   if t == error || (load64 Guest.Transport.output t &&& 0xffffffff) != 0x334d544c then 9 else

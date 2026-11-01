@@ -47,9 +47,10 @@ def clear (t : UInt64) : UInt64 :=
 partial def clearAllContexts (i t : UInt64) : UInt64 :=
   if i == 16 then t else clearAllContexts (i+1) (clear (selectContext i t))
 def clearAll (t : UInt64) : UInt64 :=
+  let generation := load64 (control+16) t
   let t := clearAllContexts 0 t
   let t := zero 0x770000 8192 t
-  zero control 64 (selectContext 0 t)
+  store64 (control+16) generation (zero control 64 (selectContext 0 t))
 def fail (reason t : UInt64) : UInt64 := store64 (st+160) reason (clear t)
 
 def writeOpaque (source n t : UInt64) : UInt64 :=
@@ -151,11 +152,11 @@ partial def freeContext (i t : UInt64) : UInt64 :=
 def processInput (t : UInt64) : UInt64 :=
   let n := load64 (Guest.TorRouter.state+80) t
   let own := Guest.NodeEnrollment.localNode
-  if n == 0 then t else
+  let client := load64 (Guest.TorRouter.state+8) t == 1
+  if n == 0 || (!client && !terminalRole (load64 (own+208) t)) then t else
   let stream := load64 (Guest.TorRouter.state+88) t
   let source := load64 (Guest.TorRouter.state+96) t
   let epoch := load64 (Guest.TorRouter.channel source+24) t
-  let client := load64 (Guest.TorRouter.state+8) t == 1
   let index := if client then 0 else findContext source stream epoch 0 t
   let chosen := if index == error then freeContext 0 t else index
   let t := copy Guest.TorRouter.inbox incomingCopy n t
@@ -163,10 +164,13 @@ def processInput (t : UInt64) : UInt64 :=
   if chosen == error || (!client && !terminalRole (load64 (own+208) t)) then t else
   let t := selectContext chosen t
   let t := if !active t && !client && load64 own t == 1 then
-    let r := syscall 104 0 fresh 32 0 t
-    if r != 32 || load64 fresh r == 0 then r else
-    let t := store64 (st+176) (load64 fresh r) r
-    let t := zero fresh 4 t
+    -- Pair this never-reused local generation with the kernel's full current
+    -- Network incarnation at the application boundary. Stop/relisten cannot
+    -- revive an old staging/result handle; exhaustion requires a fresh owner.
+    let generation := load64 (control+16) t
+    if generation == error then t else
+    let t := store64 (control+16) (generation+1) t
+    let t := store64 (st+176) (generation+1) t
     let t := store64 st 2 t
     let t := store64 (st+8) 1 t
     let t := store64 (st+24) stream t

@@ -18,7 +18,7 @@ def hashed : UInt64 := 0x6e5000
 def serialized : UInt64 := 0x700000
 -- Four independently owned volatile uploads; a finite serial disk writer is
 -- shared. Slow appenders hold their8KiB staging allocation, never the writer.
-def stageBank (i : UInt64) : UInt64 := 0x740000+i*12288
+def stageBank (i : UInt64) : UInt64 := 0x750000+i*12288
 def stageIndex (t : UInt64) : UInt64 := load64 (st+344) t
 def saveStage (i t : UInt64) : UInt64 :=
   let b := stageBank i
@@ -43,7 +43,7 @@ def stageWord (i offset t : UInt64) : UInt64 :=
 def sameOrigin (caller expected origin actual : UInt64) : Bool :=
   caller != 0 && caller == expected && origin == actual
 -- Applied at append/commit/cancel; Network is only a local process identity.
--- Its random authenticated terminal generation is a separate ownership field.
+-- Its authenticated terminal generation is a separate ownership field.
 theorem different_origin_denied (caller expected origin actual : UInt64) (different : origin ≠ actual) :
     sameOrigin caller expected origin actual = false := by simp [sameOrigin, different]
 def ownsStage (caller t : UInt64) : Bool :=
@@ -638,5 +638,5 @@ partial def loop (t : UInt64) : UInt64 :=
   let t := expireStages 0 now now
   let t := zero scratch 80 (zero hashed 4 (zero command 124 (zero wire 128 t)))
   loop (Guest.WaitSDK.deadline (Guest.WaitSDK.now t+(if pending t || Guest.MailboxReceipt.pending t then 1 else 100)) t)
-def main (t : UInt64) : UInt64 := loop (Guest.MailboxReceipt.clear (zero 0x740000 6144 (zero st 64 (zero active (bytes/8) (zero candidate (bytes/8) t)))))
+def main (t : UInt64) : UInt64 := loop (Guest.MailboxReceipt.clear (zero 0x750000 6144 (zero st 64 (zero active (bytes/8) (zero candidate (bytes/8) t)))))
 end Guest.Mailbox
