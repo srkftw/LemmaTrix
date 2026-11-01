@@ -144,14 +144,37 @@
       "signed_sha256": "4af1f78c21bf24d9d8f38421bb4e5742445451258fe93ba35d6e98d7da9d15c0"
     },
     "observed_checkpoints": {
+      "node-mailbox": true,
+      "node-relay1": true,
+      "node-relay2": true,
+      "node-relay3": true,
+      "node-alpha": true,
+      "node-beta": true,
+      "mailbox": true,
+      "peers": true,
+      "federation-alpha": true,
+      "federation-beta": true,
+      "contacts": true,
+      "registry": true,
+      "listeners": true,
+      "feed-route-charlie": true,
+      "feed-route-alice": true,
+      "feed-route-bob": true,
       "three-feed": true,
       "replication": true,
-      "ordinary": false,
-      "long": false,
-      "follow-reply": false
+      "long-read": true,
+      "follow-reply": true
     },
     "live_state_record": "build/campaign009-connected-v4/native-actors.json",
-    "first_product_checkpoint_result": "pass:126-byte nativeUI post; original480 signed bytes match across independently configured Alpha/Beta; selected audience unchanged"
+    "first_product_checkpoint_result": "pass:126-byte nativeUI post; original480 signed bytes match across independently configured Alpha/Beta; selected audience unchanged",
+    "long_post": {
+      "id": "6045eb474eea92e25e15ac18c5404a85e9ec17d2756861a1124bb1009b0eb5be",
+      "author": "01b4dc6aabc34d72afc42a1aae46e518b2de716bffddaa58ef0572c7567b216a",
+      "kind": 1,
+      "bytes": 1330,
+      "content_sha256": "da933b261f757e2e3556bd30c008f04fbdd90ce29e277d65883d4e3c0ca9e557",
+      "signed_sha256": "6045eb474eea92e25e15ac18c5404a85e9ec17d2756861a1124bb1009b0eb5be"
+    }
   },
   "component_record": "campaign-009-components.json",
   "capacity": {
@@ -555,6 +578,15 @@
       "event": "194c3c53daaf158134cd0ff4f7470d89bcc8d1cfef3b1be5fe970c2ea098c04d",
       "image_sha256": "90fdde98b45bd9828b1d53a8d7c22e5d361480116ccef08ded5bf1c2f8f668a3",
       "scope": "Actual final-image NativeFeed reader after full checked1330B content retrieval. Screenshot shows one body page; earlier screenshot remains attributed to prior582f trial."
+    },
+    {
+      "label": "Native graphical Feed long review, current clean854 image/UI0.9.2",
+      "source_ppm": "build/campaign009-connected-v4/bob-native-long-review.ppm",
+      "source_ppm_sha256": "ff888c35f206671da76f629eb8e7751bcfc734bb8d12fe3d2ee06cbb7c25b883",
+      "path": "docs/evidence/campaign-009-frames/bob-native-long-review-8542.png",
+      "sha256": "8e99c0fb2596176807ebb028851601b58212672080f49c4cbc40612079a7c0f6",
+      "image_sha256": "854253bc6b0d46ba043e6056ea8c065b00d4e8560b062d6f6f9220034f76a29b",
+      "scope": "Actual native640x400 rendered frame; lossless pixel-preserving PPM\u2192PNG conversion, one checked page of useful1330-byte post."
     }
   ],
   "focused_native_refusals": {
