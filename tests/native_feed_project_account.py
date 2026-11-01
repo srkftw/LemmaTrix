@@ -137,7 +137,7 @@ def settle_exact(g,operator,observed):
     observed(dict(check='native exact retry reconciles original commitment after query/route uncertainty',event_id=event_id.hex(),status=list(feed_ui(g)[0]),duplicate_publication=False))
 
 
-def author_actions(g,original,destination,state,author,out,observed):
+def author_actions(g,original,destination,state,author,out,observed,defer_replication=False):
     """Use the shipped E/T controls on one disposable own review, once each."""
     history_path=out/'reconnect-progress.json';history=json.loads(history_path.read_text())
     if history.get('configuration')!=state['configuration']or not history.get('done',{}).get('history-read'):
@@ -201,13 +201,14 @@ def author_actions(g,original,destination,state,author,out,observed):
             phase=feed.invoke(original.client,490,action=3)[0]
             if phase[1]==6:raise RuntimeError(('native replication explicitly stopped',original.name,list(phase),committed[:32].hex()))
             return None
-        replica=wait(replicated,600,'original signed author '+label+' replicates')
-        assert committed==replica and hashlib.sha256(committed[32:]).digest()==committed[:32]
+        replica=lookup(destination,kind,text)if defer_replication else wait(replicated,600,'original signed author '+label+' replicates')
+        assert (replica is None or committed==replica)and hashlib.sha256(committed[32:]).digest()==committed[:32]
         assert committed[224:256]==target and committed[400:432]==target and committed[304:368]==original_row[304:368]
-        assert read_body(original,committed)==text.encode()and read_body(destination,replica)==text.encode()
+        assert read_body(original,committed)==text.encode()
+        if replica is not None:assert read_body(destination,replica)==text.encode()
         if 'event'in action:assert action['event']==committed[:32].hex()
-        action.update(event=committed[:32].hex(),signed_sha256=hashlib.sha256(committed[32:]).hexdigest(),replicated=True)
-        for operator in(original,destination):
+        action.update(event=committed[:32].hex(),signed_sha256=hashlib.sha256(committed[32:]).hexdigest(),replicated=replica is not None)
+        for operator in((original,destination)if replica is not None else(original,)):
             row=next((f,p)for f,p in rows(operator)if p[:32]==target)
             assert row[1]==original_row
             if kind==4 and lookup(operator,5,TOMBSTONE)is None:
@@ -218,7 +219,7 @@ def author_actions(g,original,destination,state,author,out,observed):
         action['verified']=True;project.write_record(path,journal)
     return dict(target=target.hex(),review_key=journal['review_key'],original_signed_sha256=hashlib.sha256(original_row[32:]).hexdigest(),
                 edit=journal['actions']['edit'],tombstone=journal['actions']['tombstone'],original_signed_bytes_unchanged=True,
-                ordinary_original_body_refused_on_both_federations=True,erasure_claim=False)
+                ordinary_original_body_refused_on_both_federations=all(a.get('replicated')for a in journal['actions'].values()),erasure_claim=False)
 
 
 def main():
@@ -228,6 +229,7 @@ def main():
     parser.add_argument('--person',choices=('alice','bob'),default='bob')
     parser.add_argument('--feed-packages',type=Path,help='exact frozen bundle required for ephemeral relaunch')
     parser.add_argument('--alpha-offline-approved',action='store_true',help='select only after connected moderation/restart checks finish')
+    parser.add_argument('--local-project-only',action='store_true',help='preserve measured replication failure while completing unaffected native project actions; never a full pass')
     a=parser.parse_args();out=a.attach.resolve();evidence=out/('feed-'+a.stage+'-account.json');began=time.monotonic()
     initial=json.loads((out/'native-actors.json').read_text());person=initial['personal'][a.person]['feed']
     original_name='alpha'if person['federation']==initial['actors']['alpha']['feed']['federation']else'beta'
@@ -309,10 +311,11 @@ def main():
                 if not checkpoint.get('retained'):
                     passed('native Feed identity retention explicitly selected in Objects domain3 before further publication',author=author.hex(),separate_from_messenger_domain2=True,selection=selection,opaque_root_generation=checkpoint['retention_generation'])
                     checkpoint['retained']=True;save()
-                if not checkpoint.get('author_actions'):
-                    result=author_actions(g,original,destination,state,author,out,observed)
-                    passed('native author edit and tombstone preserve original signed history across both federations and refuse the withdrawn body',**result)
-                    checkpoint['author_actions']=True;save()
+                author_scope='local'if a.local_project_only else'replicated'
+                if checkpoint.get('author_actions')not in(True,'replicated',author_scope):
+                    result=author_actions(g,original,destination,state,author,out,observed,defer_replication=a.local_project_only)
+                    passed('native author edit and tombstone preserve signed history and refuse the withdrawn body',qualification=author_scope,**result)
+                    checkpoint['author_actions']=author_scope;save()
                 settle_exact(g,original,observed)
                 project_dir=out/'feed-project-action'
                 inventory=identity.instances(g.client)
@@ -339,9 +342,10 @@ def main():
                     chosen=project.select_event(g,g.feed_ui,existing[:32])
                     action=project.inspect_and_fork(g,g.feed_ui,record,chosen)
                 card=wait(committed,120,'original project card remains committed')
-                replica=wait(lambda:next((p for _,p in rows(destination)if p[:32]==card[:32]),None),600,'original project card replicates')
-                assert card==replica
-                body=read_body(destination,replica)
+                def replica_card():return next((p for _,p in rows(destination)if p[:32]==card[:32]),None)
+                replica=replica_card()if a.local_project_only else wait(replica_card,600,'original project card replicates')
+                assert replica is None or card==replica
+                body=read_body(destination,replica)if replica is not None else read_body(original,card)
                 assert body.startswith(b'LT-CARD1 ') and body[1545:1546]==b'\n'
                 original_descriptor=bytes.fromhex(body[9:1545].decode('ascii'))
                 assert hashlib.sha256(original_descriptor).hexdigest()==record['descriptor_sha256']
@@ -354,9 +358,9 @@ def main():
                     public=export_public(g,include_preferences=True)
                 assert preference_bits(public,project_id)&4
                 passed('explicit native preference selection retains and exports a local stable-project follow',project=record['project_id'],preference_bytes=1536,preference_sha256=hashlib.sha256(public[256:1792]).hexdigest(),automatically_published=False)
-                passed('native project card opens original Registry verification and completes useful normal Library Fork',action=action,replicated_event=card[:32].hex(),bytes=len(body),metadata_sha256=record['descriptor_sha256'],execution_consent=False)
+                passed('native project card opens original Registry verification and completes useful normal Library Fork',action=action,durably_accepted_event=card[:32].hex(),replicated_event=card[:32].hex()if replica is not None else None,bytes=len(body),metadata_sha256=record['descriptor_sha256'],execution_consent=False)
                 passed('new independent local lineage is visible in the normal trusted Library/Forge project picker',visible=visible,second_fork_requested=False)
-                report['project']=record;report['card']=dict(id=card[:32].hex(),author=author.hex(),body_sha256=hashlib.sha256(body).hexdigest(),bytes=len(body));save()
+                report['project']=record;report['card']=dict(id=card[:32].hex(),author=author.hex(),body_sha256=hashlib.sha256(body).hexdigest(),bytes=len(body),replicated=replica is not None);save()
                 refused=project.revoke_and_refuse(g,g.feed_ui,record)
                 passed('current native release revocation refuses the valid old card at the action boundary',refusal=refused)
                 settle_exact(g,original,observed)
@@ -366,6 +370,9 @@ def main():
                 assert not any(public[168:256])and not any(public[1792:])
                 passed('approved public export includes exact retained publication reference and selected preferences without signing seed or sealed key',bytes=len(public),sequence=struct.unpack_from('<Q',public,24)[0],public_sha256=hashlib.sha256(public).hexdigest(),fields=['schema','explicit preference selection','sequence','author public key','home scope','selected peer scope','last signed event reference','public key generation','selected local preferences'],preference_sha256=hashlib.sha256(public[256:1792]).hexdigest(),sealed_private_key_included=False)
                 save_approved_profile(out/(g.name+'.approved-feed-profile'),public)
+                if a.local_project_only:
+                    import network
+                    report['pending_replication']=dict(qualification='local native actions completed; selected-federation replication remains unqualified in this identified trial',operators={name:dict(replication=list(feed.invoke(actors[name].client,490,action=3)[0]),network_context0=list(network.call(actors[name].client,7,slot=0)[0]))for name in('alpha','beta')})
             elif a.stage=='migrate':
                 if not a.alpha_offline_approved:raise ValueError('finish connected moderation/restart before selecting the original federation offline')
                 prior=json.loads((out/'feed-project-account.json').read_text());assert prior['result']=='pass'
@@ -452,7 +459,7 @@ def main():
                 passed('no-vault Feed author is absent after native process replacement while approved published copies remain at replica',prior_public=before.hex(),current_identity_present=False,recipient_publication_retained=True)
                 state['personal']['charlie']['feed']=selected
                 (out/'native-actors.json').write_text(json.dumps(state,indent=2)+'\n')
-            report['frame']=screenshot(g,'feed-'+a.stage);report['result']='pass';report['seconds']=time.monotonic()-began;attempt.update(result='pass',seconds=report['seconds']);save()
+            report['frame']=screenshot(g,'feed-'+a.stage);report['result']='partial-native-project-complete'if a.local_project_only else'pass';report['seconds']=time.monotonic()-began;attempt.update(result=report['result'],seconds=report['seconds']);save()
         except BaseException as error:
             report.update(result='failure-preserved-native-actors',error=repr(error),traceback=traceback.format_exc(),seconds=time.monotonic()-began)
             attempt.update(result='failure',error=repr(error),seconds=report['seconds'])
