@@ -295,7 +295,12 @@ def main():
      # Exact home/peer bytes remain mandatory in the signed-event assertion.
      return fields[1]!=0 and(pending==0 or action==0)
     wait(audience_settled,120,'native audience selection request settled')
-   personal['feed_public']=feed_ui(g)[1][:32].hex();save()
+   def actual_public(g=g):
+    fields,payload=feed_ui(g)
+    return payload[:96]if fields[1]!=0 and len(payload)>=96 and payload[:32]!=bytes(32)else None
+   public=wait(actual_public,120,g.name+' actual scoped public identity')
+   assert public[32:64]==bytes.fromhex(feds[home])and public[64:96]==bytes.fromhex(feds[1-home])
+   personal['feed_public']=public[:32].hex();save()
   if not state['done'].get('three-feed'):
    assert all(net(g,41)[0][2]==3 for g in(charlie,alice,bob));record('three-feed','three independent Feed clients concurrently admitted; two share alpha and all share relays without operator handoff')
   if not state['done'].get('replication'):
@@ -365,7 +370,10 @@ def main():
    assert all(net(g,41)[0][2]==3 for g in(alice,bob));record('cancel','native Feed cancellation and circuit disconnect preserve both unrelated authenticated Messenger sessions',other_sessions=before,stalled_seconds=time.monotonic()-state['stall']['began_monotonic'])
   continuation()
   frames={g.name:screenshot(g,'common-community')for g in(alice,bob)}
-  report=dict(schema=1,result='pass',configuration=expected,checks=state['checks'],events=state['events'],actors=state['actors'],frames=frames,elapsed_seconds=time.monotonic()-started,capacity=dict(transport_channels=16,onion_channels=12,relay_complete_routes_bound=6,observed_simultaneous_personal_clients=3,bulk_channels=4,terminal_banks=16,mailbox_stages=4,mailbox_stage_bytes=8192),limits=['One-host local integration; native x86_64 is an RV64 interpreter when selected.','This connected segment covers signed Feed discussion/replication and Messenger/Forge contention. Project-card Add/Fork, moderation/appeals, restart/retention/migration and refusal cases require their separately recorded connected continuations.','Existing project/Registry RSA package bootstrap remains disclosed; no new Feed-author, moderator or replication private key is held by the host.','Classical native crypto does not qualify Tor interoperability, post-quantum security, independent administration, hostile-government resilience or physical hardware.'])
+  for g in(charlie,alice,bob):
+   public=feed_ui(g)[1][:32].hex();assert public!='00'*32 and public==state['personal'][g.name]['feed_public']
+   assert any(event['author']==public for event in state['events'].values()),'each displayed author must match a real original signed event'
+  report=dict(schema=1,result='pass',configuration=expected,checks=state['checks'],events=state['events'],actors=state['actors'],frames=frames,elapsed_seconds=time.monotonic()-started,controller_segments=state['controller_segments'],feed_prepublication_upgrade=state.get('feed_prepublication_upgrade'),registry_input_provenance=state.get('registry_input_provenance'),capacity=dict(transport_channels=16,onion_channels=12,relay_complete_routes_bound=6,observed_simultaneous_personal_clients=3,bulk_channels=4,terminal_banks=16,mailbox_stages=4,mailbox_stage_bytes=8192),limits=['One-host local integration; native x86_64 is an RV64 interpreter when selected.','This connected segment covers signed Feed discussion/replication and Messenger/Forge contention. Project-card Add/Fork, moderation/appeals, restart/retention/migration and refusal cases require their separately recorded connected continuations.','Existing project/Registry RSA package bootstrap remains disclosed; no new Feed-author, moderator or replication private key is held by the host.','Classical native crypto does not qualify Tor interoperability, post-quantum security, independent administration, hostile-government resilience or physical hardware.'])
   (out/'evidence.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2),flush=True)
  except BaseException as error:
   save();continuation();(out/'failure.json').write_text(json.dumps(dict(schema=1,result='failed-preserved-native-actors',stage=stage,error=repr(error),traceback=traceback.format_exc(),configuration=expected,checks=state['checks'],elapsed_seconds=time.monotonic()-started),indent=2)+'\n');raise
