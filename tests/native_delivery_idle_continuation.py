@@ -1,7 +1,8 @@
 """Useful native Messenger text/reply after naturally completed empty probes.
 
 Run only after the capacity controller releases the same actors, and only when
-its normal work has already crossed512 empty probes. No idle padding, process
+its normal work has already crossed512 empty probes. Otherwise it records an
+honest skipped/not-qualified result without input. No idle padding, process
 replacement, route selection or authority renewal is performed here.
 """
 import argparse
@@ -14,9 +15,8 @@ import time
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT/'tools'), str(ROOT/'tests')]
 import messenger
-import releases
 from messenger_journey import inspect, net, role, send_ui, wait
-from native_community_campaign import attach_campaign, focus_application
+from native_community_campaign import attach_campaign, focus_application, selected_delivery_package
 
 TEXT = 'The project community is still reachable after the capacity check.'
 REPLY = 'Confirmed: the same private session can receive and reply.'
@@ -28,11 +28,8 @@ def main():
     args = p.parse_args()
     out = args.attach.resolve();path = out/'delivery-idle-useful-work.json'
     assert not path.exists(), 'preserve the prior installed idle-liveness result'
-    package = out/'delivery-recovery-0.8.2.ltrel'
-    info = releases.inspect(package.read_bytes())
-    assert info['version'] == '0.8.2' and info['rights'] == 1024
     began = time.monotonic()
-    report = dict(schema=1, result='running', package_release=info['release_id'],
+    report = dict(schema=1, result='running',
                   controller_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
                   idle_wait_added=False, process_or_route_replacement=False,
                   operator_stop_listen=False, authority_renewal=False)
@@ -41,14 +38,15 @@ def main():
         alice, bob = (campaign.actors[n] for n in ('alice', 'bob'))
         report['configuration'] = campaign.state['configuration']
         def observe(g):
-            assert campaign.state['current_runtime_packages']['messenger_by_person'][g.name]['delivery'] == info['release_id']
+            package, info, source = selected_delivery_package(out, campaign.state, g.name)
             assert g.client.request(14, bytes.fromhex(info['project_id']))[64:96].hex() == info['release_id']
             assert messenger.endpoint(g.client, 4, 464) == g.delivery
             counter = role(g, 4, 464, a=5)[0]
             terminal, pin = net(g, 41)
             assert counter[0] == 0 and counter[1] <= 512 and counter[4] != 7, (g.name, counter)
             assert terminal[1:3] == (1, 3), (g.name, terminal)
-            return dict(delivery=g.delivery, owner=g.owner, ui=g.ui, counters=list(counter),
+            return dict(delivery=g.delivery, owner=g.owner, ui=g.ui, release=info['release_id'],
+                        package_path=str(package), package_selection=source, counters=list(counter),
                         terminal=list(terminal), pin=pin.hex())
         def received(g, text):
             status = role(g, 2, 420)[0]
@@ -66,7 +64,12 @@ def main():
                         native_inbox=answer, seconds=time.monotonic()-started)
         try:
             report['before'] = {g.name:observe(g) for g in (alice, bob)};save()
-            assert any(x['counters'][6] >= 513 for x in report['before'].values()), 'this case requires naturally observed513 empty probes before any useful-work gesture'
+            report['package_releases'] = {name:value['release'] for name,value in report['before'].items()}
+            if not any(x['counters'][6] >= 513 for x in report['before'].values()):
+                report.update(result='skipped-not-qualified', elapsed_seconds=time.monotonic()-began,
+                              reason='Neither coordinator has naturally completed513 empty probes; no idle padding or useful-work claim.',
+                              threshold=513, native_text_sent=False)
+                save();print(json.dumps(report, indent=2), flush=True);return
             report['text'] = send(alice, bob, TEXT);save()
             report['reply'] = send(bob, alice, REPLY);save()
             report['after'] = {g.name:observe(g) for g in (alice, bob)}

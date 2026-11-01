@@ -39,6 +39,22 @@ REVIEW_NOTES=(
  'Forwarding original signed bytes preserves authorship. The receiving federation separately decides whether to admit or moderate the permitted material.'
 )
 
+def selected_delivery_package(output,state,person):
+ """Resolve public package provenance before any versioned native diagnostic."""
+ runtime=state.get('current_runtime_packages',{}).get('messenger_by_person',{}).get(person)
+ if runtime is None:
+  path=Path(output)/'delivery.ltrel';selected=state['configuration']['messenger']['delivery']
+  source='initial_common_configuration'
+ else:
+  path=Path(output)/'delivery-recovery-0.8.2.ltrel';selected=runtime['delivery']
+  source='explicit_runtime_successor'
+ info=releases.inspect(path.read_bytes())
+ if info['version']!='0.8.2' or info['rights']!=1024:
+  raise ValueError('read-only Delivery464/action5 requires the selected0.8.2 package')
+ if info['release_id']!=selected:
+  raise ValueError('selected Delivery package differs from its exact public runtime ledger')
+ return path,info,source
+
 def feed_ui(g,operation=791):
  raw=g.client.request(150,struct.pack('<Q8Q',g.feed_ui,operation,0,0,0,0,0,0,1))
  return struct.unpack_from('<8Q',raw),raw[64:]

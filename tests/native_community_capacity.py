@@ -19,9 +19,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT/'tools'), str(ROOT/'tests')]
 import feed
 import messenger
-import releases
 from messenger_journey import Guest, enroll, net, role, wait
-from native_community_campaign import attach_campaign, select_destination
+from native_community_campaign import attach_campaign, select_destination, selected_delivery_package
 
 
 def main():
@@ -51,15 +50,11 @@ def main():
             """Only the admitted0.8.2 release defines read-only464/action5.
 
             Older releases treat this subaction as configuration. Verify the
-            selected public successor and current native catalog before it.
+            selected public package and current native catalog before it.
             """
-            package = out/'delivery-recovery-0.8.2.ltrel'
-            info = releases.inspect(package.read_bytes())
-            assert info['version'] == '0.8.2' and info['rights'] == 1024
-            runtime = campaign.state['current_runtime_packages']['messenger_by_person']
             result = {}
             for g in (alice, bob):
-                assert runtime[g.name]['delivery'] == info['release_id']
+                package, info, source = selected_delivery_package(out, campaign.state, g.name)
                 active = g.client.request(14, bytes.fromhex(info['project_id']))
                 assert active[64:96].hex() == info['release_id']
                 assert messenger.endpoint(g.client, 4, 464) == g.delivery
@@ -70,6 +65,7 @@ def main():
                     assert fields[1] <= 512 and fields[4] != 7, (g.name, list(fields))
                     assert terminal[1:3] == (1, 3), (g.name, list(terminal))
                 result[g.name] = dict(instance=g.delivery, release=info['release_id'],
+                    package_path=str(package), package_selection=source,
                     raw=list(fields), workflow_rpc_guard=fields[1], rpc_serial=fields[2],
                     current_rpc=fields[3], receive_phase=fields[4], receive_reason=fields[5],
                     completed_empty_probes=fields[6], parent_terminal=list(terminal))

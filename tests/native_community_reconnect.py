@@ -40,6 +40,32 @@ def timeline_rows(client):
   yield fields,body
  raise RuntimeError('native bounded timeline has no termination')
 
+def write_no_vault_ledger(out,actors,completed,controller_sha256):
+ """Bind only completed native observations; this grants no account authority."""
+ progress=out/'reconnect-progress.json';final=out/'reconnect.json'
+ assert completed['result']=='pass'and completed['done']['ephemeral']
+ assert json.loads(progress.read_text())==completed==json.loads(final.read_text())
+ assert completed['configuration']==actors['configuration']
+ selected=[check for check in completed['checks']if 'old_owner'in check and 'new_owner'in check]
+ assert len(selected)==1;check=selected[0]
+ person=actors['personal']['charlie'];fresh=person['feed']
+ assert check['result']=='pass'and check['old_owner']!=check['new_owner']==fresh['owner']
+ assert person['current_feed_identity_present']is False and person['current_feed_public']is None
+ historical=person['historical_feed_public']
+ assert historical==person['feed_public']==actors['events']['long']['author']==check['historical_feed_public']
+ assert check['current_feed_identity_present']is False and check['current_feed_public']is None
+ actor_path=out/'native-actors.json';assert json.loads(actor_path.read_text())==actors
+ ledger=dict(schema=2,result='pass',
+  scope='Public observation ledger bound to the completed native NoVault branch. Historical published author is not a live identity in the newly admitted owner; this annotation performs no Native action.',
+  image_sha256=actors['configuration']['image_sha256'],historical_feed_public=historical,
+  current_feed_identity_present=False,current_feed_public=None,current_feed_owner=fresh['owner'],current_feed_ui=fresh['ui'],
+  completed_native_checks=check,reconnect_sha256=hashlib.sha256(progress.read_bytes()).hexdigest(),
+  final_reconnect_sha256=hashlib.sha256(final.read_bytes()).hexdigest(),native_actors_sha256=hashlib.sha256(actor_path.read_bytes()).hexdigest(),
+  executed_controller_sha256=controller_sha256,
+  evidence_source='Completed native branch observed fresh UI identity0 and96zero public/scopes and original committed replica unchanged before recording pass.')
+ (out/'no-vault-public-ledger.json').write_text(json.dumps(ledger,indent=2)+'\n')
+ return ledger
+
 UNAVAILABLE='This review note was signed while the required private route was unavailable. Reconnect must publish the exact pending author sequence and event commitment without direct fallback.'
 UNCERTAIN=('Release review: a signed community note and a project release make different promises. A note records its author, intended federations, content commitment and causal references. The release must still pass the normal publisher signature and current admission checks before an action in Forge or Library. ' 'The service should preserve an accepted note across a lost connection and report uncertainty honestly to its author. An exact retry should retrieve the existing commitment instead of spending a fresh publication allowance or creating another visible row. Other readers and conversations should continue while that author reconnects. ' 'This review also asks operators to keep finite transport and storage terms visible. Expiry must require explicit approved renewal, and a failed or exhausted request must stay within its own context. Those limits make a small voluntary project community practical without granting a post permission to execute code or changing another federation policy.')
 
@@ -49,6 +75,7 @@ def main():
  state=json.loads(path.read_text())if a.resume else dict(schema=1,done={},checks=[])
  assert a.resume or not path.exists(),'use --resume to preserve the original observations'
  started=time.monotonic();stage='attach completed native community'
+ controller_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
  def save():path.write_text(json.dumps(state,indent=2)+'\n')
  def record(key,label,**extra):state['done'][key]=True;state['checks'].append(dict(check=label,result='pass',**extra));save();print('PASS',label,extra,flush=True)
  with attach_campaign(out,graphical=('charlie',))as campaign:
@@ -234,6 +261,7 @@ def main():
    for obsolete in('error','traceback'):state.pop(obsolete,None)
    state.update(result='pass',stage=stage,elapsed_seconds=time.monotonic()-started,frame=screenshot(charlie,'fresh-ephemeral-feed'),limits=['One-host local integration; no independent administration or physical hardware claim.','Ciphertext output pause after the native commit request was submitted demonstrates missing final acceptance receipt; it does not decrypt or interpret network traffic.','Committed event/byte allowance is compared exactly; no claim that all transport or retry work is free.','Full relay-capacity saturation remains qualified by the separate native paired-resource fixture; this continuation exercises actual per-session allowance refusal and reuse.'])
    save();(out/'reconnect.json').write_text(json.dumps(state,indent=2)+'\n')
+   write_no_vault_ledger(out,campaign.state,state,controller_sha256)
   except BaseException as error:
    state.update(result='failure-preserved-native-community',stage=stage,error=repr(error),traceback=traceback.format_exc(),elapsed_seconds=time.monotonic()-started);save();(out/'reconnect-failure.json').write_text(json.dumps(state,indent=2)+'\n');raise
 
