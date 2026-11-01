@@ -118,7 +118,7 @@
     }
   ],
   "common_run": {
-    "result": "core and strict stalled Forge passed; exact seq5 retry replicated, then Alice upstream loss and failed local receivers paused reconnect; parent-linked Delivery0.8.2 repair/selected-route recovery pending",
+    "result": "core and strict stalled Forge passed; exact seq5 retry replicated. After preserved unexplained Alice raw transport fatal, explicit personal Network33 and parent-linked Delivery0.8.2 recovery passed repeated native Messenger text/reply during independent paused Feed. Resumed reconnect/noVault, capacity and application continuations pending.",
     "output": "build/campaign009-connected-v7",
     "configuration": {
       "image_sha256": "2e5147c4198cf7ec39ab053f2ea8895cfdceb1c9b9dcf79e1b7bb7627314bcdf",
@@ -200,7 +200,75 @@
       "bob": "router3/terminal3; later Delivery receive7 with no local RPC",
       "native_image_changed": false,
       "operators_reset": false,
-      "recovery": "Alice explicit native Network33 replacement cleared observed fatal raw stream; approved pins re-enrolled and same route/prekey publication passed. Alice/Bob parent-linked Delivery0.8.2 admissions preserve Owner/UI; Bob route and repeated Messenger contention checkpoint still running. Eight other Network instances and all operators unchanged."
+      "recovery": "Explicit selected personal recovery passed; see selected_personal_recovery. Shared operators and eight other Network instances unchanged. The initiating Alice loss remains unobserved; uninterrupted admission is not claimed."
+    },
+    "selected_personal_recovery": {
+      "record": {
+        "path": "build/campaign009-connected-v7/selected-route-recovery.json",
+        "sha256": "fa877d048cbb62ef924f7172f0fca9f16451cfce7a1f76e22e64aa2a770c68aa",
+        "bytes": 9132
+      },
+      "result": "pass",
+      "text_seconds": 37.25912611800595,
+      "reply_seconds": 33.76291157399828,
+      "stalled_epoch": 17,
+      "stalled_pending_bytes": 532,
+      "stalled_terminal_phase": 3,
+      "stalled_seconds": 72.01964668899018,
+      "coordinator_counters_before": {
+        "alice": [
+          0,
+          2,
+          33,
+          33,
+          0,
+          0,
+          31,
+          1
+        ],
+        "bob": [
+          0,
+          3,
+          3,
+          3,
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "coordinator_counters_after": {
+        "alice": [
+          0,
+          1,
+          76,
+          76,
+          0,
+          0,
+          63,
+          1
+        ],
+        "bob": [
+          0,
+          8,
+          50,
+          50,
+          0,
+          0,
+          35,
+          1
+        ]
+      },
+      "network_recovery": {
+        "path": "build/campaign009-connected-v7/personal-network-recovery.json",
+        "sha256": "333b7c9129a13a3a0e14df71418f66614ab219447ce79a4dc070d4917d845b97",
+        "bytes": 2997
+      },
+      "limits": [
+        "The preceding scoped Alice link loss remains unexplained and continuous admission is not claimed across recovery.",
+        "A local coordinator receive failure and finite allowance require explicit personal lifecycle recovery; this does not reset durable mailbox/event budgets or authorize a new peer.",
+        "This episode is separate from the already completed original text/reply and routed Forge checks."
+      ]
     }
   },
   "component_record": "campaign-009-components.json",
@@ -643,7 +711,7 @@
     "scope": "Installed exact-role native signer authority gate and actual Feed service conflict/quota refusals on isolated purpose2 backing. No valid wrong-federation moderator signature admission is claimed."
   },
   "connected_continuations": {
-    "result": "pending on request-safe690 common-image actors; f597 application-only results preserved separately"
+    "result": "Current2e514core,strictstalledForge and explicit personal recovery passed; resumed reconnect/noVault, capacity, strictproject,moderation,restart,migration pending. Previous trials retain their separate identifiers."
   },
   "operator_interrupt_ownership": {
     "source_commit": "63fc11bcfe7a9f7c94f06b680d6e8b3e085478ed",
@@ -824,7 +892,7 @@
     "local_record": "build/campaign009-final-v5-aarch64-storage/evidence.json",
     "record_sha256": "14bc1adacd48fdb72c8050387e4cad4b65a015b5f7cb945a015200a07a36dca3"
   },
-  "current_trial_partial_record": "docs/evidence/campaign-009-connected-f597.json",
+  "current_trial_partial_record": "docs/evidence/campaign-009-community-2e514.json (planned aggregate; pending current infrastructure continuation)",
   "post_trial_request_ownership_fix": {
     "commit": "c5147de",
     "nonzero_cancel": "requires exact current request under full owner incarnation",
@@ -1102,12 +1170,12 @@
     "path": "docs/evidence/campaign-009-native-bulk-creation.json",
     "sha256": "3e301661acc9ee6b6e5d2e195ae722df794fb9b2334a31802e3156a2c4e1aa48",
     "source": "e2dee0a",
-    "qualification": "Real adapter asynchronous errno111 plus compiled Native event/banked deadline/retry fixture on QEMU and emulatedAArch64; new installed community pending."
+    "qualification": "Real adapter asynchronous errno111 and compiled Native banked deadline/retry fixture passed on QEMU/emulatedAArch64. New common installed2e514Feed replication and exactseq5retry crossed successfully; remaining lifecycle continuations pending."
   },
   "feed_local_block_fix": {
     "record": "campaign-009-feed-local-block.json",
     "source_commit": "4b78702dd2ed6a5a59372992937775645185d692",
-    "state": "focused native fixture passed; ordinary successor package build and installed retained upgrade pending",
+    "state": "Compiled Native QEMU/emulatedAArch64 producer/UI control checks passed; exact parent-linked shipping packages freshly reproduced; installed Bob retained upgrade remains pending.",
     "wire_change": "local-block outcome15 marker0 may return96B with only public author32; existing64B followed-only marker1 unchanged",
     "image_change": false
   },
@@ -1283,7 +1351,7 @@
     "messenger-delivery": "0.8.2",
     "parent": "5e166b16eeeed082bb86a246f9a79bec88fb13f097304622c9d33cd51992320a",
     "other_components": "0.8.0",
-    "workflow": "Alice and Bob explicit parent-linked admissions preserve SessionOwner/UI; repeated contention checkpoint pending"
+    "workflow": "Alice and Bob normal parent-linked admissions preserve original SessionOwner/UI. Repeated native Messenger text/reply passed with Charlie exactepoch17 paused532B and authenticated3 throughcompletion; no installed>512empty-probe claim yet."
   },
   "final_clean_idle_reproduction": "campaign-009-final-idle-reproduction.json",
   "native_idle_poll_fixture": "campaign-009-native-idle-poll.json",
