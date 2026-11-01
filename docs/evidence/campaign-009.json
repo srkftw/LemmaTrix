@@ -15,8 +15,8 @@
     "path": "build/campaign009-final-v5.bin",
     "bytes": 6291456,
     "sha256": "854253bc6b0d46ba043e6056ea8c065b00d4e8560b062d6f6f9220034f76a29b",
-    "build": "./lt build --clean; native static source8b4e26f; ordinary UI05ca3c4/Registry983f523 compiled separately",
-    "clean_build_log": "build/campaign009-final-v5-clean-build.log",
+    "build": "./lt build --clean after all Native fixes8b4e26f/05ca3c4/983f523; all nine ordinary packages and Registry freshly compiled and reproduced byte-identically.",
+    "clean_build_log": "build/campaign009-final-source-clean-build.log",
     "clean_build_log_sha256": "fd2f5602362bc935f1e0f1a35822d8047b36c7c1953fac626cabac98f1d0ce52"
   },
   "source": {
@@ -549,7 +549,7 @@
   },
   "final_clean_reproduction": {
     "schema": 1,
-    "result": "clean-built-qualification-in-progress",
+    "result": "pass-byte-identical-all11-selected-artifacts",
     "head": "462f720ad5c17c35f907f8ad074f43f229200a69",
     "native_static_source": "8b4e26f",
     "image": {
@@ -636,7 +636,87 @@
       "bytes": 97504,
       "sha256": "55413b5f50bcf07c93b8b9b6bc0ed98d2a289be60821143ffafa7881734c484b",
       "source_commit": "983f523"
-    }
+    },
+    "after_all_native_fixes": {
+      "schema": 1,
+      "result": "pass-byte-identical",
+      "native_static_source": "8b4e26f",
+      "native_ui_source": "05ca3c4",
+      "native_registry_source": "983f523",
+      "head": "42068e4fbb93ffb87b6dc50cd587ca6d65e4d7d3",
+      "clean_command": "./lt build --clean",
+      "clean_build_log_sha256": "fd2f5602362bc935f1e0f1a35822d8047b36c7c1953fac626cabac98f1d0ce52",
+      "artifacts": [
+        {
+          "fresh": "build/live/guest.bin",
+          "selected": "build/campaign009-final-v5.bin",
+          "bytes": 6291456,
+          "sha256": "854253bc6b0d46ba043e6056ea8c065b00d4e8560b062d6f6f9220034f76a29b"
+        },
+        {
+          "fresh": "build/campaign009-final-source-feed/feed-account.ltrel",
+          "selected": "build/campaign009-final-v7-feed/feed-account.ltrel",
+          "bytes": 146144,
+          "sha256": "9d9be1ad2238d6e5063ac5664786939c2c186a08b4f613ed8912e2f9eb985b50"
+        },
+        {
+          "fresh": "build/campaign009-final-source-feed/feed-federation.ltrel",
+          "selected": "build/campaign009-final-v7-feed/feed-federation.ltrel",
+          "bytes": 168284,
+          "sha256": "6cf3b1c142b5e076337575dfd22280760d1c75d95d2e3756c2ade7bbd38df35f"
+        },
+        {
+          "fresh": "build/campaign009-final-source-feed/feed.ltrel",
+          "selected": "build/campaign009-final-v7-feed/feed.ltrel",
+          "bytes": 177616,
+          "sha256": "964a4a92a901520a151a7e7eb9f56c33733302fd8672b9109dd707eb51a4313d"
+        },
+        {
+          "fresh": "build/campaign009-final-source-feed/identity.ltrel",
+          "selected": "build/campaign009-final-v7-feed/identity.ltrel",
+          "bytes": 116720,
+          "sha256": "d6467b6bf812768f4e25a466c4ce0c425635444f78b4b34fc85c50e1579ea5aa"
+        },
+        {
+          "fresh": "build/campaign009-final-source-messenger/identity.ltrel",
+          "selected": "build/campaign009-final-v3-messenger/identity.ltrel",
+          "bytes": 116720,
+          "sha256": "01a013c3b5a16b987876304b7685ca6307ae81644cd834b8a040ecb3c8bbf0fc"
+        },
+        {
+          "fresh": "build/campaign009-final-source-messenger/mailbox.ltrel",
+          "selected": "build/campaign009-final-v3-messenger/mailbox.ltrel",
+          "bytes": 98524,
+          "sha256": "9cebf4928c05e08f1688ee5437f52ffddf6e1f19393394d7889855c944d8fac8"
+        },
+        {
+          "fresh": "build/campaign009-final-source-messenger/messenger-delivery.ltrel",
+          "selected": "build/campaign009-final-v3-messenger/messenger-delivery.ltrel",
+          "bytes": 208744,
+          "sha256": "8c6c4a4d0cd534d8d1e69637c485346ffec8aabcd2b117c02fa3200ba5512372"
+        },
+        {
+          "fresh": "build/campaign009-final-source-messenger/messenger-session.ltrel",
+          "selected": "build/campaign009-final-v3-messenger/messenger-session.ltrel",
+          "bytes": 243116,
+          "sha256": "58985ad54e62aafd6cdbff0b8ed563d28b3de2c16d2330d259d521fd37613f10"
+        },
+        {
+          "fresh": "build/campaign009-final-source-messenger/messenger.ltrel",
+          "selected": "build/campaign009-final-v3-messenger/messenger.ltrel",
+          "bytes": 255620,
+          "sha256": "e90ae124b8ec5fbf58463878e9610758945507dac4775d9b904af6bbbc675430"
+        },
+        {
+          "fresh": "/home/sreekumaar/Desktop/LemmaTrix/build/live/apps/campaign009-registry-final-source.bin",
+          "selected": "build/live/apps/campaign009-registry-final-v4.bin",
+          "bytes": 97504,
+          "sha256": "55413b5f50bcf07c93b8b9b6bc0ed98d2a289be60821143ffafa7881734c484b"
+        }
+      ],
+      "scope": "One final clean source rebuild after all measured Native fixes; every selected image and ordinary package reproduced byte-for-byte. Running nine guests retained their copied immutable artifacts."
+    },
+    "published_record": "campaign-009-final-reproduction.json"
   },
   "native_moderator_authority_refusal": {
     "record": "campaign-009-native-conflict-authority.json",

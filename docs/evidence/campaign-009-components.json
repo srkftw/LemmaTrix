@@ -914,6 +914,13 @@
       "sha256": "23d5024c77d5f9797c199eec284137b92f8fd1b4f807d0e5b0b41360f3362382",
       "result": "pass",
       "scope": "Actual installed final854 image and corrected97504B Registry. Two isolated native instances verify unchanged original admission; fresh importer revokes at seq2>1, current(old) refuses3, current(new) passes. Existing disclosed project/Registry RSA bootstrap only; no Feed-authored fixture."
+    },
+    {
+      "name": "final-clean-source-reproduction",
+      "published_record": "campaign-009-final-reproduction.json",
+      "sha256": "93ab0214eb4b4be96b380c4eb53d2cd301e5cfbc68728c3948da92a8ee489128",
+      "result": "pass",
+      "scope": "After all measured Native fixes, one clean rebuild plus fresh ordinary compilation reproduced selected common image, all9 native signed packages, and corrected Registry byte-for-byte. Separate from connected runtime acceptance."
     }
   ],
   "assurance": "Local one-host execution. AArch64 is qemu-aarch64 emulation. No physical hardware, independent operators, Tor interoperability, post-quantum security or whole-store external freshness claim."
