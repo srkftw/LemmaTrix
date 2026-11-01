@@ -1,0 +1,108 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "image_sha256": "582f4d24d94874898e0bba18c98ef04d91e969f14aaf1ca0678c5152f50ae6f2",
+  "packages": {
+    "identity": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+    "feed-federation": "5bb8adb18e7161203a9eec7d6ffebf7ac1e7a0c510f8d74b652642f91c7b9686"
+  },
+  "probe_release": "e7c4559d82aef6218b7e81d79b50d033386cb2f851a25f99b16a9c8fc1094ec7",
+  "service": {
+    "instance": 17472657976446681352,
+    "release_id": "5bb8adb18e7161203a9eec7d6ffebf7ac1e7a0c510f8d74b652642f91c7b9686",
+    "federation": "b57d45f1f77aaacee74c9ae426720fcd2879e061d2dc50fccc2dac2faeb6e03a",
+    "peer": "912c3647037891d0fc3bb78b32d5b66b57d8a6842f1c3c8f06758d2af55fb106",
+    "moderator_public": "c9eb3657008112211836da847282fd88bddd2d4c8f2efd1c2c7ea00950898524",
+    "namespace": "267770413a86ecd8ffc46cf9bbe657f4661047aa84c6ae79268c882f1f3e5725",
+    "status": [
+      0,
+      0,
+      0,
+      64,
+      4,
+      16384,
+      0,
+      1
+    ],
+    "storage_grants": [
+      17472657980741648641,
+      17472657980741648898,
+      17472657980741649155,
+      17472657980741649412,
+      17472657980741649669,
+      17472657980741649926,
+      17472657980741650183,
+      17472657980741650440
+    ],
+    "storage_grants_are_live_session_handles": true,
+    "capacity": {
+      "events": 1,
+      "content_bytes": 16384,
+      "stages": 4,
+      "content_max": 16384,
+      "segments": 7,
+      "per_author_events": 16,
+      "per_author_content_bytes": 262144
+    },
+    "persistence": "native purpose2 ServerStore; index commit follows immutable content segment commit",
+    "lifecycle": "long-running native listener; no per-client handoff or host replication loop"
+  },
+  "native_public_key": "bd88150efd1c6e4f20fbaffb330f35c1990983a08bd1b52171951901a8f61aad",
+  "checks": [
+    {
+      "check": "current exact role5 consumer creates a native entropy Ed25519 key",
+      "result": "pass",
+      "public": "bd88150efd1c6e4f20fbaffb330f35c1990983a08bd1b52171951901a8f61aad"
+    },
+    {
+      "check": "three canonical valid events receive independent one-use native approvals and native signatures",
+      "result": "pass",
+      "same_author": true,
+      "first_sequence": 1,
+      "conflicting_sequence": 1,
+      "next_sequence": 2
+    },
+    {
+      "check": "exact duplicate reconciles committed acceptance before exhausted quota without new event, bytes or reservation",
+      "result": "pass",
+      "event": "7382d802079838b8c64f5fa91fc8d43f67969a488c4126f45f4224d36b0720ab",
+      "usage": [
+        0,
+        1,
+        72,
+        1,
+        16384,
+        1,
+        1,
+        1
+      ],
+      "budget": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "check": "actual native service refuses a valid different same-author sequence commitment with12 and valid next sequence at finite quota with4",
+      "result": "pass",
+      "conflict": 12,
+      "quota": 4
+    },
+    {
+      "check": "original signed event and checked immutable content remain readable after both refusals",
+      "result": "pass"
+    }
+  ],
+  "seconds": 100.65297675799957,
+  "host_private_keys": false,
+  "authoritative_host_feed_database": false,
+  "limits": "Isolated all-QEMU native application refusal probe. Canonical boundary inputs are explicit test data; this is not UI-authored connected community history.",
+  "source": "tests/native_feed_conflict.py",
+  "runtime_record": "build/campaign009-native-conflict/evidence.json",
+  "evidence_scope": "Installed native exact-consumer signer and actual Feed service refusal on isolated purpose2 backing; no claim of connected UI history."
+}
