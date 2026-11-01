@@ -46,11 +46,13 @@ def main():
     if f[0]==6:return rows
     assert len(body)==512 and hashlib.sha256(body[32:]).digest()==body[:32]
     cursor=f[1]
+    author=body[32+112:32+144]==bytes.fromhex(campaign.state['personal']['charlie']['feed_public'])
     if event_id is not None and body[:32]==event_id:rows.append(body)
-    elif text is not None and body[32+112:32+144]==bytes.fromhex(campaign.state['personal']['charlie']['feed_public'])and body[32+224:32+256]==hashlib.sha256(text.encode()).digest():rows.append(body)
+    elif author and(text is None or body[32+224:32+256]==hashlib.sha256(text.encode()).digest()):rows.append(body)
    raise RuntimeError('native bounded timeline has no termination')
   def stats():
-   f,_=feed.invoke(alpha.client,491,action=8);return dict(events=f[1],bytes=f[2])
+   rows=lookup(alpha)
+   return dict(author_events=len(rows),author_content_bytes=sum(struct.unpack_from('<Q',row,32+256)[0]for row in rows))
   def export(label):
    charlie.device.press(59);wait(lambda:feed_ui(charlie)[0][2]==5,120,'native profile panel');old=feed_ui(charlie,793)[0][1];charlie.device.press(66)
    wait(lambda:feed_ui(charlie,793)[0][1]not in(0,old),180,'native explicit public profile export')
@@ -104,7 +106,7 @@ def main():
     replica=wait(lambda:lookup(beta,event_id=bytes.fromhex(state['cut_profile']['event'])),600,'authorized replica serves exact original event');assert replica==rows
     after=stats();assert after==state['accepted_budget'],(state['accepted_budget'],after)
     profile=export('reconciled');charlie.device.press(1);assert profile['event']==state['cut_profile']['event']and profile['sequence']==state['cut_profile']['sequence']
-    record('retry','exact retry has one visible publication and unchanged committed event/byte allowance; original signed bytes remain on both federations',profile=profile,budget=after,unrelated_sessions=peers())
+    record('retry','exact retry has one visible publication and unchanged committed author event/byte usage; original signed bytes remain on both federations',profile=profile,budget=after,unrelated_sessions=peers())
    stage='no-vault native process death and fresh application authority'
    if not state['done'].get('ephemeral'):
     net(charlie,42);net(charlie,35)
