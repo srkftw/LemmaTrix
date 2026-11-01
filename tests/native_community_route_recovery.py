@@ -80,8 +80,8 @@ def main():
     c.state.setdefault('local_service_recoveries',[]).append(dict(component='messenger.delivery',person=name,old_instance=old,new_instance=new,release=info['release_id'],owner=g.owner,ui=g.ui,image_sha256=c.state['configuration']['image_sha256'],previous_release=info['parent'],kind='explicit parent-linked coordinator replacement; no operator reset'))
     persist();phase(name+' unchanged approved Mailbox route')
     route(g,[r.certificate for r in relays],mailbox);wait(lambda:publication(g),600,'same-owner native prekey publication')
-    entry.update(router_after=list(net(g,32)[0]),terminal_after=list(net(g,41)[0]));persist()
-   state['before_stall']=peers();phase('fresh selected Charlie Feed backfill')
+    entry.update(router_after=list(net(g,32)[0]),terminal_after=list(net(g,41)[0]),coordinator_counters=list(role(g,4,464,a=5)[0]));persist()
+   state['before_stall']=peers();state['coordinator_counters_before']={g.name:list(role(g,4,464,a=5)[0])for g in(alice,bob)};phase('fresh selected Charlie Feed backfill')
    select_feed_route(charlie,alpha,relays);channel=fault('status');fault('pause',channel['epoch']);charlie.device.press(104);wait(lambda:fault('status')['pending_bytes']>0,120,'native opaque backfill pending')
    held=time.monotonic();state['stall_before']=dict(channel=fault('status'),terminal=list(net(charlie,41)[0]));assert state['stall_before']['terminal'][2]==3;save()
    phase('actual recovered private-session text and reply')
@@ -90,7 +90,13 @@ def main():
    assert current['epoch']==channel['epoch']and current['connected']and current['tx_paused']and current['pending_bytes']>0
    assert state['stall_after']['terminal'][2]==3,'finite native reclamation happened before the repeated checkpoint'
    charlie.device.press(1);wait(lambda:feed_ui(charlie)[0][2]==0,120,'native backfill input cancellation');fault('resume',channel['epoch']);close_route(charlie)
-   state.update(result='pass',elapsed_seconds=time.monotonic()-started,unrelated_after=peers(),checks=['explicit parent-linked coordinator lifecycle retains each approved private session owner and UI','fresh selected personal routes use unchanged peer certificates and required mode1','new native text and reply decrypt while one independent authenticated Feed request remains paused','only Charlie own cancellation follows; shared operators are never reset'],limits=['The preceding scoped Alice link loss remains unexplained and continuous admission is not claimed across recovery.','A local coordinator receive failure and finite allowance require explicit personal lifecycle recovery; this does not reset durable mailbox/event budgets or authorize a new peer.','This episode is separate from the already completed original text/reply and routed Forge checks.'])
+   state['coordinator_counters_after']={g.name:list(role(g,4,464,a=5)[0])for g in(alice,bob)}
+   after=peers()
+   for i,g in enumerate((alice,bob)):
+    before_counter=state['coordinator_counters_before'][g.name];after_counter=state['coordinator_counters_after'][g.name]
+    assert after_counter[1]<=512 and after_counter[2]>=before_counter[2]and after_counter[6]>=before_counter[6]
+    assert after[i][4]<=state['before_stall'][i][4]and after[i][5]<=state['before_stall'][i][5],'native parent allowances must remain spent'
+   state.update(result='pass',elapsed_seconds=time.monotonic()-started,unrelated_after=after,checks=['explicit parent-linked coordinator lifecycle retains each approved private session owner and UI','fresh selected personal routes use unchanged peer certificates and required mode1','new native text and reply decrypt while one independent authenticated Feed request remains paused','only Charlie own cancellation follows; shared operators are never reset'],limits=['The preceding scoped Alice link loss remains unexplained and continuous admission is not claimed across recovery.','A local coordinator receive failure and finite allowance require explicit personal lifecycle recovery; this does not reset durable mailbox/event budgets or authorize a new peer.','This episode is separate from the already completed original text/reply and routed Forge checks.'])
    save();print(json.dumps(state,indent=2),flush=True)
   except BaseException as error:
    state.update(result='failure-preserved-native-community',stage=stage,error=repr(error),traceback=traceback.format_exc(),elapsed_seconds=time.monotonic()-started);save();raise
