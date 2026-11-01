@@ -72,6 +72,7 @@ def read_body(g,event):
 
 def export_public(g,include_preferences=None):
     focus_feed(g)
+    prior=feed_ui(g,793)[0][1]
     g.device.press(59);wait(lambda:feed_ui(g)[0][2]==5,90,'native retention and portable-state panel')
     if include_preferences is not None:
         selected=int(include_preferences)
@@ -87,7 +88,7 @@ def export_public(g,include_preferences=None):
         if observer is not None:observer('native explicit public account export',reference=reference)
         if status[4]==12 and project.complete_read(g,g.feed_ui):
             raise RuntimeError(('native public export refused',list(status)))
-        return reference if reference!=0 and status[4]==45 and project.complete_read(g,g.feed_ui)else None
+        return reference if reference!=0 and (reference!=prior or status[4]==45)and project.complete_read(g,g.feed_ui)else None
     wait(published,180,'explicit native public account export')
     shared,_=project.ui_call(g,g.feed_ui,794);data=g.client.read_object(shared[1])
     assert len(data)==2048 and struct.unpack_from('<Q',data)[0]==0x3154524f5046544c
