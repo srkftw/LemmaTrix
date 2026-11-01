@@ -736,6 +736,11 @@ def paintPump (surface t : UInt64) : UInt64 :=
   let t := store64 (st+72) 0 (zero compose 2048 (zero references 12 t))
   let t := if kind == 2 || kind == 4 || kind == 5 then copy eventId references 32 t else t
   let t := if kind == 4 || kind == 5 || kind == 6 || kind == 7 then copy eventId (references+64) 32 t else t
+  -- Appeal the exact moderated author event from a visible signed decision,
+  -- including while the original row remains hidden or locally blocked.
+  let t := if kind == 7 && load64 (selected+176) t == 8 then
+      copy eventId references 32 (copy (selected+368) (references+64) 32 t)
+    else t
   notice (if kind == 6 then 19 else if kind == 7 then 20 else 7)
     (store64 (st+24) (if kind == 6 then 6 else if kind == 7 then 7 else 1)
       (store64 (st+144) kind (store64 (st+360) 0 (store64 (st+40) 0 t))))
