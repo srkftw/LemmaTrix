@@ -49,17 +49,31 @@ def circuit_ready(g):
  return fields[2]==3
 
 def focus_application(g,which):
- # Probe the existing harmless preview, close it, then use real Alt-Tab input.
- # This never writes compositor state or application-owned memory.
- for _ in range(3):
+ # Real keyboard gestures probe a new mode transition. Messenger F4 opens its
+ # contact input; Tab closes it without canceling an accepted message. Feed F4
+ # opens a preview; Escape closes it. Never press F4 in Feed retention mode,
+ # where that same key explicitly selects optional private-state retention.
+ def mode():return feed_ui(g)[0][2]if which=='feed'else inspect(g)[0][2]
+ def observed(predicate):
+  try:wait(predicate,2,g.name+' graphical focus transition');return True
+  except TimeoutError:return False
+ for _ in range(4):
+  if feed_ui(g)[0][2]==5:
+   g.device.press(1,delay=.1)
+   if not observed(lambda:feed_ui(g)[0][2]==0):g.device.chord(56,15);continue
+  if mode()!=0:
+   g.device.press(1 if which=='feed'else 15,delay=.1)
+   if not observed(lambda:mode()==0):
+    # When a stale Messenger modal belongs to the other window, undo the
+    # focused Feed window's local Tab filter toggle before cycling focus.
+    if which=='messenger':g.device.press(15,delay=.1)
+    g.device.chord(56,15);continue
   g.device.press(62,delay=.1)
-  ok=feed_ui(g)[0][2]==9 if which=='feed'else inspect(g)[0][2]==2
-  g.device.press(1,delay=.1)
-  if ok:
-   # Keyboard delivery and the native UI's bounded input pump are separate.
-   # Do not expose our harmless focus preview to the next compose operation.
-   wait(lambda:feed_ui(g)[0][2]==0 if which=='feed'else inspect(g)[0][2]==0,120,g.name+' native focus preview closed')
-   return
+  if observed(lambda:mode()==(9 if which=='feed'else 2)):
+   g.device.press(1 if which=='feed'else 15,delay=.1)
+   wait(lambda:mode()==0,120,g.name+' native focus probe closed');return
+  # The other application received F4; close its corresponding harmless view.
+  g.device.press(15 if which=='feed'else 1,delay=.1)
   g.device.chord(56,15);time.sleep(.2)
  raise RuntimeError((g.name,'native graphical focus unavailable',which))
 
