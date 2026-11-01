@@ -41,7 +41,8 @@ def package(output, publisher):
     for name,module,rights in [('identity','Guest.Identity',0),('feed-account','Guest.FeedAccount',1024),
                               ('feed','Guest.Feed',799),('feed-federation','Guest.FeedFederation',3072)]:
         binary=live_build.app(module,module+'.main',name,2)
-        raw,_=releases.make(binary,name,'0.9.0',rights,publisher,profile=2,license='NOASSERTION')
+        version='0.9.1'if name=='feed-account'else'0.9.0'
+        raw,_=releases.make(binary,name,version,rights,publisher,profile=2,license='NOASSERTION')
         path=output/(name+'.ltrel');path.write_bytes(raw)
         rows.append(dict(name=name,path=str(path.resolve()),rights=rights,code_bytes=binary.stat().st_size,
                          code_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),

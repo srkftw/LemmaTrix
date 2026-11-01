@@ -448,7 +448,7 @@ partial def validPreferences (p i t : UInt64) : Bool :=
     let t := header 0 (load64 st t) (load64 (st+8) t) (load64 (st+24) t)
       (load64 (st+32) t) (load64 (st+40) t) (load64 (st+192) t) t
     --64-byte status plus public key32 and the two configured public scopes64.
-    160+t+copy (publicIdentity+96) (wire+64) 32 (copy scope (wire+96) 64 t)
+    160+copy (publicIdentity+96) (wire+64) 32 (copy scope (wire+96) 64 t)
   else if action == 1 && length == 128 then createIdentity token t
   else if action == 2 then prepareDraft length t
   else if action == 3 then appendDraft length t
