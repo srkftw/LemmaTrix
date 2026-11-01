@@ -24,7 +24,7 @@ def service(client,operation,action=0,handle=0,offset=0,count=0,data=b'',allowed
  return fields,raw[64:]
 
 UNAVAILABLE='This review note was signed while the required private route was unavailable. Reconnect must publish the exact pending author sequence and event commitment without direct fallback.'
-UNCERTAIN='The federation committed this release-review note while its author could not receive the acceptance result. Reconciliation must preserve this exact original signature and avoid a duplicate publication.'
+UNCERTAIN=('Release review: a signed community note and a project release make different promises. A note records its author, intended federations, content commitment and causal references. The release must still pass the normal publisher signature and current admission checks before an action in Forge or Library. ' 'The service should preserve an accepted note across a lost connection and report uncertainty honestly to its author. An exact retry should retrieve the existing commitment instead of spending a fresh publication allowance or creating another visible row. Other readers and conversations should continue while that author reconnects. ' 'This review also asks operators to keep finite transport and storage terms visible. Expiry must require explicit approved renewal, and a failed or exhausted request must stay within its own context. Those limits make a small voluntary project community practical without granting a post permission to execute code or changing another federation policy.')
 
 def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--attach',type=Path,required=True);p.add_argument('--feed-packages',type=Path,required=True);p.add_argument('--resume',action='store_true');a=p.parse_args()
@@ -177,11 +177,17 @@ def main():
    stage='publication response lost around durable native acceptance'
    if not state['done'].get('cut'):
     compose(UNCERTAIN)
+    seen_new=False
     def pending():
-     f=feed_ui(charlie)[0]
-     if f[5]in(6,7):raise RuntimeError('acceptance arrived before fault window; no response-loss claim')
-     return f if f[5]==5 else None
-    observed=wait(pending,180,'native commit pending before final acceptance result');channel=fault('status');fault('pause',channel['epoch'])
+     nonlocal seen_new
+     f,ui_pending=observe('new publication commit fault window')
+     # F5 prepares and signs asynchronously. The prior publication's cached
+     # phase7 is not the new event's acceptance. Observe actual new progress.
+     if f[5]in(0,1,2,3,4,5):seen_new=True
+     if f[5]==8:raise RuntimeError(('new publication refused before fault',list(f)))
+     if seen_new and f[5]in(6,7):raise RuntimeError('new acceptance arrived before fault window; no response-loss claim')
+     return f if f[5]in(4,5)else None
+    observed=wait(pending,180,'native submitted commit before final acceptance result');channel=fault('status');fault('pause',channel['epoch'])
     row=wait(lambda:lookup(alpha,text=UNCERTAIN),600,'native operator commits event while exact author output is paused');assert len(row)==1
     assert feed_ui(charlie)[0][5]not in(6,7),'acceptance response arrived before paused poll; refusal to inflate response-loss claim'
     state['cut_profile']=export('uncertain');state['accepted_row']=row[0].hex();state['accepted_budget']=stats();state['paused_epoch']=channel['epoch'];save()
@@ -208,7 +214,7 @@ def main():
     assert lookup(beta,event_id=bytes.fromhex(state['cut_profile']['event']))==[bytes.fromhex(state['accepted_row'])]
     campaign.state['personal']['charlie']['feed']=fresh;(out/'native-actors.json').write_text(json.dumps(campaign.state,indent=2)+'\n')
     record('ephemeral','no-vault author process death removes local publishing state; freshly admitted owner/UI has no identity while authorized replica keeps deliberately published copies',old_owner=old_owner,new_owner=charlie.feed_owner,unrelated_sessions=peers())
-   state.update(result='pass',elapsed_seconds=time.monotonic()-started,frame=screenshot(charlie,'fresh-ephemeral-feed'),limits=['One-host local integration; no independent administration or physical hardware claim.','Ciphertext output pause demonstrates lost final acceptance receipt; it does not decrypt or interpret network traffic.','Committed event/byte allowance is compared exactly; no claim that all transport or retry work is free.','Full relay-capacity saturation remains qualified by the separate native paired-resource fixture; this continuation exercises actual per-session allowance refusal and reuse.'])
+   state.update(result='pass',elapsed_seconds=time.monotonic()-started,frame=screenshot(charlie,'fresh-ephemeral-feed'),limits=['One-host local integration; no independent administration or physical hardware claim.','Ciphertext output pause after the native commit request was submitted demonstrates missing final acceptance receipt; it does not decrypt or interpret network traffic.','Committed event/byte allowance is compared exactly; no claim that all transport or retry work is free.','Full relay-capacity saturation remains qualified by the separate native paired-resource fixture; this continuation exercises actual per-session allowance refusal and reuse.'])
    save();(out/'reconnect.json').write_text(json.dumps(state,indent=2)+'\n')
   except BaseException as error:
    state.update(result='failure-preserved-native-community',stage=stage,error=repr(error),traceback=traceback.format_exc(),elapsed_seconds=time.monotonic()-started);save();(out/'reconnect-failure.json').write_text(json.dumps(state,indent=2)+'\n');raise
