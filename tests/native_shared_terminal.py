@@ -18,6 +18,7 @@ def main():
  p.add_argument('--mailbox',type=Path,default=ROOT/'build/live/apps/mailbox-shared-check.bin')
  p.add_argument('--output',type=Path,default=ROOT/'build/native-shared-terminal')
  p.add_argument('--backend',choices=('qemu','x86_64'),default='qemu')
+ p.add_argument('--ownership-boundaries',action='store_true',help='also check unfinished-result and cancellation context ownership')
  a=p.parse_args();a.output.mkdir(parents=True,exist_ok=True)
  frozen=bytearray(a.image.read_bytes());network=a.network.read_bytes()
  assert len(network)<=393216
@@ -29,7 +30,7 @@ def main():
  backing=a.output/'operator.img'
  if backing.exists():backing.unlink()
  server_store.provision(backing)
- clients=[];processes=[];logs=[];checks=[];started=time.monotonic();timings={}
+ clients=[];processes=[];logs=[];checks=[];started=time.monotonic();timings={};boundaries=dict(requested=a.ownership_boundaries,result='not-requested',checks=[])
  try:
   for i in range(7):
    base=a.output/f'node{i}';base.mkdir(exist_ok=True);path=base/'portal.sock';path.unlink(missing_ok=True)
@@ -112,6 +113,16 @@ def main():
   recipient,deposit,_=capabilities[0]
   f,_=rpc(1,2,handles[0],512,data=recipient+deposit+payloads[0][512:1024]);assert f[0] in (2,3),f
   checks.append('cross-client append with correct recipient bearer but foreign terminal context is denied')
+  if a.ownership_boundaries:
+   boundaries['result']='running'
+   try:
+    for action,label in((4,'unfinished result collection'),(7,'unfinished upload cancellation')):
+     f,_=rpc(1,action,handles[0],data=recipient+deposit)
+     assert f[0]in(1,2,3),(label,f)
+     boundaries['checks'].append(dict(check='correct bearer under a foreign current terminal cannot perform '+label,status=f[0]))
+   except Exception as error:
+    boundaries.update(result='failure',error=repr(error))
+    (a.output/'ownership-boundaries.json').write_text(json.dumps(boundaries,indent=2)+'\n')
   begin=time.monotonic()
   for i in (1,2):
    recipient,deposit,fetch=capabilities[i]
@@ -127,6 +138,23 @@ def main():
    assert bytes(body)==payloads[i]
   timings['two_clients_commit_and_read_while_other_stalled_seconds']=time.monotonic()-begin
   checks.append('two otherclients durably commit, retry exact request without duplicate, and fetch checked ciphertext while firstupload stalls')
+  if a.ownership_boundaries and boundaries['result']!='failure':
+   try:
+    recipient,deposit,_=capabilities[1]
+    cancelled=b'Native owner cancellation keeps an unfinished opaque upload separate from committed ciphertext and another stalled current context.\n'
+    request=hashlib.sha256(b'Campaign009 explicitly cancelled current-origin upload').digest();commitment=hashlib.sha256(cancelled).digest()
+    f,_=rpc(1,1,len(cancelled),1,data=recipient+deposit+request+commitment);assert f[0]==0,f;old_handle=f[1]
+    assert rpc(1,2,old_handle,0,data=recipient+deposit+cancelled[:64])[0][0]==0
+    assert rpc(1,7,old_handle,data=recipient+deposit)[0][0]==0
+    stale=rpc(1,2,old_handle,64,data=recipient+deposit+cancelled[64:])[0];assert stale[0]in(2,3),stale
+    fresh,_=rpc(1,1,len(cancelled),1,data=recipient+deposit+request+commitment)
+    assert fresh[0]==0 and fresh[1]!=old_handle,fresh
+    assert rpc(1,7,fresh[1],data=recipient+deposit)[0][0]==0
+    for i in(0,1,2):assert rpc(i,4)[0][0]==0
+    boundaries['checks'].append(dict(check='own incomplete upload is cancelled; native slot is reusable with a fresh handle; old handle remains refused',old_handle=old_handle,new_handle=fresh[1],old_append_status=stale[0],unrelated_contexts_usable=True))
+    boundaries['result']='pass'
+   except Exception as error:boundaries.update(result='failure',error=repr(error))
+   (a.output/'ownership-boundaries.json').write_text(json.dumps(boundaries,indent=2)+'\n')
   os.killpg(processes[0].pid,signal.SIGTERM);processes[0].wait(timeout=10);clients[0].close()
   for i in (1,2):assert rpc(i,4)[0][0]==0
   checks.append('dropping stalled client leaves both unrelated terminal sessions usable')
@@ -146,7 +174,7 @@ def main():
   assert rpc(0,2,handles[0],512,data=recipient+deposit+payloads[0][512:1024])[0][0]in(2,3)
   for i in (1,2):assert rpc(i,4)[0][0]==0
   checks.append('independently arriving replacement client admitted by same running operators; dead context cannot resume staging and unrelated clients remain usable')
-  report=dict(schema=1,result='pass',image_sha256=hashlib.sha256(image.read_bytes()).hexdigest(),network_sha256=hashlib.sha256(network).hexdigest(),network_bytes=len(network),mailbox_sha256=hashlib.sha256(a.mailbox.read_bytes()).hexdigest(),backend=a.backend,clients=3,relay_link_slots=12,bulk_link_slots=4,terminal_contexts=16,mailbox_stages=4,stage_bytes=8192,checks=checks,timings=timings,rpc_timings=rpc_timings,total_seconds=time.monotonic()-started,limitations='Native infrastructure component evidence. Public capability/ciphertext fixtures; this does not exercise Messenger UI, Feed, signed receipts, Forge, independent operators or hostile-network assurance.')
+  report=dict(schema=1,result='pass'if boundaries['result']!='failure'else'baseline-pass-boundary-failure',image_sha256=hashlib.sha256(image.read_bytes()).hexdigest(),network_sha256=hashlib.sha256(network).hexdigest(),network_bytes=len(network),mailbox_sha256=hashlib.sha256(a.mailbox.read_bytes()).hexdigest(),backend=a.backend,clients=3,relay_link_slots=12,bulk_link_slots=4,terminal_contexts=16,mailbox_stages=4,stage_bytes=8192,checks=checks,ownership_boundaries=boundaries,timings=timings,rpc_timings=rpc_timings,total_seconds=time.monotonic()-started,limitations='Native infrastructure component evidence. Public capability/ciphertext fixtures; this does not exercise Messenger UI, Feed, signed receipts, Forge, independent operators or hostile-network assurance.')
   (a.output/'evidence.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2),flush=True)
  except BaseException as error:
   (a.output/'failure.json').write_text(json.dumps(dict(schema=1,error=repr(error),checks_completed=checks,timings=timings,rpc_timings=locals().get('rpc_timings',[]),image_sha256=hashlib.sha256(image.read_bytes()).hexdigest()),indent=2)+'\n');raise
