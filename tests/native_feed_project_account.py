@@ -17,6 +17,8 @@ from messenger_journey import PUB,wait,screenshot
 
 CARD='This exact signed release is available for independent local review. Inspect its current admission before creating a new project lineage.'
 MOVED='The original federation is offline. I recovered my explicitly retained publishing identity and reconciled the original signed project discussion through this willing federation before publishing this update.'
+CORRECTION='Correction to my review note: a federation policy decision controls local visibility, while the original project publisher signature and current technical admission remain separate checks.'
+TOMBSTONE='I withdraw this review note after publishing its correction. The author history remains signed, and recipients or external copies may retain earlier content.'
 
 
 def secret(path,*,create=True):
@@ -98,6 +100,79 @@ def settle_exact(g,operator,observed):
     observed(dict(check='native exact retry reconciles original commitment after query/route uncertainty',event_id=event_id.hex(),status=list(feed_ui(g)[0]),duplicate_publication=False))
 
 
+def author_actions(g,original,destination,state,author,out,observed):
+    """Use the shipped E/T controls on one disposable own review, once each."""
+    history_path=out/'reconnect-progress.json';history=json.loads(history_path.read_text())
+    if history.get('configuration')!=state['configuration']or not history.get('done',{}).get('history-read'):
+        raise ValueError('Charlie must finish the exact common-image history read before author edits/tombstones')
+    path=out/'feed-author-actions.json'
+    journal=json.loads(path.read_text())if path.exists()else None
+    if journal is None:
+        key,event=next((key,event)for key,event in state['events'].items()if key.startswith('review-')and event['author']==author.hex()and event['kind']==1)
+        target=bytes.fromhex(event['id'])
+        original_row=next(p for _,p in rows(original)if p[:32]==target)
+        replica_row=next(p for _,p in rows(destination)if p[:32]==target)
+        assert original_row==replica_row and hashlib.sha256(original_row[32:]).hexdigest()==event['signed_sha256']
+        assert hashlib.sha256(read_body(original,original_row)).hexdigest()==event['content_sha256']
+        journal=dict(schema=1,configuration=state['configuration'],review_key=key,author=author.hex(),target=event['id'],original=original_row.hex(),
+                     original_content_sha256=event['content_sha256'],history_evidence_sha256=hashlib.sha256(history_path.read_bytes()).hexdigest(),actions={})
+        project.write_record(path,journal)
+    assert journal['configuration']==state['configuration']and journal['author']==author.hex()
+    target=bytes.fromhex(journal['target']);original_row=bytes.fromhex(journal['original'])
+    assert len(original_row)==512 and original_row[:32]==target and original_row[144:176]==author and struct.unpack_from('<Q',original_row,208)[0]==1
+    def lookup(operator,kind,text):
+        found=[p for _,p in rows(operator)if p[144:176]==author and struct.unpack_from('<Q',p,208)[0]==kind
+               and p[400:432]==target and p[256:288]==hashlib.sha256(text.encode()).digest()]
+        if len(found)>1:raise AssertionError('duplicate visible author action for the same exact intent')
+        return found[0]if found else None
+    for kind,key,text in((4,18,CORRECTION),(5,20,TOMBSTONE)):
+        label='edit'if kind==4 else'tombstone'
+        intent=dict(kind=kind,target=target.hex(),content_sha256=hashlib.sha256(text.encode()).hexdigest(),bytes=len(text))
+        action=journal['actions'].setdefault(label,dict(intent=intent))
+        assert action['intent']==intent
+        project.write_record(path,journal)
+        committed=lookup(original,kind,text)
+        if committed is None:
+            settle_exact(g,original,observed)
+            focus_feed(g);chosen=project.select_event(g,g.feed_ui,target);assert chosen==original_row
+            # An unsigned partial draft is recreated from the same saved intent.
+            # Signed uncertainty is reconciled above before any compose gesture.
+            g.device.press(key)
+            wait(lambda:feed_ui(g)[0][2]==1 and feed_ui(g)[0][3]==0,120,'native own '+label+' draft')
+            g.device.textASCII(text,delay=.035)
+            wait(lambda:feed_ui(g)[0][3]==len(text),180,'complete native '+label+' content')
+            g.device.press(62);wait(lambda:feed_ui(g)[0][2]==9,60,'exact native '+label+' preview')
+            action['previewed']=True;project.write_record(path,journal)
+            g.device.press(63)
+            retries=[0,time.monotonic()]
+            def accepted():
+                result=lookup(original,kind,text)
+                if result:return result
+                f=feed_ui(g)[0]
+                if f[2]==9 and f[3]==len(text)and f[4]in(12,14)and f[5]in(0,6,7)and retries[0]<8 and time.monotonic()-retries[1]>=3:
+                    g.device.press(63);retries[:]=[retries[0]+1,time.monotonic()]
+                return None
+            committed=wait(accepted,600,'native signed author '+label+' committed')
+        replica=wait(lambda:lookup(destination,kind,text),600,'original signed author '+label+' replicates')
+        assert committed==replica and hashlib.sha256(committed[32:]).digest()==committed[:32]
+        assert committed[224:256]==target and committed[400:432]==target and committed[304:368]==original_row[304:368]
+        assert read_body(original,committed)==text.encode()and read_body(destination,replica)==text.encode()
+        if 'event'in action:assert action['event']==committed[:32].hex()
+        action.update(event=committed[:32].hex(),signed_sha256=hashlib.sha256(committed[32:]).hexdigest(),replicated=True)
+        for operator in(original,destination):
+            row=next((f,p)for f,p in rows(operator)if p[:32]==target)
+            assert row[1]==original_row
+            if kind==4 and lookup(operator,5,TOMBSTONE)is None:
+                assert hashlib.sha256(read_body(operator,row[1])).hexdigest()==journal['original_content_sha256']
+            else:
+                assert row[0][5]==0
+                refused,_=feed.invoke(operator.client,491,action=6,count=1,data=target,allowed=(1,));assert refused[0]==1
+        action['verified']=True;project.write_record(path,journal)
+    return dict(target=target.hex(),review_key=journal['review_key'],original_signed_sha256=hashlib.sha256(original_row[32:]).hexdigest(),
+                edit=journal['actions']['edit'],tombstone=journal['actions']['tombstone'],original_signed_bytes_unchanged=True,
+                ordinary_original_body_refused_on_both_federations=True,erasure_claim=False)
+
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--attach',type=Path,required=True)
@@ -150,6 +225,11 @@ def main():
                 if not checkpoint.get('retained'):
                     passed('native Feed identity retention explicitly selected in Objects domain3 before further publication',author=author.hex(),separate_from_messenger_domain2=True)
                     checkpoint['retained']=True;save()
+                if not checkpoint.get('author_actions'):
+                    result=author_actions(g,original,destination,state,author,out,observed)
+                    passed('native author edit and tombstone preserve original signed history across both federations and refuse the withdrawn body',**result)
+                    checkpoint['author_actions']=True;save()
+                settle_exact(g,original,observed)
                 project_dir=out/'feed-project-action'
                 candidates=[r[0]for r in identity.instances(g.client)if r[1]in(1,2,3,4)and r[2]==2175]
                 if len(candidates)!=1:raise ValueError('expected one existing personal Registry; no extra service will be launched')
