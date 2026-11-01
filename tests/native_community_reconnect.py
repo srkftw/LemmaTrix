@@ -196,9 +196,11 @@ def main():
     wait(lambda:feed_ui(charlie)[0][5]==8,180,'native missing receipt reconciliation required')
     record('cut','operator commits exact signed event while author cannot obtain final receipt; only that circuit is disconnected',pending_ui=list(observed),profile=state['cut_profile'],accepted_budget=state['accepted_budget'],unrelated_sessions=peers())
    if not state['done'].get('retry'):
-    select_feed_route(charlie,alpha,relays);exact_retry('lost acceptance exact retry');receipt('native exact event retry reconciles durable acceptance and original replication receipt')
+    if net(charlie,41)[0][2]!=3:select_feed_route(charlie,alpha,relays)
+    if observe('lost acceptance exact retry')[0][5]==8:exact_retry('lost acceptance exact retry')
     rows=lookup(alpha,event_id=bytes.fromhex(state['cut_profile']['event']));assert rows==[bytes.fromhex(state['accepted_row'])]
-    replica=wait(lambda:lookup(beta,event_id=bytes.fromhex(state['cut_profile']['event'])),600,'authorized replica serves exact original event');assert replica==rows
+    replica=wait(lambda:visible(beta,bytes.fromhex(state['cut_profile']['event']),'exact committed replica'),600,'authorized replica serves exact original event');assert replica==rows
+    receipt('native exact event retry reconciles durable acceptance and original replication receipt')
     after=stats();assert after==state['accepted_budget'],(state['accepted_budget'],after)
     profile=export('reconciled');charlie.device.press(1);assert profile['event']==state['cut_profile']['event']and profile['sequence']==state['cut_profile']['sequence']
     record('retry','exact retry has one visible publication and unchanged committed author event/byte usage; original signed bytes remain on both federations',profile=profile,budget=after,unrelated_sessions=peers())
