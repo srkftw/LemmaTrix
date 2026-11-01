@@ -34,7 +34,7 @@ def install_or_launch(client,path,public,rights):
             return struct.unpack_from('<Q',answer,8)[0],selected
     return messenger.install(client,path,public,rights)
 
-def package(output, publisher, account_parent=None, federation_parent=None, ui_parent=None, ui_version='0.9.1'):
+def package(output, publisher, account_parent=None, federation_parent=None, ui_parent=None, ui_version='0.9.2'):
     import live_build
     if ui_version not in('0.9.1','0.9.2'):raise ValueError('supported Feed UI versions are0.9.1 and0.9.2')
     if account_parent is not None:
@@ -171,7 +171,7 @@ def replication(client,a):
 def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--socket',type=Path)
     sub=p.add_subparsers(dest='command',required=True)
-    q=sub.add_parser('package');q.add_argument('--publisher-private',type=Path,required=True);q.add_argument('--output',type=Path,required=True);q.add_argument('--account-parent',help='nonzero exact previous Feed account release hash for a normal native upgrade');q.add_argument('--federation-parent',help='nonzero exact previous Feed federation release hash for a normal native upgrade');q.add_argument('--ui-parent',help='nonzero exact previous Feed UI release hash for a normal native upgrade');q.add_argument('--ui-version',choices=('0.9.1','0.9.2'),default='0.9.1')
+    q=sub.add_parser('package');q.add_argument('--publisher-private',type=Path,required=True);q.add_argument('--output',type=Path,required=True);q.add_argument('--account-parent',help='nonzero exact previous Feed account release hash for a normal native upgrade');q.add_argument('--federation-parent',help='nonzero exact previous Feed federation release hash for a normal native upgrade');q.add_argument('--ui-parent',help='nonzero exact previous Feed UI release hash for a normal native upgrade');q.add_argument('--ui-version',choices=('0.9.1','0.9.2'),default='0.9.2',help='Feed UI version (default0.9.2);0.9.1 is available for explicitly selected legacy packaging')
     q=sub.add_parser('vault-init');q.add_argument('image',type=Path)
     q=sub.add_parser('authorize-retention');q.add_argument('--owner',type=int,required=True)
     q=sub.add_parser('ui-status');q.add_argument('--ui',type=int,required=True)
