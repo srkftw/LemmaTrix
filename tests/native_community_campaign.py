@@ -135,7 +135,7 @@ def main():
   if name in state['actors']:
    g.attach(out);assert g.network==state['actors'][name]['network'],'native actor incarnation changed; live handles cannot recover it'
   else:
-   if personal and name!='charlie':messenger.main(['vault-init',str(backing)])
+   if personal and name!='charlie':feed.main(['vault-init',str(backing)])
    if store:server_store.provision(backing)
    g.start();state['actors'][name]=dict(network=g.network,backend=backend);save()
   actors.append(g);byname[name]=g
