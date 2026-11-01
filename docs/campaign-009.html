@@ -26,6 +26,7 @@ PYREGISTRY
   --publisher tests/fixtures/campaign008-existing-forge-publisher.pub \
   --output build/campaign009-connected-v7 --mixed --replication-auto-renew --history-events 8
 # Preserve these native actors for the connected continuations:
+PYTHONPATH=tools python3 tests/native_community_active_forge.py --attach build/campaign009-connected-v7
 PYTHONPATH=tools python3 tests/native_community_reconnect.py --attach build/campaign009-connected-v7 --feed-packages build/campaign009-final-v7-feed
 PYTHONPATH=tools python3 tests/native_community_commit_retry.py --attach build/campaign009-connected-v7
 PYTHONPATH=tools python3 tests/native_community_capacity.py --attach build/campaign009-connected-v7 --refusal-timeout 1500
