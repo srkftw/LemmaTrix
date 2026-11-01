@@ -227,8 +227,10 @@ def main():
     charlie.feed_owner,charlie.feed_ui=fresh['owner'],fresh['ui'];assert charlie.feed_owner!=old_owner and charlie.feed_ui!=old_ui
     f,public=feed_ui(charlie);assert f[1]==0 and public[:96]==bytes(96),(f,public[:96])
     assert lookup(beta,event_id=bytes.fromhex(state['cut_profile']['event']))==[bytes.fromhex(state['accepted_row'])]
-    campaign.state['personal']['charlie']['feed']=fresh;(out/'native-actors.json').write_text(json.dumps(campaign.state,indent=2)+'\n')
-    record('ephemeral','no-vault author process death removes local publishing state; freshly admitted owner/UI has no identity while authorized replica keeps deliberately published copies',old_owner=old_owner,new_owner=charlie.feed_owner,unrelated_sessions=peers())
+    personal=campaign.state['personal']['charlie']
+    personal.update(feed=fresh,historical_feed_public=personal['feed_public'],current_feed_identity_present=False,current_feed_public=None)
+    (out/'native-actors.json').write_text(json.dumps(campaign.state,indent=2)+'\n')
+    record('ephemeral','no-vault author process death removes local publishing state; freshly admitted owner/UI has no identity while authorized replica keeps deliberately published copies',old_owner=old_owner,new_owner=charlie.feed_owner,historical_feed_public=personal['historical_feed_public'],current_feed_identity_present=False,current_feed_public=None,unrelated_sessions=peers())
    state.update(result='pass',elapsed_seconds=time.monotonic()-started,frame=screenshot(charlie,'fresh-ephemeral-feed'),limits=['One-host local integration; no independent administration or physical hardware claim.','Ciphertext output pause after the native commit request was submitted demonstrates missing final acceptance receipt; it does not decrypt or interpret network traffic.','Committed event/byte allowance is compared exactly; no claim that all transport or retry work is free.','Full relay-capacity saturation remains qualified by the separate native paired-resource fixture; this continuation exercises actual per-session allowance refusal and reuse.'])
    save();(out/'reconnect.json').write_text(json.dumps(state,indent=2)+'\n')
   except BaseException as error:
