@@ -284,7 +284,7 @@ def select_local_block_marker(g,author):
         except TimeoutError:continue
         if choice[4]==27:break
     else:raise RuntimeError('native chronological filter choice unavailable')
-    g.device.press(104)
+    g.device.press(104);time.sleep(3);first_pending=True;first_retries=0
     for _ in range(64):
         def ready():
             fields,payload=feed_ui(g,795)
@@ -296,8 +296,12 @@ def select_local_block_marker(g,author):
             return payload if complete and(any(payload[:32])or payload[144:176]==author)else None
         row=wait(ready,300,'native chronological signed row or author-only local block marker')
         if isinstance(row,dict):
+            if first_pending:
+                if first_retries>=8:raise RuntimeError(('native First remains unavailable',row))
+                first_retries+=1;g.device.press(104);time.sleep(3);continue
             if getattr(g,'project_observer',None):g.project_observer('native unavailable row; ordinary Next',status=row['unavailable'])
             project.advance_row(g,g.feed_ui,bytes(512));continue
+        first_pending=False
         if row[144:176]==author:
             assert not any(row[:144])and not any(row[176:]),'blocked marker must contain only its public author'
             assert feed_ui(g)[0][4]==16
@@ -332,14 +336,32 @@ def check_upgraded_local_block(g,state,approved,checkpoint,save,observed):
         profile=export_public(g,True);assert profile[256:1792]==approved[256:1792]
         record.update(restored=True,restored_preference_sha256=hashlib.sha256(profile[256:1792]).hexdigest());save()
     if not record.get('next_progress'):
-        marker=feed_ui(g,795)[1]
-        if not(marker[144:176]==author and not any(marker[:144])and not any(marker[176:])and project.complete_read(g,g.feed_ui)):
-            select_local_block_marker(g,author)
+        # A retained completed marker may belong to a later event by the same
+        # author. Re-establish chronology through an accepted First gesture,
+        # then test ordinary Next without assuming one particular successor.
+        select_local_block_marker(g,author)
         record['marker_frame']=screenshot(g,'upgraded-local-block-marker');save()
         marker=feed_ui(g,795)[1]
-        project.advance_row(g,g.feed_ui,marker)
-        next_id=bytes.fromhex(state['events']['review-0']['id'])
-        project.wait_native(g,lambda:feed_ui(g,795)[1][:32]==next_id and project.complete_read(g,g.feed_ui),300,'new native UI advances beyond blocked reply to the next permitted discussion')
+        steps=[]
+        for _ in range(16):
+            # Distinct filtered rows deliberately share an all-zero event ID.
+            # Wait after the ordinary gesture instead of treating that ID as
+            # a request/completion token.
+            g.device.press(28);time.sleep(3)
+            def next_completed():
+                fields,payload=feed_ui(g,795);status=feed_ui(g)[0]
+                if not project.complete_read(g,g.feed_ui):return None
+                if any(payload[:32]):return payload
+                if status[4]==16 and payload[144:176]==author:return dict(blocked=True)
+                if status[6]in(4,9,12,14):return dict(refused=list(status))
+                return None
+            selected=project.wait_native(g,next_completed,180,'new native UI advances beyond a blocked row to a permitted discussion')
+            if isinstance(selected,dict):
+                steps.append(selected);time.sleep(3);marker=bytes(512);continue
+            assert selected[144:176]!=author and selected[:32]!=marker[:32]
+            next_id=selected[:32];break
+        else:raise RuntimeError('bounded native Next did not reach a permitted signed row')
+        record['next_navigation']=steps
         record.update(next_progress=True,next_event=next_id.hex(),next_frame=screenshot(g,'upgraded-after-local-block'));save()
     observed(dict(check='new native UI local block reveals only public author, explicitly unblocks/reblocks and browses beyond it',
                   blocked_author=author.hex(),**record,complete_preference_graph_published=False))
