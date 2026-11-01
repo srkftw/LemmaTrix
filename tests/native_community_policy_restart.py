@@ -38,6 +38,8 @@ ALPHA_NOTE = ('Alpha accepted this independent release review while Beta was off
 HOME_NOTE = 'This Beta-only review note explains that private moderation reports and appeals stay with their intended federation; selecting a peer audience for other discussion does not broaden this post.'
 REPORT = 'Please review my own reply under the Beta federation visibility policy. This report is intended only for its moderators.'
 APPEAL = 'I appeal the local visibility decision on my own reply and request an explicit reviewed result.'
+INITIAL_ADAPTER_SHA256 = '82a3820f98b70b8ccae002b5c0fd6265c830e95aa75a2459e28705c137670038'
+RESTART_ADAPTER_SHA256 = '684f9a9507b39c3a4af7e9b1fb2c3287c6e849cdc787a687624072e2b557f0c7'
 
 
 def rows(guest, private=False):
@@ -560,8 +562,20 @@ def main():
                         # current counters remain in its native backing.
                         partial = Guest('beta', 'qemu', out, out/'guest.bin', store=out/'beta.img').attach(None)
                         partial.stop()
+                    adapter_hash = hashlib.sha256((ROOT/'tools/transport.py').read_bytes()).hexdigest()
+                    assert adapter_hash == RESTART_ADAPTER_SHA256, 'inspect changed opaque adapter before this exact restart continuation'
                     replacement = Guest('beta', 'qemu', out, out/'guest.bin', store=out/'beta.img').start()
                     actors['beta'] = beta = replacement
+                    state['beta_opaque_adapter_transition'] = dict(
+                        initial_sha256=INITIAL_ADAPTER_SHA256,
+                        initial_provenance='preserved startup adapter identity of the original nine long-lived actors; supplied by the integrator',
+                        restarted_sha256=adapter_hash, restarted_process=beta.process.pid,
+                        restarted_at_utc=time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+                        native_image_sha256=campaign.state['configuration']['image_sha256'],
+                        initial_configuration_unchanged=True,
+                        scope='fresh Beta opaque byte adapter only; no Native image, signed package, policy, event or private identity substitution',
+                        qualification='the earlier Alice route loss remains unexplained; this adapter transition is not claimed as its causal repair')
+                    save()
                     if control_marker is not None:
                         assert beta.network != campaign.state['actors']['beta']['network']
                         cleared = dict(control_marker, synchronous_admin_until_restart=False,
