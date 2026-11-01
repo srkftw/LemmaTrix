@@ -220,7 +220,7 @@ def main():
   s=socket.socket(socket.AF_UNIX);s.settimeout(10);s.connect(str(out/'charlie-fault.sock'));s.sendall(json.dumps(c).encode()+b'\n');raw=b''
   while b'\n'not in raw:raw+=s.recv(4096)
   s.close();v=json.loads(raw);assert v['ok'],v;return v
- def observe_stall(label,require_paused=False):
+ def observe_stall(label,require_paused=False,require_transport=False):
   channel=fault('status')['channel'];terminal=list(net(charlie,41)[0]);expected=state['stall']['epoch']
   paused=channel['epoch']==expected and channel['connected']and channel['tx_paused']
   alive=paused and terminal[2]==3
@@ -228,6 +228,8 @@ def main():
   state.setdefault('stall_observations',[]).append(observation);save()
   print('Native stalled Feed',label,json.dumps(observation),flush=True)
   if require_paused and not alive:raise RuntimeError(('finite native cleanup ended the stalled context before this contention checkpoint; work remains preserved',observation))
+  if require_transport and(not paused or channel['pending_bytes']==0 or terminal[2]not in(0,3)):
+   raise RuntimeError(('original stalled transport is no longer pending or has unexpected native state; preserve this epoch',observation))
   return observation
  def match(g,pub,kind,text,parent=None):
   digest=hashlib.sha256(text.encode()).digest();cursor=0
@@ -415,17 +417,17 @@ def main():
    focus(charlie,'feed');paused=fault('status')['channel'];fault('pause',paused['epoch']);charlie.device.press(104)
    wait(lambda:fault('status')['channel']['pending_bytes']>0,120,'opaque stalled native Feed backfill request')
    state['stall']=dict(epoch=paused['epoch'],began_monotonic=time.monotonic(),ui=list(feed_ui(charlie)[0]));record('stalled','native Feed backfill waits on one exact paused opaque transport epoch while two independent Messenger clients share mailbox')
-  observe_stall('before Messenger',True)
   stage='native Messenger text and reply during Feed stall'
-  send_once(alice,bob,'message',MSG);send_once(bob,alice,'reply',ANSWER)
-  observe_stall('Messenger text and reply completed',True)
   if not state['done'].get('messenger'):
+   observe_stall('before Messenger',True)
+   send_once(alice,bob,'message',MSG);send_once(bob,alice,'reply',ANSWER)
+   observe_stall('Messenger text and reply completed',True)
    record('messenger','native graphical text and reply decrypt through shared Mailbox while Feed transport remains paused',text=state.get('message'),reply=state.get('reply'),stalled_feed_ui=list(feed_ui(charlie)[0]))
   stage='actual routed Forge during Feed stall'
   project=state['project'];text='LT-PROJECT1 '+project['root']+' '+project['federation']+' 1'
   send_once(alice,bob,'project_message',text,True)
   if not state['done'].get('forge')or not state.get('forge_verified_fields'):
-   if inspect(bob)[0][2]!=6:
+   if not state.get('forge_verified_fields')and inspect(bob)[0][2]!=6:
     focus(bob,'messenger')
     state.setdefault('forge_roots_before',projects.roots(bob.client));save()
     # The global selected-reference view is populated by F1 itself. The
@@ -442,10 +444,13 @@ def main():
     if f[1]!=6 or f[5]!=0:return None
     assert f[2]==2 and f[3]==0 and f[4]==project['decision']['sequence']and selected==bytes.fromhex(project['root']+project['federation']),(f,selected)
     return f
-   result=wait(verified,900,'native existing routed Forge signature/admission');assert projects.roots(bob.client)==roots_before
+   # A resumed observer consumes the completed native operation already saved
+   # before its prior strict terminal-liveness assertion, without replaying it.
+   result=state.get('forge_verified_fields')or wait(verified,900,'native existing routed Forge signature/admission');assert projects.roots(bob.client)==roots_before
    state['forge_verified_fields']=list(result)
-   observe_stall('routed Forge completed',True)
-   record('forge','actual received reference completes existing routed Forge inspection while independent Feed link remains paused',verified_fields=list(result),execution_approved=False)
+   stalled=observe_stall('routed Forge completion observed',require_transport=True)
+   interpretation=dict(original_paused_transport_remains_pending=True,terminal_active_at_observation=stalled['terminal'][2]==3,terminal_reclamation_cause='not directly observed; elapsed native deadline or owner cancellation is inferred'if stalled['terminal'][2]==0 else None,predicate='Messenger requires the original authenticated terminal at completion; Forge requires the same paused transport epoch and pending bytes, and permits the independent terminal to have been reclaimed (user G stalled/disconnected work).')
+   record('forge','actual received reference completes existing routed Forge inspection while the independent Feed transfer remains paused, including after its terminal was reclaimed',verified_fields=list(result),execution_approved=False,stall=stalled,interpretation=interpretation)
   stage='native cancellation and independent cleanup'
   if not state['done'].get('cancel'):
    before_cancel=observe_stall('before native input cancellation')
