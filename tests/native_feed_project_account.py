@@ -351,7 +351,9 @@ def check_upgraded_local_block(g,state,approved,checkpoint,save,observed):
             def next_completed():
                 fields,payload=feed_ui(g,795);status=feed_ui(g)[0]
                 if not project.complete_read(g,g.feed_ui):return None
-                if any(payload[:32]):return payload
+                if any(payload[:32]):
+                    if status[4]==40:return dict(hidden_event=payload[:32].hex())
+                    return payload if status[4]==15 else None
                 if status[4]==16 and payload[144:176]==author:return dict(blocked=True)
                 if status[6]in(4,9,12,14):return dict(refused=list(status))
                 return None
