@@ -16,9 +16,11 @@ TEXT='The same approved private session can send after explicit recovery of its 
 REPLY='This native reply confirms recovery without resetting the shared operator or replacing the private session.'
 
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--attach',type=Path,required=True);p.add_argument('--recover',choices=('alice','bob'),action='append',required=True);p.add_argument('--delivery',type=Path,required=True);a=p.parse_args()
- out=a.attach.resolve();path=out/'selected-route-recovery.json';assert not path.exists(),'preserve the previous recovery episode'
- state=dict(schema=1,result='running',controller_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),recoveries={},checks=[])
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--attach',type=Path,required=True);p.add_argument('--recover',choices=('alice','bob'),action='append',required=True);p.add_argument('--delivery',type=Path,required=True);p.add_argument('--resume',action='store_true');a=p.parse_args()
+ out=a.attach.resolve();path=out/'selected-route-recovery.json'
+ assert a.resume or not path.exists(),'preserve the previous recovery episode'
+ state=json.loads(path.read_text())if a.resume else dict(schema=1,result='running',recoveries={},checks=[])
+ state.setdefault('controller_segments',[]).append(dict(controller_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),started_utc=time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),resumed=a.resume,prior_record_sha256=hashlib.sha256(path.read_bytes()).hexdigest()if path.exists()else None))
  started=time.monotonic();stage='attach same native community'
  def save():path.write_text(json.dumps(state,indent=2)+'\n')
  with attach_campaign(out,graphical=('alice','bob','charlie'))as c:
@@ -28,7 +30,10 @@ def main():
   if preserved.exists():assert preserved.read_bytes()==failure
   else:preserved.write_bytes(failure)
   state['prior_failure_sha256']=hashlib.sha256(failure).hexdigest();state['prior_failure_snapshot']=preserved.name
-  (out/'reconnect-controller-1.py').write_bytes((ROOT/'tests/native_community_reconnect.py').read_bytes())
+  snapshot=out/'reconnect-controller-1.py'
+  controller=(ROOT/'tests/native_community_reconnect.py').read_bytes()
+  if snapshot.exists():assert snapshot.read_bytes()==controller
+  else:snapshot.write_bytes(controller)
   configuration_hash=hashlib.sha256(json.dumps(c.state['configuration'],sort_keys=True).encode()).hexdigest()
   def persist():
    assert hashlib.sha256(json.dumps(c.state['configuration'],sort_keys=True).encode()).hexdigest()==configuration_hash
@@ -63,22 +68,34 @@ def main():
    package=copied;state['package']=dict(path=str(package),sha256=hashlib.sha256(raw).hexdigest(),**info)
    for name in dict.fromkeys(a.recover):
     g=actors[name];phase(name+' explicit parent-linked coordinator recovery')
-    focus_application(g,'messenger');wait(lambda:ui_public(g,783)[0][6]==0,180,'old local UI request collected')
-    before_public=role(g,2,422)[1];old=g.delivery
-    entry=dict(old_delivery=old,session_owner=g.owner,ui=g.ui,owner_public_sha256=hashlib.sha256(before_public).hexdigest(),router_before=list(net(g,32)[0]),terminal_before=list(net(g,41)[0]),delivery_before=list(role(g,4,464,a=2)[0]),previous_release=info['parent'],successor_release=info['release_id'],upstream_loss_cause='unknown; prior public observations preserve the scoped loss')
-    entry['upstream_loss_cause']='unknown; prior public observations preserve the scoped loss'if entry['router_before'][1]==0 else'no router loss observed; local coordinator receive failure only'
-    state['recoveries'][name]=entry;save()
-    close_route(g);g.client.request(26,struct.pack('<Q',old))
-    active=g.client.request(14,bytes.fromhex(info['project_id']));assert active[64:96].hex()==info['parent']
-    result=messenger.delivery_start(g.client,NS(release=package,public=PUB,ui=g.ui,ui_release=out/'ui.ltrel',owner_release=out/'owner.ltrel'))
-    new=result['delivery'];assert new!=old and result['owner']==g.owner and result['ui']==g.ui
-    assert g.client.request(14,bytes.fromhex(info['project_id']))[64:96].hex()==info['release_id']
-    g.delivery=new
-    assert role(g,2,422)[1]==before_public,'the existing session owner and public device must remain unchanged'
-    c.state['personal'][name]['messenger']['delivery']=new;entry.update(new_delivery=new,normal_parent_linked_admission=True,session_owner_ui_unchanged=True)
-    c.state.setdefault('current_runtime_packages',{}).setdefault('messenger_by_person',{})[name]=dict(c.state['configuration']['messenger'],delivery=info['release_id'])
-    c.state.setdefault('local_service_recoveries',[]).append(dict(component='messenger.delivery',person=name,old_instance=old,new_instance=new,release=info['release_id'],owner=g.owner,ui=g.ui,image_sha256=c.state['configuration']['image_sha256'],previous_release=info['parent'],kind='explicit parent-linked coordinator replacement; no operator reset'))
-    persist();phase(name+' unchanged approved Mailbox route')
+    entry=state['recoveries'].get(name,{})
+    if entry.get('new_delivery'):
+     assert a.resume and g.delivery==entry['new_delivery']
+     assert messenger.endpoint(g.client,4,464)==g.delivery
+     assert g.client.request(14,bytes.fromhex(info['project_id']))[64:96].hex()==info['release_id']
+     assert g.owner==entry['session_owner']and g.ui==entry['ui']
+     recovery=json.loads((out/'personal-network-recovery.json').read_text())
+     assert name=='alice'and recovery['new_network']==g.network and recovery['delivery']==g.delivery
+     assert net(g,32)[0][1]==0,'resume must not reset a partially admitted current route'
+     entry['personal_network_recovery_sha256']=hashlib.sha256((out/'personal-network-recovery.json').read_bytes()).hexdigest()
+     phase(name+' resumed selected route after identified personal Network recovery')
+    else:
+     focus_application(g,'messenger');wait(lambda:ui_public(g,783)[0][6]==0,180,'old local UI request collected')
+     before_public=role(g,2,422)[1];old=g.delivery
+     entry=dict(old_delivery=old,session_owner=g.owner,ui=g.ui,owner_public_sha256=hashlib.sha256(before_public).hexdigest(),router_before=list(net(g,32)[0]),terminal_before=list(net(g,41)[0]),delivery_before=list(role(g,4,464,a=2)[0]),previous_release=info['parent'],successor_release=info['release_id'],upstream_loss_cause='unknown; prior public observations preserve the scoped loss')
+     entry['upstream_loss_cause']='unknown; prior public observations preserve the scoped loss'if entry['router_before'][1]==0 else'no router loss observed; local coordinator receive failure only'
+     state['recoveries'][name]=entry;save()
+     close_route(g);g.client.request(26,struct.pack('<Q',old))
+     active=g.client.request(14,bytes.fromhex(info['project_id']));assert active[64:96].hex()==info['parent']
+     result=messenger.delivery_start(g.client,NS(release=package,public=PUB,ui=g.ui,ui_release=out/'ui.ltrel',owner_release=out/'owner.ltrel'))
+     new=result['delivery'];assert new!=old and result['owner']==g.owner and result['ui']==g.ui
+     assert g.client.request(14,bytes.fromhex(info['project_id']))[64:96].hex()==info['release_id']
+     g.delivery=new
+     assert role(g,2,422)[1]==before_public,'the existing session owner and public device must remain unchanged'
+     c.state['personal'][name]['messenger']['delivery']=new;entry.update(new_delivery=new,normal_parent_linked_admission=True,session_owner_ui_unchanged=True)
+     c.state.setdefault('current_runtime_packages',{}).setdefault('messenger_by_person',{})[name]=dict(c.state['configuration']['messenger'],delivery=info['release_id'])
+     c.state.setdefault('local_service_recoveries',[]).append(dict(component='messenger.delivery',person=name,old_instance=old,new_instance=new,release=info['release_id'],owner=g.owner,ui=g.ui,image_sha256=c.state['configuration']['image_sha256'],previous_release=info['parent'],kind='explicit parent-linked coordinator replacement; no operator reset'))
+     persist();phase(name+' unchanged approved Mailbox route')
     route(g,[r.certificate for r in relays],mailbox);wait(lambda:publication(g),600,'same-owner native prekey publication')
     entry.update(router_after=list(net(g,32)[0]),terminal_after=list(net(g,41)[0]),coordinator_counters=list(role(g,4,464,a=5)[0]));persist()
    state['before_stall']=peers();state['coordinator_counters_before']={g.name:list(role(g,4,464,a=5)[0])for g in(alice,bob)};phase('fresh selected Charlie Feed backfill')
