@@ -1,0 +1,151 @@
+{
+  "schema": 1,
+  "campaign": "009",
+  "result": "pass-focused-compiled-native-idle-probe",
+  "source_commit": "c4056be2a84cf24c89870b55fd3785882244f554",
+  "source": {
+    "path": "Guest/MessengerDelivery.lean",
+    "sha256": "985be229463c05381a9cb95d4459f987f4ab7b29f50efe3eb831aa19137fa028"
+  },
+  "raw_record": {
+    "path": "build/native-messenger-idle-poll/evidence.json",
+    "sha256": "009ae30ff5b0d5c7ee2c2865cacee606c8800f5d41e2b42c45a04155df7debdf"
+  },
+  "controller": {
+    "path": "tests/native_messenger_idle_poll.py",
+    "sha256": "356df800e43f4de5543fd1b92a787a97531a76af9a9e2e1b8b90c26d69d2693e",
+    "command": "python3 tests/native_messenger_idle_poll.py --backend qemu --backend aarch64"
+  },
+  "existing_rpc_fixture": {
+    "path": "tests/native_messenger_rpc_ownership.py",
+    "sha256": "99153df00b6a925819b3f6463cad89b8eaa0ab1a0e3e4df5d8740576dff276a2",
+    "execution": "same namespace-renamed Delivery source; production Guest oleans unchanged"
+  },
+  "latest_delivery_package": {
+    "name": "messenger-delivery",
+    "path": "build/campaign009-final-v7-messenger/messenger-delivery.ltrel",
+    "rights": 1024,
+    "code_bytes": 213728,
+    "code_sha256": "a7a5c79ed880f28899c0632527a77eab80313a6910614c9508859b5a719d2a3d",
+    "package_sha256": "4b752f1739375159f5b00140261cb66542a99493229b6760dfaa92c3013fe7f0",
+    "release_id": "0c0b6ff146660c532730f842b3e81462dcd6eb61cb202357085745965135a0fa",
+    "project": "messenger-delivery",
+    "version": "0.8.2",
+    "parent": "5e166b16eeeed082bb86a246f9a79bec88fb13f097304622c9d33cd51992320a",
+    "publisher_key_id": "6d20cd4935fc2907c3be78b6d4dacbb284ac5390848c40217a03f3bafacf9fbc"
+  },
+  "package_manifest": {
+    "path": "build/campaign009-final-v7-messenger/packages.json",
+    "sha256": "dee7190487557767375594091ab2e6af3a765b6f0cb9eaed379f75f5b7db767a",
+    "unchanged_other_package_releases": {
+      "identity": "f1c5934089942fbbd2fee060c10a257d6937022ffc076c354f3db77f2b2d05c2",
+      "messenger-session": "50f3e3ccb8d3faeaf29c50d6aec24bbc654a30754f26c15dd7585a4a8e64a5b3",
+      "messenger": "a0b4294d2331e6704acd69093936339f7c0b8559dd9990d4967a22216f84e6c7",
+      "mailbox": "24e249a218f52813953b8d204f1c7b3d1129e1b675a9ed8500731cf842049135"
+    },
+    "authority": "package artifact identities; not a claim that every current actor uses this whole bundle"
+  },
+  "native_diagnostic": {
+    "operation": 464,
+    "action": 5,
+    "requires": "Delivery0.8.2 and existing current-token Launcher-only grant",
+    "words": [
+      "status",
+      "local workflow charges",
+      "monotonic RPC serial",
+      "outstanding RPC id",
+      "receive phase",
+      "receive reason",
+      "saturating completed empty-probe count",
+      "version1"
+    ],
+    "mutates_state": false
+  },
+  "fixture": {
+    "schema": 1,
+    "result": "pass",
+    "delivery_source_sha256": "985be229463c05381a9cb95d4459f987f4ab7b29f50efe3eb831aa19137fa028",
+    "checks": [
+      {
+        "fixture": "idle-liveness",
+        "backend": "qemu",
+        "result": "pass",
+        "seconds": 0.28054699799395166,
+        "emulated_aarch64": false
+      },
+      {
+        "fixture": "existing-rpc-lifetime-ownership",
+        "backend": "qemu",
+        "result": "pass",
+        "seconds": 0.26997877199028153,
+        "emulated_aarch64": false
+      },
+      {
+        "fixture": "idle-liveness",
+        "backend": "aarch64",
+        "result": "pass",
+        "seconds": 1.3968017809966113,
+        "emulated_aarch64": true
+      },
+      {
+        "fixture": "existing-rpc-lifetime-ownership",
+        "backend": "aarch64",
+        "result": "pass",
+        "seconds": 0.06480267799634021,
+        "emulated_aarch64": true
+      }
+    ],
+    "fixture_images": {
+      "idle": {
+        "sha256": "40f50732deb997c3222d71e2dba21aab9cc607a846aa712029202d3cc5a5f5e6",
+        "bytes": 236756
+      },
+      "rpc-lifecycle": {
+        "sha256": "218a80b535eef64aafe3509c68678dc849b63385ae5145d44783b1b0d970e9f3",
+        "bytes": 171980
+      }
+    },
+    "completed_empty_probes": 600,
+    "preserved_prior_local_work_charges": 7,
+    "following_useful_blob_bytes": 608,
+    "modeled_parent_admissions": 602,
+    "modeled_parent_fetch_payload_bytes": 77056,
+    "monotonic_serial": 602,
+    "negative_cases": [
+      "nonzero pending mailbox handle",
+      "nonzero total",
+      "nonzero result offset",
+      "nonzero result count",
+      "extra response field",
+      "wrong response version",
+      "wrong request operation",
+      "wrong request action",
+      "selected request handle",
+      "partial request offset",
+      "different request count",
+      "wrong request version",
+      "uncollected RPC",
+      "partial receive phase",
+      "owner-commit phase",
+      "partial receive offset",
+      "explicitly selected attachment",
+      "wrong reply length",
+      "nonempty success response",
+      "sender purpose",
+      "ACK purpose",
+      "preflight purpose"
+    ],
+    "production_guest_oleans_unchanged": true,
+    "boundaries": [
+      "only an exact fully completed64B no-row idle fetch returns its own one local workflow charge",
+      "zero charge does not underflow, completed-empty observation count saturates and other local work is not reset",
+      "actual rpc/collectRPC pass600 empty responses then receive and park a two-chunk608B blob",
+      "unchanged512 local guard refuses workflow admission; finite modeled parent still refuses when its paid allowance exhausts",
+      "existing exact-owned cancellation,90000tick deadline, ready-at-deadline, serial and reconfiguration cases pass against the same copied source",
+      "actual current-token diagnostic464action5 is Launcher-only and returns local work counter, monotonic serial, current RPC id, receive phase/reason and completed-empty count without mutation"
+    ],
+    "limits": "Compiled namespace-renamed Native Delivery transitions with declared finite Network/clock and Owner oracles. Parent charges count each admitted128B fetch request and one attempt; real parent wire costs/authority remain separately qualified. No live kernel, Mailbox, socket, AEAD/session, retained state or connected Messenger claim. AArch64 assembly backend runs under qemu-aarch64."
+  },
+  "acceptance_limit": "Focused compiled transitions passed. Installed Delivery upgrade, more than512 installed idle responses and later useful Messenger work require separately identified connected evidence. No causal claim about the earlier Alice route loss.",
+  "clean_shipping_reproduction": "campaign-009-final-idle-reproduction.json"
+}
