@@ -134,6 +134,14 @@ def select_destination(g,certificate):
 
 def select_feed_route(g,destination,relays,*,budget=8388608,attempts=65536):
  """Explicit personal destination selection; operators keep serving peers."""
+ # Focus/cancel the old view before replacing its transport. A focus probe can
+ # send Escape for an old query; it must never cancel a newly authenticated NK
+ # relationship belonging to the same long-lived account owner.
+ focus_application(g,'feed');g.device.press(1)
+ def old_view_settled():
+  fields,body=feed_ui(g)
+  return struct.unpack_from('<Q',body,104)[0]==0 and struct.unpack_from('<Q',body,128)[0]==0 and fields[5]not in(1,2,3,4,5)
+ wait(old_view_settled,180,g.name+' old native Feed query/publication request settled before route replacement')
  close_route(g)
  for slot,relay in enumerate(relays):enroll(g,slot,relay.certificate)
  select_destination(g,destination.certificate)
@@ -149,7 +157,6 @@ def select_feed_route(g,destination,relays,*,budget=8388608,attempts=65536):
  net(g,31);wait(ready,900,g.name+' selected Feed circuit')
  net(g,38,h=3,a=21,b=g.feed_owner,cword=budget,d=attempts)
  wait(lambda:ready(True),600,g.name+' selected Feed terminal')
- focus_application(g,'feed')
 
 def main():
  p=argparse.ArgumentParser(description=__doc__)
