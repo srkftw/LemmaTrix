@@ -118,7 +118,7 @@
     }
   ],
   "common_run": {
-    "result": "core and strict stalled Forge passed; exact seq5 retry replicated. After preserved unexplained Alice raw transport fatal, explicit personal Network33 and parent-linked Delivery0.8.2 recovery passed repeated native Messenger text/reply during independent paused Feed. Resumed reconnect/noVault, capacity and application continuations pending.",
+    "result": "Recorded infrastructure segments passed with explicit personal recovery: concurrent native Feed, original signed replication, active-stall Messenger/Forge, exact lost-response retry, unchanged positive reservations and no-vault ephemerality. Six-pair capacity and application continuations are still running; no full-campaign completion claim.",
     "output": "build/campaign009-connected-v7",
     "configuration": {
       "image_sha256": "2e5147c4198cf7ec39ab053f2ea8895cfdceb1c9b9dcf79e1b7bb7627314bcdf",
@@ -269,6 +269,11 @@
         "A local coordinator receive failure and finite allowance require explicit personal lifecycle recovery; this does not reset durable mailbox/event budgets or authorize a new peer.",
         "This episode is separate from the already completed original text/reply and routed Forge checks."
       ]
+    },
+    "infrastructure_record": {
+      "path": "docs/evidence/campaign-009-community-2e514.json",
+      "sha256": "9ea6074ac05dae2f0873d22b0d19970fde2a1004f7ef5c3eb2b7ce1fa00c8003",
+      "result": "pass-for-recorded-segments-with-explicit-personal-recovery"
     }
   },
   "component_record": "campaign-009-components.json",
@@ -711,7 +716,7 @@
     "scope": "Installed exact-role native signer authority gate and actual Feed service conflict/quota refusals on isolated purpose2 backing. No valid wrong-federation moderator signature admission is claimed."
   },
   "connected_continuations": {
-    "result": "Current2e514core,strictstalledForge and explicit personal recovery passed; resumed reconnect/noVault, capacity, strictproject,moderation,restart,migration pending. Previous trials retain their separate identifiers."
+    "result": "Current2e514 infrastructure passed with explicit personal recovery. Capacity, strictproject, moderation, restart and offline migration remain pending."
   },
   "operator_interrupt_ownership": {
     "source_commit": "63fc11bcfe7a9f7c94f06b680d6e8b3e085478ed",
@@ -892,7 +897,7 @@
     "local_record": "build/campaign009-final-v5-aarch64-storage/evidence.json",
     "record_sha256": "14bc1adacd48fdb72c8050387e4cad4b65a015b5f7cb945a015200a07a36dca3"
   },
-  "current_trial_partial_record": "docs/evidence/campaign-009-community-2e514.json (planned aggregate; pending current infrastructure continuation)",
+  "current_trial_partial_record": "docs/evidence/campaign-009-community-2e514.json",
   "post_trial_request_ownership_fix": {
     "commit": "c5147de",
     "nonzero_cancel": "requires exact current request under full owner incarnation",
@@ -923,7 +928,7 @@
     "network_limit_bytes": 425984,
     "image_sha256": "2e5147c4198cf7ec39ab053f2ea8895cfdceb1c9b9dcf79e1b7bb7627314bcdf"
   },
-  "current_integration_work": "Same-image nine-guest connected continuation: core and strict stalled Forge passed; explicit selected personal recovery follows preserved reconnect interruption. Saturation, project, moderation, restart and offline migration remain unclaimed.",
+  "current_integration_work": "Capacity now owns all9 management portals after completed infrastructure controllers released them. Native guests and shared operators remain running; no backing reset. Next: strict project then moderation/restart then approved offline hosting move.",
   "prior_690_active_forge": {
     "result": "pass",
     "raw_record": "build/campaign009-connected-v6/active-forge.json",
