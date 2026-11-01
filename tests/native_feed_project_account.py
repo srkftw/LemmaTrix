@@ -72,14 +72,23 @@ def read_body(g,event):
 
 def export_public(g,include_preferences=None):
     focus_feed(g)
-    prior=feed_ui(g,793)[0][1]
     g.device.press(59);wait(lambda:feed_ui(g)[0][2]==5,90,'native retention and portable-state panel')
     if include_preferences is not None:
         selected=int(include_preferences)
         if feed_ui(g,793)[0][5]!=selected:g.device.press(62)
         wait(lambda:feed_ui(g,793)[0][5]==selected,90,'explicit native portable preference selection')
+    # Entering the panel produced a fresh notice30; successful publication of
+    # this explicit export produces45. A byte-identical immutable export may
+    # retain the same reference, so a changed handle alone is not completion.
     g.device.press(66)
-    wait(lambda:feed_ui(g,793)[0][1]not in(0,prior),180,'explicit native public account export')
+    def published():
+        status,diagnostic=feed_ui(g);reference=feed_ui(g,793)[0][1]
+        observer=getattr(g,'project_observer',None)
+        if observer is not None:observer('native explicit public account export',reference=reference)
+        if status[4]==12 and project.complete_read(g,g.feed_ui):
+            raise RuntimeError(('native public export refused',list(status)))
+        return reference if reference!=0 and status[4]==45 and project.complete_read(g,g.feed_ui)else None
+    wait(published,180,'explicit native public account export')
     shared,_=project.ui_call(g,g.feed_ui,794);data=g.client.read_object(shared[1])
     assert len(data)==2048 and struct.unpack_from('<Q',data)[0]==0x3154524f5046544c
     g.device.press(1)
@@ -129,7 +138,12 @@ def settle_exact(g,operator,observed):
     if not any(event_id)or struct.unpack_from('<Q',prior,24)[0]==0:raise ValueError('uncertain native author has no exact prior event to retry')
     observed(dict(check='query/route uncertainty observed before native exact retry',status=list(current),event_id=event_id.hex()))
     g.device.press(63)
-    wait(lambda:feed_ui(g)[0][5]in(6,7),900,'native F5 exact outbox retry without a replacement publication')
+    def reconciled():
+        status=feed_ui(g)[0]
+        observer=getattr(g,'project_observer',None)
+        if observer is not None:observer('native exact outbox reconciliation',event_id=event_id.hex())
+        return status[5]in(6,7)
+    wait(reconciled,900,'native F5 exact outbox retry without a replacement publication')
     f,_=feed.invoke(operator.client,491,action=4,data=event_id)
     assert f[2]>=2
     after=export_public(g)
@@ -344,12 +358,27 @@ def main():
                             if retries[0]>=16:raise RuntimeError(('native project-card owner remains busy',list(f)))
                             g.device.press(63);retries[:]=[retries[0]+1,time.monotonic()]
                     return wait(accepted,600,'native signed project card committed before action')
+                def approve_before_local_fork(chosen):
+                    if not a.local_project_only:return
+                    approved=out/(g.name+'.pre-fork-approved-feed-profile')
+                    if approved.exists():return
+                    public=export_public(g,include_preferences=True)
+                    if not preference_bits(public,bytes.fromhex(record['project_id']))&4:
+                        focus_feed(g);g.device.press(65)
+                        wait(lambda:feed_ui(g)[0][4]==17 and project.complete_read(g,g.feed_ui),180,'native stable project follow before old-image graph quota')
+                        public=export_public(g,include_preferences=True)
+                    assert preference_bits(public,bytes.fromhex(record['project_id']))&4
+                    assert public[128:160]==chosen[:32]
+                    save_approved_profile(approved,public)
+                    observed(dict(check='explicit public profile exported before old-image graph allocation',native_export=True,profile_sha256=hashlib.sha256(public).hexdigest(),preferences_sha256=hashlib.sha256(public[256:1792]).hexdigest(),retained_generation=retained_generation(backing)))
+                    focus_feed(g)
                 existing=committed()
                 if existing is None:
                     action=project.publish_and_fork(g,g.feed_ui,record,publish_wait=publish_wait,card_text=CARD)
                 else:
                     focus_feed(g)
                     chosen=project.select_event(g,g.feed_ui,existing[:32])
+                    approve_before_local_fork(chosen)
                     action=project.inspect_and_fork(g,g.feed_ui,record,chosen)
                 card=wait(committed,120,'original project card remains committed')
                 def replica_card():return next((p for _,p in rows(destination)if p[:32]==card[:32]),None)
@@ -360,7 +389,12 @@ def main():
                 original_descriptor=bytes.fromhex(body[9:1545].decode('ascii'))
                 assert hashlib.sha256(original_descriptor).hexdigest()==record['descriptor_sha256']
                 visible=project.show_fork_in_picker(g,g.feed_ui,record,action)
-                public=export_public(g,include_preferences=True)
+                try:public=export_public(g,include_preferences=True)
+                except RuntimeError as error:
+                    approved=out/(g.name+'.pre-fork-approved-feed-profile')
+                    if not a.local_project_only or not str(error).startswith("('native public export refused'")or not approved.exists():raise
+                    public=approved.read_bytes()
+                    observed(dict(check='old-image post-Fork public export remains refused by mixed-class Objects quota',native_ui=list(feed_ui(g)[0]),error=repr(error),approved_before_fork_profile_sha256=hashlib.sha256(public).hexdigest(),post_fork_export_qualified=False))
                 project_id=bytes.fromhex(record['project_id'])
                 if not preference_bits(public,project_id)&4:
                     focus_feed(g);project.select_event(g,g.feed_ui,card[:32]);g.device.press(65)
