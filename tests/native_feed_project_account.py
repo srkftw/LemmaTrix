@@ -185,12 +185,23 @@ def author_actions(g,original,destination,state,author,out,observed):
             def accepted():
                 result=lookup(original,kind,text)
                 if result:return result
+                observer=getattr(g,'project_observer',None)
+                if observer is not None:observer('native author '+label+' publication',target=target.hex())
                 f=feed_ui(g)[0]
                 if f[2]==9 and f[3]==len(text)and f[4]in(12,14)and f[5]in(0,6,7)and retries[0]<8 and time.monotonic()-retries[1]>=3:
                     g.device.press(63);retries[:]=[retries[0]+1,time.monotonic()]
                 return None
             committed=wait(accepted,600,'native signed author '+label+' committed')
-        replica=wait(lambda:lookup(destination,kind,text),600,'original signed author '+label+' replicates')
+        action['event']=committed[:32].hex();action['durably_accepted']=True;project.write_record(path,journal)
+        def replicated():
+            result=lookup(destination,kind,text)
+            if result:return result
+            observer=getattr(g,'project_observer',None)
+            if observer is not None:observer('native author '+label+' replication',event=committed[:32].hex())
+            phase=feed.invoke(original.client,490,action=3)[0]
+            if phase[1]==6:raise RuntimeError(('native replication explicitly stopped',original.name,list(phase),committed[:32].hex()))
+            return None
+        replica=wait(replicated,600,'original signed author '+label+' replicates')
         assert committed==replica and hashlib.sha256(committed[32:]).digest()==committed[:32]
         assert committed[224:256]==target and committed[400:432]==target and committed[304:368]==original_row[304:368]
         assert read_body(original,committed)==text.encode()and read_body(destination,replica)==text.encode()
@@ -228,6 +239,8 @@ def main():
     if evidence.exists():
         archived=evidence.with_name(evidence.stem+'.attempt-'+str(len(attempts))+'.json')
         archived.write_bytes(evidence.read_bytes())
+        report.setdefault('attempt_archives',[]).append(dict(path=str(archived),sha256=hashlib.sha256(archived.read_bytes()).hexdigest()))
+    for historical in('error','traceback','native_ui','native_events','inspection_error'):report.pop(historical,None)
     attempt=dict(started_utc=time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),result='running');attempts.append(attempt);report['result']='running'
     checkpoint=report.setdefault('checkpoints',{})
     if a.stage=='project':
