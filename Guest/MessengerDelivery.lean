@@ -175,6 +175,11 @@ def ready (descriptor t : UInt64) : Bool :=
   r == 96 && status r == 0 && load64 (wire+16) r == 3 && eq descriptor (wire+64) 32 r
 def makeRequest (action a b c t : UInt64) : UInt64 :=
   copy wire request 64 (header 441 action a b c 0 0 t)
+-- The parent terminal bounds whole requests to100000 ticks. Leave10000
+-- ticks for exact owned cleanup; a ready response wins the deadline boundary.
+def rpcWaitBudget : UInt64 := 90000
+def rpcDeadline (clock : UInt64) : UInt64 :=
+  if clock > 0xffffffffffffffff-rpcWaitBudget then 0xffffffffffffffff else clock+rpcWaitBudget
 def rpc (length purpose t : UInt64) : UInt64 :=
   if load64 (st+88) t != 0 || length < 64 || length > 960 || load64 (st+216) t >= 512 then error else
   let serial := load64 (st+80) t+1
@@ -186,7 +191,7 @@ def rpc (length purpose t : UInt64) : UInt64 :=
   if r != 64 || status r != 0 then error else
   let t := store64 (st+88) serial r
   let t := store64 (st+96) purpose t
-  let t := store64 (st+232) (Guest.WaitSDK.now t+5000) t
+  let t := store64 (st+232) (rpcDeadline (Guest.WaitSDK.now t)) t
   store64 (st+216) (load64 (st+216) t+1) t
 def mailboxAuth (p fetch dst t : UInt64) : UInt64 :=
   let t := copy p dst 32 t
@@ -460,20 +465,25 @@ def rpcFailure (reason t : UInt64) : UInt64 :=
   if load64 (st+96) t == 30 then publicationFailure reason t else
   if load64 (st+96) t == 31 then preflightFailure reason t else
   if load64 (st+96) t >= 10 then failReceive reason t else failSend reason t
+def abandonRPC (reason t : UInt64) : UInt64 :=
+  let id := load64 (st+88) t
+  -- A timeout cannot retract remote acceptance. Release only this exact
+  -- transport request before dropping its local handle; stale cancellation
+  -- cannot clear a replacement relationship. Ciphertext retry state remains.
+  let t := if id == 0 then t else network 42 id t
+  rpcFailure reason t
 def collectRPC (t : UInt64) : UInt64 :=
   let id := load64 (st+88) t
   if id == 0 then t else
-  let now := Guest.WaitSDK.now t
-  if now >= load64 (st+232) now then
-    rpcFailure 14 now
-  else
   let r := network 40 id t
   if r == error || r < 64 || status r != 0 then
-    if r != error && r >= 64 && status r == 6 then r else
-    rpcFailure 14 r
+    if r != error && r >= 64 && status r == 6 then
+      let now := Guest.WaitSDK.now r
+      if now >= load64 (st+232) now then abandonRPC 14 now else now
+    else abandonRPC 14 r
   else
     let n := load64 (wire+16) r
-    if n < 64 || n > 960 || r != 64+n then rpcFailure 9 r else
+    if n < 64 || n > 960 || r != 64+n then abandonRPC 9 r else
     let purpose := load64 (st+96) r
     let t := copy (wire+64) answer n r
     rpcCompleted purpose n (store64 (st+88) 0 t)

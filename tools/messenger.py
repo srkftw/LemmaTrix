@@ -57,10 +57,15 @@ def install(client,path,public,rights):
     service=nodes.start_package(client,nodes.approved_package(path,public,info['release_id'],rights),raw)
     return service,bytes.fromhex(info['release_id'])
 
+def delivery_parent(value):
+    if len(value)!=64 or any(c not in'0123456789abcdefABCDEF'for c in value)or not any(bytes.fromhex(value)):
+        raise argparse.ArgumentTypeError('delivery parent must be a nonzero exact32-byte release hash')
+    return value.lower()
+
 def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--socket',type=Path)
     sub=p.add_subparsers(dest='command',required=True)
-    q=sub.add_parser('package');q.add_argument('--publisher-private',type=Path,required=True);q.add_argument('--output',type=Path,required=True)
+    q=sub.add_parser('package');q.add_argument('--publisher-private',type=Path,required=True);q.add_argument('--output',type=Path,required=True);q.add_argument('--delivery-version',choices=('0.8.0','0.8.1'),default='0.8.1',help='Delivery release version (default0.8.1); other components remain0.8.0');q.add_argument('--delivery-parent',type=delivery_parent,help='exact active Delivery release hash for a normal native upgrade')
     q=sub.add_parser('vault-init');q.add_argument('image',type=Path)
     q=sub.add_parser('start');q.add_argument('--owner',type=Path,required=True);q.add_argument('--public',type=Path,required=True);q.add_argument('--ui',type=Path);q.add_argument('--delivery',type=Path)
     q=sub.add_parser('certify-contact');q.add_argument('--identity-release',type=Path,required=True);q.add_argument('--public',type=Path,required=True);q.add_argument('--scope',required=True);q.add_argument('--output',type=Path,required=True)
@@ -98,10 +103,12 @@ def main(argv=None):
         items=[]
         for name,module,entry,rights in [('identity','Guest.Identity','main',0),('messenger-session','Guest.MessengerSession','main',0),('messenger','Guest.Messenger','main',799),('messenger-delivery','Guest.MessengerDelivery','main',1024),('mailbox','Guest.Mailbox','main',2048)]:
             binary=live_build.app(module,module+'.'+entry,name,2)
-            raw,_=releases.make(binary,name,'0.8.0',rights,a.publisher_private,profile=2,license='NOASSERTION')
+            version=a.delivery_version if name=='messenger-delivery'else'0.8.0'
+            parent=a.delivery_parent if name=='messenger-delivery'else None
+            raw,_=releases.make(binary,name,version,rights,a.publisher_private,parent=parent,profile=2,license='NOASSERTION')
             path=a.output/(name+'.ltrel');path.write_bytes(raw)
             items.append(dict(name=name,path=str(path),rights=rights,code_bytes=binary.stat().st_size,code_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),package_sha256=hashlib.sha256(raw).hexdigest(),release_id=releases.inspect(raw)['release_id']))
-        report=dict(schema=1,packages=items,publisher='explicit host RSA bootstrap',messaging_private_keys_generated=False)
+        report=dict(schema=1,packages=items,publisher='explicit host RSA bootstrap',messaging_private_keys_generated=False,delivery_version=a.delivery_version,delivery_parent=a.delivery_parent)
         (a.output/'packages.json').write_text(json.dumps(report,indent=2)+'\n')
         ready={key:str((a.output/(name+'.ltrel')).resolve())for key,name in
                [('identity','identity'),('owner','messenger-session'),('ui','messenger'),
