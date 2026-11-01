@@ -60,20 +60,31 @@ theorem healthy_idle_has_no_deadline (clock : UInt64) : elapsedDue 0 clock = fal
   simp [elapsedDue]
 def workDeadline (clock interval : UInt64) : UInt64 :=
   if clock > 0xffffffffffffffff-interval then 0xffffffffffffffff else clock+interval
-@[noinline] def expireWork (clock t : UInt64) : UInt64 :=
-  -- Nonzero deadlines identify admitted work. Successful completion clears
-  -- its deadline; authenticated idle contexts have four zero fields.
-  let expired := elapsedDue (load64 (st+184) t) clock ||
-    elapsedDue (load64 (st+152) t) clock || elapsedDue (load64 (st+224) t) clock ||
-    elapsedDue (load64 (st+240) t) clock
-  if !expired then t else
+@[noinline] def retireOwned (reason t : UInt64) : UInt64 :=
   let ch := if load64 st t == 1 then 0 else load64 (st+32) t
-  -- A partial frame or hung typed service cannot hold a context/IPC lane.
-  -- A committed application operation remains reconcilable by its signed ID.
+  -- Capture ownership before wiping keys or retiring the dependent pair.
   let current := load64 st t == 1 ||
     (Guest.TorRouter.ready ch t && load64 (Guest.TorRouter.channel ch+24) t == load64 (st+168) t)
   let t := if current then Guest.TorRouter.abort 59 (store64 (Guest.TorRouter.state+72) ch t) else t
-  fail 28 t
+  fail reason t
+def serviceTargetAllowed (pinned target : UInt64) : Bool := pinned == 0 || pinned == target
+theorem changed_service_instance_denied (pinned target : UInt64)
+    (bound : pinned ≠ 0) (changed : pinned ≠ target) :
+    serviceTargetAllowed pinned target = false := by simp [serviceTargetAllowed, bound, changed]
+-- A target pin carries the exact local service incarnation independently of
+-- the authenticated node. Zero reports refusal after scoped retirement.
+@[noinline] def pinServiceTarget (registryRead : Bool) (target t : UInt64) : UInt64 :=
+  if target == error then Guest.Effects.effectValue 0 (retireOwned 22 t) else
+  let pinned := if registryRead then load64 (control+48) t else load64 (st+248) t
+  if !serviceTargetAllowed pinned target then Guest.Effects.effectValue 0 (retireOwned 25 t) else
+  Guest.Effects.effectValue target (if registryRead then t else store64 (st+248) target t)
+@[noinline] def expireWork (clock t : UInt64) : UInt64 :=
+  -- Successful work clears its deadline; healthy authenticated idle contexts
+  -- remain reusable. Durable operations reconcile by exact application ID.
+  let expired := elapsedDue (load64 (st+184) t) clock ||
+    elapsedDue (load64 (st+152) t) clock || elapsedDue (load64 (st+224) t) clock ||
+    elapsedDue (load64 (st+240) t) clock
+  if !expired then t else retireOwned 28 t
 
 def writeOpaque (source n t : UInt64) : UInt64 :=
   if load64 st t == 1 then Guest.TorRouter.clientRelay 2 (load64 (st+24) t) source n 0 t else
@@ -238,7 +249,7 @@ def serverQuantum (t : UInt64) : UInt64 :=
   let token := load64 (st+112) t
   if token != 0 then
     let r := syscall 134 token wire 1024 0 t
-    if r == error || r > 960 then fail 20 r else
+    if r == error || r > 960 then retireOwned 20 r else
     if r == 0 then r else
     let t := store64 (st+152) 0 (store64 (control+32) 0 (store64 (st+112) 0 r))
     let t := copy wire outgoing r t
@@ -255,8 +266,8 @@ def serverQuantum (t : UInt64) : UInt64 :=
   let feed := operation == 491 && ownRole == 16
   if (!mailbox && !feed && !registryRead) || load64 (received+56) t != 1 then fail 21 t else
   let target := if registryRead then syscall 113 0 0 0 0 t else syscall 128 (if feed then 6 else 3) operation 0 0 t
-  if registryRead && target != load64 (control+48) target then fail 25 target else
-  if target == error then fail 22 target else
+  let target := pinServiceTarget registryRead target target
+  if target == 0 then target else
   let count := if registryRead then 64 else n
   let t := copy received wire count target
   -- The remote header cannot choose its origin. This is a transport generation,
