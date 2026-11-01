@@ -47,8 +47,9 @@ def checked_read(g,target,observed):
    # Busy is a completed refusal; it is not evidence that a subsequent key
    # has already been processed. Give the finite in-flight owner operation
    # time to finish instead of counting the same sticky notice repeatedly.
+   g.device.press(104)
    time.sleep(3)
-   g.device.press(104);continue
+   continue
   if selected[:32]==target:return selected
   project.advance_row(g,g.feed_ui,selected)
  raise RuntimeError('target absent from bounded chronological native reader')
