@@ -118,7 +118,7 @@
     }
   ],
   "common_run": {
-    "result": "Infrastructure and saturation/reuse passed with explicit earlier personal recovery: concurrent native Feed, original signed replication, active-stall Messenger/Forge, exact lost-response retry, unchanged positive reservations, no-vault ephemerality, six actual routes/native seventh refusal/reuse and useful Messenger work after more than750 completed empty probes. Strict project, moderation, restart and migration remain pending.",
+    "result": "Infrastructure, saturation/reuse, post512 useful Messenger and strict project workflow passed with earlier explicit personal recovery. Genuine signed card crossed both federations; actual Library Fork and fresh action-time revocation refusal passed. Native moderation/appeal, operator restart and offline migration remain pending.",
     "output": "build/campaign009-connected-v7",
     "configuration": {
       "image_sha256": "2e5147c4198cf7ec39ab053f2ea8895cfdceb1c9b9dcf79e1b7bb7627314bcdf",
@@ -450,6 +450,97 @@
         "Local integration on the identified common image; previous scoped route loss and authorized recovery remain separate evidence.",
         "This test neither renews terminal allowances nor asserts unlimited unattended operation."
       ]
+    },
+    "strict_project": {
+      "record": "docs/evidence/campaign-009-feed-project-final.json",
+      "sha256": "fd31ebbea4c676b5adaa0287d63d67192c3ad618a568c3460767a712c923c86e",
+      "result": "pass",
+      "elapsed_seconds": 590.88,
+      "card": {
+        "id": "8caccbed6cdd0973d1f2151cae1132735be4e6563785e41b82f840dd4b25047c",
+        "author": "26d3b302e8934ea1b6e4f72a13ffe975bc36b207df5a25c5beef0b92e32320d1",
+        "body_sha256": "26eaceb10b20ed74a72f4d54153946446ace576394f4ce7e7ef7240120384485",
+        "bytes": 1683,
+        "replicated": true
+      },
+      "fork_root": "eba0bb8f2e80295d30b9b74dc1e3027d4c533c9d4babc5de7773d4d352263ca6",
+      "lineage_node": "d8ddea7d19f74ff0d80dbbf026433c8720f3944b0453268d80fce43354495179",
+      "action_time_revocation": {
+        "check": "current native release revocation refuses the valid old card at the action boundary",
+        "result": "pass",
+        "refusal": {
+          "revocation": {
+            "sequence": 2,
+            "listing": 3,
+            "reason": 6,
+            "logical_project_id": "69d8274c92d5b2c829e55d5e3f5359b7c652b13160d138eec5d7e99623a72f2b",
+            "publication_id": "14deec51b2e59bdd387e3edc7f3899503c8b6e4c244ac398c77dd18a8bd8d181",
+            "release_id": "7dc7d80f5dcb1656b8e2d32fa0728ae294be2d485cfbfe100c1a73782e4623c9",
+            "root": "92daee22b2b8ed1f4de2b1354701a07742de03065c36ecc716c0a5e60624a7c2",
+            "federation": "da551ef420d34f0926267676a49c3d15816250f9d1e8e1900233dcbcebce1228",
+            "signature": "RSA2048/SHA256 over immutable guest-evaluated admission-v1",
+            "local_execution_approved": false
+          },
+          "feed_card_still_original": true,
+          "additional_forks": 0,
+          "execution_consent": false,
+          "fork_approval_opened_before_policy_change": {
+            "publisher": "e09dd8ce5f3b3bc718337fffe3c26e0a48fb99fa27ca5fceeae948afe6125087",
+            "opened_at_sequence": 1,
+            "entered_public_digits": 64,
+            "submitted": true
+          },
+          "fresh_fork_refusal": [
+            0,
+            1,
+            8,
+            1683,
+            65,
+            7,
+            11,
+            1
+          ],
+          "fresh_inspection_refusal": [
+            0,
+            1,
+            0,
+            1683,
+            65,
+            7,
+            11,
+            1
+          ]
+        }
+      },
+      "retained_selection": {
+        "identity": true,
+        "exact_signed_outbox": true,
+        "local_follows_blocks": true,
+        "unpublished_drafts": false,
+        "cached_content": false,
+        "history": false
+      },
+      "approved_public_export": {
+        "check": "approved public export includes exact retained publication reference and selected preferences without signing seed or sealed key",
+        "result": "pass",
+        "bytes": 2048,
+        "sequence": 4,
+        "public_sha256": "7a6e79bcb61139a553ecd00659e75f4260f6024b9ea18f6f4beebd20985baf95",
+        "fields": [
+          "schema",
+          "explicit preference selection",
+          "sequence",
+          "author public key",
+          "home scope",
+          "selected peer scope",
+          "last signed event reference",
+          "public key generation",
+          "selected local preferences"
+        ],
+        "preference_sha256": "5ae7b5c4f31fddde1b9eaacbb07d97fb22be16e49f4315dc081e1fd8b3906b91",
+        "sealed_private_key_included": false
+      },
+      "native_bundle": "baseline account0.9.1/UI0.9.2; later approved successor recovery remains separate"
     }
   },
   "component_record": "campaign-009-components.json",
@@ -894,7 +985,7 @@
     "scope": "Installed exact-role native signer authority gate and actual Feed service conflict/quota refusals on isolated purpose2 backing. No valid wrong-federation moderator signature admission is claimed."
   },
   "connected_continuations": {
-    "result": "Current2e514 infrastructure, six-route capacity/native seventh refusal/reuse and post512 useful Messenger passed. Strict project, moderation/restart and offline migration remain pending."
+    "result": "Current2e514 infrastructure/capacity/post512Messenger and strict project passed. Moderation/restart now owns all nine portals; approved offline migration follows."
   },
   "operator_interrupt_ownership": {
     "source_commit": "63fc11bcfe7a9f7c94f06b680d6e8b3e085478ed",
@@ -1106,7 +1197,7 @@
     "network_limit_bytes": 425984,
     "image_sha256": "2e5147c4198cf7ec39ab053f2ea8895cfdceb1c9b9dcf79e1b7bb7627314bcdf"
   },
-  "current_integration_work": "Feed app agent owns all nine portals for strict project. Capacity/idle-useful controllers released all nine; native guests/operators continue. Federation moderation/restart and approved offline hosting move follow.",
+  "current_integration_work": "Federation moderation and restart controller owns all nine after strict project released them. Same image and Native sources unchanged; only fresh-shipping controller compatibility is being repaired offline.",
   "prior_690_active_forge": {
     "result": "pass",
     "raw_record": "build/campaign009-connected-v6/active-forge.json",
