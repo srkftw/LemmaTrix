@@ -333,7 +333,17 @@ def main():
                 if not project.live_instance(g.client,record['registry']):raise ValueError('existing personal Registry was replaced; explicit authority recovery required')
                 def committed():
                     return next((p for _,p in rows(original)if p[144:176]==author and struct.unpack_from('<Q',p,208)[0]==3 and p[368:400].hex()==record['root']['head']),None)
-                def publish_wait():return wait(committed,600,'native signed project card committed before action')
+                def publish_wait():
+                    retries=[0,time.monotonic()]
+                    def accepted():
+                        result=committed()
+                        if result:return result
+                        progress('native project-card publication',root=record['root']['head'])
+                        f,d=feed_ui(g)
+                        if f[2]==9 and f[3]==1546+len(CARD)and f[6]==4 and f[5]in(0,6,7)and struct.unpack_from('<Q',d,104)[0]==0 and time.monotonic()-retries[1]>=3:
+                            if retries[0]>=16:raise RuntimeError(('native project-card owner remains busy',list(f)))
+                            g.device.press(63);retries[:]=[retries[0]+1,time.monotonic()]
+                    return wait(accepted,600,'native signed project card committed before action')
                 existing=committed()
                 if existing is None:
                     action=project.publish_and_fork(g,g.feed_ui,record,publish_wait=publish_wait,card_text=CARD)

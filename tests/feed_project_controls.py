@@ -184,9 +184,22 @@ def prepare(g,ui,output,*,archive_path=ROOT/'tests/fixtures/campaign008-existing
 
 def publish_and_fork(g,ui,record,*,publish_wait,card_text='This card links the exact signed release we inspected. Fork it locally to review an independent change.'):
     device=g.device
-    device.press(87)
-    wait(lambda:ui_call(g,ui,791)[0][2]==1,90,'native Feed selects actual signed Registry release')
-    device.textASCII(card_text,delay=.04);device.press(62);time.sleep(.15);device.press(63)
+    path=Path(record['fork_publisher']).parent/'card-intent.json'
+    intent=dict(root=record['root']['head'],release_id=record['release_id'],text_sha256=hashlib.sha256(card_text.encode()).hexdigest(),text_bytes=len(card_text),wrapped_bytes=1546+len(card_text))
+    journal=json.loads(path.read_text())if path.exists()else dict(intent=intent)
+    if journal['intent']!=intent:raise ValueError('exact project-card intent changed on resume')
+    f,d=ui_call(g,ui,791)
+    prepared=(f[3]==intent['wrapped_bytes']and struct.unpack_from('<Q',d,120)[0]==3 and struct.unpack_from('<Q',d,136)[0]==1)
+    if not prepared:
+        device.press(87)
+        wait(lambda:ui_call(g,ui,791)[0][2]==1,90,'native Feed selects actual signed Registry release')
+        device.textASCII(card_text,delay=.04)
+        wait(lambda:ui_call(g,ui,791)[0][3]==len(card_text),120,'complete native project-card compose input')
+    else:journal['resumed_existing_wrapped_preview']=True
+    project_status=ui_call(g,ui,791)[0]
+    if project_status[2]!=9:device.press(62)
+    wait(lambda:ui_call(g,ui,791)[0][2]==9,90,'native exact project-card preview')
+    write_record(path,journal);device.press(63)
     # Paginate actual federation events until this original release card is
     # selected in the native UI. No native state setter inserts the card.
     committed=publish_wait()
