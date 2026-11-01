@@ -389,8 +389,16 @@ def main():
   send_once(alice,bob,'project_message',text,True)
   if not state['done'].get('forge'):
    if inspect(bob)[0][2]!=6:
-    focus(bob,'messenger');wait(lambda:ui_public(bob,785)[1]==bytes.fromhex(project['root']+project['federation']),180,'native displayed exact project reference')
-    state['forge_roots_before']=projects.roots(bob.client);save();bob.device.press(59,delay=.15)
+    focus(bob,'messenger')
+    state.setdefault('forge_roots_before',projects.roots(bob.client));save()
+    # The global selected-reference view is populated by F1 itself. The
+    # decrypted body was checked above; native F1 requires its parsed contact
+    # history record before it can enter inspection mode and expose that view.
+    for _ in range(8):
+     if ui_public(bob,783)[0][6]==0:bob.device.press(59,delay=.15)
+     time.sleep(.3)
+     if ui_public(bob,785)[0][1]==6:break
+    else:raise TimeoutError('native graphical project inspection selection')
    roots_before=state['forge_roots_before']
    def verified():
     f,selected=ui_public(bob,785)
