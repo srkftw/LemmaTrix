@@ -71,7 +71,9 @@ def publish_and_fork(g,ui,record,*,publish_wait,card_text='This card links the e
         return payload
     def fully_read():
         _,diagnostic=ui_call(g,ui,791)
-        return len(diagnostic)>=160 and struct.unpack_from('<Q',diagnostic,128)[0]==0
+        return (len(diagnostic)>=160 and struct.unpack_from('<Q',diagnostic,128)[0]==0
+                and (struct.unpack_from('<Q',diagnostic,104)[0]==0
+                     or struct.unpack_from('<Q',diagnostic,96)[0]==0))
     for _ in range(64):
         try:chosen=wait(selected_card,3,'native timeline card')
         except TimeoutError:
