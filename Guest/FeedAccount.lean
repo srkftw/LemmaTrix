@@ -31,6 +31,8 @@ def trustedId : UInt64 := 0x6a2200
 def sealedAuthor : UInt64 := 0x6a3000
 def unlockSecret : UInt64 := 0x6a3100
 def checkedBody : UInt64 := 0x6a4000
+def reconciledEvent : UInt64 := 0x6a8000
+def reconciledId : UInt64 := 0x6a8200
 def retained : UInt64 := 0x6c0000
 def eq (a b n t : UInt64) : Bool := Guest.LiveMemory.equal a b n t
 def hash (p n out t : UInt64) : UInt64 := Guest.ServiceHash.sha256At scratch p n out t
@@ -40,6 +42,10 @@ def failed (reason t : UInt64) : UInt64 := store64 (st+32) 8 (store64 (st+40) re
 def localAllowed (stored caller : UInt64) : Bool := stored != 0 && stored == caller
  theorem another_owner_denied (stored caller : UInt64) (h : (stored == caller) = false) :
     localAllowed stored caller = false := by simp [localAllowed,h]
+def recoveredGenerationAllowed (current observed : UInt64) : Bool := observed < current
+theorem recovered_generation_not_reused (generation : UInt64) :
+    recoveredGenerationAllowed generation generation = false := by
+  simp [recoveredGenerationAllowed]
 def net (op h t : UInt64) : UInt64 :=
   syscall 30 6 wire 64 1024 (store64 (wire+56) 2 (header op h 0 0 0 0 0 t))
 def rpc (bytes purpose t : UInt64) : UInt64 :=
@@ -82,12 +88,24 @@ partial def readRecord (offset t : UInt64) : UInt64 :=
   if offset == recordBytes then t else
   let r := Guest.FeedRetentionSDK.read offset 512 t
   if r != 576 || status r != 0 then error else readRecord (offset+512) (copy (wire+64) (retained+offset) 512 r)
+def clearAccount (t : UInt64) : UInt64 :=
+  let t := if load64 (st+64) t == 0 then t else net 42 (load64 (st+64) t) t
+  let t := Guest.FeedRetentionSDK.lock t
+  let r := Guest.IdentitySDK.lockFeed t
+  let caller := load64 (st+128) r
+  let r := zero sealedAuthor 24 (zero unlockSecret 4 r)
+  let r := zero outboxBody 2048 (zero checkedBody 2048 (zero trustedEvent 60 (zero trustedId 4
+    (zero reconciledEvent 60 (zero reconciledId 4 (zero retained 4096 (zero scratch 256 r)))))))
+  store64 (st+128) caller (zero st 64 (zero publicIdentity 36 (zero envelope 60 (zero canonical 32 (zero draft 2048 r)))))
 def retention (length t : UInt64) : UInt64 :=
   let mode := load64 (command+16) t
   let flags := load64 (command+24) t
   if mode == 2 && length == 64 then
     let r := Guest.FeedRetentionSDK.forget t
-    response (if r == 64 then status r else 13) 0 0 0 (store64 (st+192) 0 (zero sealedAuthor 24 r))
+    let code := if r == 64 then status r else 13
+    -- Forget removes publishing authority as well as the protected record.
+    -- Even an unavailable backing cannot leave an accessible old signer key.
+    response code 0 0 0 (zero preferences 192 (zero scope 8 (clearAccount r)))
   else if length != 96 || mode > 1 || flags > 1 then response 2 0 0 0 t else
   let t := copy (command+64) unlockSecret 32 t
   if mode == 0 then
@@ -120,7 +138,9 @@ def retention (length t : UInt64) : UInt64 :=
     let t := if flags == 1 && (load64 (retained+56) t &&& 2) != 0 then copy (retained+1120) preferences 1536 t else zero preferences 192 t
     let t := copy (retained+2656) outboxBody (load64 (st+24) t) t
     let t := store64 (st+208) (load64 (st+24) t) (store64 (st+216) (load64 (st+16) t) t)
-    let t := if load64 (st+8) t == 0 then store64 (st+32) 0 t else store64 (st+32) 8 (store64 (st+40) 12 t)
+    -- Even an identity-only backup may predate an accepted publication.
+    -- Recovery never silently treats its local counter as a freshness anchor.
+    let t := store64 (st+304) 1 (store64 (st+32) 8 (store64 (st+40) 12 t))
     let r := persist t
     response (if r == error then 13 else 0) (load64 st r) (load64 (st+8) r) 0 r
 def beginUpload (t : UInt64) : UInt64 :=
@@ -151,6 +171,46 @@ def pollUpload (t : UInt64) : UInt64 :=
 def saveAnswer (bytes purpose t : UInt64) : UInt64 :=
   store64 (st+136) bytes (store64 (st+144) purpose (store64 (st+152) (load64 (st+152) t+1)
     (copy wire answer bytes t)))
+def reconcilePage (cursor t : UInt64) : UInt64 :=
+  let t := req 5 cursor 0 0 (store64 (st+264) cursor t)
+  let r := rpc 64 7 t
+  if r == error then failed 14 r else r
+def finishReconciliation (t : UInt64) : UInt64 :=
+  let known := load64 (st+288) t
+  let saved := load64 (st+8) t
+  let hasPending := saved != 0 && load64 (st+208) t != 0
+  -- A restored older descriptor must not claim an already observed generation.
+  if known != 0 && !recoveredGenerationAllowed (load64 (publicIdentity+24) t) (load64 (reconciledEvent+32) t) then failed 12 t else
+  if hasPending && (known < saved || (known == saved && eq eventId reconciledId 32 t)) then
+    if !Guest.FeedEvent.valid envelope t || !Guest.FeedEvent.contentValid envelope outboxBody (load64 (st+208) t) t then failed 9 t else
+    let r := persist (store64 (st+304) 0 (store64 (st+40) 0 t))
+    if r == error then failed 13 r else beginUpload r
+  else if known == 0 then
+    -- No authenticated author history is evidence of absence only at this
+    -- selected server. Keep the explicit recovery warning and refuse signing.
+    failed 12 t
+  else
+    let t := copy reconciledEvent envelope 480 (copy reconciledId eventId 32 t)
+    let t := store64 (st+8) known (store64 (st+208) 0 (store64 (st+216) (load64 (envelope+176) t) t))
+    let r := persist (store64 (st+304) 0 (store64 (st+32) (load64 (st+296) t) (store64 (st+40) 0 t)))
+    if r == error then failed 13 r else r
+def reconcileAnswer (bytes t : UInt64) : UInt64 :=
+  if bytes == 64 && status t == 6 then finishReconciliation t else
+  if bytes != 576 || status t != 0 || !Guest.FeedEvent.valid (wire+96) t then failed 9 t else
+  let t := hash (wire+96) 480 hashed t
+  let cursor := load64 (wire+16) t
+  let generation := load64 (wire+48) t
+  if !eq hashed (wire+64) 32 t || cursor <= load64 (st+264) t || cursor > 64 ||
+      (load64 (st+272) t != 0 && generation != load64 (st+280) t) then failed 12 t else
+  let t := store64 (st+272) (load64 (st+272) t+1) (store64 (st+280) generation t)
+  let author := eq (wire+208) (publicIdentity+96) 32 t && eq (wire+368) scope 32 t
+  let sequence := load64 (wire+280) t
+  let t := if author && sequence >= load64 (st+288) t then
+      store64 (st+288) sequence
+        (store64 (st+296) (if load64 (wire+24) t >= 3 then 7 else 6)
+          (copy (wire+96) reconciledEvent 480 (copy (wire+64) reconciledId 32 t)))
+    else t
+  reconcilePage cursor t
 def validateAnswer (bytes purpose t : UInt64) : UInt64 :=
   if status t != 0 then t else
   if purpose == 5 then
@@ -178,6 +238,7 @@ def complete (bytes purpose t : UInt64) : UInt64 :=
   let t := store64 (st+64) 0 t
   -- GUI query completions retain their own response until outcome collection.
   -- Background publication receipts cannot replace that independently owned row.
+  if purpose == 7 then reconcileAnswer bytes t else
   if purpose >= 5 then saveAnswer bytes purpose t else
   if code != 0 && code != 6 && code != 10 then failed code t else
   if purpose == 1 then
@@ -237,10 +298,15 @@ partial def validText (p n i t : UInt64) : Bool :=
  def prepareDraft (length t : UInt64) : UInt64 :=
   let kind := load64 (command+16) t
   let bytes := load64 (command+24) t
+  let audience := load64 (command+32) t
   if length != 160 || load64 st t == 0 || kind == 0 || kind > 9 || kind == 8 ||
-      bytes == 0 || bytes > 16384 || load64 (st+64) t != 0 ||
-      (load64 (st+32) t >= 1 && load64 (st+32) t <= 5) || load64 (st+32) t == 8 then response 4 0 0 0 t else
-  let t := store64 (st+16) kind (store64 (st+24) bytes (store64 (st+120) 0 (store64 (st+32) 0 t)))
+      bytes == 0 || bytes > 16384 || audience > 1 || load64 (st+64) t != 0 ||
+      (load64 (st+32) t >= 1 && load64 (st+32) t <= 5) || load64 (st+32) t == 8 ||
+      load64 (st+304) t != 0 then response 4 0 0 0 t else
+  -- The approved draft carries its exact audience. A prior publication's
+  -- phase cannot leave a stale wider audience behind a new local preview.
+  let t := store64 (st+176) audience
+    (store64 (st+16) kind (store64 (st+24) bytes (store64 (st+120) 0 (store64 (st+32) 0 t))))
   response 0 bytes 0 0 (copy (command+64) refs 96 (zero draft 2048 t))
  def appendDraft (length t : UInt64) : UInt64 :=
   let offset := load64 (command+16) t
@@ -329,14 +395,8 @@ partial def followedProject (project i t : UInt64) : Bool :=
     response 15 (load64 (answer+8) t) (load64 (answer+16) t) 1 t else
   n+copy answer wire n t
  def lock (t : UInt64) : UInt64 :=
-  let t := if load64 (st+64) t == 0 then t else net 42 (load64 (st+64) t) t
-  let t := Guest.FeedRetentionSDK.lock t
-  let r := Guest.IdentitySDK.lockFeed t
-  let caller := load64 (st+128) r
-  let r := zero sealedAuthor 24 (zero unlockSecret 4 r)
-  let r := zero outboxBody 2048 (zero checkedBody 2048 (zero trustedEvent 60 (zero trustedId 4 (zero retained 4096 (zero scratch 256 r)))))
-  let t := store64 (st+128) caller (zero st 32 (zero publicIdentity 36 (zero envelope 60 (zero canonical 32 (zero draft 2048 r)))))
-  response (if r == error then 1 else 0) 0 0 0 t
+  let r := clearAccount t
+  response (if r == error then 1 else 0) 0 0 0 r
 def exportPortable (length t : UInt64) : UInt64 :=
   let includePreferences := load64 (command+16) t
   let offset := load64 (command+24) t
@@ -383,7 +443,8 @@ partial def validPreferences (p i t : UInt64) : Bool :=
   if load64 (st+128) t != 0 && !localAllowed (load64 (st+128) t) caller then response 1 0 0 0 t else
   let t := store64 (st+128) caller t
   if action == 0 then
-    let t := response 0 (load64 st t) (load64 (st+8) t) (load64 (st+24) t) t
+    let t := header 0 (load64 st t) (load64 (st+8) t) (load64 (st+24) t)
+      (load64 (st+32) t) (load64 (st+40) t) (load64 (st+192) t) t
     96+t+copy (publicIdentity+96) (wire+64) 32 (copy scope (wire+96) 64 t)
   else if action == 1 && length == 128 then createIdentity token t
   else if action == 2 then prepareDraft length t
@@ -393,7 +454,12 @@ partial def validPreferences (p i t : UInt64) : Bool :=
   else if action == 7 then preference length t
   else if action == 9 && length == 64 then lock t
   else if action == 10 && length == 64 then
-    if load64 (st+32) t != 8 || load64 (st+8) t == 0 then response 3 0 0 0 t else
+    if load64 (st+32) t != 8 || load64 (st+64) t != 0 then response 3 0 0 0 t else
+    if load64 (st+304) t != 0 then
+      let t := store64 (st+272) 0 (store64 (st+280) 0 (store64 (st+288) 0 t))
+      response 0 0 1 0 (reconcilePage 0 t)
+    else
+    if load64 (st+8) t == 0 || load64 (st+208) t == 0 then response 3 0 0 0 t else
     let r := persist (store64 (st+40) 0 t)
     if r == error then response 13 0 12 0 r else response 0 0 1 0 (beginUpload r)
   else if action == 11 && length == 64 && load64 (st+32) t == 6 && load64 (st+64) t == 0 then

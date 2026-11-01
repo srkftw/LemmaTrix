@@ -631,6 +631,26 @@ def notice (n t : UInt64) : UInt64 := dirty (store64 (st+32) n t)
     let t := store64 (labels+48) 7953764204164312937 t
     let t := store64 (labels+56) 778331508 t
     text labels 60 x y color bg t
+  -- 66: Home selected: F11 swaps configured scopes; F2 creates
+  else if id == 66 then
+    let t := store64 labels 7810775711721811784 t
+    let t := store64 (labels+8) 5053102984782963557 t
+    let t := store64 (labels+16) 8318255677413798193 t
+    let t := store64 (labels+24) 8459846313699140384 t
+    let t := store64 (labels+32) 8101803600778650994 t
+    let t := store64 (labels+40) 7142764285779473253 t
+    let t := store64 (labels+48) 126879581431154 t
+    text labels 55 x y color bg t
+  -- 67: Identity scope is fixed; retain or lock before changing
+  else if id == 67 then
+    let t := store64 labels 8751735924676977737 t
+    let t := store64 (labels+8) 7575166106816705312 t
+    let t := store64 (labels+16) 4279657113747595379 t
+    let t := store64 (labels+24) 2336921123937415712 t
+    let t := store64 (labels+32) 2336070161928319599 t
+    let t := store64 (labels+40) 7142820551179265378 t
+    let t := store64 (labels+48) 29113321587106152 t
+    text labels 55 x y color bg t
   else t
 def label (id x y color t : UInt64) : UInt64 :=
   if id < 16 then label0 id x y color t else
@@ -667,6 +687,11 @@ def draw (_surface t : UInt64) : UInt64 :=
       let t := if card then hexBytes (references+32) 32 14 158 (label 33 14 146 accent t) else t
       let t := wrapped (compose+offset) (n-offset) 14 (if card then 182 else 146) t
       hex n 4 540 316 accent bg t
+    else if mode == 4 then
+      let t := label 66 14 128 fg t
+      let t := hexBytes accountScope 32 14 158 t
+      let t := hexBytes (accountScope+32) 32 14 182 t
+      label 32 14 218 fg t
     else if mode == 3 then
       let t := label 21 14 122 fg t
       let t := hexBytes identity 32 14 146 t
@@ -741,6 +766,12 @@ def paintPump (surface t : UInt64) : UInt64 :=
  def createIdentity (t : UInt64) : UInt64 :=
   if load64 (st+168) t != 0 then notice 21 (store64 (st+24) 3 t) else
   submit 1 0 0 0 0 accountScope 64 (store64 (st+24) 3 t)
+def selectFederation (t : UInt64) : UInt64 :=
+  if load64 (st+168) t != 0 || (load64 (st+8) t != 0 && load64 (st+16) t != 0) then notice 67 t else
+  let t := copy accountScope references 32 t
+  let t := copy (accountScope+32) accountScope 32 t
+  let t := copy references (accountScope+32) 32 t
+  notice 66 (store64 (st+24) 4 t)
  def beginCompose (kind t : UInt64) : UInt64 :=
   if load64 (st+168) t == 0 then notice 4 t else
   if load64 (st+192) t == 8 then notice 13 t else
@@ -781,7 +812,7 @@ def wrapCard (t : UInt64) : UInt64 :=
   if load64 (st+24) t != 9 || load64 (st+40) t == 0 then notice 8 t else
   let t := wrapCard t
   if t == error then notice 12 t else
-  submit 2 (load64 (st+144) t) (load64 (st+40) t) 0 0 references 96 (store64 (st+48) 0 t)
+  submit 2 (load64 (st+144) t) (load64 (st+40) t) (load64 (st+208) t) 0 references 96 (store64 (st+48) 0 t)
  def preference (kind t : UInt64) : UInt64 :=
   let offset := if kind == 1 then st+224 else st+232
   let enabled := 2
@@ -876,7 +907,8 @@ partial def readPortable (object offset t : UInt64) : UInt64 :=
     let phase := load64 (wire+32) t
     let changed := phase != load64 (st+192) t || load64 (wire+40) t != load64 (st+336) t ||
       (if result t == 0 then 0 else 1) != load64 (st+168) t
-    let t := store64 (st+336) (load64 (wire+40) t) t
+    let t := store64 (st+336) (load64 (wire+40) t)
+      (store64 (st+344) (load64 (wire+48) t) t)
     let t := store64 (st+192) phase (store64 (st+88) phase t)
     let t := if changed then store64 (st+96) (load64 (wire+40) t) t else t
     let t := if n == 160 then copy (wire+64) identity 96 t else t
@@ -1028,7 +1060,8 @@ def projectKey (code t : UInt64) : UInt64 :=
   else if code == 66 then preference 2 t
   else if code == 67 then beginCompose 6 t
   else if code == 68 then beginCompose 7 t
-  else if code == 87 then projectSelect t
+  else if code == 87 then
+    if load64 (st+168) t == 0 then selectFederation t else projectSelect t
   else if code == 59 then notice 30 (store64 (st+24) 5 t)
   else if mode == 1 || mode == 6 || mode == 7 then
     if code == 14 then
