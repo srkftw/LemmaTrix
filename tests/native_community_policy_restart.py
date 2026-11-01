@@ -631,7 +631,16 @@ def main():
                     row = wait(lambda: find(alpha, author=bob_author, kind=1, text=ALPHA_NOTE),
                                600, 'native Alpha event accepted while Beta operator is offline')
                     state['alpha_pending'] = row[1].hex()
-                    state['alpha_budget'] = list(feed.invoke(alpha.client, 490, action=12)[0])
+                    if campaign.state['actors']['alpha']['replication'].get('auto_renew', False):
+                        def reserved_alpha():
+                            ledger = replication_ledger(alpha)
+                            reserved = next((r for r in ledger['rows'] if r['event'] == row[1][:32].hex()), None)
+                            return ledger if reserved and reserved['attempts'] > 0 and reserved['reserved_bytes'] > 0 else None
+                        state['alpha_reserved_replication_ledger'] = wait(
+                            reserved_alpha, 600, 'native Alpha reservation committed before its restart baseline')
+                        state['alpha_budget'] = state['alpha_reserved_replication_ledger']['budget']
+                    else:
+                        state['alpha_budget'] = list(feed.invoke(alpha.client, 490, action=12)[0])
                     record('pending-alpha', 'unrelated Alpha native service accepts another author while Beta is offline')
                 if not state['done'].get('recovered'):
                     stage = 'cold native Beta operator recovery'
@@ -739,7 +748,26 @@ def main():
                 alpha_after = feed.invoke(alpha.client, 490, action=12)[0]
                 if campaign.state['actors']['alpha']['replication'].get('auto_renew', False):
                     assert state['alpha_budget'][3] <= alpha_after[3] <= alpha_after[1]
-                    assert alpha_after[2] == state['alpha_budget'][2] and alpha_after[5] == state['alpha_budget'][5]
+                    if 'alpha_reserved_replication_ledger' not in state:
+                        # Resume the preserved older controller after its early
+                        # snapshot: permit only this exact new event's native
+                        # reservation, proving every preexisting row unchanged.
+                        ledger = replication_ledger(alpha)
+                        pending = next(r for r in ledger['rows'] if r['event'] == state['alpha_pending'][:64])
+                        prior = next(op for check in state['lease_checks'] for op in check['operators']
+                                     if op['operator'] == 'alpha' and op['before_budget'] == state['alpha_budget'])
+                        for old, current in zip(prior['before_attempts'], ledger['rows']):
+                            assert old[4:6] == [current['reserved_bytes'], current['reserved_work']]
+                        assert [alpha_after[2]-state['alpha_budget'][2], alpha_after[5]-state['alpha_budget'][5]] in (
+                            [0, 0], [pending['reserved_bytes'], pending['reserved_work']])
+                        state['alpha_reservation_snapshot_reconciliation'] = dict(
+                            before_budget=state['alpha_budget'], after_budget=list(alpha_after),
+                            exact_pending_reservation=pending, prior_rows_unchanged=len(prior['before_attempts']),
+                            disclosure='the preserved controller sampled immediately after acceptance; native reservation committed later without changing any prior row or policy')
+                        state['alpha_reserved_replication_ledger'] = ledger
+                        save()
+                    baseline = state['alpha_reserved_replication_ledger']['budget']
+                    assert alpha_after[2] == baseline[2] and alpha_after[5] == baseline[5]
                 else:
                     assert alpha_after[3] == state['alpha_budget'][3]
                 state['block_after_restart'] = blocked_marker(bob, alpha, target, author)
