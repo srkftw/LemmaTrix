@@ -128,8 +128,10 @@ def retention (length t : UInt64) : UInt64 :=
     if r != 352 || status r != 0 then response (if r == error then 1 else status r) 0 0 0 (zero unlockSecret 4 r) else
     let t := store64 st (result r) (copy (wire+64) publicIdentity 288 r)
     let r := Guest.IdentitySDK.sealFeed (load64 st t) unlockSecret t
+    -- Preserve the IPC byte count before clearing scratch: memory operations
+    -- return an effect token, not the preceding response length.
+    if r != 256 || status r != 0 then response (if r == error then 1 else status r) 0 0 0 (zero unlockSecret 4 r) else
     let r := zero unlockSecret 4 r
-    if r != 256 || status r != 0 then response (if r == error then 1 else status r) 0 0 0 r else
     let t := copy (retained+64) scope 64 (copy (wire+64) sealedAuthor 192 r)
     let t := store64 (st+8) (load64 (retained+24) t) (store64 (st+24) (load64 (retained+40) t) t)
     let t := store64 (st+16) (load64 (retained+48) t) (store64 (st+120) (load64 (retained+40) t) t)
