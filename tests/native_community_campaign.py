@@ -107,6 +107,7 @@ def main():
  p.add_argument('--publisher',type=Path,default=ROOT/'build/signed-forge-journey-2/publisher.pub')
  p.add_argument('--mixed',action='store_true',help='relay2 uses the native x86_64 RV64 interpreter; both federation services remain QEMU')
  p.add_argument('--history-events',type=int,default=17,choices=range(3,18),help='meaningful UI-authored discussion events, distributed below each author16-event allowance')
+ p.add_argument('--prior-attempt',type=Path,help='read-only evidence chain for a superseded campaign; never copies native backing or authority')
  p.add_argument('--resume',action='store_true');p.add_argument('--stop-on-exit',action='store_true')
  a=p.parse_args();out=a.output.resolve();out.mkdir(parents=True,exist_ok=a.resume)
  statefile=out/'native-actors.json';image=out/'guest.bin'
@@ -123,6 +124,8 @@ def main():
  expected=dict(image_sha256=hashlib.sha256(image.read_bytes()).hexdigest(),feed={n:releases.inspect(f.read_bytes())['release_id']for n,f in fp.items()},messenger={n:r['release_id']for n,(_,r)in mp.items()},mixed=a.mixed,history_events=a.history_events)
  state=json.loads(statefile.read_text())if a.resume else dict(schema=1,configuration=expected,done={},actors={},personal={},events={},checks=[])
  assert state['configuration']==expected,'resume selections changed'
+ if not a.resume and a.prior_attempt:
+  prior=a.prior_attempt.resolve();state['prior_attempt']=dict(path=str(prior),files={name:hashlib.sha256((prior/name).read_bytes()).hexdigest()for name in('mixed-failure-segment.json','route-failure-observations.json','native-actors.json')},authority_reused=False)
  controller=Path(__file__).read_bytes();segments=state.setdefault('controller_segments',[])
  snapshot=out/('controller-'+str(len(segments)+1)+'.py');snapshot.write_bytes(controller)
  segments.append(dict(git_head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),controller_sha256=hashlib.sha256(controller).hexdigest(),controller_snapshot=snapshot.name,started_time_utc=datetime.now(timezone.utc).isoformat(),prior_failure_sha256=hashlib.sha256((out/'failure.json').read_bytes()).hexdigest()if a.resume and(out/'failure.json').exists()else None))
