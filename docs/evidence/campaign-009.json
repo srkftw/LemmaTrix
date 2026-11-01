@@ -117,11 +117,377 @@
     }
   ],
   "common_run": {
-    "result": "in progress",
+    "result": "core pass; fresh active Forge/reconnect and later continuations in progress",
     "output": "build/campaign009-connected-v6",
-    "image_sha256": "690e8959d79a42d3e61aa6f69df14b4e0c485ad58b015f451685abf014c275ee",
-    "replication_policy": "explicit native rolling variant2;16MiBfinitepool;1MiBslices;nohostrenewals",
-    "started_with": "nine separately initialized credentials/backings; relay2native-x86, other8QEMU; no per-client operator reset"
+    "raw_evidence": "build/campaign009-connected-v6/evidence.json",
+    "raw_sha256": "b0e461169889663ebdf4eaf967f0abb4663a6b786abfaf870fe055e38403f5f6",
+    "configuration": {
+      "image_sha256": "690e8959d79a42d3e61aa6f69df14b4e0c485ad58b015f451685abf014c275ee",
+      "feed": {
+        "identity": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+        "feed-account": "f50eaa12d7dc69c962584ce34a12d53d9b064970c640d23d594e930d7fc4bc07",
+        "feed": "bfd1a9584b654f8ee4f0c3f1b3703608b452da7a9ad472683821aa8f4f13a635",
+        "feed-federation": "02041c0eeca13f17a62a8913954558d9dc5be7e52f55d5db915dc76b14241526"
+      },
+      "messenger": {
+        "identity": "84ea29cef8ea6f2dc832fddc427ed2d11d8d81421e01b160be6f4b5b2bc95cee",
+        "owner": "50f3e3ccb8d3faeaf29c50d6aec24bbc654a30754f26c15dd7585a4a8e64a5b3",
+        "ui": "a0b4294d2331e6704acd69093936339f7c0b8559dd9990d4967a22216f84e6c7",
+        "delivery": "f8f9a0c572e691398008ab13e3aa852a12eeec06344715f593bf8a921d07c20b",
+        "mailbox": "24e249a218f52813953b8d204f1c7b3d1129e1b675a9ed8500731cf842049135"
+      },
+      "mixed": true,
+      "history_events": 17,
+      "replication_auto_renew": true
+    },
+    "checks": [
+      {
+        "check": "native durable Mailbox and receipt authority configured",
+        "result": "pass"
+      },
+      {
+        "check": "public approved relay and destination policies configured independently",
+        "result": "pass"
+      },
+      {
+        "check": "native federation alpha owns its independent backing, policy and moderator",
+        "result": "pass"
+      },
+      {
+        "check": "native federation beta owns its independent backing, policy and moderator",
+        "result": "pass"
+      },
+      {
+        "check": "two native graphical Messenger identities retain separate domain2 state and approve certified contacts",
+        "result": "pass"
+      },
+      {
+        "check": "actual existing signed project admitted through native Registry with disclosed existing RSA bootstrap",
+        "result": "pass"
+      },
+      {
+        "check": "native operators listen once and replenish their own bounded admission",
+        "result": "pass"
+      },
+      {
+        "check": "three independent Feed clients concurrently admitted; two share alpha and all share relays without operator handoff",
+        "result": "pass"
+      },
+      {
+        "check": "native signed enrollment derives separately approved inter-operator mode3 relationship; personal traffic still requires mode1",
+        "result": "pass"
+      },
+      {
+        "check": "independent native Feed reader paginates chronologically and validates the useful multi-payload long post before displaying it",
+        "result": "pass",
+        "event": "71f2a5ff2dd58408939c9dfcde612b9dbc82c0aae165deccdc6adad71a44f178",
+        "bytes": 1330
+      },
+      {
+        "check": "native ordinary and useful long post preserve original signed bytes across two operators; independent reader follows locally and replies across permitted scope",
+        "result": "pass",
+        "events": {
+          "ordinary": {
+            "id": "f21897947ce1845fa3fc0f4ea5361391dc3960f61f78f93c94d897e2d75499e2",
+            "author": "16a50e5fedf4e6f6fa18fce942c5d1b12ad4f08a3343a988684135d333646757",
+            "kind": 1,
+            "bytes": 126,
+            "content_sha256": "541c88ecfd5e37d6e433746b0e38ce252c25c94a6874966ab975cee0c2cbb22b",
+            "signed_sha256": "f21897947ce1845fa3fc0f4ea5361391dc3960f61f78f93c94d897e2d75499e2"
+          },
+          "long": {
+            "id": "71f2a5ff2dd58408939c9dfcde612b9dbc82c0aae165deccdc6adad71a44f178",
+            "author": "16a50e5fedf4e6f6fa18fce942c5d1b12ad4f08a3343a988684135d333646757",
+            "kind": 1,
+            "bytes": 1330,
+            "content_sha256": "da933b261f757e2e3556bd30c008f04fbdd90ce29e277d65883d4e3c0ca9e557",
+            "signed_sha256": "71f2a5ff2dd58408939c9dfcde612b9dbc82c0aae165deccdc6adad71a44f178"
+          },
+          "reply": {
+            "id": "633152b55e73a1cfec9b6dd5e424e701433675f32bb33db367d5460da1f1b2cf",
+            "author": "9005b69771a5651fe395967eff7b3d8a6379bf27e9dca218f0741e82be1a4aad",
+            "kind": 2,
+            "bytes": 142,
+            "content_sha256": "c3b55f0ac6d9e6debdb353279f57693aa8ebf54b34411829709e63efb183235a",
+            "signed_sha256": "633152b55e73a1cfec9b6dd5e424e701433675f32bb33db367d5460da1f1b2cf"
+          },
+          "review-0": {
+            "id": "db5b4d422edf771787a2ba782231779e964f5c7596a89a8640457d1232065add",
+            "author": "16a50e5fedf4e6f6fa18fce942c5d1b12ad4f08a3343a988684135d333646757",
+            "kind": 1,
+            "bytes": 135,
+            "content_sha256": "4ca22c1ff9a33c74c8e2e918c7b8be5ea1382b0703951397ced9aded8eed69c9",
+            "signed_sha256": "db5b4d422edf771787a2ba782231779e964f5c7596a89a8640457d1232065add"
+          },
+          "review-1": {
+            "id": "c98454cc2304a2c01ce8879e37dca91604f1cf13969c847c04f4f6ab2c3e25fc",
+            "author": "9005b69771a5651fe395967eff7b3d8a6379bf27e9dca218f0741e82be1a4aad",
+            "kind": 1,
+            "bytes": 147,
+            "content_sha256": "7478de5c67a7b4b76250e7afe14a88be663b9ef070a95e5357e1604df5048d12",
+            "signed_sha256": "c98454cc2304a2c01ce8879e37dca91604f1cf13969c847c04f4f6ab2c3e25fc"
+          },
+          "review-2": {
+            "id": "38fa00bd17532d34b0c06bec494912e7d6736e4f0c44acffbca41a72f8aa3ae9",
+            "author": "c2123300a3daccccfc4b2219d273684ed1d281a887dd985d639e7a68bf579be2",
+            "kind": 1,
+            "bytes": 149,
+            "content_sha256": "6232aff56fca73d062dd25c9c17cb783935dac3ce41b9e33a9596dc4f1fd81c4",
+            "signed_sha256": "38fa00bd17532d34b0c06bec494912e7d6736e4f0c44acffbca41a72f8aa3ae9"
+          },
+          "review-3": {
+            "id": "b75cd3f002140bdf08ef9951d7b6da946b8e099420869f7ef858ebab43f664ea",
+            "author": "16a50e5fedf4e6f6fa18fce942c5d1b12ad4f08a3343a988684135d333646757",
+            "kind": 1,
+            "bytes": 145,
+            "content_sha256": "e1ab90a478d350a70c33be1a9c31ac7b4f871b83b970ee2e8d23f01570bf8f22",
+            "signed_sha256": "b75cd3f002140bdf08ef9951d7b6da946b8e099420869f7ef858ebab43f664ea"
+          },
+          "review-4": {
+            "id": "69e5dc712afe53da0b011b02041adfc61e8568888353b53bac8110ac8eb55121",
+            "author": "9005b69771a5651fe395967eff7b3d8a6379bf27e9dca218f0741e82be1a4aad",
+            "kind": 1,
+            "bytes": 147,
+            "content_sha256": "82d52ac7efdcbc0bf777772c06cfee2f6c25bbecdcc540c00a20ddbdfb701dce",
+            "signed_sha256": "69e5dc712afe53da0b011b02041adfc61e8568888353b53bac8110ac8eb55121"
+          },
+          "review-5": {
+            "id": "0d9d2b9fe9dbf6f4d92991e01e0e0acb9d691eecd70135076b6df6fdd209d46d",
+            "author": "c2123300a3daccccfc4b2219d273684ed1d281a887dd985d639e7a68bf579be2",
+            "kind": 1,
+            "bytes": 150,
+            "content_sha256": "5989cfb675f726ba1aadef1d4544e2f09ffe5ac35319dff8da53ce4ccfbf7805",
+            "signed_sha256": "0d9d2b9fe9dbf6f4d92991e01e0e0acb9d691eecd70135076b6df6fdd209d46d"
+          },
+          "review-6": {
+            "id": "63a8e53f1caa1c2ec2d4e5fa68e8cd691e9b4b7dd1f37a2d2df0f6ccbbcd2209",
+            "author": "16a50e5fedf4e6f6fa18fce942c5d1b12ad4f08a3343a988684135d333646757",
+            "kind": 1,
+            "bytes": 149,
+            "content_sha256": "8d3d1e68804c17c3b8cc5a3397236c38bc0f0693fa743345f31883cd3b14df9e",
+            "signed_sha256": "63a8e53f1caa1c2ec2d4e5fa68e8cd691e9b4b7dd1f37a2d2df0f6ccbbcd2209"
+          },
+          "review-7": {
+            "id": "3c21caa1a198f0f1e760655de3559a53d23d3fd6f22e3d5468a1f126110ee0f1",
+            "author": "9005b69771a5651fe395967eff7b3d8a6379bf27e9dca218f0741e82be1a4aad",
+            "kind": 1,
+            "bytes": 141,
+            "content_sha256": "9471edd884fd2d80f32aaa6afda65f74155c0e57f91c83395c98f1a9772be2ff",
+            "signed_sha256": "3c21caa1a198f0f1e760655de3559a53d23d3fd6f22e3d5468a1f126110ee0f1"
+          },
+          "review-8": {
+            "id": "11f8e1a3789678a8fc407975f0683bb154299ee41a768645e993578e2514341b",
+            "author": "c2123300a3daccccfc4b2219d273684ed1d281a887dd985d639e7a68bf579be2",
+            "kind": 1,
+            "bytes": 133,
+            "content_sha256": "e0612bb1c8801583d2c4164ab2a944917a7d00c07599dd1c1fbac5e2f86f806c",
+            "signed_sha256": "11f8e1a3789678a8fc407975f0683bb154299ee41a768645e993578e2514341b"
+          },
+          "review-9": {
+            "id": "4d514ffe55b992ca21aa4803a8b716111b5d01895247b56aac10ce9922dc969c",
+            "author": "16a50e5fedf4e6f6fa18fce942c5d1b12ad4f08a3343a988684135d333646757",
+            "kind": 1,
+            "bytes": 148,
+            "content_sha256": "132737f451305100ffe91d6277e380c001e722ffe2ffc81c40a0e0ae8b72a297",
+            "signed_sha256": "4d514ffe55b992ca21aa4803a8b716111b5d01895247b56aac10ce9922dc969c"
+          },
+          "review-10": {
+            "id": "94eeff6770d85bb19092084f079a172ef72a6ac4dae4e39ad86122bf35c84626",
+            "author": "9005b69771a5651fe395967eff7b3d8a6379bf27e9dca218f0741e82be1a4aad",
+            "kind": 1,
+            "bytes": 162,
+            "content_sha256": "ecceb580c0af69d0117ec0ed4a65985cf827031f74a92ddf694bf344b3a9155b",
+            "signed_sha256": "94eeff6770d85bb19092084f079a172ef72a6ac4dae4e39ad86122bf35c84626"
+          },
+          "review-11": {
+            "id": "4b69ff7b3dc3a60342d904fc9b1b303c439074646f1a8c05e13c059e22141f3b",
+            "author": "c2123300a3daccccfc4b2219d273684ed1d281a887dd985d639e7a68bf579be2",
+            "kind": 1,
+            "bytes": 140,
+            "content_sha256": "da0d294baade36211e6d6ddcf0f12bb0324a3d5128a20aac4c93480bb59bcb55",
+            "signed_sha256": "4b69ff7b3dc3a60342d904fc9b1b303c439074646f1a8c05e13c059e22141f3b"
+          },
+          "review-12": {
+            "id": "9c83fa1f2f5713e65172e4699ae45582c514e6f044dfcc89dda9b436e582d5dc",
+            "author": "16a50e5fedf4e6f6fa18fce942c5d1b12ad4f08a3343a988684135d333646757",
+            "kind": 1,
+            "bytes": 150,
+            "content_sha256": "8d31d627d3066dbf6c3caee7e50ffa080c4f6856ec16dc19a3c8395e055ab569",
+            "signed_sha256": "9c83fa1f2f5713e65172e4699ae45582c514e6f044dfcc89dda9b436e582d5dc"
+          },
+          "review-13": {
+            "id": "60bda9c376294e405046bfcc7e73f6a5b0a3c9166fdd810877342c1dd1869f77",
+            "author": "9005b69771a5651fe395967eff7b3d8a6379bf27e9dca218f0741e82be1a4aad",
+            "kind": 1,
+            "bytes": 151,
+            "content_sha256": "3bbe1c686aff6139a4d2b193cf996d42d4b4bb0713bc22d33ec539ba0eac4ec4",
+            "signed_sha256": "60bda9c376294e405046bfcc7e73f6a5b0a3c9166fdd810877342c1dd1869f77"
+          }
+        }
+      },
+      {
+        "check": "meaningful discussion continues beyond the native UI single resident row; original history remains paginated and body commitments remain readable",
+        "result": "pass",
+        "events": 17,
+        "ui_resident_events": 1,
+        "service_committed_index_bound": 64,
+        "body_segment_cache_bytes": 131072
+      },
+      {
+        "check": "native Feed backfill waits on one exact paused opaque transport epoch while two independent Messenger clients share mailbox",
+        "result": "pass"
+      },
+      {
+        "check": "native graphical text and reply decrypt through shared Mailbox while Feed transport remains paused",
+        "result": "pass",
+        "text": {
+          "serial": 1,
+          "seconds": 46.5367094460089
+        },
+        "reply": {
+          "serial": 1,
+          "seconds": 31.609880107003846
+        },
+        "stalled_feed_ui": [
+          0,
+          1,
+          0,
+          150,
+          6,
+          7,
+          6,
+          1
+        ]
+      },
+      {
+        "check": "actual received reference completes existing routed Forge inspection while the independent Feed transfer remains paused, including after its terminal was reclaimed",
+        "result": "pass",
+        "verified_fields": [
+          0,
+          6,
+          2,
+          0,
+          1,
+          0,
+          1,
+          1
+        ],
+        "execution_approved": false,
+        "stall": {
+          "stage": "routed Forge completion observed",
+          "elapsed_seconds": 139.30581568198977,
+          "channel": {
+            "slot": 0,
+            "epoch": 2,
+            "connected": true,
+            "connecting": false,
+            "tx_paused": true,
+            "pending_bytes": 532,
+            "tx_bytes": 46866,
+            "rx_bytes": 41546
+          },
+          "terminal": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1
+          ],
+          "original_epoch_transport_paused": true,
+          "original_epoch_still_paused": false
+        },
+        "interpretation": {
+          "original_paused_transport_remains_pending": true,
+          "terminal_active_at_observation": false,
+          "terminal_reclamation_cause": "not directly observed; elapsed native deadline or owner cancellation is inferred",
+          "predicate": "Messenger requires the original authenticated terminal at completion; Forge requires the same paused transport epoch and pending bytes, and permits the independent terminal to have been reclaimed (user G stalled/disconnected work)."
+        }
+      },
+      {
+        "check": "native Feed cancellation and circuit disconnect preserve both unrelated authenticated Messenger sessions",
+        "result": "pass",
+        "other_sessions": [
+          [
+            0,
+            1,
+            3,
+            0,
+            8377522,
+            65459,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            3,
+            0,
+            8379600,
+            65472,
+            0,
+            1
+          ]
+        ],
+        "stalled_seconds": 139.81294563999109,
+        "before_input_cancel": {
+          "stage": "before native input cancellation",
+          "elapsed_seconds": 139.31973459899018,
+          "channel": {
+            "slot": 0,
+            "epoch": 2,
+            "connected": true,
+            "connecting": false,
+            "tx_paused": true,
+            "pending_bytes": 532,
+            "tx_bytes": 46866,
+            "rx_bytes": 41546
+          },
+          "terminal": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1
+          ],
+          "original_epoch_transport_paused": true,
+          "original_epoch_still_paused": false
+        },
+        "cleanup": {
+          "stage": "owned cleanup",
+          "elapsed_seconds": 139.41788226198696,
+          "channel": {
+            "slot": 0,
+            "epoch": 2,
+            "connected": true,
+            "connecting": false,
+            "tx_paused": true,
+            "pending_bytes": 532,
+            "tx_bytes": 46866,
+            "rx_bytes": 41546
+          },
+          "terminal": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1
+          ],
+          "original_epoch_transport_paused": true,
+          "original_epoch_still_paused": false
+        }
+      }
+    ],
+    "elapsed_seconds": 3315.918975085995,
+    "scope": "One identified common image; Forge completion at139.306s preserved the original paused transport epoch after its terminal was observed reclaimed; fresh active-context Forge check pending."
   },
   "component_record": "campaign-009-components.json",
   "capacity": {
@@ -153,7 +519,7 @@
     "replication_allocation_bytes_max": 1048576,
     "replication_attempts_per_event": 9,
     "polls_per_attempt": 128,
-    "actual_concurrent_clients_in_common_run": 0,
+    "actual_concurrent_clients_in_common_run": 3,
     "mailbox_progress_ticks": 10000,
     "mailbox_absolute_stage_ticks": 60000,
     "relay_setup_ticks": 100000,
@@ -527,6 +893,16 @@
       "sha256": "8e99c0fb2596176807ebb028851601b58212672080f49c4cbc40612079a7c0f6",
       "image_sha256": "854253bc6b0d46ba043e6056ea8c065b00d4e8560b062d6f6f9220034f76a29b",
       "scope": "Actual native640x400 rendered frame; lossless pixel-preserving PPM→PNG conversion, one checked page of useful1330-byte post."
+    },
+    {
+      "path": "docs/evidence/campaign-009-frames/bob-native-long-review-690e.png",
+      "sha256": "08291f0c03d4fd7b6b0d483d0232feba36fb723627872bc1138dce9518a0dec3",
+      "source": "build/campaign009-connected-v6/bob-native-long-review.ppm",
+      "source_sha256": "239f07badc2e100b7fb357da2615df6e872212eb6329f1a8056d799ef663c29c",
+      "image_sha256": "690e8959d79a42d3e61aa6f69df14b4e0c485ad58b015f451685abf014c275ee",
+      "pixels": "640x400 native compositor capture; identical RGB pixels losslessly encoded as PNG",
+      "inspection": "final page of full1330B native checked long review; author validity/policy distinction and selected home+peer audience visible",
+      "qualified_step": "native long reader, not the full remaining acceptance boundary"
     }
   ],
   "focused_native_refusals": {
