@@ -2364,5 +2364,11 @@
     "record_sha256": "0f3983b70c39c2f0724015e41fe2141d6dd3b70f5e5a59066d8fe36bfac850c6",
     "scope": "Focused compiled RV64 state transitions, including provisioned predicate inputs for bulk reconnect and a declared128 target-result oracle plus133 dispatch counter; no claim that this oracle implements kernel binding/replacement; no native certificate-admission claim from this fixture. AArch64 assembly emulator runs under qemu-aarch64; no physical hardware or full native Messenger qualification.",
     "current_primary_service_pin": "Full exact native service incarnation per authenticated terminal context, distinct from Registry pin. A changed target retires only the matching route epoch before133 dispatch, requiring a fresh context; durable exact-capability retry remains independent."
+  },
+  "installed_terminal_service_replacement": {
+    "published_record": "campaign-009-terminal-service-replacement.json",
+    "record_sha256": "2d7009da48a5d0aa7bf5c174285edf1fed6aba24a2db55713188dc856962fbdd",
+    "scope": "Actual installed seven-guest candidate854/source8b4e26f. Replace only Mailbox, preserving Network/certificate/listeners. Old idle NK refused before new staging, independent Feed remains usable, fresh Mail NK safely reuses canceled numeric handle1. Does not revive old authority or forbid exact durable retry.",
+    "result": "pass"
   }
 }

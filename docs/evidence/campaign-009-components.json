@@ -893,6 +893,20 @@
       "sha256": "0792747be09823a3be52ecdb6da8cae886d6be3b7a75f49269083a2ae6a722a8",
       "result": "pass",
       "scope": "Exact final90fd image, actual installed Native3clients/same3relays/Mailbox; correct-bearer foreign unfinished append/poll/cancel refused, owned cancel+stage reuse, concurrent commit/read, dead-context fresh replacement. Public ciphertext/cap fixtures, no Messenger UI or Feed social history in this boundary probe; CPU overlap with common setup recorded."
+    },
+    {
+      "name": "compiled-terminal-exact-service-pin",
+      "published_record": "campaign-009-terminal-target-contexts.json",
+      "sha256": "d54ddc04676d879f07beb43a352f3f1b438997b72a6f6ea3eb3d48ba7f15d764",
+      "scope": "Focused compiled RV64/emulatedAArch64 transition fixture; declared target oracle is not Kernel replacement assurance.",
+      "result": "pass"
+    },
+    {
+      "name": "installed-terminal-service-replacement",
+      "published_record": "campaign-009-terminal-service-replacement.json",
+      "sha256": "2d7009da48a5d0aa7bf5c174285edf1fed6aba24a2db55713188dc856962fbdd",
+      "scope": "Actual installed seven-guest candidate854/source8b4e26f, old Mailbox NK refused before new staging, unrelated Feed status continues, fresh Mail NK safely reuses canceled numeric handle.",
+      "result": "pass"
     }
   ],
   "assurance": "Local one-host execution. AArch64 is qemu-aarch64 emulation. No physical hardware, independent operators, Tor interoperability, post-quantum security or whole-store external freshness claim."
