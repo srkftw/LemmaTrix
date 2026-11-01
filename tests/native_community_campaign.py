@@ -4,7 +4,8 @@ Only public configuration, signed packages, real input/display and opaque
 adapters are controlled here. Native guests author, sign, commit and replicate.
 Use --resume only while these exact native actors remain running.
 """
-import argparse,base64,contextlib,hashlib,json,socket,struct,sys,time,traceback
+import argparse,base64,contextlib,hashlib,json,socket,struct,subprocess,sys,time,traceback
+from datetime import datetime,timezone
 from pathlib import Path
 from types import SimpleNamespace as NS
 ROOT=Path(__file__).resolve().parents[1]
@@ -117,6 +118,10 @@ def main():
  expected=dict(image_sha256=hashlib.sha256(image.read_bytes()).hexdigest(),feed={n:releases.inspect(f.read_bytes())['release_id']for n,f in fp.items()},messenger={n:r['release_id']for n,(_,r)in mp.items()},mixed=a.mixed,history_events=a.history_events)
  state=json.loads(statefile.read_text())if a.resume else dict(schema=1,configuration=expected,done={},actors={},personal={},events={},checks=[])
  assert state['configuration']==expected,'resume selections changed'
+ controller=Path(__file__).read_bytes();segments=state.setdefault('controller_segments',[])
+ snapshot=out/('controller-'+str(len(segments)+1)+'.py');snapshot.write_bytes(controller)
+ segments.append(dict(git_head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),controller_sha256=hashlib.sha256(controller).hexdigest(),controller_snapshot=snapshot.name,started_time_utc=datetime.now(timezone.utc).isoformat(),prior_failure_sha256=hashlib.sha256((out/'failure.json').read_bytes()).hexdigest()if a.resume and(out/'failure.json').exists()else None))
+ statefile.write_text(json.dumps(state,indent=2)+'\n')
  actors=[];byname={};started=time.monotonic();stage='native topology'
  feds=[hashlib.sha256(b'Campaign009 common alpha').hexdigest(),hashlib.sha256(b'Campaign009 common beta').hexdigest()]
  def save():statefile.write_text(json.dumps(state,indent=2)+'\n')

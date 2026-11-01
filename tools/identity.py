@@ -96,7 +96,25 @@ def start(client, release_path, public_path):
         raise ValueError('Identity service must use profile2 with exactly zero package rights')
     # Explicit operator-selected publisher pin, before normal signature admission.
     client.request(10, raw[128:160] + releases.public_modulus(public_path))
-    slot, admitted = client.install(release_path)
+    # A temporary native signer may have exited while its exact public release
+    # remains admitted. Relaunch through normal current-policy checks rather
+    # than attempting to publish the same release again. No live key or grant
+    # is recovered from a stopped process.
+    slot = None
+    for index in range(16):
+        try:
+            entry = client.request(13, struct.pack('<Q', index))
+        except ValueError as error:
+            if str(error) != 'guest rejected command13, status1':
+                raise
+            continue
+        if len(entry) >= 192 and entry[160:192] == bytes.fromhex(info['release_id']):
+            slot = index + 1
+            break
+    if slot is None:
+        slot, admitted = client.install(release_path)
+    else:
+        admitted = info
     service = struct.unpack_from('<Q', client.request(25, struct.pack('<Q', slot)), 8)[0]
     launcher = next(row[0] for row in instances(client) if row[0] & 255 == 1)
     try:
