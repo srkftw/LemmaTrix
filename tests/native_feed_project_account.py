@@ -69,15 +69,43 @@ def read_body(g,event):
     return body
 
 
-def export_public(g):
+def export_public(g,include_preferences=None):
     focus_feed(g)
     prior=feed_ui(g,793)[0][1]
-    g.device.press(59);g.device.press(66)
+    g.device.press(59);wait(lambda:feed_ui(g)[0][2]==5,90,'native retention and portable-state panel')
+    if include_preferences is not None:
+        selected=int(include_preferences)
+        if feed_ui(g,793)[0][5]!=selected:g.device.press(62)
+        wait(lambda:feed_ui(g,793)[0][5]==selected,90,'explicit native portable preference selection')
+    g.device.press(66)
     wait(lambda:feed_ui(g,793)[0][1]not in(0,prior),180,'explicit native public account export')
     shared,_=project.ui_call(g,g.feed_ui,794);data=g.client.read_object(shared[1])
     assert len(data)==2048 and struct.unpack_from('<Q',data)[0]==0x3154524f5046544c
     g.device.press(1)
     return data
+
+
+def preference_bits(profile,subject):
+    assert len(profile)==2048 and struct.unpack_from('<Q',profile,16)[0]==1
+    return next((struct.unpack_from('<Q',profile,offset+8)[0]for offset in range(256,1792,48)
+                 if struct.unpack_from('<Q',profile,offset)[0]==1 and profile[offset+16:offset+48]==subject),0)
+
+
+def save_approved_profile(path,profile):
+    fd=os.open(path,os.O_CREAT|os.O_TRUNC|os.O_WRONLY,0o600)
+    try:os.fchmod(fd,0o600);os.write(fd,profile)
+    finally:os.close(fd)
+
+
+def retained_generation(backing):
+    generations=[0]
+    with backing.open('rb')as source:
+        for slot in(0,1):
+            source.seek((5396000+slot)*512);header=source.read(512)
+            if len(header)!=512:continue
+            magic,version,domain,generation,length=struct.unpack_from('<5Q',header)
+            if magic==0x315243455246544c and version==1 and domain==3 and 256<=length<=32768:generations.append(generation)
+    return max(generations)
 
 
 def settle_exact(g,operator,observed):
@@ -215,15 +243,23 @@ def main():
                 already_retained=feed_ui(g,793)[0][6]==1
                 may_create=not already_retained and not checkpoint.get('retention_intent')
                 objects_key=secret(out/(g.name+'.feed-objects-unlock'),create=may_create);feed_key=secret(out/(g.name+'.feed-author-unlock'),create=may_create)
-                checkpoint['retention_intent']=dict(author=author.hex(),owner=g.feed_owner);save()
-                if feed_ui(g,793)[0][6]!=1:
+                selection=dict(identity=True,exact_signed_outbox=True,local_follows_blocks=True,unpublished_drafts=False,cached_content=False,history=False)
+                checkpoint['retention_intent']=dict(author=author.hex(),owner=g.feed_owner,selection=selection);save()
+                if feed_ui(g,793)[0][6]!=1 or not checkpoint.get('retention_preferences'):
                     raw=g.client.request(200,struct.pack('<8Q',200,0,3,0,0,0,0,1)+objects_key);assert struct.unpack_from('<Q',raw)[0]==0
                     g.client.request(179,struct.pack('<2Q',g.feed_owner,1))
-                    focus_feed(g);g.device.press(59);g.device.press(60);g.device.textASCII(feed_key.hex(),delay=.04);g.device.press(63)
-                    wait(lambda:feed_ui(g,793)[0][6]==1,180,'explicit native account retention before project publication')
+                    focus_feed(g);g.device.press(59);wait(lambda:feed_ui(g)[0][2]==5,90,'native retention panel')
+                    g.device.press(60)
+                    if feed_ui(g,793)[0][5]!=1:g.device.press(62)
+                    wait(lambda:feed_ui(g,793)[0][5]==1,90,'native optional follows and blocks retention approval')
+                    generation=retained_generation(backing)
+                    g.device.textASCII(feed_key.hex(),delay=.04);g.device.press(63)
+                    wait(lambda:feed_ui(g,793)[0][6]==1 and feed_ui(g)[0][4]==46 and project.complete_read(g,g.feed_ui)and retained_generation(backing)>generation,180,'complete native account retention commit before project publication')
                     g.device.press(1)
+                    checkpoint['retention_generation']=retained_generation(backing)
+                    checkpoint['retention_preferences']=True;save()
                 if not checkpoint.get('retained'):
-                    passed('native Feed identity retention explicitly selected in Objects domain3 before further publication',author=author.hex(),separate_from_messenger_domain2=True)
+                    passed('native Feed identity retention explicitly selected in Objects domain3 before further publication',author=author.hex(),separate_from_messenger_domain2=True,selection=selection,opaque_root_generation=checkpoint['retention_generation'])
                     checkpoint['retained']=True;save()
                 if not checkpoint.get('author_actions'):
                     result=author_actions(g,original,destination,state,author,out,observed)
@@ -231,8 +267,15 @@ def main():
                     checkpoint['author_actions']=True;save()
                 settle_exact(g,original,observed)
                 project_dir=out/'feed-project-action'
-                candidates=[r[0]for r in identity.instances(g.client)if r[1]in(1,2,3,4)and r[2]==2175]
+                inventory=identity.instances(g.client)
+                ordinary=[r for r in inventory if r[1]in(1,2,3,4)and 7<=(r[0]&255)<15]
+                candidates=[r[0]for r in ordinary if r[2]==2175]
                 if len(candidates)!=1:raise ValueError('expected one existing personal Registry; no extra service will be launched')
+                required=[*state['personal'][a.person]['messenger'].values(),person['identity'],g.feed_owner,g.feed_ui,candidates[0]]
+                assert all(any(r[0]==who for r in ordinary)for who in required)and len(ordinary)<=7
+                if not checkpoint.get('ordinary_capacity'):
+                    passed('existing native Messenger, Feed and selected Registry coexist with a free ordinary application slot',live_ordinary_instances=[dict(instance=r[0],rights=r[2])for r in ordinary],capacity=8,free_slots=8-len(ordinary),registry_reused=True,messenger_stopped=False)
+                    checkpoint['ordinary_capacity']=True;save()
                 existing=dict(instance=candidates[0],admission_key=str((out/'registry-federation.pem').resolve()),admission_public=str((out/'registry-federation.pub').resolve()),
                               federation=state['project']['federation'],release_id=state['project']['decision']['release_id'],sequence=state['project']['decision']['sequence'])
                 record=project.prepare(g,g.feed_ui,project_dir,existing=existing)if not (project_dir/'project.json').exists()else json.loads((project_dir/'project.json').read_text())
@@ -255,16 +298,26 @@ def main():
                 original_descriptor=bytes.fromhex(body[9:1545].decode('ascii'))
                 assert hashlib.sha256(original_descriptor).hexdigest()==record['descriptor_sha256']
                 visible=project.show_fork_in_picker(g,g.feed_ui,record,action)
+                public=export_public(g,include_preferences=True)
+                project_id=bytes.fromhex(record['project_id'])
+                if not preference_bits(public,project_id)&4:
+                    focus_feed(g);project.select_event(g,g.feed_ui,card[:32]);g.device.press(65)
+                    wait(lambda:feed_ui(g)[0][4]==17 and project.complete_read(g,g.feed_ui),180,'native follow of the selected stable project')
+                    public=export_public(g,include_preferences=True)
+                assert preference_bits(public,project_id)&4
+                passed('explicit native preference selection retains and exports a local stable-project follow',project=record['project_id'],preference_bytes=1536,preference_sha256=hashlib.sha256(public[256:1792]).hexdigest(),automatically_published=False)
                 passed('native project card opens original Registry verification and completes useful normal Library Fork',action=action,replicated_event=card[:32].hex(),bytes=len(body),metadata_sha256=record['descriptor_sha256'],execution_consent=False)
                 passed('new independent local lineage is visible in the normal trusted Library/Forge project picker',visible=visible,second_fork_requested=False)
                 report['project']=record;report['card']=dict(id=card[:32].hex(),author=author.hex(),body_sha256=hashlib.sha256(body).hexdigest(),bytes=len(body));save()
                 refused=project.revoke_and_refuse(g,g.feed_ui,record)
                 passed('current native release revocation refuses the valid old card at the action boundary',refusal=refused)
                 settle_exact(g,original,observed)
-                public=export_public(g)
+                public=export_public(g,include_preferences=True)
                 assert public[32:64]==author and public[128:160]==card[:32]
-                passed('approved public export includes exact retained publication reference without signing seed or sealed key',bytes=len(public),sequence=struct.unpack_from('<Q',public,24)[0],public_sha256=hashlib.sha256(public).hexdigest())
-                (out/(g.name+'.approved-feed-profile')).write_bytes(public)
+                assert struct.unpack_from('<Q',public,16)[0]==1 and preference_bits(public,project_id)&4
+                assert not any(public[168:256])and not any(public[1792:])
+                passed('approved public export includes exact retained publication reference and selected preferences without signing seed or sealed key',bytes=len(public),sequence=struct.unpack_from('<Q',public,24)[0],public_sha256=hashlib.sha256(public).hexdigest(),fields=['schema','explicit preference selection','sequence','author public key','home scope','selected peer scope','last signed event reference','public key generation','selected local preferences'],preference_sha256=hashlib.sha256(public[256:1792]).hexdigest(),sealed_private_key_included=False)
+                save_approved_profile(out/(g.name+'.approved-feed-profile'),public)
             elif a.stage=='migrate':
                 if not a.alpha_offline_approved:raise ValueError('finish connected moderation/restart before selecting the original federation offline')
                 prior=json.loads((out/'feed-project-account.json').read_text());assert prior['result']=='pass'
@@ -272,6 +325,15 @@ def main():
                 author=bytes.fromhex(prior['card']['author']);old_event=bytes.fromhex(prior['card']['id'])
                 old_record=next(p for _,p in rows(destination)if p[:32]==old_event);old_body=read_body(destination,old_record)
                 assert hashlib.sha256(old_body).hexdigest()==prior['card']['body_sha256']
+                approved_path=out/(g.name+'.move-approved-feed-profile')
+                if not approved_path.exists():save_approved_profile(approved_path,export_public(g,include_preferences=True))
+                approved=approved_path.read_bytes();assert approved[32:64]==author
+                approved_hash=hashlib.sha256(approved).hexdigest()
+                if 'approved_profile_sha256'in checkpoint:assert checkpoint['approved_profile_sha256']==approved_hash
+                checkpoint['approved_profile_sha256']=approved_hash;save()
+                project_id=bytes.fromhex(prior['project']['project_id']);assert preference_bits(approved,project_id)&4
+                blocked_author=bytes.fromhex(state['personal']['alice'if a.person=='bob'else'bob']['feed_public'])
+                block_was_selected=bool(preference_bits(approved,blocked_author)&2)
                 if original is not None:
                     checkpoint['offline_intent']=True;checkpoint['original']=original_name;save()
                     original.stop()
@@ -281,7 +343,7 @@ def main():
                     checkpoint['offline']=True;save()
                 focus_feed(g)
                 select_feed_route(g,destination,relays)
-                public=export_public(g)
+                public=export_public(g,include_preferences=True)
                 recovered=public[32:64]==author and struct.unpack_from('<Q',public,160)[0]>1 and feed_ui(g,793)[0][6]==1
                 if not recovered:
                     if feed_ui(g)[0][1]!=0:
@@ -289,12 +351,16 @@ def main():
                         wait(lambda:feed_ui(g)[0][1]==0,120,'native account lock clears current author authority')
                     g.client.request(179,struct.pack('<2Q',g.feed_owner,1))
                     focus_feed(g);g.device.press(59);g.device.press(61)
+                    if feed_ui(g,793)[0][5]!=1:g.device.press(62)
                     g.device.textASCII(secret(out/(g.name+'.feed-author-unlock'),create=False).hex(),delay=.04);g.device.press(63)
                     wait(lambda:feed_ui(g)[0][1]==1 and feed_ui(g)[0][5]==8 and feed_ui(g,793)[0][6]==1,180,'complete retained author recovery with original federation offline')
                 assert feed_ui(g)[1][:32]==author
                 focus_feed(g)
                 settle_exact(g,destination,observed)
-                public=export_public(g)
+                public=export_public(g,include_preferences=True)
+                assert public[256:1792]==approved[256:1792]and preference_bits(public,project_id)&4
+                if block_was_selected:assert preference_bits(public,blocked_author)&2
+                passed('native recovery restores exactly the explicitly approved local preferences independently of federation policy',preference_bytes=1536,preference_sha256=hashlib.sha256(public[256:1792]).hexdigest(),stable_project_follow=True,previously_selected_local_block=block_was_selected,local_block_preserved=True if block_was_selected else None,complete_graph_published=False)
                 event=match(destination,author,1,hashlib.sha256(MOVED.encode()).digest())
                 assert public[32:64]==author and public[128:160]in(old_event,event[:32]if event else old_event)and struct.unpack_from('<Q',public,160)[0]>1
                 if not checkpoint.get('recovered'):
