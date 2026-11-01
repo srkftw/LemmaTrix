@@ -18,8 +18,8 @@ import releases
 from messenger_journey import inspect, net, role, send_ui, wait
 from native_community_campaign import attach_campaign, focus_application
 
-TEXT = 'The community remained available during relay capacity checks. This message follows native empty-mailbox checks beyond512.'
-REPLY = 'This reply confirms useful Messenger work on the same approved private session after the long community operation.'
+TEXT = 'The project community is still reachable after the capacity check.'
+REPLY = 'Confirmed: the same private session can receive and reply.'
 
 
 def main():
