@@ -90,7 +90,10 @@ def export_public(g,include_preferences=None):
             raise RuntimeError(('native public export refused',list(status)))
         return reference if reference!=0 and (reference!=prior or status[4]==45)and project.complete_read(g,g.feed_ui)else None
     wait(published,180,'explicit native public account export')
-    shared,_=project.ui_call(g,g.feed_ui,794);data=g.client.read_object(shared[1])
+    shared,_=project.ui_call(g,g.feed_ui,794)
+    if shared[0]!=0 or shared[1]==0:raise ValueError(('native approved public export capability refused',list(shared)))
+    try:data=g.client.read_object(shared[1])
+    finally:g.client.objects(47,shared[1])
     assert len(data)==2048 and struct.unpack_from('<Q',data)[0]==0x3154524f5046544c
     g.device.press(1)
     return data
@@ -153,26 +156,63 @@ def settle_exact(g,operator,observed):
 
 
 
-def successor_packages(bundle,old_releases):
+def retained_pair_packages(bundle,old_releases,*,relaunch=False):
     paths={name:bundle/(name+'.ltrel')for name in('identity','feed-account','feed','feed-federation')}
-    selected={name:releases.inspect(path.read_bytes())for name,path in paths.items()}
+    modulus=releases.public_modulus(PUB)
+    selected={name:releases.inspect(path.read_bytes(),modulus)for name,path in paths.items()}
     for name in('identity','feed-federation'):
         assert selected[name]['release_id']==old_releases[name],name+' must remain the exact existing service release'
     for name,version,rights in(('feed-account','0.9.2',1024),('feed','0.9.3',799)):
         info=selected[name]
-        assert info['project']==name and info['version']==version and info['rights']==rights
-        assert info['parent']==old_releases[name]and info['release_id']!=old_releases[name],'normal exact-parent upgrade required'
+        assert info['project']==name and info['rights']==rights
+        if relaunch:
+            assert info['release_id']==old_releases[name],'relaunch requires the exact already admitted release'
+        else:
+            assert info['version']==version
+            assert info['parent']==old_releases[name]and info['release_id']!=old_releases[name],'normal exact-parent upgrade required'
     return paths,{name:dict(release_id=info['release_id'],parent=info['parent'],version=info['version'],
+                           code_sha256=info['executable_sha256'],
                            package_sha256=hashlib.sha256(paths[name].read_bytes()).hexdigest())for name,info in selected.items()}
 
 
-def upgrade_retained_pair(g,campaign,bundle,checkpoint,save):
+def successor_packages(bundle,old_releases):
+    return retained_pair_packages(bundle,old_releases)
+
+
+def check_admitted_pair(client,paths,packages,old_releases,*,relaunch):
+    """Read current native hashes/versions before ordinary process replacement."""
+    for name in('identity','feed-account','feed'):
+        raw=paths[name].read_bytes();info=releases.inspect(raw)
+        current=client.request(14,bytes.fromhex(info['project_id']))
+        assert len(current)==128 and current[64:96].hex()==old_releases[name],name+' differs from the exact current native release'
+        for index in range(16):
+            try:header=client.request(13,struct.pack('<Q',index))
+            except ValueError as error:
+                if str(error)!='guest rejected command13, status1':raise
+                continue
+            if len(header)==512 and header[160:192].hex()==old_releases[name]:
+                if relaunch or name=='identity':
+                    assert header==raw[:512],name+' current native header/hash differs from the selected exact package'
+                else:
+                    assert tuple(map(int,packages[name]['version'].split('.')))>struct.unpack_from('<3Q',header,72),'normal upgrade requires a strictly newer component version'
+                break
+        else:raise ValueError(name+' has no exact current native catalog entry')
+
+
+def upgrade_retained_pair(g,campaign,bundle,checkpoint,save,*,relaunch=False):
     """Normal ordinary-package replacement after a completed explicit lock."""
     state=campaign.state;out=campaign.output
-    intent=checkpoint.setdefault('ordinary_upgrade',dict(old=state['personal'][g.name]['feed'],old_releases=dict(state['configuration']['feed'])))
-    paths,packages=successor_packages(bundle,intent['old_releases'])
+    current=state['personal'][g.name]['feed'];active=dict(state['configuration']['feed'])
+    for name,field in(('feed-account','owner_release'),('feed','ui_release')):
+        if field in current:active[name]=current[field]
+    key='ordinary_relaunch'if relaunch else'ordinary_upgrade'
+    intent=checkpoint.setdefault(key,dict(old=current,old_releases=active))
+    paths,packages=retained_pair_packages(bundle,intent['old_releases'],relaunch=relaunch)
     if 'packages'in intent:assert intent['packages']==packages,'successor package provenance changed on resume'
     intent['packages']=packages;save()
+    if not intent.get('stopped'):
+        check_admitted_pair(g.client,paths,packages,intent['old_releases'],relaunch=relaunch)
+        intent['exact_current_native_catalog_verified']=True;save()
     old=intent['old']
     if not intent.get('locked'):
         focus_feed(g);g.device.press(59);g.device.press(64)
@@ -189,12 +229,13 @@ def upgrade_retained_pair(g,campaign,bundle,checkpoint,save):
     fresh=intent['new'];g.feed_owner,g.feed_ui=fresh['owner'],fresh['ui'];g.ui=g.feed_ui
     assert fresh['owner']!=old['owner']and fresh['ui']!=old['ui']and fresh['identity']==old['identity']
     state['personal'][g.name]['feed']=dict(fresh,owner_release=packages['feed-account']['release_id'],ui_release=packages['feed']['release_id'])
-    state.setdefault('ordinary_package_upgrades',{})[g.name]=dict(stage='retained hosting move',old_owner=old['owner'],old_ui=old['ui'],
+    ledger='ordinary_package_relaunches'if relaunch else'ordinary_package_upgrades'
+    state.setdefault(ledger,{})[g.name]=dict(stage='retained hosting move',old_owner=old['owner'],old_ui=old['ui'],
         new_owner=fresh['owner'],new_ui=fresh['ui'],packages=packages,authority_reused=False,image_unchanged=True)
     project.write_record(out/'native-actors.json',state)
     if(out/'continuations.json').exists():
         public=json.loads((out/'continuations.json').read_text());public['personal'][g.name]=state['personal'][g.name]
-        public['ordinary_package_upgrades']=state['ordinary_package_upgrades'];project.write_record(out/'continuations.json',public)
+        public[ledger]=state[ledger];project.write_record(out/'continuations.json',public)
     intent['actor_ledger_updated']=True;save()
     return intent
 
@@ -412,13 +453,15 @@ def main():
     parser.add_argument('--attach',type=Path,required=True)
     parser.add_argument('--stage',choices=('project','migrate','ephemeral'),required=True)
     parser.add_argument('--person',choices=('alice','bob'),default='bob')
-    parser.add_argument('--feed-packages',type=Path,help='exact frozen bundle required for ephemeral relaunch')
+    parser.add_argument('--feed-packages',type=Path,help='exact frozen bundle required for ephemeral or retained same-release relaunch')
     parser.add_argument('--upgrade-feed-packages',type=Path,help='parent-linked Account0.9.2/UI0.9.3 bundle for explicit retained migration upgrade')
+    parser.add_argument('--relaunch-retained-feed',action='store_true',help='normally relaunch the exact current --feed-packages account/UI during retained migration')
     parser.add_argument('--alpha-offline-approved',action='store_true',help='select only after connected moderation/restart checks finish')
     parser.add_argument('--local-project-only',action='store_true',help='preserve measured replication failure while completing unaffected native project actions; never a full pass')
     parser.add_argument('--application-checkpoint',action='store_true',help='run strict project actions after the explicit partial 17-event release, preserving later history-read targets')
     a=parser.parse_args();
     if a.upgrade_feed_packages is not None and a.stage!='migrate':raise ValueError('ordinary Feed upgrade is part of the explicit retained migration stage only')
+    if a.relaunch_retained_feed and(a.stage!='migrate'or a.feed_packages is None or a.upgrade_feed_packages is not None):raise ValueError('retained same-release relaunch requires migrate and --feed-packages, without --upgrade-feed-packages')
     out=a.attach.resolve();evidence=out/('feed-'+a.stage+'-account.json');began=time.monotonic()
     initial=json.loads((out/'native-actors.json').read_text());person=initial['personal'][a.person]['feed']
     original_name='alpha'if person['federation']==initial['actors']['alpha']['feed']['federation']else'beta'
@@ -434,6 +477,8 @@ def main():
     for historical in('error','traceback','native_ui','native_events','inspection_error'):report.pop(historical,None)
     attempt=dict(started_utc=time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),result='running');attempts.append(attempt);report['result']='running'
     checkpoint=report.setdefault('checkpoints',{})
+    if checkpoint.get('ordinary_relaunch')and a.upgrade_feed_packages is not None:raise ValueError('preserve the selected exact-current retained relaunch on resume')
+    if checkpoint.get('ordinary_upgrade')and a.relaunch_retained_feed:raise ValueError('preserve the selected parent-linked retained upgrade on resume')
     release=None
     if a.application_checkpoint:
         assert a.stage=='project'and not a.local_project_only
@@ -679,12 +724,20 @@ def main():
                         previous_root_generation=retained_generation(backing),original_host_offline=True,
                         selected_preference_sha256=hashlib.sha256(approved[256:1792]).hexdigest())
                     save()
+                lifecycle=None
                 if a.upgrade_feed_packages is not None:
                     upgrade=upgrade_retained_pair(g,campaign,a.upgrade_feed_packages.resolve(),checkpoint,save)
+                    lifecycle=upgrade
                     if not checkpoint.get('upgrade_recorded'):
                         passed('explicit native lock and parent-linked ordinary Feed upgrade replace only this retained personal UI/account with fresh process authority',**upgrade)
                         checkpoint['upgrade_recorded']=True;save()
+                elif a.relaunch_retained_feed:
+                    lifecycle=upgrade_retained_pair(g,campaign,a.feed_packages.resolve(),checkpoint,save,relaunch=True)
+                    if not checkpoint.get('relaunch_recorded'):
+                        passed('explicit native lock and exact-current ordinary Feed relaunch replace only this retained personal UI/account with fresh process authority',**lifecycle)
+                        checkpoint['relaunch_recorded']=True;save()
                 elif checkpoint.get('ordinary_upgrade'):raise ValueError('resume the selected exact successor bundle with --upgrade-feed-packages')
+                elif checkpoint.get('ordinary_relaunch'):raise ValueError('resume the selected exact current bundle with --relaunch-retained-feed and --feed-packages')
                 focus_feed(g)
                 selected_feed_route(g,destination,relays,observed)
                 public=export_public(g,include_preferences=True)if feed_ui(g)[0][1]else None
@@ -714,7 +767,7 @@ def main():
                 assert public[256:1792]==approved[256:1792]and preference_bits(public,project_id)&4
                 if block_was_selected:assert preference_bits(public,blocked_author)&2
                 passed('native recovery restores exactly the explicitly approved local preferences independently of federation policy',preference_bytes=1536,preference_sha256=hashlib.sha256(public[256:1792]).hexdigest(),stable_project_follow=True,previously_selected_local_block=block_was_selected,local_block_preserved=True if block_was_selected else None,complete_graph_published=False)
-                if a.upgrade_feed_packages is not None:
+                if lifecycle is not None and lifecycle['packages']['feed']['version']=='0.9.3'and lifecycle['packages']['feed-account']['version']=='0.9.2':
                     check_upgraded_local_block(g,state,approved,checkpoint,save,observed)
                 event=match(destination,author,1,hashlib.sha256(MOVED.encode()).digest())
                 assert public[32:64]==author and public[128:160]in(prior_event,event[:32]if event else prior_event)and struct.unpack_from('<Q',public,160)[0]>1
@@ -749,7 +802,9 @@ def main():
                 assert struct.unpack_from('<Q',event,216)[0]>struct.unpack_from('<Q',approved,24)[0]
                 assert struct.unpack_from('<Q',event,64)[0]>struct.unpack_from('<Q',approved,160)[0]
                 assert read_body(destination,event)==MOVED.encode()
-                passed('same retained federation-scoped author publishes a new checked event at willing second host while original remains offline',event=event[:32].hex(),sequence=struct.unpack_from('<Q',event,216)[0],original_still_offline=not(out/(original_name+'.sock')).exists(),new_identity_link_claim=False)
+                move_status=feed_ui(g)[0]
+                durable,_=feed.invoke(destination.client,491,action=4,data=event[:32])
+                passed('same retained federation-scoped author publishes a new checked event at willing second host while original remains offline',event=event[:32].hex(),sequence=struct.unpack_from('<Q',event,216)[0],original_still_offline=not(out/(original_name+'.sock')).exists(),new_identity_link_claim=False,ui_publication_phase=move_status[5],destination_publication_state=durable[2],replication_claim=move_status[5]==7,replication_limit='durable acceptance does not imply acknowledgement from the offline original federation')
                 settle_exact(g,destination,observed)
                 after=export_public(g,include_preferences=True)
                 assert after[32:128]==public[32:128]and after[128:160]==event[:32]and after[256:1792]==approved[256:1792]
