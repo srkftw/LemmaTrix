@@ -262,6 +262,27 @@ def check_upgraded_local_block(g,state,approved,checkpoint,save,observed):
     return record
 
 
+
+def choose_move_audience(g,checkpoint,save):
+    """A newly launched UI needs its own explicit audience choice."""
+    expected='Audience: home plus selected peer federation'
+    home='Audience: home federation only'
+    focus_feed(g)
+    def audience():
+        frame=g.device.frame()
+        if frame is None:return None
+        value=project.rendered_text(frame,14,324,44,foreground=0x8cdec6).rstrip()
+        return value if value in(home,expected)else None
+    selected=wait(audience,180,'native completed audience footer after retained UI recovery')
+    if selected==home:
+        checkpoint['move_audience_intent']='home plus selected peer federation';save()
+        g.device.press(30)
+    wait(lambda:audience()==expected and project.complete_read(g,g.feed_ui),180,'explicit native home and willing peer audience before move preview')
+    checkpoint['move_audience']=dict(label=expected,frame=screenshot(g,'move-approved-peer-audience'),
+        source='ordinary native A control and completed rendered footer; no account field setter')
+    save()
+
+
 def application_checkpoint(out,state):
     """Accept only the explicitly released partial campaign, without upgrading it."""
     path=out/'application-checkpoint-release.json';released=json.loads(path.read_text())
@@ -701,6 +722,7 @@ def main():
                     passed('fresh native recovery preserves scoped author and exact prior publication through selected willing federation',public=author.hex(),generation=struct.unpack_from('<Q',public,160)[0],sequence=struct.unpack_from('<Q',public,24)[0],exact_event=prior_event.hex(),original_card=old_event.hex(),no_original_server_permission=True)
                     checkpoint['recovered']=True;save()
                 if event is None:
+                    choose_move_audience(g,checkpoint,save)
                     focus_feed(g);g.device.press(61)
                     wait(lambda:feed_ui(g)[0][2]==1 and feed_ui(g)[0][3]==0,120,'native fresh move publication draft')
                     g.device.textASCII(MOVED,delay=.035)
