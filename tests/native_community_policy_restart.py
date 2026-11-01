@@ -132,6 +132,35 @@ def moderator(guest):
 
 
 
+def replication_ledger(guest):
+    """Read native commitments; each field is an observation, not an atomic dump."""
+    budget, policy = feed.invoke(guest.client, 490, action=12)
+    authority = feed.invoke(guest.client, 490, action=13)[0]
+    count = feed.invoke(guest.client, 490, action=9)[0][1]
+    rows = []
+    for i in range(count):
+        fields, event_id = feed.invoke(guest.client, 490, action=14, handle=i)
+        assert len(event_id) == 32 and fields[1] == i+1
+        rows.append(dict(event=event_id.hex(), flags=fields[2], attempts=fields[3],
+                         reserved_bytes=fields[4], reserved_work=fields[5]))
+    return dict(budget=list(budget), policy_hash=policy.hex(), authority=list(authority),
+                policy_variant=authority[1], rows=rows)
+
+
+def retained_replication_ledger(before, after):
+    assert before['policy_variant'] == after['policy_variant'] == 2
+    assert after['policy_hash'] == before['policy_hash']
+    assert after['budget'] == before['budget']
+    assert len(after['rows']) == len(before['rows'])
+    for a, b in zip(before['rows'], after['rows']):
+        assert b['event'] == a['event'] and b['flags'] & a['flags'] == a['flags']
+        assert a['attempts'] <= b['attempts'] <= 9
+        assert b['reserved_bytes'] >= a['reserved_bytes'] and b['reserved_work'] >= a['reserved_work']
+        if a['reserved_bytes']:
+            assert b['reserved_bytes'] == a['reserved_bytes']
+            assert b['reserved_work'] == a['reserved_work']
+
+
 def check_replication_lease(guest, operator, endpoint):
     """Explicit operator stage boundary; never a per-event reset or keepalive.
 
@@ -420,6 +449,12 @@ def main():
                     state['reserved_beta_budget'] = list(feed.invoke(beta.client, 490, action=12)[0])
                     state['beta_checkpoint'] = feed.invoke(beta.client, 490, action=3)[0][4]
                     state['beta_counts'] = list(feed.invoke(beta.client, 490, action=9)[0])
+                    if campaign.state['actors']['beta']['replication'].get('auto_renew', False):
+                        state['beta_replication_ledger'] = replication_ledger(beta)
+                        assert state['beta_replication_ledger']['policy_variant'] == 2
+                        assert state['beta_replication_ledger']['budget'] == state['reserved_beta_budget']
+                        assert any(r['event'] == row[1][:32].hex() and r['attempts'] > 0 and r['reserved_bytes'] > 0
+                                   for r in state['beta_replication_ledger']['rows'])
                     save()
                     beta.stop()
                     os.killpg(paused_alpha, signal.SIGCONT)
@@ -474,14 +509,30 @@ def main():
                     assert list(feed.invoke(beta.client, 490, action=9)[0])[1:3] == state['beta_counts'][1:3]
                     assert find(beta, event_id=bytes.fromhex(state['beta_pending'])[:32])[1].hex() == state['beta_pending']
                     assert find(beta, event_id=target)[0][5] == 1
+                    previous_replication = campaign.state['actors']['beta']['replication']
+                    if previous_replication.get('auto_renew', False):
+                        restored_ledger = replication_ledger(beta)
+                        retained_replication_ledger(state['beta_replication_ledger'], restored_ledger)
+                        # Persistent approval does not revive live grants or a
+                        # volatile cached policy after process replacement.
+                        assert restored_ledger['authority'][2:4] == [0, 0]
+                        assert restored_ledger['authority'][5:7] == [0, 0]
+                        state['beta_recovered_replication_ledger'] = restored_ledger
                     net(beta, 30)
                     replication = feed.replication(beta.client, NS(
-                        peer=0, side='client', slot=0,
-                        scope=campaign.state['actors']['beta']['replication']['scope'],
-                        endpoint=campaign.state['bulk_endpoint'], bytes=16777216, rate=65536, lifetime=100000,
-                        auto_renew=campaign.state['actors']['beta']['replication'].get('auto_renew', False)))
+                        peer=0, side='client', slot=previous_replication['network_slot'],
+                        scope=previous_replication['scope'],
+                        endpoint=campaign.state['bulk_endpoint'], bytes=previous_replication['bytes'],
+                        rate=previous_replication['rate'], lifetime=previous_replication['lifetime'],
+                        auto_renew=previous_replication.get('auto_renew', False)))
                     state['beta_after_current_configuration_budget'] = list(feed.invoke(beta.client, 490, action=12)[0])
-                    assert state['beta_after_current_configuration_budget'][3] == state['reserved_beta_budget'][3]+1048576
+                    assert state['beta_after_current_configuration_budget'][3] == state['reserved_beta_budget'][3]+min(1048576, previous_replication['bytes']-state['reserved_beta_budget'][3])
+                    if previous_replication.get('auto_renew', False):
+                        configured = replication_ledger(beta)
+                        assert configured['policy_variant'] == 2
+                        assert configured['policy_hash'] == state['beta_replication_ledger']['policy_hash']
+                        assert configured['authority'][2:4] == [1, 0] and configured['authority'][5] == 128
+                        state['beta_current_replication_ledger'] = configured
                     campaign.state['actors']['beta'].update(network=beta.network, feed=service, replication=replication)
                     (out/'native-actors.json').write_text(json.dumps(campaign.state, indent=2)+'\n')
                     public = out/'continuations.json'
@@ -520,6 +571,15 @@ def main():
                 alice.device.press(63 if feed_ui(alice)[0][5] == 8 else 19)
                 wait(lambda: feed_ui(alice)[0][5] == 7, 600, 'author obtains actual replication evidence for its original accepted event through a fresh selected route')
                 state['after_beta_budget'] = after
+                if campaign.state['actors']['beta']['replication'].get('auto_renew', False):
+                    final_ledger = replication_ledger(beta)
+                    assert final_ledger['policy_hash'] == state['beta_replication_ledger']['policy_hash']
+                    for earlier in state['beta_replication_ledger']['rows']:
+                        later = next(r for r in final_ledger['rows'] if r['event'] == earlier['event'])
+                        assert later['reserved_bytes'] == earlier['reserved_bytes']
+                        assert later['reserved_work'] == earlier['reserved_work']
+                        assert earlier['attempts'] <= later['attempts'] <= 9
+                    state['beta_final_replication_ledger'] = final_ledger
                 record('restart', 'both final-image peers automatically resume original signed pending events without operator peer reset or renewed event budget; persisted appeal reversal and local block survive')
             state.update(result='pass-'+args.stage, elapsed_seconds=time.monotonic()-began)
             save()
