@@ -208,7 +208,9 @@ def queuePreflight (caller length t : UInt64) : UInt64 :=
   if load64 preflight t != 0 && load64 (preflight+8) t == caller && load64 (preflight+16) t == h && load64 (preflight+24) t == contact then
     if load64 preflight t == 8 then response 0 h 6 0 t else
     if load64 preflight t != 9 then response 0 h 1 0 t else
-    response 0 h 1 0 (store64 preflight 1 (store64 (preflight+32) 0 t))
+    -- A new explicit user retry admits another finite claim attempt budget.
+    -- The owner's exact claim identity remains unchanged across uncertainty.
+    response 0 h 1 0 (store64 preflight 1 (store64 (preflight+40) 0 (store64 (preflight+32) 0 t)))
   else
   if (load64 preflight t > 0 && load64 preflight t < 8) ||
     (load64 (st+24) t > 0 && load64 (st+24) t <= 6) || load64 (st+24) t == 9 || load64 (st+24) t == 10 then response 6 h 1 0 t else

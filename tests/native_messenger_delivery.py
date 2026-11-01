@@ -19,6 +19,27 @@ def idB : UInt64 := 0x7a0040
 -- The fixture trap is a rejected/current-token oracle, not the live kernel.
 -- It counts foreign calls so a passive scheduling hint cannot hide admission.
 def calls : UInt64 := 0x7a0080
+def preflightRetryChecks (t : UInt64) : UInt64 :=
+  let t := zero st 64 (zero preflight 128 (zero command 128 (zero calls 4 t)))
+  let t := store64 st 77 (store64 (st+152) 1 (store64 (preflight+128) 5 t))
+  let t := store64 preflight 5 (store64 (preflight+8) 55 (store64 (preflight+16) 91
+    (store64 (preflight+24) 1 (store64 (preflight+40) 32 t))))
+  let t := store64 claimIdentity 0x12345678 (store64 (calls+16) 1 t)
+  let t := store64 command 460 (store64 (command+8) 91 (store64 (command+24) 1
+    (store64 (command+32) 1 (store64 (command+48) 3 (store64 (command+56) 1 t)))))
+  -- A running preflight cannot renew its own budget on another queue/poll.
+  let r := dispatch 55 799 2000 64 t
+  if status r != 0 || load64 preflight r != 5 || load64 (preflight+40) r != 32 then 82 else
+  -- A failed preflight needs a new caller request; no background poll resets
+  -- its exhausted attempt counter or the native owner's claim identity.
+  let t := preflightFailure 4 r
+  let r := dispatch 55 799 2001 64 t
+  if status r != 0 || load64 preflight r != 1 || load64 (preflight+40) r != 0 ||
+    load64 (preflight+32) r != 0 || load64 (preflight+16) r != 91 ||
+    load64 (preflight+24) r != 1 || load64 claimIdentity r != 0x12345678 then 83 else
+  let t := store64 preflight 6 (store64 (preflight+40) 32 r)
+  let r := dispatch 55 799 2002 64 t
+  if status r != 0 || load64 preflight r != 6 || load64 (preflight+40) r != 32 then 84 else 0
 def attachmentCommand (h index contact fresh t : UInt64) : UInt64 :=
   let t := zero command 128 t
   store64 command 460 (store64 (command+8) h (store64 (command+16) index
@@ -276,7 +297,9 @@ def check (t : UInt64) : UInt64 :=
   let r := queue 55 104 t
   if status r != 0 || load64 (wire+16) r != 2 then 23 else
   let r := queue 55 104 (store64 (command+32) 2 r)
-  if status r != 12 || load64 (st+64) r != 1 || load64 (st+24) r != 11 then 24 else hintChecks r
+  if status r != 12 || load64 (st+64) r != 1 || load64 (st+24) r != 11 then 24 else
+  let checked := preflightRetryChecks r
+  if checked != 0 then checked else hintChecks r
 end build.NativeMessengerDelivery
 '''
 
@@ -327,5 +350,6 @@ fixtureReturn:
   boundaries=['native decoder parks and refetches first opaque blob','actual immediate and polled ACK completion clear resident cache','second transfer reuses freed row without stale ciphertext','resident access rechecks random transfer identity','failed fetch including unknown blob stays unavailable until eligible explicit retry','explicit unavailable-fetch retry resumes selected blob only','authorization integrity ACK failures and exhausted retry budget remain failed','foreground Forge admission preserves in-flight work and returns queued phase instead of stale success','exact queued foreground retry preserves its bound and different callers or references conflict','bounded foreground admission failure preserves unrelated admitted RPC tokens','cached exact-ciphertext acceptance rejects a changed contact without replacing its original state'],
   limits='Direct compiled coordinator-transition fixture with opaque reply bytes. A bounded guest trap supplies rejected/current-token syscall131 results and rejects owner endpoint/network admission; it checks native dispatch revalidation and counts attempted foreign calls, not live kernel grant semantics. No real route, mailbox durability or AEAD/session claim. ARM backend, when selected, is emulated.')
  report['boundaries']+=['bounded immutable attachment scheduling hint preserves admitted RPC and Owner tokens','exact repeat does not renew the8192work bound and conflicting caller or reference cannot replace it','new background phase0fetch yields while partial fetch, Owner commit, ACK and selected fetch remain eligible','ACK promotion occurs before the suppression gate','passive hint quantum performs no Owner or Network admission','expiry returns native unavailable on the next exact real request and releases scheduling priority','a distinct valid caller can replace expired intent without a deadcaller blockade','next native460dispatch rechecks131 and owner endpoint before admission; revoked current-token result never executes saved intent','send and receive failure clear passive intent','exact caller and handle cancellation clears only the passive hint while normal cancellation semantics continue','actual partial receive and ACK-poll phases remain eligible while Owner-commit phase remains untouched','selected incoming fetch bypasses the background-only suppression gate','readonly administrator464action4 exposes lastpurpose phase length offset handle anddeadline without tokens or mutation','readonly administrator464action3 rejects ordinary rights and exposes only the eight scalar state words while preserving tokens and state','failed attachment reconciliation also reserves bounded receive-free admission; exact retry cannot renew it, drain preserves ciphertext and expiry stays unavailable','explicit missing-receipt reconciliation flag is admitted only for reason11 and keeps exact ciphertext request commitment caps handle and index','integrity or authorization failures and unconfirmed retries force strict fresh0; changedcaller index and rejected current-token checks cannot admit reconciliation']
+ report['boundaries'].append('only an explicit failed-preflight retry renews its finite claim-attempt allowance while retaining the same native claim identity; pending queue/poll does not renew it')
  (B/'evidence.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2))
 if __name__=='__main__':main()

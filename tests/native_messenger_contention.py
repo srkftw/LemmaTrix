@@ -16,6 +16,7 @@ def main():
  p=argparse.ArgumentParser(description=__doc__)
  p.add_argument('--image',type=Path,default=ROOT/'build/live/guest.bin');p.add_argument('--network',type=Path)
  p.add_argument('--ready',type=Path,default=ROOT/'build/campaign009-messenger-packages/ready.json')
+ p.add_argument('--mailbox',type=Path,help='exact signed Mailbox package override for the shared-service fix')
  p.add_argument('--output',type=Path,default=ROOT/'build/native-messenger-contention')
  p.add_argument('--registry',type=Path,default=ROOT/'build/live/apps/native-registry.bin')
  p.add_argument('--public-graph',type=Path,default=ROOT/'build/signed-forge-journey-2/published-closure.json')
@@ -31,7 +32,7 @@ def main():
  wait(lambda:a.ready.exists(),1800,'current native signed product packages')
  manifest=json.loads(a.ready.read_text());packages={}
  for name in ('owner','ui','delivery','identity','mailbox'):
-  source=Path(manifest[name]);target=out/(name+'.ltrel');target.write_bytes(source.read_bytes())
+  source=a.mailbox if name=='mailbox'and a.mailbox else Path(manifest[name]);target=out/(name+'.ltrel');target.write_bytes(source.read_bytes())
   packages[name]=(target,releases.inspect(target.read_bytes()))
  archive=json.loads(a.public_graph.read_text());root=bytes.fromhex(archive['selected'][0]['head'])
  records=[dict(n,payload=base64.b64decode(n['payload'],validate=True)) for n in archive['nodes']]

@@ -8,18 +8,21 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 sys.path[:0]=[str(ROOT/'tools'),str(ROOT/'tests')]
 import identity,messenger,projects,releases
-from messenger_journey import Guest,net,role,wait,wait_ui,inspect,screenshot,enroll,mailbox_start,restore_operator,enroll_mailbox,send_ui
-from messenger_product_journey import ui_public
+from messenger_journey import Guest,net,role,wait,wait_ui,inspect,screenshot,enroll,mailbox_start,restore_operator,enroll_mailbox,send_ui,install,route
+from messenger_product_journey import ui_public,record_binding,publication,close_route
 from messenger_routed_project import send_reference
 
 def main():
  p=argparse.ArgumentParser(description=__doc__)
  p.add_argument('--campaign',type=Path,required=True)
  p.add_argument('--mailbox',type=Path,required=True)
+ p.add_argument('--delivery',type=Path,help='replace only personal ciphertext coordinators, preserving UI and native session owners')
+ p.add_argument('--reuse-mailbox',action='store_true',help='the previous continuation already installed/recovered this exact Mailbox release')
  p.add_argument('--output',type=Path,required=True)
  a=p.parse_args();campaign=a.campaign.resolve();out=a.output.resolve();out.mkdir(parents=True,exist_ok=False)
  packages={name:(campaign/(name+'.ltrel'),releases.inspect((campaign/(name+'.ltrel')).read_bytes()))for name in ('identity','owner','ui','delivery')}
  packages['mailbox']=(a.mailbox.resolve(),releases.inspect(a.mailbox.read_bytes()))
+ if a.delivery:packages['delivery']=(a.delivery.resolve(),releases.inspect(a.delivery.read_bytes()))
  original=json.loads((campaign/'failure.json').read_text());checks=[];actors=[];began=time.monotonic();stage='attach preserved native actors'
  report=dict(schema=1,result='running',source=str(campaign),source_failure_sha256=hashlib.sha256((campaign/'failure.json').read_bytes()).hexdigest(),image_sha256=hashlib.sha256((campaign/'guest.bin').read_bytes()).hexdigest(),mailbox=packages['mailbox'][1],checks=checks,limits=original['limits'])
  def record(label,**extra):
@@ -35,6 +38,7 @@ def main():
    if g.certificate:g.pin=hashlib.sha256(g.certificate).digest()
   return g
  def fault(op,epoch=None):
+  if op in ('pause','resume')and epoch is None:epoch=fault('status')['channel']['epoch']
   c=dict(op=op,slot=0)
   if epoch is not None:c['epoch']=epoch
   s=socket.socket(socket.AF_UNIX);s.settimeout(10);s.connect(str(campaign/'stall-fault.sock'));s.sendall(json.dumps(c).encode()+b'\n');raw=b''
@@ -57,14 +61,26 @@ def main():
   alice=attach('alice',True);bob=attach('bob',True);stalled=attach('stall')
   before={g.name:list(net(g,32)[0])for g in [mailbox,*relays,alice,bob,stalled]}
   stage='replace only native mailbox application and recover its own backing'
-  prior=messenger.endpoint(mailbox.client,3,440);mailbox.client.request(26,struct.pack('<Q',prior))
-  mailbox.identity_package=campaign/'identity.ltrel';restore_operator(mailbox,campaign);mailbox_start(mailbox,packages)
+  prior=messenger.endpoint(mailbox.client,3,440)
+  if a.reuse_mailbox:mailbox.mailbox=prior
+  else:
+   mailbox.client.request(26,struct.pack('<Q',prior))
+   mailbox.identity_package=campaign/'identity.ltrel';restore_operator(mailbox,campaign);mailbox_start(mailbox,packages)
   assert all(net(g,32)[0][2]==3 for g in (alice,bob,stalled))
-  record('native Mailbox application replaced and recovers its own backing while relays and three admitted circuits remain running',prior_instance=prior,current_instance=mailbox.mailbox,prior_router_states=before)
+  record('same native Mailbox backing and three existing circuits remain running',mailbox_previously_recovered=a.reuse_mailbox,prior_instance=prior,current_instance=mailbox.mailbox,prior_router_states=before)
+  certs=[g.certificate for g in relays]
+  if a.delivery:
+   for g in (alice,bob):
+    close_route(g);g.client.request(26,struct.pack('<Q',g.delivery));g.delivery,did=install(g,packages,'delivery',1024)
+    sid=bytes.fromhex(packages['owner'][1]['release_id']);uid=bytes.fromhex(packages['ui'][1]['release_id'])
+    for op in (427,428,434):record_binding(g,2,g.owner,g.delivery,op,sid,did)
+    for op in range(460,464):record_binding(g,4,g.delivery,g.ui,op,did,uid)
+    record_binding(g,4,g.delivery,messenger.launcher(g.client),464,did)
+    route(g,certs,mailbox);wait(lambda g=g:publication(g),240,g.name+' native prekey reconciliation')
+   record('personal ciphertext coordinators replaced and reauthorized while retained native session owners, UI and operators remain running',delivery=packages['delivery'][1])
   # Only this personal client's route is refreshed after its adapter stall.
   stage='refresh third personal client and stall a new bounded upload'
   fault('resume');net(stalled,42);net(stalled,35)
-  certs=[g.certificate for g in relays]
   for i,cert in enumerate([*certs,mailbox.certificate]):enroll(stalled,i,cert)
   net(stalled,31);wait(lambda:net(stalled,32)[0][2]==3,300,'third personal route re-admission')
   net(stalled,38,h=3,a=17,b=messenger.launcher(stalled.client),cword=8388608,d=65536)
@@ -83,7 +99,7 @@ def main():
   original_text=b'native shared service text while another client stalls'
   old,_=inspect(alice);assert old[6]==1,old
   alice.device.press(65,delay=.15)
-  accepted,_=wait_ui(alice,lambda f:f[6]==1 and f[4]in(19,21,27),'original exact-ciphertext retry durable acceptance')
+  accepted,_=wait_ui(alice,lambda f:f[6]==1 and f[4]in(19,27),'original exact-ciphertext retry durable acceptance')
   assert accepted[4]==19,(accepted,ui_public(alice,783)[0])
   wait(lambda:received(bob,original_text),600,'native recipient text after exact retry')
   reply,seconds=send_ui(bob,'native shared service reply while third client stalls')

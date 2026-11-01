@@ -49,7 +49,7 @@ class MultiplexStream:
     if self.control_path.lstat().st_ino==self.control_inode:self.control_path.unlink()
    except FileNotFoundError:pass
  def run(self):
-  channels=[dict(sock=None,listener=None,pending=bytearray(),epoch=0,connecting=False,endpoint=None,deadline=0,rxcredit=0,flow=False,txpaused=False,txbytes=0,rxbytes=0) for _ in range(CHANNELS)]
+  channels=[dict(sock=None,listener=None,accepting=False,pending=bytearray(),epoch=0,connecting=False,endpoint=None,deadline=0,rxcredit=0,flow=False,txpaused=False,txbytes=0,rxbytes=0) for _ in range(CHANNELS)]
   incoming=bytearray();outgoing=bytearray()
   controls={}
   def new_epoch(ch):
@@ -86,7 +86,7 @@ class MultiplexStream:
    # can never be interpreted as the start of a replacement TCP connection.
    new_epoch(ch);event(5,slot,reason)
    if remove and ch['listener']:
-    old=ch['listener'];ch['listener']=None
+    old=ch['listener'];ch['listener']=None;ch['accepting']=False
     if not any(other['listener'] is old for other in channels):old.close()
   def endpoint(raw,listen):
    text=raw.decode('ascii')
@@ -105,7 +105,7 @@ class MultiplexStream:
      if state['output'] is None:reads.append(conn)
      else:writes.append(conn)
     for ch in channels:
-     if ch['listener'] and ch['sock'] is None and len(outgoing)<LIMIT and ch['listener'] not in reads:reads.append(ch['listener'])
+     if ch['listener'] and ch['accepting'] and ch['sock'] is None and len(outgoing)<LIMIT and ch['listener'] not in reads:reads.append(ch['listener'])
      if ch['sock']:
       if ch['connecting'] and time.monotonic()>=ch['deadline']:
        disconnect(channels.index(ch),errno.ETIMEDOUT);continue
@@ -162,7 +162,7 @@ class MultiplexStream:
        remote=shared or socket.socket(family,socket.SOCK_STREAM);remote.setblocking(False)
        if op==2:
         if shared is None:remote.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1);remote.bind(address);remote.listen(CHANNELS)
-        ch['listener']=remote;event(9,slot)
+        ch['listener']=remote;ch['accepting']=True;event(9,slot)
        else:
         result=remote.connect_ex(address)
         if result not in (0,errno.EINPROGRESS,errno.EWOULDBLOCK):remote.close();raise OSError(result,'connect failed')
@@ -183,9 +183,9 @@ class MultiplexStream:
      else:event(6,slot,errno.ENOSYS)
     for slot,ch in enumerate(channels):
      listener=ch['listener'];remote=ch['sock']
-     if listener in ready and ch['sock'] is None:
+     if listener in ready and ch['accepting'] and ch['sock'] is None:
       try:
-       remote,_=listener.accept();remote.setblocking(False);ch['sock']=remote;ch['rxcredit']=1008 if ch['flow'] else 0;new_epoch(ch);event(8,slot,LIMIT)
+       remote,_=listener.accept();remote.setblocking(False);ch['sock']=remote;ch['accepting']=False;ch['rxcredit']=1008 if ch['flow'] else 0;new_epoch(ch);event(8,slot,LIMIT)
       except BlockingIOError:pass
      if remote is None:continue
      try:

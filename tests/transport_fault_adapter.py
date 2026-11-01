@@ -66,10 +66,12 @@ def run(output=None):
    for _ in range(LIMIT//1008+1):send(7,0,bytes(1008),epoch=1)
    q,_=event();assert q[1:3]==(5,0)and q[4]==2
    status=control(op='status',slot=0)['channel'];assert status['pending_bytes']==0 and not status['tx_paused']and not status['connected']
+   # The native owner must explicitly replenish this listener before reuse.
+   send(2,2,endpoint);assert event()[0][1:3]==(9,2)
    replacement=socket.create_connection(address);replacement.settimeout(3);remotes.append(replacement)
-   q,_=event();assert q[1:3]==(8,0)and q[4]==3
+   q,_=event();assert q[1:3]==(8,2)and q[4]==1
    assert not control(op='pause',slot=0,epoch=1)['ok']
-   send(7,0,b'new epoch',epoch=3);assert replacement.recv(9)==b'new epoch'
+   send(7,2,b'new epoch',epoch=1);assert replacement.recv(9)==b'new epoch'
    checks.append('unchanged64KiB pending limit, overflow disconnect, epoch invalidation and no queued-byte reuse')
    for command in ({'op':'pause','slot':True,'epoch':3},{'op':'status','epoch':3},{'op':'unknown'},{'op':'status','extra':1}):assert not control(**command)['ok']
    with socket.socket(socket.AF_UNIX,socket.SOCK_STREAM)as client:
