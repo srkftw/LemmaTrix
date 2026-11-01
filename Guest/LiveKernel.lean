@@ -15,17 +15,20 @@ def frame (p : UInt64) : UInt64 := state+65536+p*512
 def queue (p : UInt64) : UInt64 := 0x80c00000+p*16384
 def rx : UInt64 := 0x80d00000
 def code (p : UInt64) : UInt64 := 0x81000000+p*524288
-def arena (p : UInt64) : UInt64 := 0x81800000+p*0x200000
--- Built-in Objects/Vault/Network profile3 uses the same private512KiB physical slot. Native
--- signed application profile2 retains its256KiB ceiling and existing mapping.
-def codeLimit (p service : UInt64) : UInt64 := if (p == 2 && service == 2) || (p == 3 && service == 3) || (p == 6 && service == 6) then 393216 else 262144
-def dataOffset (p : UInt64) : UInt64 := if p == 2 || p == 3 || p == 6 then 393216 else 262144
-def stackOffset (p : UInt64) : UInt64 := if p == 2 || p == 3 || p == 6 then 458752 else 327680
+-- Extra ordinary arenas avoid Launcher's existing wide0x83000000 mapping.
+def arena (p : UInt64) : UInt64 := if p >= 12 then 0x89800000+(p-12)*0x200000 else 0x81800000+p*0x200000
+-- Built-in Objects/Network384KiB and Vault416KiB stay in their512KiB physical
+-- slots. Signed application profile2 retains its256KiB ceiling and mapping.
+def codeLimit (p service : UInt64) : UInt64 := if p == 3 && service == 3 then 425984 else if (p == 2 && service == 2) || (p == 3 && service == 3) || (p == 6 && service == 6) then 393216 else 262144
+def dataOffset (p : UInt64) : UInt64 := if p == 3 then 425984 else if p == 2 || p == 3 || p == 6 then 393216 else 262144
+def stackOffset (p : UInt64) : UInt64 := if p == 3 then 491520 else if p == 2 || p == 3 || p == 6 then 458752 else 327680
 def serviceSource (p : UInt64) : UInt64 := if p == 2 then 0x80480000 else if p == 3 then 0x80500000 else if p == 6 then 0x80340000 else 0x80300000+(p-1)*262144
 theorem ordinary_application_code_limit (p : UInt64) : codeLimit p 0 = 262144 := by
   simp [codeLimit]
 def physical (p v : UInt64) : UInt64 :=
   if v >= 0x600000 then arena p+v-0x600000 else code p+dataOffset p+v-0x410000
+theorem extra_arenas_fit_common_ram : arena 14+0x200000 <= (0x8a000000 : UInt64) := by decide
+theorem extra_arenas_follow_texttools : arena 12 = (0x89000000 : UInt64)+4*0x200000 := by decide
 def valid (ptr len bound : UInt64) : Bool := ptr >= 0x410000 && ptr <= 0x420000 && len <= bound && len <= 0x420000-ptr
 def validFor (p ptr len bound t : UInt64) : Bool :=
   valid ptr len bound || (Guest.load64 (proc p+96) t == 2 && ptr >= 0x600000 && ptr <= 0x800000 && len <= bound && len <= 0x800000-ptr)
@@ -40,9 +43,9 @@ partial def encoded (p n t : UInt64) : UInt64 :=
   if n == 0 then t else encoded (p+1) (n-1) (digits (Guest.load8 p t) 2 t)
 def live (who t : UInt64) : Bool :=
   let p := who &&& 255
-  p > 0 && p < 12 && Guest.load64 (proc p) t > 0 && Guest.load64 (proc p) t < 5 && identity p t == who
+  p > 0 && p < 15 && Guest.load64 (proc p) t > 0 && Guest.load64 (proc p) t < 5 && identity p t == who
 
--- Registry-v1: four local role records and 32 exact operation grants. These
+-- Registry-v1: six local role records and 96 exact operation grants. These
 -- supervisor-only ranges are disjoint from release descriptors at 0x80b10000.
 -- A registered target is sticky until teardown: revocation cannot reopen the
 -- old generic Launcher/Compositor endpoint bypass.
@@ -64,20 +67,20 @@ def grantLive (grant t : UInt64) : Bool :=
   let service := Guest.load64 (grant+24) t
   let role := Guest.load64 (grant+8) t
   let target := service &&& 255
-  Guest.load64 grant t == 1 && role > 0 && role <= 4 && live caller t && live service t &&
+  Guest.load64 grant t == 1 && role > 0 && role <= 6 && live caller t && live service t &&
     Guest.load64 (bindingRole role) t == service && Guest.load64 (proc target+272) t == role &&
     packageMatches (caller &&& 255) (grant+96) t && packageMatches target (grant+64) t &&
     Guest.ServiceBindingPolicy.serviceRightsValid role (Guest.load64 (proc target+16) t)
 
 partial def findGrant (caller service operation index t : UInt64) : UInt64 :=
-  if index == 32 then 0 else
+  if index == 96 then 0 else
   let grant := bindingGrant index
   if Guest.load64 grant t == 1 && Guest.load64 (grant+16) t == caller &&
       Guest.load64 (grant+24) t == service && Guest.load64 (grant+32) t == operation then grant
   else findGrant caller service operation (index+1) t
 
 partial def vacantGrant (index t : UInt64) : UInt64 :=
-  if index == 32 then 0 else
+  if index == 96 then 0 else
   if Guest.load64 (bindingGrant index) t == 0 then bindingGrant index else vacantGrant (index+1) t
 
 def authorizedGrant (caller service operation generation t : UInt64) : Bool :=
@@ -122,7 +125,7 @@ def requestCurrent (p service token t : UInt64) : Bool :=
     Guest.load64 (proc p+32) t == service) || asyncCurrent p service token t
 
 partial def cancelGrant (generation p t : UInt64) : UInt64 :=
-  if p == 12 then t else
+  if p == 15 then t else
   let t := if Guest.load64 (proc p) t == 2 && Guest.load64 (proc p+232) t == generation then
     let t := Guest.store64 (proc p+40) 0 t
     let t := Guest.store64 (proc p+232) 0 t
@@ -137,7 +140,7 @@ partial def cancelGrant (generation p t : UInt64) : UInt64 :=
 -- Revoked or terminated requests leave holes that receive discards normally;
 -- their queue plaintext is cleared immediately, without reusing reply tokens.
 partial def purgeQueued (principal generation index t : UInt64) : UInt64 :=
-  if index == 96 then t else
+  if index == 120 then t else
   let slot := queue (index/8)+64+(index%8)*1088
   let selected := (principal != 0 && Guest.load64 slot t == principal) ||
     (generation != 0 && Guest.load64 (slot+1056) t == generation)
@@ -145,7 +148,7 @@ partial def purgeQueued (principal generation index t : UInt64) : UInt64 :=
   purgeQueued principal generation (index+1) t
 
 partial def invalidateBindings (principal role index t : UInt64) : UInt64 :=
-  if index == 32 then t else
+  if index == 96 then t else
   let grant := bindingGrant index
   let selected := Guest.load64 grant t == 1 &&
     ((principal != 0 && (Guest.load64 (grant+16) t == principal || Guest.load64 (grant+24) t == principal)) ||
@@ -158,7 +161,7 @@ partial def invalidateBindings (principal role index t : UInt64) : UInt64 :=
   invalidateBindings principal role (index+1) t
 
 partial def invalidateRoles (principal role t : UInt64) : UInt64 :=
-  if role == 5 then t else
+  if role == 7 then t else
   let t := if Guest.load64 (bindingRole role) t == principal then zero (bindingRole role) 16 t else t
   invalidateRoles principal (role+1) t
 
@@ -224,7 +227,7 @@ def boundEndpoint (caller role operation t : UInt64) : UInt64 :=
   if grant != 0 && grantLive grant t then service else err
 
 partial def activeServiceRequest (service token caller t : UInt64) : Bool :=
-  if caller == 12 then false else
+  if caller == 15 then false else
   (Guest.load64 (proc caller) t == 2 && Guest.load64 (proc caller+32) t == service &&
    Guest.load64 (proc caller+40) t == token &&
    authorizedGrant (identity caller t) service (Guest.load64 (proc caller+240) t) (Guest.load64 (proc caller+232) t) t) ||
@@ -264,7 +267,7 @@ def tables (p t : UInt64) : UInt64 :=
   else t
 
 partial def cancelWaiters (target p t : UInt64) : UInt64 :=
-  if p == 12 then t else
+  if p == 15 then t else
     let t := if Guest.load64 (proc p) t == 2 && Guest.load64 (proc p+32) t == target then
       let t := Guest.store64 (frame p+80) err t
       Guest.store64 (proc p) 1 t
@@ -286,6 +289,7 @@ def teardown (p why t : UInt64) : UInt64 :=
   let t := invalidateRoles old 1 t
   let t := if Guest.load64 0x80b00800 t == old then zero 0x80b00800 8 t else t
   let t := if Guest.load64 0x80b00880 t == old then zero 0x80b00880 8 t else t
+  let t := if Guest.load64 0x80b00900 t == old then zero 0x80b00900 8 t else t
   let t := Guest.AudioDevice.died old t
   let t := if Guest.load64 (state+216) t == old then Guest.store64 (state+216) 0 t else t
   let t := if Guest.load64 (state+128) t == old then Guest.store64 (state+128) 0 t else t
@@ -325,12 +329,12 @@ def start (p source len rights entry service t : UInt64) : UInt64 :=
     Guest.store64 (proc p) 1 t
 
 partial def freeSlot (p t : UInt64) : UInt64 :=
-  if p == 12 then 0 else
+  if p == 15 then 0 else
     if Guest.load64 (proc p) t == 0 || Guest.load64 (proc p) t >= 5 then p else freeSlot (p+1) t
 
 partial def choose (p count t : UInt64) : UInt64 :=
   if count == 0 then 0 else
-    let next := if p >= 11 then 1 else p+1
+    let next := if p >= 14 then 1 else p+1
     if ready next t then next else choose next (count-1) t
 
 partial def pollRx (fuel t : UInt64) : UInt64 :=
@@ -371,7 +375,8 @@ def wakeSerial (initial : UInt64) : UInt64 :=
 -- Each caller has one live request. Endpoint queues and reply tokens are kernel-owned.
 def allowedEndpoint (caller target h t : UInt64) : Bool :=
   if target == 2 then (h == 2 || h == identity target t) && (Guest.load64 (proc caller+16) t &&& 127) != 0
-  else if target == 3 then (caller == 1 || (Guest.load64 (proc caller+16) t &&& 2048) != 0) && (h == 3 || h == identity target t)
+  else if target == 3 then (caller == 1 || (Guest.load64 (proc caller+16) t &&& 2048) != 0 ||
+    (identity caller t == Guest.load64 0x80b00900 t && identity caller t == Guest.load64 (bindingRole 5) t)) && (h == 3 || h == identity target t)
   else if target == 1 then caller == 4 && (h == 1 || h == identity target t)
   else if target == 5 then (h == 5 || h == identity target t) && (caller == 1 || (Guest.load64 (proc caller+16) t &&& 256) != 0 || identity caller t == Guest.load64 (state+208) t)
   else if target == 6 then (h == 6 || h == identity target t) && (caller == 1 || (Guest.load64 (proc caller+16) t &&& 1024) != 0)
@@ -405,7 +410,7 @@ def rpcBudget (caller target endpoint ptr len t : UInt64) : UInt64 :=
       (Guest.load64 (physical caller ptr+56) t &&& 255) == 2 then 30000
   else if Guest.load64 (bindingRole 1) t == endpoint && endpoint == identity target t &&
       Guest.load64 (proc target+272) t == 1 &&
-      ((operation == 400 && len == 128) || (operation == 401 && len == 64) ||
+      ((operation == 410 && (len == 128 || len == 320)) || (operation == 400 && len == 128) || (operation == 401 && len == 64) ||
        (operation == 402 && (len == 192 || len == 320))) &&
       Guest.load64 (physical caller ptr+56) t == 1 &&
       authorizedGrant (identity caller t) endpoint operation (Guest.load64 (proc caller+232) t) t then 30000
@@ -414,7 +419,7 @@ def rpcBudget (caller target endpoint ptr len t : UInt64) : UInt64 :=
 
 def call (p endpoint ptr len capacity t : UInt64) : UInt64 :=
   let target := endpoint &&& 255
-  if target == 0 || target >= 12 || target == p || !validFor p ptr len 1024 t || capacity > 1024 || !validFor p ptr capacity 1024 t then err else
+  if target == 0 || target >= 15 || target == p || !validFor p ptr len 1024 t || capacity > 1024 || !validFor p ptr capacity 1024 t then err else
     let operation := if len >= 64 then Guest.load64 (physical p ptr) t else err
     let generic := Guest.load64 (proc target+272) t != 0
     let grant := if generic then findGrant (identity p t) endpoint operation 0 t else 0
@@ -490,7 +495,7 @@ def call (p endpoint ptr len capacity t : UInt64) : UInt64 :=
 def submitAsync (p endpoint ptr len capacity t : UInt64) : UInt64 :=
   let target := endpoint &&& 255
   let a := asyncAt p
-  if Guest.load64 a t != 0 || target == 0 || target >= 12 ||
+  if Guest.load64 a t != 0 || target == 0 || target >= 15 ||
       capacity == 0 || !validFor p ptr len 1024 t || len < 64 then err else
   let builtin := target == 6 && endpoint == identity 6 t && Guest.load64 (proc 6+24) t == 6 &&
     networkAsyncAllowed p (Guest.load64 (physical p ptr) t) 0 t
@@ -559,7 +564,7 @@ partial def receive (p ptr capacity fuel t : UInt64) : UInt64 :=
         len+32+t
 
 partial def reply (sender token ptr len p t : UInt64) : UInt64 :=
-  if p == 12 || !valid ptr len 1024 then err else
+  if p == 15 || !valid ptr len 1024 then err else
     if Guest.load64 (proc p) t == 2 && Guest.load64 (proc p+40) t == token && Guest.load64 (proc p+32) t == identity sender t then
       let capacity := Guest.load64 (proc p+56) t
       if len > capacity then err else
@@ -578,7 +583,7 @@ partial def reply (sender token ptr len p t : UInt64) : UInt64 :=
 def release (index : UInt64) : UInt64 := 0x80b10000+index*256
 def releaseCode (index : UInt64) : UInt64 := 0x86400000+index*262144
 partial def usedRelease (index p t : UInt64) : Bool :=
-  if p == 12 then false else
+  if p == 15 then false else
     (Guest.load64 (proc p) t > 0 && Guest.load64 (proc p) t < 5 && Guest.load64 (proc p+112) t == index+1) || usedRelease index (p+1) t
 
 partial def output (p n t : UInt64) : UInt64 :=
@@ -594,7 +599,7 @@ def console (p ptr n t : UInt64) : UInt64 :=
     emit 10 t
 
 partial def inspectProcesses (p dst t : UInt64) : UInt64 :=
-  if p == 12 then t else
+  if p == 15 then t else
     let row := dst+p*32
     let t := Guest.store64 row (identity p t) t
     let t := Guest.store64 (row+8) (Guest.load64 (proc p) t) t
@@ -630,11 +635,11 @@ def dispatch (p op h ptr n v t : UInt64) : UInt64 :=
   else if op == 41 then
     if p == 1 && valid ptr n 4096 then output (physical p ptr) n t else err
   else if op == 42 then
-    if p == 1 && valid ptr 384 384 then 384+inspectProcesses 0 (physical p ptr) t else err
+    if p == 1 && valid ptr 480 480 then 480+inspectProcesses 0 (physical p ptr) t else err
   else if op == 50 then
     if p != 1 || h >= 16 || Guest.load64 (release h) t != 1 then err else
       let slot := if ptr == 0 then freeSlot 7 t else ptr &&& 255
-      if slot < 7 || slot >= 12 || (ptr != 0 && ptr != identity slot t) || (Guest.load64 (proc slot) t > 0 && Guest.load64 (proc slot) t < 5) then err else
+      if slot < 7 || slot >= 15 || (ptr != 0 && ptr != identity slot t) || (Guest.load64 (proc slot) t > 0 && Guest.load64 (proc slot) t < 5) then err else
         let r := release h
         let result := start slot (releaseCode h) (Guest.load64 (r+8) t) (Guest.load64 (r+16) t) (Guest.load64 (r+24) t) 0 t
         if result == err then err else
@@ -901,6 +906,25 @@ def dispatch (p op h ptr n v t : UInt64) : UInt64 :=
       !Guest.ServiceBindingPolicy.receiptConsumer (Guest.load64 (proc recipient+272) t) (Guest.load64 (proc recipient+16) t))) then err else
     let grant := findGrant h (identity p t) ptr 0 t
     if grant != 0 && grantLive grant t then Guest.load64 (grant+40) t else err
+  else if op == 147 then
+    -- Explicit selected Feed records within Objects domain3, never domain2.
+    if ptr != 0 || v != 3 then err else
+    if p == 3 && h != 0 && h == Guest.load64 0x80b00900 t && n == 0 then zero 0x80b00900 8 t else
+    if p == 3 && h == 0 && n == 0 then
+      let owner := Guest.load64 0x80b00900 t
+      if live owner t && Guest.load64 (bindingRole 5) t == owner then owner else err
+    else if p != 1 || n > 1 then err else
+    if n == 0 then zero 0x80b00900 8 t else
+    if !live h t || h != Guest.load64 (bindingRole 5) t ||
+      Guest.load64 (proc (h &&& 255)+16) t != 1024 then err else
+    Guest.store64 0x80b00900 h t
+  else if op == 146 then
+    -- Only the current signer inspects a typed Feed consumer incarnation.
+    if Guest.load64 (bindingRole 1) t != identity p t || Guest.load64 (proc p+272) t != 1 ||
+      Guest.load64 (proc p+16) t != 0 || (h != 5 && h != 6) || ptr != 0 || n != 0 || v != 0 then err else
+    let consumer := Guest.load64 (bindingRole h) t
+    if !live consumer t || !Guest.ServiceBindingPolicy.serviceRightsValid h
+      (Guest.load64 (proc (consumer &&& 255)+16) t) then err else consumer
   else if op == 116 then Guest.load64 (state+16) t
   else if op == 117 then
     let now := Guest.load64 (state+16) t
@@ -929,7 +953,7 @@ def dispatch (p op h ptr n v t : UInt64) : UInt64 :=
     let slot := Guest.load64 (proc (h &&& 255)+112) t
     if slot == 0 || slot > 16 then err else 32+copy (release (slot-1)+64) (physical p ptr) 32 t
   else if op == 124 then
-    if identity p t != Guest.load64 (state+216) t || !validFor p ptr n 384 t || n != 384 then err else 384+inspectProcesses 0 (physical p ptr) t
+    if identity p t != Guest.load64 (state+216) t || !validFor p ptr n 480 t || n != 480 then err else 480+inspectProcesses 0 (physical p ptr) t
   else if op == 120 then
     if (Guest.load64 (proc p+16) t &&& 4096) == 0 then err else Guest.AudioDevice.acquire (identity p t) t
   else if op == 121 then
@@ -954,7 +978,7 @@ def dispatch (p op h ptr n v t : UInt64) : UInt64 :=
   else if op == 97 then
     if h > 0 && h <= 6 && live (identity h t) t then identity h t else err
   else if op == 91 then
-    if p != 4 || !valid ptr 384 384 then err else 384+inspectProcesses 0 (physical p ptr) t
+    if p != 4 || !valid ptr 480 480 then err else 480+inspectProcesses 0 (physical p ptr) t
   else if op == 112 then
     if p != 1 || (h != 0 && (!live h t || (h &&& 255) < 7)) then err else
       Guest.store64 (state+200) h t
@@ -976,7 +1000,7 @@ def dispatch (p op h ptr n v t : UInt64) : UInt64 :=
   else err
 
 partial def expire (p now t : UInt64) : UInt64 :=
-  if p == 12 then t else
+  if p == 15 then t else
     let t := if (Guest.load64 (proc p) t == 2 || Guest.load64 (proc p) t == 4) && Guest.load64 (proc p+120) t <= now then
       let t := Guest.store64 (proc p+40) 0 t
       let t := Guest.store64 (frame p+80) err t
@@ -985,7 +1009,7 @@ partial def expire (p now t : UInt64) : UInt64 :=
     expire (p+1) now t
 
 partial def seedInstances (p seed t : UInt64) : UInt64 :=
-  if p == 12 then t else seedInstances (p+1) seed (Guest.store64 (proc p+8) seed t)
+  if p == 15 then t else seedInstances (p+1) seed (Guest.store64 (proc p+8) seed t)
 
 partial def bootServices (p t : UInt64) : UInt64 :=
   if p == 7 then t else
@@ -997,11 +1021,11 @@ partial def bootServices (p t : UInt64) : UInt64 :=
 
 def kernelMain (initial : UInt64) : UInt64 :=
   let t := zero state 16384 initial
-  let t := zero 0x80100000 24576 t
+  let t := zero 0x80100000 32768 t
   let t := zero 0x80b00000 2560 t
   let t := zero 0x80b10000 512 t
-  let t := zero 0x80b20000 3072 t
-  let t := zero 0x80c00000 24576 t
+  let t := zero 0x80b20000 3840 t
+  let t := zero 0x80c00000 30720 t
   let t := zero rx 2048 t
   let t := Guest.store8 0x10000002 7 t
   let t := Devices.init t
@@ -1043,7 +1067,7 @@ def trapDispatch (f cause value : UInt64) : UInt64 :=
       teardown p cause (emit 10 t)
     else Guest.finish 1
   let t := wakeSerial (pollRx 256 t)
-  let next := if cause == 8 && op != 9 && ready p t then p else choose p 11 t
+  let next := if cause == 8 && op != 9 && ready p t then p else choose p 14 t
   let t := Guest.store64 state next t
   frame next+t
 end Guest.Live

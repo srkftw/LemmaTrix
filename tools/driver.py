@@ -123,6 +123,7 @@ def main():
               '  network / forge / federation       encrypted peer setup and guest discovery/admission\n'
               '  server-store / node                explicit durable backing and isolated node roles\n'
               '  remote-build                       guest-approved executor and real verifier comparison\n'
+              '  feed ...                 native Feed packages, federation roles and approved replication\n'
               '  rel-live ...             native edit / host build / live reimport loop\n'
               '  check                    live integrated acceptance\n'
               '  fixture-build/run/check  historical finite campaign-001 regression')
@@ -169,6 +170,11 @@ def main():
     if len(sys.argv)>1 and sys.argv[1]=='network':
         import network
         sys.exit(network.main(sys.argv[2:]))
+    if len(sys.argv)>1 and sys.argv[1]=='feed':
+        import feed
+        try:sys.exit(feed.main(sys.argv[2:]))
+        except (ValueError,OSError,EOFError,TimeoutError) as error:
+            print('lt feed:',error,file=sys.stderr);sys.exit(1)
     if len(sys.argv)>1 and sys.argv[1]=='messenger':
         import messenger
         try:sys.exit(messenger.main(sys.argv[2:]))

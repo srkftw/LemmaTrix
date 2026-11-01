@@ -16,6 +16,11 @@ def other : UInt64 := 0x739200
 def scratch : UInt64 := 0x73a000
 def running : UInt64 := 0x73b000
 def hashed : UInt64 := 0x73c000
+-- Readers never borrow the admitted writer's partial page or candidate index.
+-- These disjoint buffers keep committed reads available while a serial writer
+-- waits for more chunks. Hash scratch is transient and the running hash is not.
+def readPage : UInt64 := 0x73d000
+def readIndices : UInt64 := 0x73e000
 def magic : UInt64 := 0x3152565253544c
 def formatMagic : UInt64 := 0x31524f5453544c
 def row (i : UInt64) : UInt64 := rows+i*512
@@ -50,12 +55,13 @@ partial def indexIO (op sector p left t : UInt64) : UInt64 :=
   if left == 0 then t else
     let r := disk op sector p 4096 t
     if r == error then error else indexIO op (sector+8) (p+4096) (left-4096) r
-def loadIndex (p t : UInt64) : UInt64 :=
+def loadIndexAt (p output t : UInt64) : UInt64 :=
   let sector := bankSector (load64 (p+16) t) (load64 (p+24) t)+2048
-  let r := indexIO 65 sector indices 8192 t
+  let r := indexIO 65 sector output 8192 t
   if r == error then error else
-    let t := ServiceHash.sha256At scratch indices 8192 hashed r
+    let t := ServiceHash.sha256At scratch output 8192 hashed r
     if eq hashed (p+112) 32 t then t else error
+def loadIndex (p t : UInt64) : UInt64 := loadIndexAt p indices t
 def inspectRoot (p slot t : UInt64) : UInt64 :=
   if !rootValid p slot t then error else loadIndex p t
 partial def scan (i t : UInt64) : UInt64 :=
@@ -91,7 +97,7 @@ def permit (length t : UInt64) : UInt64 :=
   let role := load64 (command+16) t
   let quota := load64 (command+24) t
   let actual := syscall 34 target 0 0 0 t
-  if length != 96 || actual == error || (actual &&& 0x100000800) == 0 || role == 0 || role > 4 ||
+  if length != 96 || actual == error || (actual &&& 0x100000800) == 0 || role == 0 || role > 6 ||
       quota == 0 || quota > 1048576 || Guest.ProjectGraph.allZero (command+64) 32 actual then response 1 0 actual else
     let found := locate (command+64) 0 actual
     let slot := if found == error then vacant 0 actual else found
@@ -219,15 +225,15 @@ def read (caller h offset count t : UInt64) : UInt64 :=
     let p := row slot
     let total := load64 (p+32) t
     if load64 p t != magic || offset >= total || count > total-offset || offset%4096+count > 4096 then response 2 0 t else
-      let r := loadIndex p t
+      let r := loadIndexAt p readIndices t
       if r == error then response 5 0 r else
       let sector := bankSector slot (load64 (p+24) r)+(offset/4096)*8
-      let r := disk 65 sector page 4096 r
+      let r := disk 65 sector readPage 4096 r
       if r == error then response 6 0 r else
-      let t := ServiceHash.sha256At scratch page 4096 hashed r
-      if !eq hashed (indices+offset/4096*32) 32 t then response 5 0 t else
+      let t := ServiceHash.sha256At scratch readPage 4096 hashed r
+      if !eq hashed (readIndices+offset/4096*32) 32 t then response 5 0 t else
         let t := response 0 count t
-        64+count+copy (page+offset%4096) (wire+64) count t
+        64+count+copy (readPage+offset%4096) (wire+64) count t
 
 def dispatch (caller rights length t : UInt64) : UInt64 :=
   let owner := load64 txn t

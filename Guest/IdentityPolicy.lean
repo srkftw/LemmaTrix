@@ -3,7 +3,8 @@ namespace Guest.IdentityPolicy
 -- incarnations, never claimed roles in an application payload, supply identity.
 def administrative (rights : UInt64) : Bool := (rights &&& 0x100000000) != 0
 def purposeAllowed (role purpose : UInt64) : Bool :=
-  (role == 2 && purpose == 1) || (role == 3 && (purpose == 2 || purpose == 3))
+  (role == 2 && purpose == 1) || (role == 3 && (purpose == 2 || purpose == 3)) ||
+  (role == 5 && purpose == 4) || (role == 6 && purpose == 5)
 def bindingCurrent (stored current : UInt64) : Bool := current != 0 && stored == current
 def permits (active owner caller storedGeneration currentGeneration remaining : UInt64)
     (bodyMatches : Bool) : Bool :=
@@ -47,4 +48,9 @@ theorem missing_binding_denies (stored : UInt64) : bindingCurrent stored 0 = fal
 theorem replaced_binding_denies (stored current : UInt64) (different : (stored == current) = false) :
     bindingCurrent stored current = false := by
   simp [bindingCurrent, different]
+theorem feed_author_cannot_sign_moderation : purposeAllowed 5 5 = false := by decide
+theorem feed_moderator_cannot_sign_author_events : purposeAllowed 6 4 = false := by decide
+theorem feed_author_has_typed_purpose : purposeAllowed 5 4 = true := by decide
+theorem feed_moderator_has_typed_purpose : purposeAllowed 6 5 = true := by decide
+theorem messenger_cannot_sign_feed : purposeAllowed 2 4 = false := by decide
 end Guest.IdentityPolicy

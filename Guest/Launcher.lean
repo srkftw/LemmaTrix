@@ -156,8 +156,8 @@ def retain (h t : UInt64) : UInt64 :=
   let t := Guest.store64 (buf+56) 1 t
   let metadata := forward 2 64 t
   if metadata != 96 || Guest.load64 buf metadata != 0 || (Guest.load64 (buf+48) metadata &&& 25) != 25 then err else
-    let count := Guest.syscall 42 0 0x418000 384 0 metadata
-    if count != 384 then err else
+    let count := Guest.syscall 42 0 0x418000 480 0 metadata
+    if count != 480 then err else
       let vault := Guest.load64 (0x418000+96) count
       let t := zero buf 8 count
       let t := Guest.store64 buf 6 t
@@ -344,7 +344,7 @@ def stageProject (root t : UInt64) : UInt64 :=
 
 @[noinline] def commandControl (op len t : UInt64) : UInt64 :=
   if op == 1 then result 2 t
-  else if op == 2 then Guest.syscall 42 0 buf 384 0 t
+  else if op == 2 then Guest.syscall 42 0 buf 480 0 t
   else if op == 3 then
     let t := zero (control+256) 8 t
     result 0 t
@@ -429,7 +429,7 @@ def stageProject (root t : UInt64) : UInt64 :=
     if len != 16 then err else
       let old := Guest.load64 buf t
       let slot := Guest.load64 (buf+8) t
-      if !launchable slot t || old >>> 8 >= 0x00ffffffffffffff || ((old >>> 8) &&& 0xffffff) == 0xffffff || (old &&& 255) < 4 || (old &&& 255) >= 12 then err else
+      if !launchable slot t || old >>> 8 >= 0x00ffffffffffffff || ((old >>> 8) &&& 0xffffff) == 0xffffff || (old &&& 255) < 4 || (old &&& 255) >= 15 then err else
         let r := Guest.syscall 51 old 0 0 0 t
         if r == err then err else
           let identity := Guest.syscall 50 (slot-1) old 0 0 r
@@ -536,8 +536,8 @@ def describeProjectRetention (root t : UInt64) : UInt64 :=
 def retainProject (root t : UInt64) : UInt64 :=
   let prepared := prepareProject root 1 t
   if prepared == err then err else
-    let count := Guest.syscall 42 0 0x418000 384 0 prepared
-    if count != 384 then
+    let count := Guest.syscall 42 0 0x418000 480 0 prepared
+    if count != 480 then
       keep err (releaseFrozenProject 0 count)
     else
       let vault := Guest.load64 (0x418000+96) count
@@ -693,6 +693,10 @@ def retainGameSave (handle t : UInt64) : UInt64 :=
   else if op == 178 then
     if len != 16 then err else
     let r := Guest.syscall 144 (Guest.load64 buf t) 1 (Guest.load64 (buf+8) t) 2 t
+    if r == err then err else 8+Guest.store64 buf 0 r
+  else if op == 179 then
+    if len != 16 then err else
+    let r := Guest.syscall 147 (Guest.load64 buf t) 0 (Guest.load64 (buf+8) t) 3 t
     if r == err then err else 8+Guest.store64 buf 0 r
   else if op == 180 then if len == 8 then stageProject (Guest.load64 buf t) t else err
   else if op == 181 then

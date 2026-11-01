@@ -20,7 +20,7 @@ def hash (p n out t : UInt64) : UInt64 := Guest.ServiceHash.sha256At scratch p n
 def bodyValid (p t : UInt64) : Bool :=
   let n := load64 (p+176) t
   load64 p t == Guest.Identity.nodeMagic && load64 (p+8) t == 2 &&
-  (load64 (p+16) t == 7 || load64 (p+16) t == 8) &&
+  (load64 (p+16) t == 7 || load64 (p+16) t == 8 || load64 (p+16) t == 16) &&
   load64 (p+24) t == 1 && load64 (p+32) t == 1 &&
   load64 (p+40) t > 0 && load64 (p+40) t <= 1073741824 &&
   load64 (p+48) t > 0 && load64 (p+48) t <= 1000000000 &&

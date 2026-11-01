@@ -38,4 +38,18 @@ def authorizeReceipt (receipt service limit context t : UInt64) : UInt64 :=
   invoke 409 128 (copy context (wire+64) 64 (header 409 0 receipt service limit 0 0 t))
 def signReceipt (grant body t : UInt64) : UInt64 :=
   invoke 409 256 (copy body (wire+64) 192 (header 409 grant 0 0 0 0 0 t))
+-- Feed-v1 lifecycle is restricted to a current exact registered account or
+-- federation consumer. Scope and signing purpose are determined by that role.
+def feedCreate (federation scope t : UInt64) : UInt64 :=
+  invoke 410 128 (copy scope (wire+96) 32 (copy federation (wire+64) 32 (header 410 0 0 0 0 0 0 t)))
+def feedApprove (key bodyHash t : UInt64) : UInt64 :=
+  invoke 410 96 (copy bodyHash (wire+64) 32 (header 410 1 key 0 0 0 0 t))
+def feedRevoke (key t : UInt64) : UInt64 := invoke 410 64 (header 410 2 key 0 0 0 0 t)
+def sealFeed (key credential t : UInt64) : UInt64 :=
+  invoke 410 96 (copy credential (wire+64) 32 (header 410 3 key 0 0 0 0 t))
+def recoverFeed (credential publicKey sealed t : UInt64) : UInt64 :=
+  let t := copy credential (wire+64) 32 (header 410 4 0 0 0 0 0 t)
+  let t := copy publicKey (wire+96) 32 t
+  invoke 410 320 (copy sealed (wire+128) 192 t)
+def lockFeed (t : UInt64) : UInt64 := invoke 410 64 (header 410 5 0 0 0 0 0 t)
 end Guest.IdentitySDK
