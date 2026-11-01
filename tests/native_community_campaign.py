@@ -54,7 +54,7 @@ def focus_application(g,which):
  raise RuntimeError((g.name,'native graphical focus unavailable',which))
 
 @contextlib.contextmanager
-def attach_campaign(output,graphical=('alice','bob','charlie')):
+def attach_campaign(output,graphical=('alice','bob','charlie'),skip=()):
  """Attach the same live actors for connected native product continuations.
 
  The state contains public configuration and ephemeral native handles. A
@@ -66,6 +66,7 @@ def attach_campaign(output,graphical=('alice','bob','charlie')):
  actors={}
  try:
   for name,record in state['actors'].items():
+   if name in skip:continue
    g=Guest(name,record['backend'],out,out/'guest.bin',graphical=name in graphical).attach(None)
    actors[name]=g
    assert g.network==record['network'],'explicit native recovery required for restarted '+name
