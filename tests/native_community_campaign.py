@@ -55,7 +55,11 @@ def focus_application(g,which):
   g.device.press(62,delay=.1)
   ok=feed_ui(g)[0][2]==9 if which=='feed'else inspect(g)[0][2]==2
   g.device.press(1,delay=.1)
-  if ok:return
+  if ok:
+   # Keyboard delivery and the native UI's bounded input pump are separate.
+   # Do not expose our harmless focus preview to the next compose operation.
+   wait(lambda:feed_ui(g)[0][2]==0 if which=='feed'else inspect(g)[0][2]==0,120,g.name+' native focus preview closed')
+   return
   g.device.chord(56,15);time.sleep(.2)
  raise RuntimeError((g.name,'native graphical focus unavailable',which))
 
