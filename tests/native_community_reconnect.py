@@ -66,6 +66,21 @@ def main():
    wait(lambda:feed_ui(charlie)[0][3]==len(text),180,'native complete review input');charlie.device.press(62);wait(lambda:feed_ui(charlie)[0][2]==9,120,'native exact review preview');charlie.device.press(63)
   try:
    peers()
+   stage='reconcile prior accepted publication after own backfill timeout'
+   if not state['done'].get('ready'):
+    prior=list(feed_ui(charlie)[0])
+    if prior[5]==8:
+     # A bounded backfill timeout may conservatively require reconciliation
+     # of the retained last publication. Use its ordinary native exact retry;
+     # never clear the warning or substitute a newly authored event.
+     known=export('prior-backfill');charlie.device.press(1)
+     assert len(lookup(alpha,event_id=bytes.fromhex(known['event'])))==1
+     before=stats();select_feed_route(charlie,alpha,relays);charlie.device.press(63)
+     wait(lambda:feed_ui(charlie)[0][5]in(6,7),600,'native prior accepted commitment reconciliation')
+     assert stats()==before
+     net(charlie,42);net(charlie,35)
+     record('ready','own backfill timeout warning reconciles the exact previously accepted publication before new composition',prior_ui=prior,profile=known,author_usage=before,unrelated_sessions=peers())
+    else:record('ready','prior publication is settled before required-route refusal test',prior_ui=prior,unrelated_sessions=peers())
    stage='required-mode1 route refusal'
    if not state['done'].get('unavailable'):
     assert net(charlie,41)[0][2]==0 and not lookup(alpha,text=UNAVAILABLE)
