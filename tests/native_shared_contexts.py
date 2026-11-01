@@ -74,6 +74,52 @@ open Guest Guest.LiveSDK
     (store64 (Guest.OnionTerminal.st+32) 0 (store64 (Guest.OnionTerminal.st+224) 99 t)))
   let t := Guest.OnionTerminal.expireWork 100 t
   if load64 Guest.OnionTerminal.st t != 0 then 42 else 0
+@[noinline] def primaryPinChecks (t : UInt64) : UInt64 :=
+  let t := zero Guest.TorRouter.state 8192 (zero Guest.Transport.st 4096
+    (zero Guest.OnionTerminal.control 64 (zero Guest.OnionTerminal.st 4096 (zero 0x770000 8192 t))))
+  let t := store64 Guest.TorRouter.state 1 (store64 (Guest.TorRouter.state+8) 2 t)
+  let t := store64 (Guest.TorRouter.channel 0) 4 (store64 (Guest.TorRouter.channel 1) 4
+    (store64 (Guest.TorRouter.channel 2) 4 (store64 (Guest.TorRouter.channel 3) 4 t)))
+  let t := store64 (Guest.TorRouter.channel 0+24) 7 (store64 (Guest.TorRouter.channel 2+24) 9 t)
+  let t := store64 (Guest.TorRouter.circuit 0) 1 (store64 (Guest.TorRouter.circuit 0+16) 1
+    (store64 (Guest.TorRouter.circuit 2) 1 (store64 (Guest.TorRouter.circuit 2+16) 3 t)))
+  let t := store64 Guest.OnionTerminal.st 2 (store64 (Guest.OnionTerminal.st+8) 3
+    (store64 (Guest.OnionTerminal.st+32) 0 (store64 (Guest.OnionTerminal.st+168) 7
+    (store64 (Guest.OnionTerminal.st+176) 123 t))))
+  let t := store64 (Guest.OnionTerminal.st+248) 555 t
+  let t := store64 Guest.OnionTerminal.noiseBank 0xaa t
+  let t := Guest.OnionTerminal.selectContext 1 t
+  let t := store64 Guest.OnionTerminal.st 2 (store64 (Guest.OnionTerminal.st+8) 3
+    (store64 (Guest.OnionTerminal.st+32) 2 (store64 (Guest.OnionTerminal.st+168) 9
+    (store64 (Guest.OnionTerminal.st+176) 456 t))))
+  -- An unrelated Registry-style bank has no primary pin; its exact target is
+  -- separately selected in control48. Neither changes with this primary app.
+  let t := store64 (Guest.OnionTerminal.st+248) 0 (store64 (Guest.OnionTerminal.control+48) 999 t)
+  let t := store64 Guest.OnionTerminal.noiseBank 0xee t
+  let t := Guest.OnionTerminal.selectContext 0 t
+  if load64 (Guest.OnionTerminal.st+248) t != 555 || load64 (Guest.OnionTerminal.bank 1+248) t != 0 then 43 else
+  -- The fixture supplies only the result of128. Actual kernel binding and
+  -- process-replacement enforcement are exercised by the installed probe.
+  let t := store64 0x718208 777 (store64 0x718210 0 t)
+  let t := store64 (Guest.NodeEnrollment.localNode+208) 8 t
+  let t := store64 (Guest.OnionTerminal.st+48) 64 (store64 (Guest.OnionTerminal.st+56) 64 t)
+  let t := store64 Guest.OnionTerminal.received 441 (store64 (Guest.OnionTerminal.received+56) 1 t)
+  let t := Guest.OnionTerminal.serverQuantum t
+  if load64 0x718210 t != 0 || load64 Guest.OnionTerminal.st t != 0 ||
+    load64 (Guest.OnionTerminal.st+160) t != 25 || load64 (Guest.TorRouter.channel 0) t != 0 ||
+    load64 (Guest.TorRouter.channel 1) t != 0 || load64 (Guest.TorRouter.channel 2) t != 4 ||
+    load64 (Guest.OnionTerminal.bank 0+248) t != 0 || load64 (Guest.OnionTerminal.bank 1+512) t != 0xee ||
+    load64 (Guest.OnionTerminal.control+48) t != 999 then 44 else
+  -- A saved primary pin cannot close a channel reused by a newer epoch.
+  let t := store64 Guest.OnionTerminal.st 2 (store64 (Guest.OnionTerminal.st+32) 0
+    (store64 (Guest.OnionTerminal.st+168) 7 (store64 (Guest.OnionTerminal.st+176) 123
+    (store64 (Guest.OnionTerminal.st+248) 555 t))))
+  let t := store64 (Guest.TorRouter.channel 0) 4 (store64 (Guest.TorRouter.channel 0+24) 11
+    (store64 (Guest.OnionTerminal.control+32) 456 t))
+  let t := Guest.OnionTerminal.retireOwned 25 t
+  if load64 Guest.OnionTerminal.st t != 0 || load64 (Guest.TorRouter.channel 0) t != 4 ||
+    load64 (Guest.OnionTerminal.control+32) t != 456 || load64 (Guest.OnionTerminal.bank 1+512) t != 0xee then 45 else
+  0
 @[noinline] def bulkChecks (t : UInt64) : UInt64 :=
   let t := zero Guest.Network.control 512 (zero Guest.Network.st 64
     (zero Guest.Noise.state 52 (zero Guest.Transport.st 4096 t)))
@@ -238,6 +284,8 @@ open Guest Guest.LiveSDK
 def check (t : UInt64) : UInt64 :=
   let checked := terminalLimitChecks t
   if checked != 0 then checked else
+  let checked := primaryPinChecks checked
+  if checked != 0 then checked else
   let checked := contextChecks checked
   if checked != 0 then checked else bulkChecks checked
 end build.NativeSharedContexts
@@ -258,6 +306,10 @@ fixtureClock:
  bne t0,t1,fatal
  li t1,135
  beq a7,t1,fixtureCancel
+ li t1,128
+ beq a7,t1,fixturePrimary
+ li t1,133
+ beq a7,t1,fixtureDispatch
  li t1,110
  bne a7,t1,fatal
  li a0,100
@@ -266,6 +318,17 @@ fixtureCancel:
  li t1,0x80518200
  sd a0,0(t1)
  li a0,0
+ j fixtureReturn
+fixturePrimary:
+ li t1,0x80518208
+ ld a0,0(t1)
+ j fixtureReturn
+fixtureDispatch:
+ li t1,0x80518210
+ ld t2,0(t1)
+ addi t2,t2,1
+ sd t2,0(t1)
+ li a0,-1
 fixtureReturn:
  csrr t0,mepc
  addi t0,t0,4
@@ -275,6 +338,6 @@ fixtureReturn:
  driver.asm(boot,native.B/'1.o')
  driver.run([driver.tool('ld.lld'),'-m','elf64lriscv','--no-relax','-T',ROOT/'runtime/kernel.ld',*(native.B/f'{i}.o'for i in range(3)),'-o',native.B/'check.elf'])
  driver.run([driver.tool('llvm-objcopy'),'-O','binary',native.B/'check.elf',binary])
- report=dict(schema=1,result='pass',image_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),checks=[native.execute(binary,b) for b in a.backend or ['qemu','aarch64']],boundaries=['terminal output link quota exhaustion closes the actual charged pair even when another pair was last pumped','partial terminal frames and pending typed IPC expire independently; exact cancellation frees the dispatch lane and wipes only the selected key/buffer snapshot','healthy idle terminal contexts do not expire; deadline addition saturates instead of disabling near clock exhaustion','relay integrity failure closes only dependent incoming/outgoing pair','expired idle listener gets a finite setup window only when accepted; outbound and ongoing handshake deadlines do not renew','failed LISTEN retires only that listener, backs off within32 failures, and explicit operator listen renews its allowance','terminal keys/buffers banked by channel, stream and epoch; stale epoch rejects','mailbox sameNetworkcaller different terminalorigin cannot append or collect foreignstaging','adapterv3 accepts slot15 and rejects slot16','bulk reconnect attempts remain context-private, finite32 and pending admission does not renew them','current native Feed relationship preserves exact used allowance and expiry only on link loss; lost jobs and inbox cleared, expired/pin-changed or explicit-stop grants cannot revive'],limitations='Focused compiled RV64 state transitions, including provisioned predicate inputs for bulk reconnect; no native certificate-admission claim from this fixture. AArch64 assembly emulator runs under qemu-aarch64; no physical hardware or full native Messenger qualification.')
+ report=dict(schema=1,result='pass',image_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),checks=[native.execute(binary,b) for b in a.backend or ['qemu','aarch64']],boundaries=['saved terminal primary target pins survive context switching; changed target retires only the selected epoch-owned pair before dispatch133, leaving unrelated bank/Registry pin intact; stale epochs cannot close a reused channel','terminal output link quota exhaustion closes the actual charged pair even when another pair was last pumped','partial terminal frames and pending typed IPC expire independently; exact cancellation frees the dispatch lane and wipes only the selected key/buffer snapshot','healthy idle terminal contexts do not expire; deadline addition saturates instead of disabling near clock exhaustion','relay integrity failure closes only dependent incoming/outgoing pair','expired idle listener gets a finite setup window only when accepted; outbound and ongoing handshake deadlines do not renew','failed LISTEN retires only that listener, backs off within32 failures, and explicit operator listen renews its allowance','terminal keys/buffers banked by channel, stream and epoch; stale epoch rejects','mailbox sameNetworkcaller different terminalorigin cannot append or collect foreignstaging','adapterv3 accepts slot15 and rejects slot16','bulk reconnect attempts remain context-private, finite32 and pending admission does not renew them','current native Feed relationship preserves exact used allowance and expiry only on link loss; lost jobs and inbox cleared, expired/pin-changed or explicit-stop grants cannot revive'],limitations='Focused compiled RV64 state transitions, including provisioned predicate inputs for bulk reconnect and a declared128 target-result oracle plus133 dispatch counter; no claim that this oracle implements kernel binding/replacement; no native certificate-admission claim from this fixture. AArch64 assembly emulator runs under qemu-aarch64; no physical hardware or full native Messenger qualification.')
  (native.B/'evidence.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2))
 if __name__=='__main__':main()
