@@ -167,7 +167,7 @@
     "replication_allocation_bytes_max": 1048576,
     "replication_attempts_per_event": 9,
     "polls_per_attempt": 128,
-    "actual_concurrent_clients_in_common_run": 3,
+    "actual_concurrent_clients_in_common_run": 0,
     "mailbox_progress_ticks": 10000,
     "mailbox_absolute_stage_ticks": 60000,
     "relay_setup_ticks": 100000,
@@ -2687,5 +2687,12 @@
     "bytes": 97504,
     "sha256": "55413b5f50bcf07c93b8b9b6bc0ed98d2a289be60821143ffafa7881734c484b",
     "source_commit": "983f523"
+  },
+  "installed_imported_registry_revocation": {
+    "name": "installed-imported-registry-revocation",
+    "published_record": "campaign-009-registry-imported-revocation.json",
+    "sha256": "23d5024c77d5f9797c199eec284137b92f8fd1b4f807d0e5b0b41360f3362382",
+    "result": "pass",
+    "scope": "Actual installed final854 image and corrected97504B Registry. Two isolated native instances verify unchanged original admission; fresh importer revokes at seq2>1, current(old) refuses3, current(new) passes. Existing disclosed project/Registry RSA bootstrap only; no Feed-authored fixture."
   }
 }

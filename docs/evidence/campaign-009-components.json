@@ -907,6 +907,13 @@
       "sha256": "2d7009da48a5d0aa7bf5c174285edf1fed6aba24a2db55713188dc856962fbdd",
       "scope": "Actual installed seven-guest candidate854/source8b4e26f, old Mailbox NK refused before new staging, unrelated Feed status continues, fresh Mail NK safely reuses canceled numeric handle.",
       "result": "pass"
+    },
+    {
+      "name": "installed-imported-registry-revocation",
+      "published_record": "campaign-009-registry-imported-revocation.json",
+      "sha256": "23d5024c77d5f9797c199eec284137b92f8fd1b4f807d0e5b0b41360f3362382",
+      "result": "pass",
+      "scope": "Actual installed final854 image and corrected97504B Registry. Two isolated native instances verify unchanged original admission; fresh importer revokes at seq2>1, current(old) refuses3, current(new) passes. Existing disclosed project/Registry RSA bootstrap only; no Feed-authored fixture."
     }
   ],
   "assurance": "Local one-host execution. AArch64 is qemu-aarch64 emulation. No physical hardware, independent operators, Tor interoperability, post-quantum security or whole-store external freshness claim."
