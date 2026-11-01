@@ -6,6 +6,7 @@ fault is availability of exact opaque guest process groups; no host event,
 policy result, private identity seed or replication message is supplied.
 """
 import argparse
+import contextlib
 import hashlib
 import json
 import os
@@ -21,6 +22,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / 'tools'), str(ROOT / 'tests')]
 import feed
 import identity
+import messenger
 import onion
 import releases
 from messenger_journey import Guest, PUB, net, screenshot, wait
@@ -167,6 +169,42 @@ def check_replication_lease(guest, operator, endpoint):
     return result
 
 
+
+@contextlib.contextmanager
+def approved_synchronous_beta_admin(campaign):
+    """Use the disclosed exact150 adapter only for the affected old Beta.
+
+    An interrupted175 admission left one bounded devbridge result without a
+    locally acquired token. This never guesses that token or changes native
+    grants. A replacement client after scheduled cold restart uses normal175.
+    """
+    path = campaign.output/'management-control-boundary.json'
+    marker = json.loads(path.read_text()) if path.exists() else {}
+    enabled = marker.get('synchronous_admin_until_restart', False)
+    if enabled:
+        assert marker.get('actor') == 'beta'
+    beta = campaign.actors.get('beta')
+    affected = beta.client if enabled and beta is not None else None
+    original = feed.invoke
+    def invoke(client, operation, action=0, handle=0, offset=0, count=0, data=b'', allowed=(0,)):
+        if affected is None or client is not affected or operation not in (490, 491):
+            return original(client, operation, action, handle, offset, count, data, allowed)
+        target = messenger.endpoint(client, 6, operation)
+        request = struct.pack('<Q8Q', target, operation, action, handle, offset, count, 0, 0, 1)+data
+        raw = client.request(150, request)
+        if len(raw) < 64:
+            raise ValueError('native synchronous Feed response is truncated')
+        fields = struct.unpack_from('<8Q', raw)
+        if fields[0] not in allowed:
+            raise ValueError('native service status'+str(fields[0]))
+        return fields, raw[64:]
+    feed.invoke = invoke
+    try:
+        yield marker if enabled else None
+    finally:
+        feed.invoke = original
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--attach', type=Path, required=True)
@@ -190,7 +228,7 @@ def main():
         print('PASS', label, extra, flush=True)
 
     skip = ('beta',) if args.stage == 'restart' and state['done'].get('pending-beta') and not state['done'].get('recovered') else ()
-    with attach_campaign(out, graphical=('alice', 'bob'), skip=skip) as campaign:
+    with attach_campaign(out, graphical=('alice', 'bob'), skip=skip) as campaign, approved_synchronous_beta_admin(campaign) as control_marker:
         assert campaign.state['done'].get('cancel'), 'core connected contention journey must finish first'
         assert all(releases.inspect((bundle/(name+'.ltrel')).read_bytes())['release_id'] ==
                    campaign.state['configuration']['feed'][name]
@@ -203,6 +241,8 @@ def main():
         target = bytes.fromhex(campaign.state['events']['reply']['id'])
         state['configuration'] = campaign.state['configuration']
         state['target'] = target.hex()
+        if control_marker is not None:
+            state['management_control_boundary'] = control_marker
         try:
             lease_checks = []
             for name in ('alpha', 'beta'):
@@ -363,6 +403,14 @@ def main():
                         partial.stop()
                     replacement = Guest('beta', 'qemu', out, out/'guest.bin', store=out/'beta.img').start()
                     actors['beta'] = beta = replacement
+                    if control_marker is not None:
+                        assert beta.network != campaign.state['actors']['beta']['network']
+                        cleared = dict(control_marker, synchronous_admin_until_restart=False,
+                                       cleared_by='scheduled Beta cold restart; fresh Launcher/native incarnation',
+                                       previous_network=campaign.state['actors']['beta']['network'],
+                                       current_network=beta.network)
+                        (out/'management-control-boundary.json').write_text(json.dumps(cleared, indent=2)+'\n')
+                        state['management_control_boundary_after_restart'] = cleared
                     identity.start(beta.client, bundle/'identity.ltrel', PUB)
                     beta.client.request(178, struct.pack('<2Q', beta.network, 1))
                     onion.call(beta.client, 44, data=key_credential(out/'beta.node-unlock'))
