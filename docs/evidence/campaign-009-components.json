@@ -755,6 +755,66 @@
         "result": "pass",
         "seconds": 84.34409918299934
       }
+    },
+    {
+      "name": "actual-native-valid-conflict-and-quota",
+      "local_record": "build/campaign009-native-conflict/evidence.json",
+      "published_record": "campaign-009-native-conflict.json",
+      "record_sha256": "b00b6d25949892ce4a7f011a8844f3579d2b78525e2dd81ad1d877c60779c4e2",
+      "result": "pass",
+      "image_sha256": "582f4d24d94874898e0bba18c98ef04d91e969f14aaf1ca0678c5152f50ae6f2",
+      "checks": [
+        {
+          "check": "current exact role5 consumer creates a native entropy Ed25519 key",
+          "result": "pass",
+          "public": "bd88150efd1c6e4f20fbaffb330f35c1990983a08bd1b52171951901a8f61aad"
+        },
+        {
+          "check": "three canonical valid events receive independent one-use native approvals and native signatures",
+          "result": "pass",
+          "same_author": true,
+          "first_sequence": 1,
+          "conflicting_sequence": 1,
+          "next_sequence": 2
+        },
+        {
+          "check": "exact duplicate reconciles committed acceptance before exhausted quota without new event, bytes or reservation",
+          "result": "pass",
+          "event": "7382d802079838b8c64f5fa91fc8d43f67969a488c4126f45f4224d36b0720ab",
+          "usage": [
+            0,
+            1,
+            72,
+            1,
+            16384,
+            1,
+            1,
+            1
+          ],
+          "budget": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "check": "actual native service refuses a valid different same-author sequence commitment with12 and valid next sequence at finite quota with4",
+          "result": "pass",
+          "conflict": 12,
+          "quota": 4
+        },
+        {
+          "check": "original signed event and checked immutable content remain readable after both refusals",
+          "result": "pass"
+        }
+      ],
+      "elapsed_seconds": 100.65297675799957,
+      "limitations": "Isolated all-QEMU native application refusal probe. Canonical boundary inputs are explicit test data; this is not UI-authored connected community history."
     }
   ],
   "assurance": "Local one-host execution. AArch64 is qemu-aarch64 emulation. No physical hardware, independent operators, Tor interoperability, post-quantum security or whole-store external freshness claim."
