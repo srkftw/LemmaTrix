@@ -152,6 +152,7 @@ def main():
  p.add_argument('--publisher',type=Path,default=ROOT/'build/signed-forge-journey-2/publisher.pub')
  p.add_argument('--mixed',action='store_true',help='relay2 uses the native x86_64 RV64 interpreter; both federation services remain QEMU')
  p.add_argument('--history-events',type=int,default=17,choices=range(3,18),help='meaningful UI-authored discussion events, distributed below each author16-event allowance')
+ p.add_argument('--replication-auto-renew',action='store_true',help='explicitly approve native rolling leases within the same durable finite replication total')
  p.add_argument('--prior-attempt',type=Path,help='read-only evidence chain for a superseded campaign; never copies native backing or authority')
  p.add_argument('--resume',action='store_true');p.add_argument('--stop-on-exit',action='store_true')
  a=p.parse_args();out=a.output.resolve();out.mkdir(parents=True,exist_ok=a.resume)
@@ -167,6 +168,7 @@ def main():
   assert target.read_bytes()==source.read_bytes(),'resume package changed: '+n
   mp[n]=(target,releases.inspect(target.read_bytes()))
  expected=dict(image_sha256=hashlib.sha256(image.read_bytes()).hexdigest(),feed={n:releases.inspect(f.read_bytes())['release_id']for n,f in fp.items()},messenger={n:r['release_id']for n,(_,r)in mp.items()},mixed=a.mixed,history_events=a.history_events)
+ if a.replication_auto_renew:expected['replication_auto_renew']=True
  state=json.loads(statefile.read_text())if a.resume else dict(schema=1,configuration=expected,done={},actors={},personal={},events={},checks=[])
  assert state['configuration']==expected,'resume selections changed'
  if not a.resume and a.prior_attempt:
@@ -353,7 +355,7 @@ def main():
    probe=socket.socket();probe.bind(('127.0.0.1',0));endpoint='127.0.0.1:'+str(probe.getsockname()[1]);probe.close()
    scope=hashlib.sha256(b'Campaign009 common explicitly approved replication').hexdigest();state['bulk_endpoint']=endpoint;save()
    for g,side in((alpha,'server'),(beta,'client')):
-    state['actors'][g.name]['replication']=feed.replication(g.client,NS(peer=0,side=side,slot=0,scope=scope,endpoint=endpoint,bytes=16777216,rate=65536,lifetime=100000));save()
+    state['actors'][g.name]['replication']=feed.replication(g.client,NS(peer=0,side=side,slot=0,scope=scope,endpoint=endpoint,bytes=16777216,rate=65536,lifetime=100000,auto_renew=a.replication_auto_renew));save()
    record('replication','native signed enrollment derives separately approved inter-operator mode3 relationship; personal traffic still requires mode1')
   stage='native signed Feed community'
   first=publish(charlie,'ordinary',SHORT);longrow=publish(charlie,'long',LONG)
@@ -424,11 +426,17 @@ def main():
    before=[list(net(g,41)[0])for g in(alice,bob)];fault('resume',state['stall']['epoch']);net(charlie,42);net(charlie,35)
    assert all(net(g,41)[0][2]==3 for g in(alice,bob));record('cancel','native Feed cancellation and circuit disconnect preserve both unrelated authenticated Messenger sessions',other_sessions=before,stalled_seconds=time.monotonic()-state['stall']['began_monotonic'])
   continuation()
+  replication_runtime={}
+  if a.replication_auto_renew:
+   for g in(alpha,beta):
+    lease,_=feed.invoke(g.client,490,action=13);budget,policy=feed.invoke(g.client,490,action=12)
+    assert lease[1]==2 and lease[3]!=2,(g.name,lease)
+    replication_runtime[g.name]=dict(lease=list(lease),budget=list(budget),policy_hash=policy.hex(),host_lease_renewals=0)
   frames={g.name:screenshot(g,'common-community')for g in(alice,bob)}
   for g in(charlie,alice,bob):
    public=feed_ui(g)[1][:32].hex();assert public!='00'*32 and public==state['personal'][g.name]['feed_public']
    assert any(event['author']==public for event in state['events'].values()),'each displayed author must match a real original signed event'
-  report=dict(schema=1,result='pass',configuration=expected,checks=state['checks'],events=state['events'],actors=state['actors'],frames=frames,elapsed_seconds=time.monotonic()-started,controller_segments=state['controller_segments'],feed_prepublication_upgrade=state.get('feed_prepublication_upgrade'),registry_input_provenance=state.get('registry_input_provenance'),capacity=dict(transport_channels=16,onion_channels=12,relay_complete_routes_bound=6,observed_simultaneous_personal_clients=3,bulk_channels=4,terminal_banks=16,mailbox_stages=4,mailbox_stage_bytes=8192),limits=['One-host local integration; native x86_64 is an RV64 interpreter when selected.','This connected segment covers signed Feed discussion/replication and Messenger/Forge contention. Project-card Add/Fork, moderation/appeals, restart/retention/migration and refusal cases require their separately recorded connected continuations.','Existing project/Registry RSA package bootstrap remains disclosed; no new Feed-author, moderator or replication private key is held by the host.','Classical native crypto does not qualify Tor interoperability, post-quantum security, independent administration, hostile-government resilience or physical hardware.'])
+  report=dict(schema=1,result='pass',configuration=expected,checks=state['checks'],events=state['events'],actors=state['actors'],frames=frames,elapsed_seconds=time.monotonic()-started,controller_segments=state['controller_segments'],replication_runtime=replication_runtime,feed_prepublication_upgrade=state.get('feed_prepublication_upgrade'),registry_input_provenance=state.get('registry_input_provenance'),capacity=dict(transport_channels=16,onion_channels=12,relay_complete_routes_bound=6,observed_simultaneous_personal_clients=3,bulk_channels=4,terminal_banks=16,mailbox_stages=4,mailbox_stage_bytes=8192),limits=['One-host local integration; native x86_64 is an RV64 interpreter when selected.','This connected segment covers signed Feed discussion/replication and Messenger/Forge contention. Project-card Add/Fork, moderation/appeals, restart/retention/migration and refusal cases require their separately recorded connected continuations.','Existing project/Registry RSA package bootstrap remains disclosed; no new Feed-author, moderator or replication private key is held by the host.','Classical native crypto does not qualify Tor interoperability, post-quantum security, independent administration, hostile-government resilience or physical hardware.'])
   (out/'evidence.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2),flush=True)
  except BaseException as error:
   save();continuation();(out/'failure.json').write_text(json.dumps(dict(schema=1,result='failed-preserved-native-actors',stage=stage,error=repr(error),traceback=traceback.format_exc(),configuration=expected,checks=state['checks'],elapsed_seconds=time.monotonic()-started),indent=2)+'\n');raise
