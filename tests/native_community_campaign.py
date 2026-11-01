@@ -274,7 +274,14 @@ def main():
     state['done']['feed-route-'+g.name]=True;save()
    if not feed_ui(g)[0][1]:
     focus(g,'feed');g.device.press(60);wait(lambda g=g:feed_ui(g)[0][1]!=0,300,g.name+' scoped Feed identity')
-    g.device.press(30);wait(lambda g=g:feed_ui(g)[0][4]==23,120,'explicit home and peer audience')
+    g.device.press(30)
+    def audience_settled(g=g):
+     fields,payload=feed_ui(g);action,pending=struct.unpack_from('<2Q',payload,96)
+     # A submits native action18; submit/completion replace its transient
+     # notice23. A later status read may already be pending after it settles.
+     # Exact home/peer bytes remain mandatory in the signed-event assertion.
+     return fields[1]!=0 and(pending==0 or action==0)
+    wait(audience_settled,120,'native audience selection request settled')
    personal['feed_public']=feed_ui(g)[1][:32].hex();save()
   if not state['done'].get('three-feed'):
    assert all(net(g,41)[0][2]==3 for g in(charlie,alice,bob));record('three-feed','three independent Feed clients concurrently admitted; two share alpha and all share relays without operator handoff')
