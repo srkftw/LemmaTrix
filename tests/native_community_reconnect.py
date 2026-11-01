@@ -48,7 +48,7 @@ def main():
     cursor=f[1]
     author=body[32+112:32+144]==bytes.fromhex(campaign.state['personal']['charlie']['feed_public'])
     if event_id is not None and body[:32]==event_id:rows.append(body)
-    elif author and(text is None or body[32+224:32+256]==hashlib.sha256(text.encode()).digest()):rows.append(body)
+    elif event_id is None and author and(text is None or body[32+224:32+256]==hashlib.sha256(text.encode()).digest()):rows.append(body)
    raise RuntimeError('native bounded timeline has no termination')
   def stats():
    rows=lookup(alpha)
