@@ -325,6 +325,8 @@ def submitRequest (caller length t : UInt64) : UInt64 :=
 
 def collectResponse (caller length t : UInt64) : UInt64 :=
   if caller != load64 (st+128) t || length != 64 then response 8 0 t else
+  -- A stale request cannot await or collect a replacement relationship.
+  if load64 (command+8) t != load64 (st+64) t then response 3 0 t else
   let n := load64 (st+48) t
   if n == 0 || load64 (st+56) t != n then response 6 0 t else
   if load64 (command+8) t != load64 (st+40) t then response 3 0 t else
@@ -360,6 +362,11 @@ def dispatch (caller admin op length t : UInt64) : UInt64 :=
     if caller == load64 (st+128) t then statusResponse t else response 8 0 t
   else if op == 42 && length == 64 then
     if admin == 1 then response 0 0 (clearAll t) else
-    if caller == load64 (st+128) t then response 0 0 (clear t) else response 8 0 t
+    if caller != load64 (st+128) t then response 8 0 t else
+    -- Zero explicitly cancels this owner's whole relationship. Nonzero
+    -- asynchronous cancellation must name its still-current request.
+    let request := load64 (command+8) t
+    if request != 0 && request != load64 (st+64) t then response 3 0 t else
+    response 0 0 (clear t)
   else response 8 0 t
 end Guest.OnionTerminal

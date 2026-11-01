@@ -17,11 +17,11 @@ def rx : UInt64 := 0x80d00000
 def code (p : UInt64) : UInt64 := 0x81000000+p*524288
 -- Extra ordinary arenas avoid Launcher's existing wide0x83000000 mapping.
 def arena (p : UInt64) : UInt64 := if p >= 12 then 0x89800000+(p-12)*0x200000 else 0x81800000+p*0x200000
--- Built-in Objects/Network384KiB and Vault416KiB stay in their512KiB physical
+-- Built-in Objects384KiB and Vault/Network416KiB stay in their512KiB physical
 -- slots. Signed application profile2 retains its256KiB ceiling and mapping.
-def codeLimit (p service : UInt64) : UInt64 := if p == 3 && service == 3 then 425984 else if (p == 2 && service == 2) || (p == 3 && service == 3) || (p == 6 && service == 6) then 393216 else 262144
-def dataOffset (p : UInt64) : UInt64 := if p == 3 then 425984 else if p == 2 || p == 3 || p == 6 then 393216 else 262144
-def stackOffset (p : UInt64) : UInt64 := if p == 3 then 491520 else if p == 2 || p == 3 || p == 6 then 458752 else 327680
+def codeLimit (p service : UInt64) : UInt64 := if (p == 3 && service == 3) || (p == 6 && service == 6) then 425984 else if p == 2 && service == 2 then 393216 else 262144
+def dataOffset (p : UInt64) : UInt64 := if p == 3 || p == 6 then 425984 else if p == 2 then 393216 else 262144
+def stackOffset (p : UInt64) : UInt64 := if p == 3 || p == 6 then 491520 else if p == 2 then 458752 else 327680
 def serviceSource (p : UInt64) : UInt64 := if p == 2 then 0x80480000 else if p == 3 then 0x80500000 else if p == 6 then 0x80340000 else 0x80300000+(p-1)*262144
 theorem ordinary_application_code_limit (p : UInt64) : codeLimit p 0 = 262144 := by
   simp [codeLimit]

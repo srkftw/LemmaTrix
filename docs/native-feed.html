@@ -3,6 +3,7 @@
 <nav><a href="index.html">Documents</a> · <a href="native-messenger.html">Messenger and relay enrollment</a> · <a href="machine-abi.html">Machine contract</a> · <a href="networked-forge.html">Existing Forge</a></nav>
 <h1>Native Feed and federation operation</h1>
 <p>Feed is a signed native graphical package with a separate account/network owner. Identity holds author seeds; each federation owns its native event service, moderation key, storage and finite policy. Host tools compile/package, configure public pins and supply opaque devices. They do not sign Feed events, choose moderation outcomes, replicate events or maintain a social database. Execution results and remaining acceptance work belong to the Campaign009 record; this guide describes the implemented interfaces.</p>
+<p>Current Network uses the bounded416KiB built-in profile within its existing512KiB physical slot; ordinary packages remain256KiB. Nonzero terminal cancellation and collection name the current request, so a delayed request from the same owner cannot clear or collect a replacement relationship. Explicit owner-wide cancellation uses request0. An accepted idle listener gets its new finite handshake window before the old idle deadline is evaluated.</p>
 <h2>Build and install</h2>
 <pre><code>./lt build
 ./lt feed package --publisher-private tests/keys/development-rsa.pem --output build/feed-packages

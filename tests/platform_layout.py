@@ -24,7 +24,7 @@ def main():
   body=raw[offset:offset+length]
   if a.artifacts:assert body==(a.artifacts/(names[slot-1]+'.bin')).read_bytes()
   services.append(dict(slot=slot,image_offset=offset,length=length,limit=limit,descriptor=version,sha256=hashlib.sha256(body).hexdigest()))
- # Network's explicitly widened built-in profile now occupies340000..39ffff.
+ # Network's explicitly widened built-in profile now occupies340000..3a7fff.
  # Check all gaps between the declared service regions, including its vacated
  # old440000 slot, rather than assuming the former gap is still empty.
  regions=sorted(live_build.service_image_bounds(slot)for slot in range(1,7))
@@ -50,7 +50,7 @@ def main():
   supervisor_dma_regions=[dict(start=start,end_exclusive=stop,purpose=name) for start,stop,name in dma],
   objects_physical=dict(code=[0x81100000,0x81160000],data=[0x81160000,0x81170000],stack=[0x81170000,0x81174000],next_service_code=0x81180000),
   vault_physical=dict(code=[0x81180000,0x811e8000],data=[0x811e8000,0x811f8000],stack=[0x811f8000,0x811fc000],next_service_code=0x81200000),
-  network_physical=dict(code=[0x81300000,0x81360000],data=[0x81360000,0x81370000],stack=[0x81370000,0x81374000],next_service_code=0x81380000),
+  network_physical=dict(code=[0x81300000,0x81368000],data=[0x81368000,0x81378000],stack=[0x81378000,0x8137c000],next_service_code=0x81380000),
   ordinary_signed_application_code_limit=262144,process_slots=15,ordinary_slots=8,service_roles=6,exact_operation_grants=96,
   extra_ordinary_arenas=[dict(slot=i,start=0x89800000+(i-12)*0x200000,end_exclusive=0x89800000+(i-11)*0x200000) for i in range(12,15)],ram_bytes=160*1024*1024,
   assumptions='static ranges correspond to the documented kernel functions; actual boot/IPC/restart tested separately')

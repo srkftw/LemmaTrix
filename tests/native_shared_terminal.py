@@ -21,8 +21,9 @@ def main():
  p.add_argument('--ownership-boundaries',action='store_true',help='also check unfinished-result and cancellation context ownership')
  a=p.parse_args();a.output.mkdir(parents=True,exist_ok=True)
  frozen=bytearray(a.image.read_bytes());network=a.network.read_bytes()
- assert len(network)<=393216
- frozen[0x340000:0x3a0000]=bytes(393216);frozen[0x340000:0x340000+len(network)]=network
+ assert struct.unpack_from('<Q',frozen,0x200000+6*32+24)[0]==425984,'Network splice requires current416KiB kernel image'
+ assert len(network)<=425984
+ frozen[0x340000:0x3a8000]=bytes(425984);frozen[0x340000:0x340000+len(network)]=network
  struct.pack_into('<Q',frozen,0x200000+6*32,len(network))
  image=a.output/'guest.bin';image.write_bytes(frozen)
  signer=a.output/'identity.ltrel';raw,_=releases.make(ROOT/'build/live/apps/identity.bin','identity','1.0.0',0,ROOT/'tests/keys/development-rsa.pem',profile=2);signer.write_bytes(raw)
