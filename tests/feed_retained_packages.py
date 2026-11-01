@@ -3,7 +3,7 @@
 This is not native lifecycle or recovery evidence. Native25/26 and typed recovery
 are exercised by the connected retained-account continuation.
 """
-import argparse,json,struct,sys
+import argparse,json,struct,sys,tempfile
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 sys.path[:0]=[str(ROOT/'tools'),str(ROOT/'tests')]
@@ -46,6 +46,14 @@ def main():
  check('wrong native current release refuses relaunch',lambda:admitted(a.current,new,True,Catalog(a.current,wrong_current=True)),True)
  check('changed native executable commitment refuses relaunch',lambda:admitted(a.current,new,True,Catalog(a.current,changed_header=True)),True)
  check('missing native catalog entry refuses relaunch',lambda:admitted(a.current,new,True,Catalog(a.current,missing=True)),True)
+ # Reusing one component is permitted only when another is an exact-parent
+ # successor. Copy original signed bytes; this creates no release or authority.
+ with tempfile.TemporaryDirectory()as temporary:
+  mixed=Path(temporary)
+  for name in('identity','feed-account','feed','feed-federation'):
+   source=a.baseline if name=='feed-account'else a.current
+   (mixed/(name+'.ltrel')).write_bytes((source/(name+'.ltrel')).read_bytes())
+  check('normal UI successor may reuse exact current account bytes',lambda:admitted(mixed,old,False,Catalog(a.baseline)))
  print(json.dumps(dict(schema=1,result='pass',checks=checks,scope='Controller guards only: real signed packages, modeled read-only native catalog. No actor control, native relaunch, key recovery or storage claim.'),indent=2))
 
 if __name__=='__main__':main()
