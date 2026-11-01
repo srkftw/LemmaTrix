@@ -166,6 +166,26 @@ def application_checkpoint(out,state):
                 reserved_history_keys=['ordinary','long','review-13'],editable_review='review-2')
 
 
+def ephemeral_author_history(out,state,completed):
+    """Keep the retired publishing author distinct from the fresh owner."""
+    path=out/'no-vault-public-ledger.json';ledger=json.loads(path.read_text())
+    person=state['personal']['charlie'];fresh=person['feed']
+    replaced=next(check for check in completed['checks']if 'old_owner'in check and 'new_owner'in check)
+    assert ledger['schema']==2 and ledger['result']=='pass'
+    assert ledger['image_sha256']==state['configuration']['image_sha256']
+    assert ledger['reconnect_sha256']==hashlib.sha256((out/'reconnect-progress.json').read_bytes()).hexdigest()
+    assert ledger['completed_native_checks']==replaced and replaced['result']=='pass'
+    assert replaced['old_owner']!=replaced['new_owner']==fresh['owner']==ledger['current_feed_owner']
+    assert fresh['ui']==ledger['current_feed_ui']
+    assert ledger['current_feed_identity_present']is False and ledger['current_feed_public']is None
+    assert person['current_feed_identity_present']is False and person['current_feed_public']is None
+    historical=person['historical_feed_public']
+    assert historical==ledger['historical_feed_public']==state['events']['long']['author']
+    return dict(historical_author=historical,old_owner=replaced['old_owner'],fresh_owner=fresh['owner'],
+                fresh_ui=fresh['ui'],ledger_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
+                classification='completed no-vault observation; historical author is not the fresh owner identity')
+
+
 def author_actions(g,original,destination,state,author,out,observed,defer_replication=False,application_release=None):
     """Use the shipped E/T controls on one disposable own review, once each."""
     history_path=out/'reconnect-progress.json'
@@ -294,6 +314,7 @@ def main():
         completed=json.loads((out/'reconnect-progress.json').read_text())
         assert completed.get('result')=='pass'and completed.get('done',{}).get('ephemeral'),'finish original publisher ephemerality before taking its home federation offline'
         assert completed['configuration']==initial['configuration']
+        report['original_author_ephemerality']=ephemeral_author_history(out,initial,completed)
     skip=(original_name,)if a.stage=='migrate'and checkpoint.get('offline_intent')and not(out/(original_name+'.sock')).exists()else()
     with attach_campaign(out,skip=skip)as campaign,approved_synchronous_beta_admin(campaign)as control_marker:
         state=campaign.state;actors=campaign.actors;report['configuration']=state['configuration'];report['person']=a.person
@@ -499,14 +520,12 @@ def main():
                     passed('original hosting federation explicitly offline while willing replica retains original signed project metadata',event=old_event.hex(),body_sha256=hashlib.sha256(old_body).hexdigest(),original=original_name,replica=destination.name)
                     checkpoint['offline']=True;save()
                 if not checkpoint.get('offline_original_publisher_read'):
-                    reconnect=json.loads((out/'reconnect-progress.json').read_text());assert reconnect['done']['ephemeral']
-                    replaced=next(check for check in reconnect['checks']if 'old_owner'in check and 'new_owner'in check)
-                    assert replaced['old_owner']!=replaced['new_owner']==state['personal']['charlie']['feed']['owner']
-                    discussion=state['events']['long'];assert discussion['author']==state['personal']['charlie']['feed_public']
+                    history=report['original_author_ephemerality']
+                    discussion=state['events']['long'];assert discussion['author']==history['historical_author']
                     committed=next(p for _,p in rows(destination)if p[:32].hex()==discussion['id'])
                     assert hashlib.sha256(committed[32:]).hexdigest()==discussion['signed_sha256']
                     body=read_body(destination,committed);assert hashlib.sha256(body).hexdigest()==discussion['content_sha256']
-                    passed('willing replica serves original checked long discussion with home federation offline and original no-vault author owner gone',event=discussion['id'],bytes=len(body),signed_sha256=discussion['signed_sha256'],content_sha256=discussion['content_sha256'],original_owner=replaced['old_owner'],fresh_ephemeral_owner=replaced['new_owner'],original_host_offline=not(out/(original_name+'.sock')).exists())
+                    passed('willing replica serves original checked long discussion with home federation offline and original no-vault author owner gone',event=discussion['id'],bytes=len(body),signed_sha256=discussion['signed_sha256'],content_sha256=discussion['content_sha256'],original_owner=history['old_owner'],fresh_ephemeral_owner=history['fresh_owner'],historical_author=history['historical_author'],no_vault_ledger_sha256=history['ledger_sha256'],original_host_offline=not(out/(original_name+'.sock')).exists())
                     checkpoint['offline_original_publisher_read']=True;save()
                 focus_feed(g)
                 selected_feed_route(g,destination,relays,observed)
