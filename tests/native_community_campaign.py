@@ -88,10 +88,28 @@ def attach_campaign(output,graphical=('alice','bob','charlie'),skip=()):
    if g.device:g.device.close()
    if g.client:g.client.close()
 
+def select_destination(g,certificate):
+ """Explicitly revoke a different selected destination before approving it.
+
+ Ordinary enrollment continues refusing an unexpected identity replacement.
+ This transition is used only after a personal route has been closed for an
+ explicit application/destination choice; operator peer policies are untouched.
+ """
+ prior,material=net(g,25,h=3,allow=(3,))
+ transition=None
+ if prior[0]==0 and prior[2]==1 and material[:480]!=certificate:
+  transition=dict(previous_certificate_sha256=hashlib.sha256(material[:480]).hexdigest(),selected_certificate_sha256=hashlib.sha256(certificate).hexdigest(),operations=[24,22,23],scope='explicit personal destination slot3; no operator policy change')
+  net(g,24,h=3)
+ enroll(g,3,certificate)
+ if transition:
+  path=g.out/(g.name+'.destination-selections.json');records=json.loads(path.read_text())if path.exists()else[]
+  records.append(transition);path.write_text(json.dumps(records,indent=2)+'\n')
+
 def select_feed_route(g,destination,relays,*,budget=8388608,attempts=65536):
  """Explicit personal destination selection; operators keep serving peers."""
  close_route(g)
- for slot,certificate in enumerate([*(r.certificate for r in relays),destination.certificate]):enroll(g,slot,certificate)
+ for slot,relay in enumerate(relays):enroll(g,slot,relay.certificate)
+ select_destination(g,destination.certificate)
  net(g,31);wait(lambda:circuit_ready(g),900,g.name+' selected Feed circuit')
  net(g,38,h=3,a=21,b=g.feed_owner,cword=budget,d=attempts)
  wait(lambda:net(g,41)[0][2]==3,600,g.name+' selected Feed terminal')
@@ -337,7 +355,7 @@ def main():
   for g in(alice,bob):
    msg_select(g)
    if not state['done'].get('messenger-route-'+g.name):
-    focus(g,'messenger');close_route(g);route(g,certs,mailbox);wait(lambda g=g:publication(g),600,g.name+' native prekey publication')
+    focus(g,'messenger');close_route(g);select_destination(g,mailbox.certificate);route(g,certs,mailbox);wait(lambda g=g:publication(g),600,g.name+' native prekey publication')
     state['done']['messenger-route-'+g.name]=True;save()
   if not state['done'].get('stalled'):
    focus(charlie,'feed');paused=fault('status')['channel'];fault('pause',paused['epoch']);charlie.device.press(104)
