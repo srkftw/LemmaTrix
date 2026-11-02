@@ -7,7 +7,7 @@ import argparse,contextlib,hashlib,json,os,signal,socket,struct,subprocess,sys,t
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 sys.path[:0]=[str(ROOT/'tools'),str(ROOT/'tests')]
-import live,live_build,identity,messenger,onion_route as route,releases
+import live,live_build,identity,messenger,onion_route as route,releases,server_store
 from graphical_devices import DeviceInput
 from creator_journey import rendered_text
 
@@ -16,6 +16,7 @@ def main():
  p.add_argument('--image',type=Path,required=True);p.add_argument('--identity',type=Path,required=True)
  p.add_argument('--output',type=Path,default=ROOT/'build/campaign010-terminal-profiles')
  p.add_argument('--backend',choices=('qemu','x86_64'),default='x86_64')
+ p.add_argument('--keep',action='store_true',help='preserve actual actors for the connected Notes continuation')
  a=p.parse_args();a.output.mkdir(parents=True,exist_ok=True)
  image=bytearray(a.image.read_bytes());parts={}
  for pid,name in ((1,'launcher'),(4,'compositor'),(6,'network')):
@@ -34,6 +35,8 @@ def main():
   backend=a.backend if i==0 else 'qemu'
   command=[ROOT/'lt','run','--image',frozen,'--backend',backend,'--socket',path,'--network-mux']
   if i==0:command+=['--graphics',base/'display.qmp']
+  if i>=4:
+   server_store.provision(base/'server.img');command+=['--server-store',base/'server.img']
   processes.append(subprocess.Popen(list(map(str,command)),cwd=ROOT,stdout=log,stderr=subprocess.STDOUT,start_new_session=True))
   route.wait(path.exists,90);c=live.Client(path,timeout=600);clients.append(c);c.request(1)
   if i:identity.start(c,a.identity,ROOT/'tests/keys/development-rsa-public.pem')
@@ -67,6 +70,9 @@ def main():
    launcher=messenger.launcher(clients[i]);network=next(r[0]for r in identity.instances(clients[i])if r[0]&255==6)
    for op in(440,441):messenger.bind(clients[i],3,service,launcher,op,sid)
    messenger.bind(clients[i],3,service,network,441,sid);route.route(clients[i],30)
+   server_store.call(clients[i],230)
+   grant=server_store.call(clients[i],231,service,1,1048576,hashlib.sha256(('Campaign010 terminal provider'+str(i)).encode()).digest())[0][1]
+   messenger.invoke(clients[i],3,440,h=0,a=grant)
   owner=messenger.launcher(personal);other=next(r[0] for r in identity.instances(personal) if r[0]&255==6)
   def profile(index):
    f,body=route.route(personal,49);return f,struct.unpack_from('<8Q',body,index*128),body[index*128+64:index*128+96]
@@ -75,9 +81,13 @@ def main():
    if row[4]==4:raise AssertionError(('terminal unavailable',index,row))
    return f[1]==index+1 and row[4]==3
   def native_select(index,label):
-   ui.chord(56,49);time.sleep(.4)
-   frame=ui.wait_frame()
-   assert rendered_text(frame,12,8,23)=='Approved service routes','trusted route chooser did not open'
+   ui.chord(56,49)
+   def presented():
+    frame=ui.frame()
+    return frame if rendered_text(frame,12,8,23)=='Approved service routes' else None
+   try:frame=route.wait(presented,30)
+   except BaseException:
+    (a.output/(label+'-unavailable.ppm')).write_bytes(ui.frame().ppm());raise
    for _ in range(index):ui.press(108);time.sleep(.1)
    time.sleep(.3);ui.press(28);time.sleep(.3)
    (a.output/(label+'.ppm')).write_bytes(ui.frame().ppm())
@@ -122,10 +132,13 @@ def main():
   if ui:ui.close()
   for c in clients:
    with contextlib.suppress(Exception):c.close()
-  for process in processes:
-   if process.poll() is None:os.killpg(process.pid,signal.SIGTERM)
-  for process in processes:
-   with contextlib.suppress(subprocess.TimeoutExpired):process.wait(timeout=10)
-   if process.poll() is None:os.killpg(process.pid,signal.SIGKILL);process.wait()
+  if a.keep:
+   (a.output/'actors.json').write_text(json.dumps(dict(schema=1,processes=[dict(pid=process.pid,node=i,socket=str(a.output/f'node{i}/portal.sock'))for i,process in enumerate(processes)]),indent=2)+'\n')
+  else:
+   for process in processes:
+    if process.poll() is None:os.killpg(process.pid,signal.SIGTERM)
+   for process in processes:
+    with contextlib.suppress(subprocess.TimeoutExpired):process.wait(timeout=10)
+    if process.poll() is None:os.killpg(process.pid,signal.SIGKILL);process.wait()
   for log in logs:log.close()
 if __name__=='__main__':main()

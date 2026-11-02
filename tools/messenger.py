@@ -72,7 +72,7 @@ def delivery_start(client,a):
         invoke(client,4,464,h=owner)
     except BaseException:
         client.request(26,struct.pack('<Q',delivery));raise
-    return dict(owner=owner,ui=a.ui,delivery=delivery,delivery_release=did.hex(),route_configured=False,exact_grant_count=32)
+    return dict(owner=owner,ui=a.ui,delivery=delivery,delivery_release=did.hex(),route_configured=False,exact_grant_count=33,binding_capacity=96)
 
 def delivery_parent(value):
     if len(value)!=64 or any(c not in'0123456789abcdefABCDEF'for c in value)or not any(bytes.fromhex(value)):
@@ -167,7 +167,11 @@ def main(argv=None):
             except ValueError:
                 signer,sid=install(client,a.identity_release,a.public,0);temporary=True
             try:
-                for operation in (400,405,402,403):identity.bind(client,signer,launcher(client),sid,bytes(32),operation)
+                for operation in (400,405,402,403):
+                    try:current=identity.endpoint(client,operation)
+                    except ValueError:identity.bind(client,signer,launcher(client),sid,bytes(32),operation)
+                    else:
+                        if current!=signer:raise ValueError('contact certification requires the exact current shared Identity service')
                 fields,_=identity.invoke(client,400,a=2,data=bundle[192:224]+identity.digest(a.scope));key=fields[1]
                 device_generation=struct.unpack_from('<Q',bundle,16)[0]
                 subject=bundle[32:64]+bundle[192:224]+bundle[224:256]
