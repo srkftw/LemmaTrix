@@ -1,0 +1,102 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "scope": "Re-fetch from the still-live independent seed after native reader failure.\n\nOnly the disposable failed reader restarts. The seed graph, catalog, identity\nand durable store remain intact. No graph archive is imported into either side.\n",
+  "image_sha256": "b743de7abac5c508660a662041ef97ef3da7677bd7c33d9903123e9d8e5459ad",
+  "source_distribution": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign010-forge-distribution-5",
+  "checks": [
+    {
+      "check": "fresh disposable reader retrieves exact24node212881byte closure from unchanged surviving seed after original source and Alpha offline",
+      "result": "pass",
+      "fetched": {
+        "configured": true,
+        "selected_root": 8052477528633245952,
+        "frozen_root": 0,
+        "offered_nodes": 0,
+        "offered_bytes": 0,
+        "send_phase": 0,
+        "send_ordinal": 0,
+        "send_offset": 0,
+        "pending_job": 13763166042970914843,
+        "import_transaction": 0,
+        "received_nodes": 24,
+        "status": 11,
+        "metadata_nodes": 24,
+        "metadata_bytes": 212881,
+        "role": 0,
+        "policy": 1,
+        "server_store_grant": 0,
+        "queued_fetch": false,
+        "last_native_key": 63
+      },
+      "decision": {
+        "required": true,
+        "local_phase": 0,
+        "local_slot": 0,
+        "local_sequence": 0,
+        "send_phase": 0,
+        "local_classification": 0,
+        "local_reason": 0,
+        "remote_phase": 2,
+        "classification": 2,
+        "reason": 0,
+        "remote_sequence": 1,
+        "metadata_epoch": 1,
+        "error": 0,
+        "descriptor": {
+          "format": 2,
+          "classification": 2,
+          "reason": 0,
+          "policy": 3,
+          "rights": 895,
+          "sequence": 1,
+          "runtime_profile": 2,
+          "logical_project_id": "811de18db4868dcc7e4a56e3dbb2bfb9705192eb7c93fa64bab7cda34149af34",
+          "publication_id": "19474c4c7d84e36473fece33e5b59d6e35dfb9d790e22980087e879c71f3bbb7",
+          "release_id": "5f5079d707eafd7fc51b3413b9aa3e8b05340dcec6b36a4b8cdbe9e68db170a9",
+          "source_commitment": "3ad0a8e0d5cb20cfcf6e889bd74b4083e445349aebb089b14e9bba4acf0e2cbd",
+          "artifact_commitment": "c5d6050bd043624b87089633dd84193754b7e740c39e3be2236a76a295bd5ca7",
+          "evidence_commitment": "586799309bcd7ca24fdd3b0cd354e033554dff764f0f1a6ed8686bf21f92f3fc",
+          "policy_commitment": "5e09a8c8a5f53e01ad34cadbbef085c8ecea109f752f6abd98b662a03861566c",
+          "federation_id": "45c685db79fb1cf45780281b2c72a16bb2c3c14cec05f5603171cd02346c5469",
+          "root": "3ae8ad12addef09160d55b01d7d527bbac6c5eded3b327df3511331f3230a747",
+          "publisher_key_id": "3be87c52b8d89ab5d467caa3815f117a5948d6760519f24cd85edaef014f512a",
+          "signature_present": true
+        }
+      },
+      "export": {
+        "head": "3ae8ad12addef09160d55b01d7d527bbac6c5eded3b327df3511331f3230a747",
+        "project_id": "811de18db4868dcc7e4a56e3dbb2bfb9705192eb7c93fa64bab7cda34149af34",
+        "nodes": 24,
+        "bytes": 212881,
+        "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign010-fetched-reader-2/fetched-graph.json",
+        "authority": "exported bytes only; import revalidates graph"
+      },
+      "provider_roots_unchanged": true,
+      "source_graph_imported": false
+    },
+    {
+      "check": "native Forge F6 verifies exact graph and trusted review installs useful Notes; second user creates and searches real note",
+      "result": "pass",
+      "release_id": "5f5079d707eafd7fc51b3413b9aa3e8b05340dcec6b36a4b8cdbe9e68db170a9",
+      "publisher": "19474c4c7d84e36473fece33e5b59d6e35dfb9d790e22980087e879c71f3bbb7",
+      "application_frame": "f06a4b6970f48b35baa56fcc1990c9f12263eefd5fa69a78fae7d2ac57ed724d",
+      "native_stack_guard_preserved": true
+    }
+  ],
+  "elapsed_seconds": 132.701,
+  "reader_continuation": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign010-fetched-reader-2/reader-live.json",
+  "live_reader": {
+    "pid": 777369,
+    "socket": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign010-fetched-reader-2/reader/portal.sock",
+    "graphics": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign010-fetched-reader-2/reader/display.qmp",
+    "forge": 8052477524338278663,
+    "registry": 8052477524338278664
+  },
+  "source_record": "build/campaign010-fetched-reader-2/execution.json",
+  "limitations": [
+    "Original publisher and Alpha/source were offline; surviving seed retained independently initialized native identity and authorized actual closure.",
+    "Publisher selection, federation review and physical installation/execution approval are distinct steps.",
+    "Live handles identify only this disposable session; no publisher secrets were copied into the reader."
+  ]
+}

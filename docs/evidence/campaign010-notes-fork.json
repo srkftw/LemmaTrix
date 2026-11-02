@@ -1,0 +1,243 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "reader_record": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign010-fetched-reader-2/reader-live.json",
+  "image_sha256": "b743de7abac5c508660a662041ef97ef3da7677bd7c33d9903123e9d8e5459ad",
+  "checks": [
+    {
+      "check": "native Ctrl+F forks actual network-fetched project under separately generated guest publisher",
+      "result": "pass",
+      "upstream": {
+        "cap": 8052477528633245954,
+        "name": "seed-3ae8ad12addef091-3ae8ad12addef091",
+        "head": "3ae8ad12addef09160d55b01d7d527bbac6c5eded3b327df3511331f3230a747"
+      },
+      "upstream_logical": "811de18db4868dcc7e4a56e3dbb2bfb9705192eb7c93fa64bab7cda34149af34",
+      "fork": {
+        "cap": 8052477528633245958,
+        "name": "notes-fork",
+        "head": "c4d06297c005739cc59cb4ad66add4d396e5ba7a7732c90f6eac2c72756a66e7"
+      },
+      "logical_project_id": "c4d06297c005739cc59cb4ad66add4d396e5ba7a7732c90f6eac2c72756a66e7",
+      "publisher": {
+        "role": 1,
+        "generation": 1,
+        "federation": "76929a33ccf0c891c7e23cfe15ecec1f6658c5e2b417a3f40fdb0b912f484601",
+        "scope": "811de18db4868dcc7e4a56e3dbb2bfb9705192eb7c93fa64bab7cda34149af34",
+        "public_key": "e1eac58aff434f848dc04038999979b8694c091fb72a866597cfadc8d3f80a66",
+        "fingerprint": "48ff9406c7e56b05d2b1228f6d5228e3dcdc2610e00501b1f0d960be727673a0",
+        "signature": "d54ab07508edd39b702e793e5f499cff0f1fe11ffc577f68e0e1660dd0c32bfab5def448c319507daa461bba52b477f0cc32cf37d01584c3c48617ebae2b2c02",
+        "retention": "ephemeral",
+        "validity": "explicit revocation; no reboot-relative expiry",
+        "person_identity": "not established by this self-signed descriptor"
+      },
+      "publisher_key_id": "eb33b26e8ada980fd314d008a0a4f4f434adc5d7b1523f2b3a9b582ba7f52efc",
+      "lineage": {
+        "logical_project_id": "811de18db4868dcc7e4a56e3dbb2bfb9705192eb7c93fa64bab7cda34149af34",
+        "source_root": "3ae8ad12addef09160d55b01d7d527bbac6c5eded3b327df3511331f3230a747",
+        "release_id": "5f5079d707eafd7fc51b3413b9aa3e8b05340dcec6b36a4b8cdbe9e68db170a9",
+        "publisher_key_id": "eb33b26e8ada980fd314d008a0a4f4f434adc5d7b1523f2b3a9b582ba7f52efc"
+      }
+    },
+    {
+      "check": "public SDK resolves exact fetched signed source dependency through native importer before rebuilding",
+      "result": "pass",
+      "dependencies": [
+        {
+          "schema": 1,
+          "root": 8052477528633245958,
+          "head": "00d374d8faad4dbb342301860530a64d5c074b80cccade0cc883ca9c95d679f3",
+          "previous_head": "f532d8eee10c355eb9ddad59875a08c0ca376ed366750e30413aeaf05d70da40",
+          "release_id": "a4e39b5b087822dd3054501afc425bcbcfa6dcbc8faa98293e626f6256fb55c2",
+          "release_node": "1149ce951e83dc4b9e28d146231e01792dae7224be641383976ebf0793610e07",
+          "dependency_root": 8052477528633245963,
+          "source_attachment": "deps/a4e39b5b087822dd3054501afc425bcbcfa6dcbc8faa98293e626f6256fb55c2.rel",
+          "native_import_validated": true,
+          "installed": false,
+          "execution_authority": false,
+          "session_only": true
+        }
+      ],
+      "prior_source": "f532d8eee10c355eb9ddad59875a08c0ca376ed366750e30413aeaf05d70da40",
+      "source": "00d374d8faad4dbb342301860530a64d5c074b80cccade0cc883ca9c95d679f3",
+      "private_fixture": false
+    },
+    {
+      "check": "public SDK resolves exact fetched signed source dependency through native importer before rebuilding",
+      "result": "pass",
+      "dependencies": [],
+      "prior_source": "00d374d8faad4dbb342301860530a64d5c074b80cccade0cc883ca9c95d679f3",
+      "source": "00d374d8faad4dbb342301860530a64d5c074b80cccade0cc883ca9c95d679f3",
+      "private_fixture": false
+    },
+    {
+      "check": "native source and semantic changes build, sign and republish distinct working fork with preserved helper and lineage",
+      "result": "pass",
+      "source": "00d374d8faad4dbb342301860530a64d5c074b80cccade0cc883ca9c95d679f3",
+      "artifact": {
+        "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign010-notes-fork-2/builder-resolved/app.bin",
+        "sha256": "876dd4a458825ca9cbef885e409547b0d68afa5248e6584cdaf089ad3bb97afc",
+        "bytes": 103700
+      },
+      "release": {
+        "project": "project-notes",
+        "version": "1.0.1",
+        "release_id": "3eaf40c375f522806cab6fb1bdb02579ad688ce8c0f0640f25a2cc09d538b077",
+        "publisher_key_id": "eb33b26e8ada980fd314d008a0a4f4f434adc5d7b1523f2b3a9b582ba7f52efc",
+        "project_id": "9e1d3ebeb4848fbeb2648c4bd3cdd1cae7f1d9528e51ece68af358281b3ee9d7",
+        "rights": 895,
+        "executable_sha256": "876dd4a458825ca9cbef885e409547b0d68afa5248e6584cdaf089ad3bb97afc",
+        "source_root": "becfe6e4d6ec186c0da059060d5077f742105d17989de5175aa763caae9ebbe6",
+        "manifest_root": "fa04659e6aa9d02ff8480a08007bcffa75aef1e57256e3d4da997f89856b66de",
+        "parent": "0000000000000000000000000000000000000000000000000000000000000000",
+        "size": 103700,
+        "signature_verified": true,
+        "manifest_checked": true,
+        "identity_scheme": 4,
+        "logical_project_id": "c4d06297c005739cc59cb4ad66add4d396e5ba7a7732c90f6eac2c72756a66e7",
+        "facet": "NativeApplication",
+        "signature_profile": "Ed25519-pure-LT-PROJECT-RELEASE-V1",
+        "publisher_generation": 1,
+        "prefix_size": 608,
+        "public_key": "e1eac58aff434f848dc04038999979b8694c091fb72a866597cfadc8d3f80a66",
+        "release_handle": 8052477528633246286,
+        "release_node": "39d86783ee073df651497913d2f7b24780e4ede48bfe141eca0a9615e12e9e5d"
+      },
+      "published": {
+        "cap": 8052477528633245967,
+        "name": "project-notes-1.0.1",
+        "head": "66068a319dac7121582b3b2d54efd7a040f53f8a3ac91292764727cf538c3e3f",
+        "root": 8052477528633245967,
+        "release_id": "3eaf40c375f522806cab6fb1bdb02579ad688ce8c0f0640f25a2cc09d538b077",
+        "source_root": "00d374d8faad4dbb342301860530a64d5c074b80cccade0cc883ca9c95d679f3",
+        "logical_project_id": "c4d06297c005739cc59cb4ad66add4d396e5ba7a7732c90f6eac2c72756a66e7",
+        "signed": true,
+        "admitted": false,
+        "installed": false,
+        "session_only": true
+      },
+      "archive": {
+        "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign010-notes-fork-2/project-notes-fork-graph.json",
+        "head": "66068a319dac7121582b3b2d54efd7a040f53f8a3ac91292764727cf538c3e3f",
+        "project_id": "c4d06297c005739cc59cb4ad66add4d396e5ba7a7732c90f6eac2c72756a66e7",
+        "nodes": 24,
+        "bytes": 186326,
+        "authority": "Exported actual authorized graph bytes; import revalidates"
+      },
+      "host_publisher_key": false
+    },
+    {
+      "check": "distinct installed native fork runs changed case-sensitive search and Annotation semantic default",
+      "result": "pass",
+      "release_id": "3eaf40c375f522806cab6fb1bdb02579ad688ce8c0f0640f25a2cc09d538b077",
+      "negative_query": "sdk",
+      "positive_query": "SDK",
+      "selected_note": "Fork guide",
+      "semantic_category": "Annotation",
+      "typing_seconds_per_key": 0.3,
+      "frame": "92f3c83a9c0d0267a73c67f8693b04da450c91cbea658312a308a51cd47c0765"
+    },
+    {
+      "check": "actual signed successor requesting added Network cannot reuse prior895 execution approval",
+      "result": "pass",
+      "release": {
+        "project": "project-notes",
+        "version": "1.0.2",
+        "release_id": "a91e462da99476c61d0356ee6ff48ba737c656f37ffebc42587130bf95bf87bc",
+        "publisher_key_id": "eb33b26e8ada980fd314d008a0a4f4f434adc5d7b1523f2b3a9b582ba7f52efc",
+        "project_id": "9e1d3ebeb4848fbeb2648c4bd3cdd1cae7f1d9528e51ece68af358281b3ee9d7",
+        "rights": 1919,
+        "executable_sha256": "876dd4a458825ca9cbef885e409547b0d68afa5248e6584cdaf089ad3bb97afc",
+        "source_root": "ea6c7d246514c0b271de073f343f3f7977a5a03da0bae062ed6819e2dacbe432",
+        "manifest_root": "87740cb4b2907b17470ae7bf4a71f6e669c11a99b910f7ccf1bcf1ffcb099a13",
+        "parent": "3eaf40c375f522806cab6fb1bdb02579ad688ce8c0f0640f25a2cc09d538b077",
+        "size": 103700,
+        "signature_verified": true,
+        "manifest_checked": true,
+        "identity_scheme": 4,
+        "logical_project_id": "c4d06297c005739cc59cb4ad66add4d396e5ba7a7732c90f6eac2c72756a66e7",
+        "facet": "NativeApplication",
+        "signature_profile": "Ed25519-pure-LT-PROJECT-RELEASE-V1",
+        "publisher_generation": 1,
+        "prefix_size": 608,
+        "public_key": "e1eac58aff434f848dc04038999979b8694c091fb72a866597cfadc8d3f80a66",
+        "release_node": "fe3dde16653f12839c216608c06dd8eb46ee6f30de7ac67d79d9fbf8b046953b",
+        "release_handle": 8052477528633246307
+      },
+      "parent": "3eaf40c375f522806cab6fb1bdb02579ad688ce8c0f0640f25a2cc09d538b077",
+      "previous_rights": 895,
+      "requested_rights": 1919,
+      "added_rights": 1024,
+      "approval_error": "guest rejected command23, status1",
+      "install_error": "guest rejected command24, status1",
+      "installed": false
+    }
+  ],
+  "elapsed_seconds": 111.883,
+  "live_session": {
+    "schema": 1,
+    "pid": 777369,
+    "socket": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign010-fetched-reader-2/reader/portal.sock",
+    "graphics": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign010-fetched-reader-2/reader/display.qmp",
+    "backend": "qemu",
+    "image": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign010-fork-scope/guest.bin",
+    "image_sha256": "b743de7abac5c508660a662041ef97ef3da7677bd7c33d9903123e9d8e5459ad",
+    "forge": 8052477524338278663,
+    "registry": 8052477524338278664,
+    "root": {
+      "cap": 8052477528633245954,
+      "name": "seed-3ae8ad12addef091-3ae8ad12addef091",
+      "head": "3ae8ad12addef09160d55b01d7d527bbac6c5eded3b327df3511331f3230a747"
+    },
+    "release_id": "5f5079d707eafd7fc51b3413b9aa3e8b05340dcec6b36a4b8cdbe9e68db170a9",
+    "live_only": true
+  },
+  "fork": {
+    "cap": 8052477528633245958,
+    "name": "notes-fork",
+    "head": "c4d06297c005739cc59cb4ad66add4d396e5ba7a7732c90f6eac2c72756a66e7"
+  },
+  "publisher": 8052477520043311371,
+  "published": {
+    "cap": 8052477528633245967,
+    "name": "project-notes-1.0.1",
+    "head": "66068a319dac7121582b3b2d54efd7a040f53f8a3ac91292764727cf538c3e3f",
+    "root": 8052477528633245967,
+    "release_id": "3eaf40c375f522806cab6fb1bdb02579ad688ce8c0f0640f25a2cc09d538b077",
+    "source_root": "00d374d8faad4dbb342301860530a64d5c074b80cccade0cc883ca9c95d679f3",
+    "logical_project_id": "c4d06297c005739cc59cb4ad66add4d396e5ba7a7732c90f6eac2c72756a66e7",
+    "signed": true,
+    "admitted": false,
+    "installed": false,
+    "session_only": true
+  },
+  "source_record": "build/campaign010-notes-fork-2/execution.json",
+  "compiler_id": "48abf5a902482720d547b388bad65d284254123aaa33347ca46b26cf55ebef4e",
+  "sdk": {
+    "version": "0.1.0",
+    "content_id": "3312ddcd277f401c377142b006bac6cf9aeefd8fa89f4d4c78f1fd5469caf533"
+  },
+  "helper_release": "a4e39b5b087822dd3054501afc425bcbcfa6dcbc8faa98293e626f6256fb55c2",
+  "elapsed_seconds_scope": "Original harness measurement before preserved-actor continuations; excludes subsequent dependency resolution, rebuild/sign/publication, application use and capability-boundary continuation. Not a total journey duration.",
+  "continuations": [
+    {
+      "initial_failure": "Native proposal refused code6: old 1.0 published wrapper lacked a direct signed helper edge. Carrier presence alone was correctly insufficient.",
+      "resolution": "Ordinary sdk attach-dependency from exact network-fetched signed carrier, native ImportJobs admission, then native editor F5 and normal key-free worker rebuild.",
+      "preserved_record": "build/campaign010-notes-fork-2/execution-before-dependency-resolution.json"
+    },
+    {
+      "harness_failures": [
+        "One-shot worker queried before native F5 acknowledgement.",
+        "Post-export harness assertion referenced an unset local fork_logical variable."
+      ],
+      "resolution": "Waited for actual BUILD QUEUED native state; inspected already signed immutable result and continued installation/use on the same native actor. No replacement signature or graph injection.",
+      "preserved_record": "build/campaign010-notes-fork-2/execution-before-signed-fork-finish.json"
+    }
+  ],
+  "limitations": [
+    "QEMU RV64 guest on native x86-64 Linux; this fork run is not ARM hardware evidence.",
+    "Original 1.0 app rendering uses 300ms/key pacing; responsive 1.1 performance is separate evidence.",
+    "The signed 1919-right successor was staged and refused with old895 approval. It was neither installed nor published.",
+    "Session capabilities and publisher handles are observations only; no seeds or recoverable authority are present."
+  ]
+}
