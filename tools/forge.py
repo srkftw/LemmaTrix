@@ -3,7 +3,11 @@ import argparse,json,struct
 from pathlib import Path
 import live,network
 
-def configure(client,instance,credentials,role='client',policy='portable',store_grant=0,recover_and_seed=False):
+def configure(client,instance,credentials,role='client',policy='portable',store_grant=0,recover_and_seed=False,peer_slot=None,stream=1):
+ if peer_slot is not None:
+  if type(peer_slot)is not int or not 0<=peer_slot<4 or type(stream)is not int or not 0<stream<2**64:raise ValueError('select exact bulk peer0..3 and nonzero stream')
+  selected=client.request(150,struct.pack('<Q8Q',instance,68,peer_slot,stream,1,0,0,0,1))
+  if len(selected)!=64 or struct.unpack_from('<Q',selected)[0]:raise ValueError('Forge transport selection requires a fresh unconfigured service; existing work is preserved')
  side,material=network.load_credentials(credentials)
  peer=material[32:64] if side==1 else material[:32]
  service=material[64:96]
@@ -12,7 +16,7 @@ def configure(client,instance,credentials,role='client',policy='portable',store_
  request=struct.pack('<8Q',1,0,roles.index(role),policies.index(policy)+1,store_grant,int(recover_and_seed),0,1)+peer+service
  raw=client.request(150,struct.pack('<Q',instance)+request)
  if len(raw)!=64 or struct.unpack_from('<Q',raw)[0]:raise ValueError('native Forge configuration denied')
- return {'instance':instance,'role':role,'policy':policy,'peer':peer.hex(),'service':service.hex(),'server_store_grant':store_grant,'recover_and_seed':recover_and_seed,'native_controls':'F1 admission details; F2 scope; F3 metadata; F4 offer; F5 fetch; F6 install; F7 remote request; F8 server save; F9 inspect/recover; F10 remote approval; F11 federation publish; S metadata subscription; Esc cancel','signing_authority':'none','personal_retention':'ephemeral; server retention requires a separately granted purpose2 store'}
+ return {'instance':instance,'role':role,'policy':policy,'peer_slot':peer_slot,'stream':stream if peer_slot is not None else 0,'peer':peer.hex(),'service':service.hex(),'server_store_grant':store_grant,'recover_and_seed':recover_and_seed,'native_controls':'F1 admission details; F2 scope; F3 metadata; F4 offer; F5 fetch; F6 install; F7 remote request; F8 server save; F9 inspect/recover; F10 remote approval; F11 federation publish; S metadata subscription; Esc cancel','signing_authority':'none','personal_retention':'ephemeral; server retention requires a separately granted purpose2 store'}
 
 def federation_configure(client,instance,identity,policy=1,enabled=True):
  identity=network.digest(identity) if enabled else bytes(32)
@@ -54,7 +58,7 @@ def main(argv=None):
  p=argparse.ArgumentParser(description='Provision native Forge peer settings; normal actions are graphical')
  p.add_argument('--socket',required=True,type=Path);p.add_argument('--instance',required=True,type=int)
  sub=p.add_subparsers(dest='command',required=True)
- q=sub.add_parser('configure');q.add_argument('--credentials',required=True,type=Path);q.add_argument('--role',choices=('client','registry','seed','builder','verifier'),default='client');q.add_argument('--policy',choices=('portable','source-only'),default='portable');q.add_argument('--store-grant',type=int,default=0);q.add_argument('--recover-and-seed',action='store_true')
+ q=sub.add_parser('configure');q.add_argument('--credentials',required=True,type=Path);q.add_argument('--role',choices=('client','registry','seed','builder','verifier'),default='client');q.add_argument('--policy',choices=('portable','source-only'),default='portable');q.add_argument('--store-grant',type=int,default=0);q.add_argument('--recover-and-seed',action='store_true');q.add_argument('--peer-slot',type=int,choices=range(4),help='explicit native v2 bulk context for multiplex transport');q.add_argument('--stream',type=int,default=1)
  q=sub.add_parser('federation');q.add_argument('--identity',default='');q.add_argument('--policy',choices=('portable','native-restricted','consumer'),default='portable');q.add_argument('--disable',action='store_true')
  q=sub.add_parser('admission');q.add_argument('--local',action='store_true')
  sub.add_parser('subscription')
@@ -62,7 +66,7 @@ def main(argv=None):
  sub.add_parser('inspect')
  a=p.parse_args(argv);c=live.Client(a.socket)
  try:
-  if a.command=='configure':result=configure(c,a.instance,a.credentials,a.role,a.policy,a.store_grant,a.recover_and_seed)
+  if a.command=='configure':result=configure(c,a.instance,a.credentials,a.role,a.policy,a.store_grant,a.recover_and_seed,a.peer_slot,a.stream)
   elif a.command=='federation':result=federation_configure(c,a.instance,a.identity,{'portable':1,'native-restricted':2,'consumer':3}[a.policy],not a.disable)
   elif a.command=='admission':result=federation_inspect(c,a.instance,a.local)
   elif a.command=='subscription':result=subscription_inspect(c,a.instance)

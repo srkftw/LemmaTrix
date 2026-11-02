@@ -1,3 +1,4 @@
+import Guest.ForgeBounds
 import Guest.ProjectSDK
 import Guest.ProjectGraph
 import Guest.Raster
@@ -8,20 +9,20 @@ open Guest.ProjectSDK
 -- graph capabilities, peer credentials, approvals, or durable checkpoints.
 def st : UInt64 := 0x750000
 def head : UInt64 := 0x750080
-def row (ordinal : UInt64) : UInt64 := 0x750100+ordinal*160
+def row (ordinal : UInt64) : UInt64 := 0x754000+ordinal*160
 def payload : UInt64 := 0x760000
 def capacity : UInt64 := 262144
 def same (a b n t : UInt64) : Bool := Guest.ProjectGraph.equal a b n t
-def init (t : UInt64) : UInt64 := zero st 800 t
+def init (t : UInt64) : UInt64 := zero 0x754000 1280 (zero st 800 t)
 def begin (root t : UInt64) : UInt64 :=
   if same root head 32 t then store64 (st+32) 0 t else
-    copy root head 32 (zero st 800 t)
+    copy root head 32 (zero 0x754000 1280 (zero st 800 t))
 def matching (ordinal kind schema bytes identities t : UInt64) : Bool :=
   let r := row ordinal
-  ordinal < 24 && load64 (r+128) t == 1 && load64 (r+96) t == kind &&
+  ordinal < Guest.ForgeBounds.maxNodes && load64 (r+128) t == 1 && load64 (r+96) t == kind &&
     load64 (r+104) t == schema && load64 (r+112) t == bytes && same identities r 96 t
 def offer (ordinal kind schema bytes identities t : UInt64) : UInt64 :=
-  if ordinal >= 24 then t else
+  if ordinal >= Guest.ForgeBounds.maxNodes then t else
   let t := store64 (st+8) (ordinal+1) t
   if matching ordinal kind schema bytes identities t then
     store64 (st+16) ordinal (store64 (st+24) 0 (store64 (st+32) 2 t))
@@ -38,13 +39,13 @@ def offer (ordinal kind schema bytes identities t : UInt64) : UInt64 :=
       let t := store64 (r+136) 1 t
       store64 st (used+bytes) t
 def complete (ordinal t : UInt64) : UInt64 :=
-  if ordinal >= 24 || load64 (row ordinal+136) t != 1 then t else
+  if ordinal >= Guest.ForgeBounds.maxNodes || load64 (row ordinal+136) t != 1 then t else
     let t := store64 (st+16) ordinal t
     store64 (st+24) 0 (store64 (st+32) 1 t)
 def active (t : UInt64) : Bool := load64 (st+32) t != 0
 def abort (t : UInt64) : UInt64 :=
   let index := load64 (st+8) t
-  let t := if index == 0 || index > 24 then t else
+  let t := if index == 0 || index > Guest.ForgeBounds.maxNodes then t else
     let r := row (index-1)
     if load64 (r+128) t != 0 || load64 (r+136) t != 1 || load64 (r+120) t+load64 (r+112) t != load64 st t then t else
       zero r 20 (store64 st (load64 (r+120) t) t)
