@@ -35,6 +35,16 @@ def poll (handle t : UInt64) : UInt64 := call 64 (header 4 handle 0 0 0 0 0 t)
 def receive (handle t : UInt64) : UInt64 := call 64 (header 6 handle 0 0 0 0 0 t)
 def revoke (handle t : UInt64) : UInt64 := call 64 (header 8 handle 0 0 0 0 0 t)
 def nonce (t : UInt64) : UInt64 := call 64 (header 10 0 0 0 0 0 0 t)
+-- Refresh only the same live caller-owned grant. The broker preserves its
+-- original finite budget/used/rate counters and exact peer/root/op/stream.
+-- A failed inspection/refresh never mints replacement authority.
+def lease (handle lifetime t : UInt64) : UInt64 :=
+  let r := call 64 (header 17 handle lifetime 0 0 0 0 t)
+  if r != 64 || status r != 0 then error else r
+@[noinline] def maintainLease (handle t : UInt64) : UInt64 :=
+  let r := lease handle 0 t
+  if r == error then error else
+  if load64 (wire+32) r > load64 (wire+40) r+10000 then r else lease handle 100000 r
 def inspect (t : UInt64) : UInt64 :=
   let t := header 0 (load64 st t) (slot t) (load64 (st+16) t) (load64 (st+24) t) 0 0 t
   64+t
