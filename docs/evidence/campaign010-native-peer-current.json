@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "image_sha256": "3e302c0260ff76768e4c7af151a52af54d2402ba6941062dadb68134e462d8be",
+  "image_bytes": 5556,
+  "production_source_sha256": {
+    "Guest/Network.lean": "e54b97b21e9f598a7c395068abc576ce94668fb6ee6cd5c97c8bed38308cef44",
+    "Guest/NodeEnrollment.lean": "d6502c1508e548f35a63c647616d5724af1cacc635712c937ab1f3337b6be649",
+    "Guest/TorRouter.lean": "6fd70da9e09a865ed115dec61563e64c01008467c9f3f707cd991ab54c283724"
+  },
+  "fixture_source_sha256": "02215fd97e53ebc9fb562ec1fd3581e7e17136fa799269d42c39ce12f9eca93a",
+  "checks": [
+    {
+      "backend": "qemu",
+      "seconds": 0.24880676600150764,
+      "result": "pass"
+    },
+    {
+      "backend": "aarch64",
+      "seconds": 0.1557043619977776,
+      "result": "pass"
+    }
+  ],
+  "cases": 13,
+  "boundaries": [
+    "encoded selection8 accepts exactly approved active peer7 and current local/peer certificate digests",
+    "selection9 refuses a plausible out-of-range public candidate",
+    "changed own or selected-peer digest refuses, including the final digest byte",
+    "changed frozen own/peer stamp refuses",
+    "inactive own or selected peer refuses",
+    "explicit revoked state2 and signed revocation flag1 each refuse",
+    "revocation of unrelated peer0 does not invalidate selected peer7",
+    "legacy first-slot and no-native-selection behavior preserved"
+  ],
+  "limitations": "Emitted nativePeerCurrent checks over public prevalidated enrollment state.\n\nThis fixture supplies only active/revoked public enrollment records and frozen\ncertificate digests. It performs no certificate signature verification, grant\nrenewal, live transport, actor operation or expiry-clock simulation. The actual\npeerValid predicate checks enrollment state and its signed revocation flag;\ncivil-time expiry is not a field in that predicate.\n",
+  "environment": "x86-64 Linux; RV64 QEMU and AArch64 assembly emulator under qemu-aarch64. No physical ARM hardware or full transport qualification."
+}
