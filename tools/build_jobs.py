@@ -1,6 +1,6 @@
 """Exact source snapshot compilation in an OS-enforced, key-free build sandbox."""
 import base64,hashlib,json,os,re,shutil,signal,subprocess,sys,tempfile
-from pathlib import Path,PurePosixPath
+from pathlib import Path
 import driver
 import public_sdk
 ROOT=driver.ROOT
@@ -11,11 +11,7 @@ RECIPE='lemmatrix-lean-rv64-structured-2'
 def sha(data):return hashlib.sha256(data).hexdigest()
 def canonical(value):return json.dumps(value,sort_keys=True,separators=(',',':'),ensure_ascii=True).encode()
 def safe_name(name):
- if not isinstance(name,str) or not re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_./-]{0,127}',name):raise ValueError('invalid project-relative path')
- p=PurePosixPath(name)
- if str(p)!=name or any(v in ('','..','.') for v in p.parts) or p.is_absolute():raise ValueError('noncanonical project-relative path')
- if p.parts[0] in public_sdk.RESERVED:raise ValueError('project shadows reserved SDK namespace')
- return name
+ return public_sdk.relative(name)
 
 def source_commitment(files):
  if not files or len(files)>MAX_FILES or sum(len(v) for v in files.values())>MAX_INPUT:raise ValueError('source snapshot exceeds128 files/4MiB')

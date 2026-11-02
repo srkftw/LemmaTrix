@@ -14,7 +14,7 @@ DEPENDENCIES=ROOT/'build/dependency-cache'
 RECIPE='lemmatrix-lean-rv64-structured-2'
 MAX_FILES=128;MAX_BYTES=4*1024*1024;MAX_SOURCE=128*1024;MAX_DEPENDENCIES=16
 MODULE=re.compile(r'[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*\Z')
-RESERVED={'Guest','Lemma','Compiler','runtime','sdk'}
+RESERVED={'Guest','Lemma','Compiler','Init','Lean','Std','runtime','sdk'}
 RECIPE_FILES=['Compiler/Main.lean','runtime/primitives.S','runtime/app.ld','runtime/app2.ld','tools/build_sandbox_runner.py']
 CLIENTS={'Guest.Primitives','Guest.Structured','Guest.Effects','Guest.LiveSDK','Guest.NetworkSDK','Guest.LiveMemory','Guest.Keyboard','Guest.Raster','Guest.WaitSDK','Guest.ProjectSDK','Guest.ServerSDK','Guest.AppIntentSDK'}
 PUBLIC=['Lemma.Types','Lemma.UI','Lemma.Objects','Lemma.Net','Lemma.Identity','Lemma.Social','Lemma.Messenger','Lemma.Library','Lemma.Forge','Lemma.Server','Lemma.Proof','Lemma.Wallet']
@@ -29,7 +29,13 @@ def relative(name,*,reserved=True):
  require(isinstance(name,str) and re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_./-]{0,127}',name) is not None,'invalid project-relative path')
  p=PurePosixPath(name)
  require(str(p)==name and not p.is_absolute() and all(x not in ('','.','..') for x in p.parts),'noncanonical project-relative path')
- require(not reserved or p.parts[0] not in RESERVED,'project shadows reserved SDK namespace')
+ if name.endswith('.lean'):
+  module=name[:-5].replace('/','.')
+  require(MODULE.fullmatch(module) is not None and name==module.replace('.','/')+'.lean','Lean source must use a canonical module path: '+name)
+ # Both SDK clients and the toolchain stdlib have immutable module roots.
+ # Inspect the namespace as well as the directory: e.g. Lean.lean and the
+ # noncanonical Lemma.UI.lean must never shadow those roots in an app/dependency.
+ require(not reserved or p.parts[0].split('.')[0] not in RESERVED,'project shadows reserved SDK/toolchain namespace')
  return name
 
 def records(files,*,reserved=True):
