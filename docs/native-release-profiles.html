@@ -5,6 +5,7 @@
 <h1>Native release and decision profiles</h1>
 <p>Campaign010, 1 November 2026. This page specifies implemented encodings and authority boundaries; the campaign execution record identifies which connected operations were executed.</p>
 <p>Release-v2 remains the original 512-byte header, 256-byte RSA2048/SHA-256 signature and executable. Its identifiers and public pins are unchanged. Release-v4 uses the same 512-byte header, a 64-byte pure RFC8032 Ed25519 signature, a 32-byte public key, then the executable. Its prefix is 608 bytes. Parsers dispatch on the explicit version and never reinterpret a failed v4 verification as v2.</p>
+<p>Launcher memoizes a successful v4 signature check only for the complete 608-byte envelope hash, exact selected trusted public-key hash and current session staging epoch. Every subsequent installation still hashes the actual executable and header, resolves current publisher trust and requires separate exact permission approval. New staging clears the cache. Revoked trust, substituted signature or public key, altered artifact bytes and unknown algorithm profiles cannot inherit cached verification. Legacy verification keeps its existing path; this optimization creates no durable execution or signing authority.</p>
 <table><tr><th>Header field</th><th>Release-v4 meaning</th></tr>
 <tr><td>384</td><td>Facet 1 NativeApplication or 2 DevelopmentArtifact.</td></tr>
 <tr><td>392</td><td>Publisher key generation, 1 through 2³²−1.</td></tr>

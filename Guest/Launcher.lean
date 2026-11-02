@@ -14,6 +14,26 @@ def catalog (i : UInt64) : UInt64 := 0x640000+i*1024
 def project (i : UInt64) : UInt64 := 0x660000+i*128
 def trust (i : UInt64) : UInt64 := 0x620000+i*384
 def hash (src len out t : UInt64) : UInt64 := Guest.ServiceHash.sha256At 0x600200 src len out t
+-- Session-local memoization of a successful pure-Ed25519 check, never an
+-- installation grant. This private record commits to the complete608-byte
+-- envelope, selected current trust key and exact staging epoch. validate still
+-- rehashes the executable/header and rechecks current trust on every use.
+def verificationCache : UInt64 := 0x63c000
+def resetStageVerification (t : UInt64) : UInt64 :=
+  Guest.store64 (control+568) (Guest.load64 (control+568) t+1)
+    (Guest.store64 verificationCache 0 t)
+def verifyStaged (key t : UInt64) : Bool :=
+  if Guest.load64 (stage+8) t != 4 then Guest.ReleaseFormat.verify stage key t else
+  let t := hash stage 608 (verificationCache+80) t
+  let t := hash key 32 (verificationCache+112) t
+  if Guest.load64 verificationCache t == 1 &&
+    Guest.load64 (verificationCache+72) t == Guest.load64 (control+568) t &&
+    equal (verificationCache+8) (verificationCache+80) 32 t &&
+    equal (verificationCache+40) (verificationCache+112) 32 t then true else
+  if !Guest.ReleaseFormat.verify stage key t then false else
+  let t := copy (verificationCache+80) (verificationCache+8) 64 t
+  let t := Guest.store64 (verificationCache+72) (Guest.load64 (control+568) t) t
+  Guest.Effects.effectValue 1 (Guest.store64 verificationCache 1 t) == 1
 
 
 def respond (rid status src len t : UInt64) : UInt64 :=
@@ -66,7 +86,7 @@ def validate (t : UInt64) : Bool :=
           let t := hash stage 512 (control+64) t
           let t := copy (control+96) (stage+160) 32 t
           if !equal (control+64) (stage+160) 32 t then false else
-            Guest.ReleaseFormat.verify stage (trust (key-1)+40) t
+            verifyStaged (trust (key-1)+40) t
 
 partial def findProject (id i t : UInt64) : UInt64 :=
   if i == 8 then 0 else if Guest.load64 (project i) t == 1 && equal id (project i+8) 32 t then i+1 else findProject id (i+1) t
@@ -307,7 +327,7 @@ partial def materialBinary (root count i used t : UInt64) : UInt64 :=
       let r := graphRead h (stage+Guest.ReleaseFormat.prefix stage h+used) n 0 h
       if r == err then err else materialBinary root count (i+1) (used+n) r
 def stageProject (root t : UInt64) : UInt64 :=
-  let t := zero (control+256) 8 t
+  let t := resetStageVerification (zero (control+256) 8 t)
   let r := forward 2 64 (graphHeader 24 root 0 0 t)
   if r != 128 || Guest.load64 buf r != 0 then err else
   let h := Guest.load64 (buf+8) r
@@ -349,7 +369,7 @@ def stageProject (root t : UInt64) : UInt64 :=
   if op == 1 then result 2 t
   else if op == 2 then Guest.syscall 42 0 buf 480 0 t
   else if op == 3 then
-    let t := zero (control+256) 8 t
+    let t := resetStageVerification (zero (control+256) 8 t)
     result 0 t
   else if op == 10 then
     if (len != 64 && len != 288) || (len == 288 &&
@@ -395,7 +415,7 @@ def stageProject (root t : UInt64) : UInt64 :=
   if op == 20 then
     if len != 8 || Guest.load64 buf t < 612 || Guest.load64 buf t > 262912 then err else
       let size := Guest.load64 buf t
-      let t := zero (control+256) 8 t
+      let t := resetStageVerification (zero (control+256) 8 t)
       let t := Guest.store64 (control+256) size t
       result size t
   else if op == 21 then
