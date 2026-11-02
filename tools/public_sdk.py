@@ -217,9 +217,11 @@ def make_lock(*,module=None,entry=None,profile=0,dependencies=(),facet='NativeAp
  lock['content_id']=sha(b'LT-DEPENDENCY-LOCK-1\0'+canonical(lock));validate_lock(lock);resolve_dependencies(lock['dependencies'],lock['sdk']);return lock
 
 def resolve(files):
+ records(files)
  require('lemma.lock.json' in files,'public SDK project requires lemma.lock.json; run ./lt sdk lock PROJECT')
  lock=validate_lock(json.loads(files['lemma.lock.json']));manifest,sdk=resolve_sdk(lock['sdk']);dependencies,release_order=resolve_dependencies(lock['dependencies'],lock['sdk'],files)
  require(not set(files)&set(dependencies),'dependency collides with project source/resource')
+ records({**files,**dependencies})
  public=set(manifest['public_modules']);dependency_modules={n[:-5].replace('/','.') for n in dependencies if n.endswith('.lean')}
  # Every source is validated, including non-exported transitive modules. Apps
  # may import only the dependency's declared exports; dependency internals remain
