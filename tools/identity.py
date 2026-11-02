@@ -12,9 +12,9 @@ import struct
 import live
 import releases
 
-ROLES = {'project': 1, 'messenger': 2, 'node': 3, 'receipt': 4, 'feed': 5, 'moderator': 6}
-PURPOSES = {'contact': 1, 'service': 2, 'receipt-key': 3, 'feed-event': 4, 'feed-decision': 5}
-OPERATIONS = tuple(range(400, 411))
+ROLES = {'project': 1, 'messenger': 2, 'node': 3, 'receipt': 4, 'feed': 5, 'moderator': 6, 'registry': 7}
+PURPOSES = {'contact': 1, 'service': 2, 'receipt-key': 3, 'feed-event': 4, 'feed-decision': 5, 'project-release': 6, 'registry-decision': 7}
+OPERATIONS = tuple(range(400, 412))
 IDENTITY_MAGIC = 0x314449544c
 SIGNING_MAGIC = 0x31474953544c
 CONTACT_MAGIC = 0x315443544c
@@ -49,7 +49,7 @@ def instances(client):
 
 def bind(client, service, caller, service_release, caller_release, operation, prior=0):
     if operation not in OPERATIONS:
-        raise ValueError('Identity-v1 operation outside 400..410')
+        raise ValueError('Identity operation outside 400..411')
     if len(service_release) != 32 or len(caller_release) != 32:
         raise ValueError('exact admitted release commitments required')
     body = struct.pack('<6Q', 1, 1, service, caller, operation, prior)
@@ -71,7 +71,7 @@ def endpoint(client, operation):
 
 def invoke(client, op, h=0, a=0, b=0, c=0, data=b''):
     target = endpoint(client, op)
-    if op in (408,409,410):
+    if op in (408,409,410,411):
         import time,signal
         prior_mask=signal.pthread_sigmask(signal.SIG_BLOCK,{signal.SIGINT})
         token=None

@@ -3,8 +3,8 @@ namespace Guest.IdentityPolicy
 -- incarnations, never claimed roles in an application payload, supply identity.
 def administrative (rights : UInt64) : Bool := (rights &&& 0x100000000) != 0
 def purposeAllowed (role purpose : UInt64) : Bool :=
-  (role == 2 && purpose == 1) || (role == 3 && (purpose == 2 || purpose == 3)) ||
-  (role == 5 && purpose == 4) || (role == 6 && purpose == 5)
+  (role == 1 && purpose == 6) || (role == 2 && purpose == 1) || (role == 3 && (purpose == 2 || purpose == 3)) ||
+  (role == 5 && purpose == 4) || (role == 6 && purpose == 5) || (role == 7 && purpose == 7)
 def bindingCurrent (stored current : UInt64) : Bool := current != 0 && stored == current
 def permits (active owner caller storedGeneration currentGeneration remaining : UInt64)
     (bodyMatches : Bool) : Bool :=
@@ -40,6 +40,11 @@ theorem exhausted_denies (active owner caller generation current : UInt64) (exac
     permits active owner caller generation current 0 exactBody = false := by
   simp [permits]
 theorem project_key_cannot_certify_contact : purposeAllowed 1 1 = false := by decide
+theorem project_key_has_typed_release_purpose : purposeAllowed 1 6 = true := by decide
+theorem feed_key_cannot_sign_project : purposeAllowed 5 6 = false := by decide
+theorem node_key_cannot_sign_project : purposeAllowed 3 6 = false := by decide
+theorem registry_key_has_typed_decision_purpose : purposeAllowed 7 7 = true := by decide
+theorem publisher_cannot_admit_release : purposeAllowed 1 7 = false := by decide
 theorem receipt_key_cannot_certify_contact : purposeAllowed 4 1 = false := by decide
 theorem receipt_key_has_no_generic_signing (purpose : UInt64) : purposeAllowed 4 purpose = false := by simp [purposeAllowed]
 theorem messenger_key_cannot_declare_node : purposeAllowed 2 2 = false := by decide

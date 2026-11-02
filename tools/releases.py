@@ -1,4 +1,4 @@
-"""Publisher-owned RSA release envelopes for the live Lean guest."""
+"""Versioned native releases; host assembly never signs guest Ed25519 releases."""
 import argparse, hashlib, json, re, struct, sys, tempfile
 from pathlib import Path
 try:
@@ -10,6 +10,8 @@ except ImportError:
 MAGIC=0x3253454c544c
 HEADER=512
 PREFIX=768
+NATIVE_PREFIX=608
+NATIVE_DOMAIN=b'LT-PROJECT-RELEASE-V1\0'
 RIGHTS={'object.read':1,'object.create':2,'object.revise':4,'object.share':8,'object.revoke':16,'object.enumerate':32,'object.export':64,'console.write':128,'display.surface':256,'input.focus':512,'network.broker':1024,'server.store':2048,'audio.output':4096}
 def digest(data):return hashlib.sha256(data).digest()
 def project(name):
@@ -94,7 +96,7 @@ def make(binary,name,version,rights,key,sources=(),parent=None,license='NOASSERT
     inspect(release,modulus,manifest)
     return release,manifest
 
-def inspect(data,trusted_modulus=None,manifest=None):
+def _inspect_legacy(data,trusted_modulus=None,manifest=None):
     _require(isinstance(data,bytes) and PREFIX<=len(data)<=PREFIX+262144,'invalid envelope size')
     q=lambda n:struct.unpack_from('<Q',data,n)[0]
     _require(q(0)==MAGIC and q(8)==2 and q(16)==HEADER,'incompatible release schema')
@@ -129,6 +131,108 @@ def inspect(data,trusted_modulus=None,manifest=None):
         _require(digest(pkg.canonical({'license':manifest.get('license'),'distribution_authority':'explicit local author declaration'}))==data[320:352],'rights metadata commitment mismatch')
         _require((manifest.get('parent') or '00'*32)==data[288:320].hex(),'parent lineage mismatch')
     return {'project':name,'version':'.'.join(str(q(x)) for x in (72,80,88)), 'release_id':data[160:192].hex(),'publisher_key_id':data[96:128].hex(),'project_id':data[128:160].hex(),'rights':q(64),'executable_sha256':data[192:224].hex(),'source_root':data[224:256].hex(),'manifest_root':data[256:288].hex(),'parent':data[288:320].hex(),'size':q(24),'signature_verified':trusted_modulus is not None,'manifest_checked':manifest is not None,'identity_scheme':q(488),'logical_project_id':manifest.get('identity_mapping',{}).get('logical_project_id') if manifest else None}
+
+def release_prefix(data):
+    _require(isinstance(data,bytes) and len(data)>=HEADER,'truncated release header')
+    magic,version,header=struct.unpack_from('<3Q',data)
+    _require(magic==MAGIC and header==HEADER and version in (2,4),'incompatible release schema')
+    return PREFIX if version==2 else NATIVE_PREFIX
+
+def public_key(path):
+    """Explicit RSA modulus or Ed25519 public key. Never load a private key."""
+    raw=Path(path).read_bytes()
+    if len(raw)==32:return raw
+    if len(raw)==256 and not raw.startswith(b'-----'):return public_modulus(path)
+    der=pkg.crypto(['pkey','-pubin','-in',path,'-pubout','-outform','DER']).stdout
+    if der[:12]==bytes.fromhex('302a300506032b6570032100') and len(der)==44:return der[12:]
+    return public_modulus(path)
+
+def prepare_native(binary,name,version,rights,public_key,generation,*,sources=(),parent=None,license='NOASSERTION',evidence=(),profile=2,source_base=None,source_records_override=None,logical_project_id=None,facet='NativeApplication',sdk=None,dependencies=(),build=None,provenance=None,exports=(),recipe=None,fork_origin=None):
+    """Prepare review material only. A native coordinator must validate graph
+    objects, review and obtain the exact one-use guest signature independently.
+    This function accepts no private key and cannot confer publication authority.
+    """
+    _require(isinstance(public_key,bytes) and len(public_key)==32 and any(public_key),'exact Ed25519 public key required')
+    _require(type(generation) is int and 1<=generation<=0xffffffff,'bounded publisher generation required')
+    _require(facet in ('NativeApplication','DevelopmentArtifact'),'unsupported release facet')
+    project(name)
+    _require(re.fullmatch(r'(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)',version) is not None,'canonical major.minor.patch version required')
+    major,minor,patch=map(int,version.split('.'))
+    _require(max(major,minor,patch)<=0xffffffff,'bounded semantic version required')
+    _require(type(rights) is int and 0<=rights<=8191,'known capability mask required')
+    _require(isinstance(license,str) and bool(license),'explicit license or NOASSERTION required')
+    logical_project_id=logical_project_id or project(name).hex()
+    publisher_id=digest(public_key).hex();publication_id=publication(logical_project_id,publisher_id)
+    native=facet=='NativeApplication'
+    executable=Path(binary).read_bytes() if native else b''
+    if native:_require(profile in (1,2) and 0<len(executable)<=(262144 if profile==2 else 65536) and len(executable)%4==0,'bounded aligned native executable required')
+    else:_require(binary is None and rights==0,'source-only dependency has no executable or execution rights');profile=0
+    _require(parent is None or isinstance(parent,str) and re.fullmatch('[0-9a-f]{64}',parent) is not None,'exact canonical parent release required')
+    source_records=[]
+    for path in sorted(map(Path,sources)):
+        data=path.read_bytes();relative=path.resolve().relative_to(Path(source_base).resolve()) if source_base else Path(path.name)
+        source_records.append(dict(path=relative.as_posix(),sha256=digest(data).hex(),size=len(data)))
+    if source_records_override is not None:
+        _require(not sources,'choose source records or paths');source_records=list(source_records_override)
+    for record in source_records:
+        pkg.source_path(record['path'])
+        _require(type(record['size']) is int and 0<=record['size']<=65536 and re.fullmatch('[0-9a-f]{64}',record['sha256']) is not None,'invalid source record')
+    source_records=sorted(source_records,key=lambda value:value['path'])
+    _require(source_records and len(source_records)<=64 and len({value['path']for value in source_records})==len(source_records),'finite nonempty unique source closure required')
+    manifest=dict(schema=4,project=name,version=version,rights=rights,license=license,sources=source_records,evidence=list(evidence),parent=parent,facet=facet,identity_mapping=dict(scheme=4,logical_project_id=logical_project_id,publication_id=publication_id.hex(),publisher_key_id=publisher_id),publisher_generation=generation,sdk=sdk,dependencies=list(dependencies),build=build,provenance=provenance,exports=list(exports),recipe=recipe,fork_origin=fork_origin,machine='LT-Dev-v2',runtime='LT-structured-v3'if profile==2 else'LT-U64-effects-v2'if native else'source-only',resource_profile=profile,persistence='ephemeral; retention only through separately approved Objects broker',network='explicit broker grants required; encrypted bulk only'if rights&1024 else'unavailable',limitations=['host Lean/LLVM bootstrap; source-to-binary chain unverified','local authorization is separate from catalog admission'])
+    header=bytearray(HEADER)
+    for offset,value in {0:MAGIC,8:4,16:HEADER,24:len(executable),32:(0x200000 if profile==2 else 0x400000)if native else 0,40:2,48:2,56:2,64:rights,72:major,80:minor,88:patch,384:1 if native else 2,392:generation,400:profile,408:(65536+(2097152 if profile==2 else 0))if native else 0,416:16384 if native else 0,424:len(name),480:1,488:4}.items():struct.pack_into('<Q',header,offset,value)
+    header[96:128]=digest(public_key);header[128:160]=publication_id;header[192:224]=digest(executable)if native else bytes(32)
+    header[224:256]=digest(pkg.canonical(source_records));header[256:288]=digest(pkg.canonical(manifest));header[288:320]=bytes.fromhex(parent)if parent else bytes(32)
+    header[320:352]=digest(pkg.canonical(dict(license=license,distribution_authority='explicit local author declaration')));header[352:384]=digest(pkg.canonical(list(evidence)));header[432:432+len(name)]=name.encode()
+    header[160:192]=digest(header)
+    return bytes(header),manifest
+
+def attach_native(header,signature,public_key,manifest,executable=b''):
+    """Assemble a returned native signature. Verification is mandatory; this
+    adapter cannot generate a signature or replace the guest coordinator."""
+    _require(len(header)==HEADER and len(signature)==64 and len(public_key)==32,'exact native release components required')
+    raw=header+signature+public_key+executable
+    inspect(raw,public_key,manifest)
+    return raw
+
+def inspect(data,trusted_modulus=None,manifest=None):
+    start=release_prefix(data)
+    if start==PREFIX:return _inspect_legacy(data,trusted_modulus,manifest)
+    _require(NATIVE_PREFIX<=len(data)<=NATIVE_PREFIX+262144,'invalid native envelope size')
+    q=lambda n:struct.unpack_from('<Q',data,n)[0]
+    native=q(384)==1
+    _require(q(384)in(1,2)and 1<=q(392)<=0xffffffff and q(480)==1 and q(488)==4 and data[496:512]==bytes(16),'unsupported native facet/signature profile')
+    _require(q(64)<=8191 and all(q(x)<=0xffffffff for x in(72,80,88))and all(q(x)==2 for x in(40,48,56)),'incompatible native machine/runtime/capabilities')
+    _require(1<=q(424)<=48 and data[432+q(424):480]==bytes(48-q(424)),'invalid release name/padding')
+    try:name=data[432:432+q(424)].decode('ascii')
+    except UnicodeDecodeError as exc:raise ValueError('project name must be ASCII')from exc
+    project(name)
+    _require(len(data)==start+q(24),'native executable extent mismatch')
+    if native:
+        _require(q(400)in(1,2)and 0<q(24)<=(262144 if q(400)==2 else 65536)and q(24)%4==0 and q(32)==(0x200000 if q(400)==2 else 0x400000)and q(408)==65536+(2097152 if q(400)==2 else 0)and q(416)==16384,'unsupported native executable profile')
+        _require(digest(data[start:])==data[192:224],'native executable commitment mismatch')
+    else:_require(all(q(x)==0 for x in(24,32,64,400,408,416))and data[192:224]==bytes(32),'source-only facet grants no executable or execution authority')
+    _require(all(any(data[x:x+32])for x in(96,128,224,256,320,352)),'missing native release commitment')
+    header=bytearray(data[:HEADER]);header[160:192]=bytes(32)
+    _require(digest(header)==data[160:192],'release identity mismatch')
+    public=data[576:608]
+    _require(digest(public)==data[96:128],'native publisher key identity mismatch')
+    if trusted_modulus is not None:
+        _require(isinstance(trusted_modulus,bytes)and len(trusted_modulus)==32 and trusted_modulus==public,'exact trusted Ed25519 publisher required')
+        with tempfile.TemporaryDirectory(prefix='lt-release-verify-')as tmp:
+            folder=Path(tmp);(folder/'public.der').write_bytes(bytes.fromhex('302a300506032b6570032100')+public);(folder/'body').write_bytes(NATIVE_DOMAIN+data[:HEADER]);(folder/'signature').write_bytes(data[512:576])
+            result=pkg.crypto(['pkeyutl','-verify','-pubin','-inkey',folder/'public.der','-keyform','DER','-rawin','-in',folder/'body','-sigfile',folder/'signature'],check=False)
+            _require(result.returncode==0,'publisher Ed25519 signature verification failed')
+    if manifest is not None:
+        _require(isinstance(manifest,dict)and manifest.get('schema')==4 and manifest.get('facet')==('NativeApplication'if native else'DevelopmentArtifact'),'invalid native manifest facet')
+        mapping=manifest.get('identity_mapping',{})
+        _require(mapping.get('scheme')==4 and mapping.get('publisher_key_id')==data[96:128].hex()and mapping.get('publication_id')==data[128:160].hex()and publication(mapping.get('logical_project_id'),mapping.get('publisher_key_id'))==data[128:160],'native publication identity mismatch')
+        _require(digest(pkg.canonical(manifest))==data[256:288],'manifest commitment mismatch')
+        _require(manifest.get('project')==name and manifest.get('version')=='.'.join(str(q(x))for x in(72,80,88))and manifest.get('rights')==q(64)and manifest.get('resource_profile')==q(400)and manifest.get('publisher_generation')==q(392),'manifest identity/profile mismatch')
+        _require(digest(pkg.canonical(manifest.get('sources')))==data[224:256]and digest(pkg.canonical(manifest.get('evidence')))==data[352:384],'source/evidence commitment mismatch')
+        _require(digest(pkg.canonical(dict(license=manifest.get('license'),distribution_authority='explicit local author declaration')))==data[320:352]and(manifest.get('parent')or'00'*32)==data[288:320].hex(),'license/parent commitment mismatch')
+    return dict(project=name,version='.'.join(str(q(x))for x in(72,80,88)),release_id=data[160:192].hex(),publisher_key_id=data[96:128].hex(),project_id=data[128:160].hex(),rights=q(64),executable_sha256=data[192:224].hex(),source_root=data[224:256].hex(),manifest_root=data[256:288].hex(),parent=data[288:320].hex(),size=q(24),signature_verified=trusted_modulus is not None,manifest_checked=manifest is not None,identity_scheme=4,logical_project_id=manifest.get('identity_mapping',{}).get('logical_project_id')if manifest else None,facet='NativeApplication'if native else'DevelopmentArtifact',signature_profile='Ed25519-pure-LT-PROJECT-RELEASE-V1',publisher_generation=q(392),prefix_size=start,public_key=public.hex())
 def main(argv=None):
     p=argparse.ArgumentParser(description='Original-publisher RSA envelopes (no intermediary signing)')
     sub=p.add_subparsers(dest='cmd',required=True)
@@ -141,7 +245,7 @@ def main(argv=None):
         manifest=args.manifest or Path(str(args.release)+'.manifest.json')
         metadata=json.loads(manifest.read_text()) if manifest.exists() else None
         if args.manifest and metadata is None:raise ValueError('selected manifest does not exist')
-        modulus=public_modulus(args.public_key) if args.public_key else None
+        modulus=public_key(args.public_key) if args.public_key else None
         print(json.dumps(inspect(args.release.read_bytes(),modulus,metadata),indent=2));return 0
     mask=sum(RIGHTS[r] for r in set(args.right))
     data,manifest=make(args.binary,args.project,args.version,mask,args.sign_key,args.source,args.parent,args.license,profile=args.profile,source_base=args.source_base,logical_project_id=args.logical_project_id)

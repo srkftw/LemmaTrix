@@ -20,9 +20,19 @@ def authorize (key requester purpose bodyLength bodyHash t : UInt64) : UInt64 :=
   let t := header 405 key requester purpose bodyLength 0 0 t
   invoke 405 96 (copy bodyHash (wire+64) 32 t)
 def certify (permit body bodyLength t : UInt64) : UInt64 :=
-  if bodyLength > 256 then error else
+  if bodyLength > 512 then error else
   let t := header 402 permit 0 0 0 0 0 t
   invoke 402 (64+bodyLength) (copy body (wire+64) bodyLength t)
+-- Private coordinator use only. Purpose6 signs the Release-v4 domain and
+-- header directly; it never returns an Identity certificate envelope.
+def signProjectRelease (permit releaseHeader t : UInt64) : UInt64 :=
+  certify permit releaseHeader 512 t
+def sealProject (key credential t : UInt64) : UInt64 :=
+  invoke 408 96 (copy credential (wire+64) 32 (header 408 2 key 0 0 0 0 t))
+def recoverProject (credential publicKey sealed t : UInt64) : UInt64 :=
+  let t := copy credential (wire+64) 32 (header 408 3 0 0 0 0 0 t)
+  let t := copy publicKey (wire+96) 32 t
+  invoke 408 320 (copy sealed (wire+128) 192 t)
 def revokeKey (key t : UInt64) : UInt64 := invoke 403 64 (header 403 key 0 0 0 0 0 t)
 def lock (t : UInt64) : UInt64 := invoke 404 64 (header 404 0 0 0 0 0 0 t)
 def inspect (t : UInt64) : UInt64 := invoke 406 64 (header 406 0 0 0 0 0 0 t)
@@ -52,4 +62,15 @@ def recoverFeed (credential publicKey sealed t : UInt64) : UInt64 :=
   let t := copy publicKey (wire+96) 32 t
   invoke 410 320 (copy sealed (wire+128) 192 t)
 def lockFeed (t : UInt64) : UInt64 := invoke 410 64 (header 410 5 0 0 0 0 0 t)
+def createRegistry (registry limit policy release t : UInt64) : UInt64 :=
+  let t := copy policy (wire+64) 32 (header 411 0 registry limit 0 0 0 t)
+  invoke 411 128 (copy release (wire+96) 32 t)
+def signRegistryDecision (key body t : UInt64) : UInt64 :=
+  invoke 411 576 (copy body (wire+64) 512 (header 411 1 key 0 0 0 0 t))
+def sealRegistry (key credential t : UInt64) : UInt64 :=
+  invoke 411 96 (copy credential (wire+64) 32 (header 411 2 key 0 0 0 0 t))
+def recoverRegistry (registry credential publicKey sealed t : UInt64) : UInt64 :=
+  let t := copy credential (wire+64) 32 (header 411 3 registry 0 0 0 0 t)
+  let t := copy publicKey (wire+96) 32 t
+  invoke 411 320 (copy sealed (wire+128) 192 t)
 end Guest.IdentitySDK

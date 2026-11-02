@@ -6,6 +6,8 @@ import Guest.LiveMemory
 import Guest.VaultCrypto
 import Guest.ReceiptSDK
 import Guest.WaitSDK
+import Guest.ReleaseFormat
+import Guest.FederationDecisionFormat
 namespace Guest.Identity
 open Guest.LiveSDK
 -- Installed profile2, rights EXACTLY zero. Kernel role1 grants narrow entropy;
@@ -84,7 +86,7 @@ def create (token t : UInt64) : UInt64 :=
   let role := load64 (command+16) t
   let slot := freeKey 0 t
   let handle := serial t
-  if role == 0 || role > 6 || zeros (command+64) 32 t || zeros (command+96) 32 t then fail 2 t else
+  if role == 0 || role > 7 || zeros (command+64) 32 t || zeros (command+96) 32 t then fail 2 t else
   if slot == error || handle == error then fail 4 t else
   let k := keyAt slot
   let t := zero k 32 (takeSerial t)
@@ -119,6 +121,7 @@ partial def ipv4 (p n i part t : UInt64) : Bool :=
   load8 (p+next) t == 58 && port != error && (port &&& 0xffffffff) > 0 && port >>> 32 == n
 def validBody (role purpose p n t : UInt64) : Bool :=
   if !Guest.IdentityPolicy.purposeAllowed role purpose then false else
+  if purpose == 6 then n == 512 && load64 (p+8) t == 4 && Guest.ReleaseFormat.validHeader p t else
   if purpose == 1 then
     n == 128 && load64 p t == contactMagic && load64 (p+8) t == 1 &&
     load64 (p+16) t > 0 && load64 (p+24) t <= 7 &&
@@ -154,7 +157,10 @@ def authorize (token t : UInt64) : UInt64 :=
   let bindingGeneration := syscall 132 recipient 402 0 0 t
   if k == error then fail 3 t else
   if recipient == 0 || !Guest.IdentityPolicy.purposeAllowed (load64 (k+16) t) purpose ||
-    length != (if purpose == 1 || purpose == 3 then 128 else 256) || zeros (command+64) 32 t then fail 2 t else
+    length != (if purpose == 1 || purpose == 3 then 128 else if purpose == 6 then 512 else 256) || zeros (command+64) 32 t then fail 2 t else
+  -- Release approval is reserved to the trusted native coordinator, never an
+  -- installed app or a caller merely presenting a project key handle.
+  if purpose == 6 && (recipient%256 != 1 || load64 (k+160) t != recipient || load64 (k+168) t != 0) then fail 1 t else
   if bindingGeneration == error || bindingGeneration == 0 then fail 3 t else
   if slot == error || handle == error then fail 4 t else
   let g := grantAt slot
@@ -170,6 +176,21 @@ def authorize (token t : UInt64) : UInt64 :=
   let t := copy (command+64) (g+64) 32 t
   let t := store64 (g+96) bindingGeneration t
   if !current token t then fail 3 (zero g 16 t) else response 0 handle purpose length t
+def signProject (k token t : UInt64) : UInt64 :=
+  let p := command+64
+  let t := hash (k+128) 32 hashed t
+  if !eq hashed (p+96) 32 t || load64 (p+392) t != load64 (k+24) t || load64 (k+168) t != 0 then fail 1 t else
+  let t := copy (p+160) publicDescriptor 32 t
+  let t := hash p 512 hashed (zero (p+160) 4 t)
+  let t := copy publicDescriptor (p+160) 32 t
+  if !eq hashed (p+160) 32 t || !current token t then fail 1 t else
+  let t := Guest.ReleaseFormat.signedMessage p canonical t
+  let t := Guest.Ed25519.sign (k+96) (k+128) canonical Guest.ReleaseFormat.messageLength signature t
+  if t == error || !current token t then fail 3 t else
+  let t := header 0 (load64 (k+8) t) 6 512 1 0 0 t
+  let t := copy signature (wire+64) 64 t
+  let t := copy (k+128) (wire+128) 32 t
+  168+clearScratch (store64 (wire+160) (load64 (k+24) t) t)
 def certify (caller token length t : UInt64) : UInt64 :=
   let g := findGrant (load64 (command+8) t) caller 0 t
   if g == error then fail 3 t else
@@ -186,7 +207,9 @@ def certify (caller token length t : UInt64) : UInt64 :=
       (load64 (g+48) t) (load64 (k+24) t) (load64 (g+56) t) exactBody ||
       !validBody (load64 (k+16) t) purpose (command+64) bodyLength t ||
       ((purpose == 4 || purpose == 5) && (!eq (command+176) (k+32) 32 t ||
-        load64 (k+160) t != caller || syscall 146 (load64 (k+16) t) 0 0 0 t != caller)) then fail 1 t else
+        load64 (k+160) t != caller || syscall 146 (load64 (k+16) t) 0 0 0 t != caller)) ||
+      (purpose == 6 && (caller%256 != 1 || load64 (k+160) t != caller)) then fail 1 t else
+  if purpose == 6 then signProject k token (zero g 16 t) else
   let t := zero canonical 64 t
   let t := store64 canonical signingMagic t
   let t := store64 (canonical+8) 1 t
@@ -391,6 +414,153 @@ def feedRecover (caller role token t : UInt64) : UInt64 :=
   let t := recoveredKey slot role receiptWork (load64 (receiptWork+96) t+1) (receiptWork+32) t
   if t == error || !current token t then receiptFail 3 (zero (keyAt slot) 32 t) else
   exportKey (keyAt slot) token (clearReceipt (store64 (keyAt slot+160) caller t))
+-- Project authority uses its own typed seal inside the existing Objects
+-- domain3 store. This ciphertext is not a generic fourth vault domain.
+def projectSealMagic : UInt64 := 0x314c414553504c
+def projectRetentionKey (credential t : UInt64) : UInt64 :=
+  let t := copy credential (receiptWork+512) 32 t
+  let t := store64 (receiptWork+544) projectSealMagic t
+  let t := store64 (receiptWork+552) 3 t
+  hash (receiptWork+512) 48 (receiptWork+768) t
+def projectSeal (caller key token t : UInt64) : UInt64 :=
+  let k := findKey key 0 t
+  if k == error || load64 (k+16) t != 1 || load64 (k+160) t != caller ||
+    zeros (command+64) 32 t then receiptFail 1 t else
+  let p := receiptWork
+  let b := receiptWork+256
+  let t := zero p 18 t
+  let t := copy (k+96) p 32 t
+  let t := copy (k+32) (p+32) 64 t
+  let t := store64 (p+96) (load64 (k+24) t) t
+  let t := store64 (p+104) 1 t
+  let t := projectRetentionKey (command+64) t
+  let r := syscall 130 0 (receiptWork+1024) 32 0 t
+  if r != 0 || !current token r then receiptFail 6 r else
+  let t := zero b 24 r
+  let t := store64 b projectSealMagic t
+  let t := store64 (b+8) 1 t
+  let t := copy (receiptWork+1024) (b+16) 12 t
+  let t := Guest.VaultCrypto.encrypt (receiptWork+768) (b+16) b 32 p 144 (b+32) t
+  if t == error || !current token t then receiptFail 3 t else
+  256+clearReceipt (copy b (wire+64) 192 (header 0 key 192 3 0 0 0 t))
+def projectRecover (caller token t : UInt64) : UInt64 :=
+  let slot := freeKey 0 t
+  let b := command+128
+  if slot == error || load64 b t != projectSealMagic || load64 (b+8) t != 1 ||
+    !zeros (b+28) 4 t || zeros (command+64) 32 t || zeros (command+96) 32 t then receiptFail 2 t else
+  let t := projectRetentionKey (command+64) t
+  let r := Guest.VaultCrypto.decrypt (receiptWork+768) (b+16) b 32 (b+32) 144 receiptWork t
+  if r == error || zeros (receiptWork+32) 32 r || zeros (receiptWork+64) 32 r ||
+    load64 (receiptWork+104) r != 1 || load64 (receiptWork+96) r == 0 ||
+    load64 (receiptWork+96) r >= 0xffffffff then receiptFail 9 r else
+  let t := Guest.Ed25519.publicKey receiptWork (receiptWork+1024) r
+  if !eq (receiptWork+1024) (command+96) 32 t || !current token t then receiptFail 8 t else
+  let t := recoveredKey slot 1 receiptWork (load64 (receiptWork+96) t+1) (receiptWork+32) t
+  if t == error || !current token t then receiptFail 3 (zero (keyAt slot) 32 t) else
+  -- A sealed old backup is not an external freshness anchor. Recovery restores
+  -- inspection only; it cannot silently authorize a conflicting successor.
+  let t := store64 (keyAt slot+160) caller t
+  exportKey (keyAt slot) token (clearReceipt (store64 (keyAt slot+168) 1 t))
+def decisionCache (k : UInt64) : UInt64 := 0x657000+(k-0x651000)/256*128
+def decisionReply (k token t : UInt64) : UInt64 :=
+  if !current token t then fail 3 t else
+  let t := header 0 (load64 (k+8) t) 7 512 1 0 0 t
+  let t := copy (decisionCache k+32) (wire+64) 64 t
+  let t := copy (k+128) (wire+128) 32 t
+  168+clearScratch (store64 (wire+160) (load64 (k+24) t) t)
+def registrySealMagic : UInt64 := 0x314c414553524c
+def registryRetentionKey (credential t : UInt64) : UInt64 :=
+  let t := copy credential (receiptWork+512) 32 t
+  let t := store64 (receiptWork+544) registrySealMagic t
+  let t := store64 (receiptWork+552) 3 t
+  hash (receiptWork+512) 48 (receiptWork+768) t
+def registrySeal (registry key token t : UInt64) : UInt64 :=
+  let k := findKey key 0 t
+  if k == error || load64 (k+16) t != 7 || load64 (k+160) t != registry ||
+    zeros (command+64) 32 t then receiptFail 1 t else
+  let p := receiptWork
+  let b := receiptWork+256
+  let t := zero p 18 t
+  let t := copy (k+96) p 32 t
+  let t := copy (k+32) (p+32) 64 t
+  let t := store64 (p+96) (load64 (k+24) t) t
+  let t := store64 (p+104) 7 t
+  let t := store64 (p+112) (load64 (k+184) t) t
+  let t := store64 (p+120) (load64 (k+176) t) t
+  let t := registryRetentionKey (command+64) t
+  let r := syscall 130 0 (receiptWork+1024) 32 0 t
+  if r != 0 || !current token r then receiptFail 6 r else
+  let t := zero b 24 r
+  let t := store64 b registrySealMagic t
+  let t := store64 (b+8) 1 t
+  let t := copy (receiptWork+1024) (b+16) 12 t
+  let t := Guest.VaultCrypto.encrypt (receiptWork+768) (b+16) b 32 p 144 (b+32) t
+  if t == error || !current token t then receiptFail 3 t else
+  256+clearReceipt (copy b (wire+64) 192 (header 0 key 192 3 0 0 0 t))
+def registryRecover (registry token t : UInt64) : UInt64 :=
+  let slot := freeKey 0 t
+  let b := command+128
+  let generation := syscall 132 registry 411 0 0 t
+  if slot == error || generation == error || generation == 0 || load64 b t != registrySealMagic || load64 (b+8) t != 1 ||
+    !zeros (b+28) 4 t || zeros (command+64) 32 t || zeros (command+96) 32 t then receiptFail 2 t else
+  let t := registryRetentionKey (command+64) t
+  let r := Guest.VaultCrypto.decrypt (receiptWork+768) (b+16) b 32 (b+32) 144 receiptWork t
+  if r == error || zeros (receiptWork+32) 32 r || zeros (receiptWork+64) 32 r ||
+    load64 (receiptWork+104) r != 7 || load64 (receiptWork+96) r == 0 ||
+    load64 (receiptWork+96) r >= 0xffffffff || load64 (receiptWork+120) r > 65536 then receiptFail 9 r else
+  let t := Guest.Ed25519.publicKey receiptWork (receiptWork+1024) r
+  if !eq (receiptWork+1024) (command+96) 32 t || !current token t then receiptFail 8 t else
+  let t := recoveredKey slot 7 receiptWork (load64 (receiptWork+96) t+1) (receiptWork+32) t
+  if t == error || !current token t then receiptFail 3 (zero (keyAt slot) 32 t) else
+  let k := keyAt slot
+  let t := store64 (k+160) registry t
+  let t := store64 (k+176) (load64 (receiptWork+120) t) t
+  let t := store64 (k+184) (load64 (receiptWork+112) t) t
+  let t := store64 (k+192) generation (zero (decisionCache k) 16 t)
+  exportKey k token (clearReceipt t)
+def decisionLifecycle (caller admin token length t : UInt64) : UInt64 :=
+  let action := load64 (command+8) t
+  let selected := load64 (command+16) t
+  let registry := syscall 113 0 0 0 0 t
+  if action == 0 && admin == 1 && caller%256 == 1 && length == 128 then
+    let limit := load64 (command+24) t
+    let generation := syscall 132 selected 411 0 0 t
+    if registry == error || registry != selected || generation == error || generation == 0 ||
+      limit == 0 || limit > 65536 then fail 1 t else
+    let r := create token (store64 (command+16) 7 t)
+    let k := findKey (load64 (wire+8) r) 0 r
+    if load64 wire r != 0 || k == error then r else
+    let t := zero (decisionCache k) 16 r
+    let t := store64 (k+160) selected t
+    let t := store64 (k+176) limit t
+    352+store64 (k+192) generation t
+  else if action == 2 && admin == 1 && caller%256 == 1 && length == 96 && registry != error then
+    registrySeal registry selected token t
+  else if action == 3 && admin == 1 && caller%256 == 1 && length == 320 && selected == registry && registry != error then
+    registryRecover registry token t
+  else if action == 1 && length == 576 && caller == registry && registry != error then
+    let k := findKey selected 0 t
+    let generation := syscall 132 caller 411 0 0 t
+    let p := command+64
+    if k == error || load64 (k+16) t != 7 || load64 (k+160) t != caller ||
+      generation == error || !Guest.IdentityPolicy.bindingCurrent (load64 (k+192) t) generation ||
+      !Guest.FederationDecisionFormat.validHeader p t || !eq (k+32) (p+256) 32 t ||
+      load64 (p+392) t != load64 (k+24) t then fail 1 t else
+    let t := hash (k+128) 32 hashed t
+    if !eq hashed (p+288) 32 t then fail 1 t else
+    let t := hash p 512 hashed t
+    let sequence := load64 (p+48) t
+    if sequence == load64 (k+184) t && eq hashed (decisionCache k) 32 t then decisionReply k token t else
+    if sequence <= load64 (k+184) t || load64 (k+176) t == 0 then fail 3 t else
+    let t := store64 (k+176) (load64 (k+176) t-1) t
+    let t := store64 (k+184) sequence t
+    let t := zero (decisionCache k) 16 t
+    let t := Guest.FederationDecisionFormat.signedMessage p canonical t
+    let t := Guest.Ed25519.sign (k+96) (k+128) canonical Guest.FederationDecisionFormat.messageLength signature t
+    if t == error || !current token t then fail 3 t else
+    let t := copy hashed (decisionCache k) 32 t
+    decisionReply k token (copy signature (decisionCache k+32) 64 t)
+  else fail 1 t
 def feedLifecycle (caller token length t : UInt64) : UInt64 :=
   let role := feedRole caller t
   let action := load64 (command+8) t
@@ -424,17 +594,26 @@ partial def reapFeedOwners (i t : UInt64) : UInt64 :=
   let k := keyAt i
   let owner := load64 (k+160) t
   let role := load64 (k+16) t
-  let t := if load64 k t == 1 && owner != 0 && (role == 5 || role == 6) &&
-      syscall 146 role 0 0 0 t != owner then zero k 32 (revokeGrants (load64 (k+8) t) 0 t) else t
+  let stale := ((role == 5 || role == 6) && syscall 146 role 0 0 0 t != owner) ||
+    (role == 7 && syscall 113 0 0 0 0 t != owner)
+  let t := if load64 k t == 1 && owner != 0 && stale then
+      zero k 32 (revokeGrants (load64 (k+8) t) 0 t) else t
   reapFeedOwners (i+1) t
 def dispatch (caller rights token length t : UInt64) : UInt64 :=
   let op := load64 command t
   let admin := Guest.IdentityPolicy.administrative rights
-  if length < 64 || length > 320 || load64 (command+56) t != 1 ||
+  if length < 64 || length > 576 || load64 (command+56) t != 1 ||
     load64 (command+40) t != 0 || load64 (command+48) t != 0 || !current token t then fail 2 t else
   if op == 410 then feedLifecycle caller token length t
+  else if op == 411 then decisionLifecycle caller (if admin then 1 else 0) token length t
   else if op == 400 then
-    if admin && length == 128 && load64 (command+16) t <= 4 then create token t else fail 1 t
+    if admin && length == 128 && load64 (command+16) t <= 4 then
+      if load64 (command+16) t != 1 then create token t else
+      if caller%256 != 1 then fail 1 t else
+      let r := create token t
+      let k := findKey (load64 (wire+8) r) 0 r
+      if load64 wire r != 0 || k == error then r else 352+store64 (k+160) caller r
+    else fail 1 t
   else if op == 401 then
     let k := findKey (load64 (command+8) t) 0 t
     if !admin then fail 1 t else if length != 64 then fail 2 t else if k == error then fail 3 t else exportKey k token t
@@ -442,14 +621,17 @@ def dispatch (caller rights token length t : UInt64) : UInt64 :=
   else if op == 403 then if admin && length == 64 then revokeKey t else fail 1 t
   else if op == 404 then if admin && length == 64 then lock t else fail 1 t
   else if op == 405 then
-    if admin && length == 96 && load64 (command+24) t <= 3 then authorize token t else fail 1 t
+    if admin && length == 96 && (load64 (command+24) t <= 3 ||
+      (load64 (command+24) t == 6 && caller%256 == 1)) then authorize token t else fail 1 t
   else if op == 406 then if admin && length == 64 then
     64+header 0 1 8 16 (countKeys 0 0 t) (countGrants 0 0 t) 0 t else fail 2 t
   else if op == 407 then if length == 64 then
     cancelApproval (load64 (command+8) t) caller (if admin then 1 else 0) 0 t else fail 2 t
   else if op == 408 && admin then
     if load64 (command+8) t == 0 && length == 96 then sealKeys token t else
-    if load64 (command+8) t == 1 && length == 320 then recoverKeys token t else receiptFail 2 t
+    if load64 (command+8) t == 1 && length == 320 then recoverKeys token t else
+    if caller%256 == 1 && load64 (command+8) t == 2 && length == 96 then projectSeal caller (load64 (command+16) t) token t else
+    if caller%256 == 1 && load64 (command+8) t == 3 && length == 320 then projectRecover caller token t else receiptFail 2 t
   else if op == 409 then
     if admin && load64 (command+8) t == 0 && length == 128 then authorizeReceipt token t else
     if !admin && length == 256 then signReceipt caller token t else receiptFail 2 t
