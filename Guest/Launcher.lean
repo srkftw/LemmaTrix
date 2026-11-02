@@ -12,6 +12,9 @@ def control : UInt64 := 0x630000
 def stage : UInt64 := 0x700000
 def catalog (i : UInt64) : UInt64 := 0x640000+i*1024
 def project (i : UInt64) : UInt64 := 0x660000+i*128
+-- Installed projects are catalog metadata, independent of the eight live app
+-- slots. Match the sixteen retained release entries within this private page.
+def projectCapacity : UInt64 := 16
 def trust (i : UInt64) : UInt64 := 0x620000+i*384
 def hash (src len out t : UInt64) : UInt64 := Guest.ServiceHash.sha256At 0x600200 src len out t
 -- Session-local memoization of a successful pure-Ed25519 check, never an
@@ -89,9 +92,9 @@ def validate (t : UInt64) : Bool :=
             verifyStaged (trust (key-1)+40) t
 
 partial def findProject (id i t : UInt64) : UInt64 :=
-  if i == 8 then 0 else if Guest.load64 (project i) t == 1 && equal id (project i+8) 32 t then i+1 else findProject id (i+1) t
+  if i == projectCapacity then 0 else if Guest.load64 (project i) t == 1 && equal id (project i+8) 32 t then i+1 else findProject id (i+1) t
 partial def freeProject (i t : UInt64) : UInt64 :=
-  if i == 8 then 0 else if Guest.load64 (project i) t == 0 then i+1 else freeProject (i+1) t
+  if i == projectCapacity then 0 else if Guest.load64 (project i) t == 0 then i+1 else freeProject (i+1) t
 partial def freeRelease (i t : UInt64) : UInt64 :=
   if i == 16 then 0 else if Guest.load64 (catalog i+768) t == 0 then i+1 else freeRelease (i+1) t
 partial def knownRevoked (id i t : UInt64) : Bool :=
@@ -157,7 +160,7 @@ partial def releaseById (id i t : UInt64) : UInt64 :=
   if i == 16 then 0 else
     if Guest.load64 (catalog i+768) t == 1 && equal id (catalog i+160) 32 t then i+1 else releaseById id (i+1) t
 partial def referenced (slot i t : UInt64) : Bool :=
-  if i == 8 then false else
+  if i == projectCapacity then false else
     (Guest.load64 (project i) t == 1 && (Guest.load64 (project i+72) t == slot+1 || Guest.load64 (project i+80) t == slot+1)) || referenced slot (i+1) t
 partial def collect (i count t : UInt64) : UInt64 :=
   if i == 16 then result count t else
@@ -792,9 +795,13 @@ def retainGameSave (handle t : UInt64) : UInt64 :=
   else err
 
 def command (op len t : UInt64) : UInt64 :=
+  -- Native graph inspection verifies an actual executable/signature. The GUI
+  -- request already carries pollGUI's frame; the unrelated commandIO locals
+  -- would exceed the16KiB stack guard during Ed25519/SHA512 verification.
+  if op == 180 then if len == 8 then stageProject (Guest.load64 buf t) t else err
   -- Native GUI requests already carry pollGUI's bounded frame. Keep publisher
   -- hashing/verification off the unrelated large I/O command stack.
-  if (op >= 186 && op <= 191) || op == 226 || op == 228 || op == 229 then Guest.ProjectPublisher.dispatch op len t
+  else if (op >= 186 && op <= 191) || op == 226 || op == 228 || op == 229 then Guest.ProjectPublisher.dispatch op len t
   else if op < 20 then commandControl op len t
   else if op < 25 then commandStage op len t
   else if op < 34 then commandProcess op len t
@@ -932,6 +939,7 @@ partial def loop (t : UInt64) : UInt64 :=
 
 def main (initial : UInt64) : UInt64 :=
   let t := zero control 128 initial
+  let t := zero (project 0) 256 t
   let t := zero 0x632000 512 t
   let t := respond 0 0 buf 0 t
   loop t

@@ -9,13 +9,16 @@ ROOT=Path(__file__).resolve().parents[1];sys.path[:0]=[str(ROOT/'tools'),str(ROO
 import driver,live_build,onion_crypto
 from structured_runtime import BOOT
 from campaign010_terminal_queue import TRAP
-B=ROOT/'build/campaign010-transport-lineage'
+B=ROOT/'build/campaign010-transport-lineage-capacity'
 SOURCE='''import Guest.Network
 import Guest.ProjectPublisher
+import Guest.Launcher
 namespace build.Campaign010TransportLineage
 open Guest Guest.LiveSDK
 def packet (op version t : UInt64) : UInt64 :=
   store64 (command+56) version (store64 command op (zero command 8 t))
+partial def fillProjects (i t : UInt64) : UInt64 :=
+  if i == 15 then t else fillProjects (i+1) (store64 (Guest.Launcher.project i) 1 t)
 def check (t : UInt64) : UInt64 :=
   let t := zero Guest.Network.st 32 (zero Guest.Network.control 32 (zero Guest.Transport.st 512 (zero Guest.OnionTerminal.control 64 (zero Guest.OnionTerminal.st 4096 (zero 0x770000 8192 t)))))
   let t := store64 Guest.Transport.st 1 t
@@ -45,12 +48,19 @@ def check (t : UInt64) : UInt64 :=
   let t := store64 (Guest.ProjectPublisher.h+128) 33 (store64 (Guest.ProjectPublisher.h+288) 55 (store64 (p+40) 55 (store64 (p+72) 1 (store64 (Guest.ProjectPublisher.h+72) 2 t))))
   if !Guest.ProjectPublisher.lineageCurrent t then 11 else
   let t := store64 (Guest.ProjectPublisher.h+96) 99 t
-  if Guest.ProjectPublisher.lineageCurrent t then 12 else 0
+  if Guest.ProjectPublisher.lineageCurrent t then 12 else
+  let t := zero (Guest.Launcher.project 0) 256 (zero 0x6c6000 4 t)
+  let p := Guest.Launcher.project 15
+  let t := store64 p 1 (store64 (p+8) 123 (store64 (p+72) 9 (store64 0x6c6000 123 t)))
+  if Guest.Launcher.findProject 0x6c6000 0 t != 16 || Guest.Launcher.freeProject 0 t != 1 then 13 else
+  if !Guest.Launcher.referenced 8 0 t then 14 else
+  let t := fillProjects 0 t
+  if Guest.Launcher.freeProject 0 t != 0 then 15 else 0
 end build.Campaign010TransportLineage
 '''
 def main():
  B.mkdir(parents=True,exist_ok=True)
- for module in ('Guest.Network','Guest.ProjectPublisher'):live_build.compile_module(module)
+ for module in ('Guest.Network','Guest.Launcher'):live_build.compile_module(module)
  path=ROOT/'build/Campaign010TransportLineage.lean';path.write_text(SOURCE);driver.lean(['-o',path.with_suffix('.olean'),path])
  assembly=B/'check.S';driver.lean(['--run','Compiler/Main.lean','build.Campaign010TransportLineage',assembly,'build.Campaign010TransportLineage.check'])
  boot=BOOT.replace('lt_Examples_StructuredConsumer_check','lt_build_Campaign010TransportLineage_check').replace(' li t1,0x40000cf',' li t1,0x201000cf\n sd t1,24(t0)\n li t1,0x40000cf').replace(' call lt_finish\nfatal:\n li a0,2\n call lt_finish',TRAP)
@@ -58,6 +68,6 @@ def main():
  for i,p in enumerate((assembly,B/'boot.S',ROOT/'runtime/primitives.S')):
   obj=B/f'{i}.o';driver.asm(p,obj);objects.append(obj)
  elf=B/'check.elf';binary=B/'check.bin';driver.run([driver.tool('ld.lld'),'-m','elf64lriscv','--no-relax','-T',ROOT/'runtime/kernel.ld',*objects,'-o',elf]);driver.run([driver.tool('llvm-objcopy'),'-O','binary',elf,binary]);onion_crypto.B=B
- report=dict(schema=1,result='pass',image_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),checks=[onion_crypto.execute(binary,b)for b in ('qemu','aarch64')],boundaries=['MUX reserves bulk12..15 before router setup','frozen SDK terminal v1 keeps caller ownership checks','legacy raw connection cannot migrate into MUX','ordinary v1 bulk is rejected under MUX','peer bank3 selects channel15','known logical identity cannot switch publisher without fork','current parent and newer version required'],limits=__doc__)
+ report=dict(schema=1,result='pass',image_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),checks=[onion_crypto.execute(binary,b)for b in ('qemu','aarch64')],boundaries=['MUX reserves bulk12..15 before router setup','frozen SDK terminal v1 keeps caller ownership checks','legacy raw connection cannot migrate into MUX','ordinary v1 bulk is rejected under MUX','peer bank3 selects channel15','known logical identity cannot switch publisher without fork','current parent and newer version required','installed project16 remains discoverable and protects its retained release','full16-project metadata table refuses further allocation'],limits=__doc__)
  (B/'evidence.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2))
 if __name__=='__main__':main()
