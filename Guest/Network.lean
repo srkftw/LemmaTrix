@@ -138,7 +138,7 @@ def nativePeerCurrent (t : UInt64) : Bool :=
   if selected == 0 then true else
   let own := Guest.NodeEnrollment.localNode
   let peer := Guest.NodeEnrollment.peer (selected-1)
-  selected <= 4 && load64 own t == 1 && Guest.TorRouter.peerValid peer t &&
+  selected <= 8 && load64 own t == 1 && Guest.TorRouter.peerValid peer t &&
     Guest.NodeEnrollment.eq (own+512) (stamp+32) 32 t &&
     Guest.NodeEnrollment.eq (peer+512) (stamp+64) 32 t
 def nativeFeedRelationship (t : UInt64) : Bool :=
