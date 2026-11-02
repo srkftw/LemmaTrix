@@ -13,6 +13,7 @@ from campaign010_forge_continue import verify_closure,fetch
 from forge_journey import wait
 from forge_replication import save
 from graphical_devices import DeviceInput
+from creator_journey import rendered_text
 
 class MuxNode(Node):
  def __init__(self,path,disk=None):
@@ -21,6 +22,16 @@ class MuxNode(Node):
   if disk:command+=['--server-store',str(disk)]
   self.proc=subprocess.Popen(command,cwd=ROOT,stdout=self.log,stderr=subprocess.STDOUT,start_new_session=True)
   wait(self.sock.exists,'fresh multiplexed personal/provider boot');self.ui=DeviceInput('qemu',self.qmp)
+ def select(self,name):
+  self.focus(self.instance)
+  if rendered_text(self.ui.frame(),10,56,10,0x9fc6a5)=='FEDERATION':self.ui.press(59);time.sleep(.5)
+  self.ui.press(60)
+  def ready():
+   f=self.ui.frame();rows=[rendered_text(f,32,107+i*12,len(name)+1).rstrip()for i in range(16)];return rows if name in rows else None
+  rows=wait(ready,'native selected project rows',60)
+  for _ in range(rows.index(name)):self.ui.press(108);time.sleep(.5)
+  time.sleep(.5);self.ui.press(28)
+  wait(lambda:self.inspect()['status']==1,'native selected project delivered to Forge',90)
 
 def archive(path):
  doc=json.loads(path.read_text());rows=[dict(row,payload=base64.b64decode(row['payload'],validate=True))for row in doc['nodes']]
@@ -31,11 +42,11 @@ def archive(path):
  return dict(path=str(path.resolve()),doc=doc,rows=rows,root=root,release=envelope[160:192].hex(),publication=envelope[128:160],publisher=envelope[576:608],facet=struct.unpack_from('<Q',envelope,384)[0])
 
 def main():
- p=argparse.ArgumentParser(description=__doc__)
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--resume-setup',action='store_true',help='resume preserved exact authenticated actors after setup-only failure')
  for field in ('image','archive','helper','identity','registry','forge','server-forge','output'):p.add_argument('--'+field,type=Path,required=True)
- a=p.parse_args();a.output=a.output.resolve();a.output.mkdir(parents=True,exist_ok=False);os.environ['LT_GUEST_IMAGE']=str(a.image.resolve())
+ a=p.parse_args();a.output=a.output.resolve();a.output.mkdir(parents=True,exist_ok=a.resume_setup);os.environ['LT_GUEST_IMAGE']=str(a.image.resolve())
  app,helper=archive(a.archive),archive(a.helper);assert len(app['rows'])>24 and app['facet']==1 and helper['facet']==2
- disk=a.output/'provider.img';server_store.provision(disk);nodes=[];checks=[];phase='cold native setup';started=time.monotonic()
+ disk=a.output/'provider.img';(None if a.resume_setup else server_store.provision(disk));nodes=[];checks=[];phase='cold native setup';started=time.monotonic()
  report=dict(schema=1,result='running',image_sha256=hashlib.sha256(a.image.read_bytes()).hexdigest(),sdk_changed=False,checks=checks,limitations=['QEMU guests with independent state on one Linux x86-64 host.','Signed endpoint descriptors and first-party service packages use explicit legacy RSA bootstrap; project release and operator keys/signatures remain guest-owned Ed25519.','RemoteBuild v2 wrappers typecheck, but this test executes Forge transfers, not a remote compiler.'])
  def write():
   report.update(phase=phase,elapsed_seconds=round(time.monotonic()-started,3),live_actors=[dict(pid=n.proc.pid,socket=str(n.sock),graphics=str(n.qmp),forge=getattr(n,'instance',None),registry=getattr(n,'registry',None),image=str(a.image.resolve()))for n in nodes]);(a.output/'execution.json').write_text(json.dumps(report,indent=2)+'\n')
@@ -87,8 +98,22 @@ def main():
    root=projects.import_records(c,item['doc']['selected'],item['rows'])[0]['cap'];shell=struct.unpack_from('<Q',c.request(2),4*32)[0];c.objects(27,root,shell,127)
   n.select(item['root']['name']);n.ui.press(87)
  try:
-  provider=actor('provider',disk);source=actor('source');keys=relation('source-provider',digest('Campaign010 MUX source'))
-  ready=link(provider,source,keys);forge_setup(provider,a.server_forge,keys[1],'registry');forge_setup(source,a.forge,keys[0]);configuration=registry(provider);registry(source,configuration)
+  if a.resume_setup:
+   prior=json.loads((a.output/'execution.json').read_text());assert not prior['checks'],'setup-only continuation must not discard initialized native authority'
+   for label,row in zip(('provider','source'),prior['live_actors']):
+    n=object.__new__(MuxNode);n.path=a.output/label;n.sock=Path(row['socket']);n.qmp=Path(row['graphics']);n.log=(n.path/'guest.log').open('ab');n.ui=DeviceInput('qemu',n.qmp);n.proc=type('Existing',(),{'pid':row['pid'],'poll':lambda self:None})()
+    nodes.append(n)
+   provider,source=nodes;path=a.output/'source-provider';keys=(path/'client.credential',path/'server.credential',path/'service.public')
+   with provider.client()as c:
+    for who,state,rights,_ in identity.instances(c):
+     if who&255>=7 and 0<state<5:c.request(26,struct.pack('<Q',who))
+   provider.ui.press(1)
+   ready=[]
+   for n in nodes:
+    with n.client()as c:ready.append(network.status(c,slot=0))
+  else:
+   provider=actor('provider',disk);source=actor('source');keys=relation('source-provider',digest('Campaign010 MUX source'));ready=link(provider,source,keys)
+  forge_setup(provider,a.server_forge,keys[1],'registry');forge_setup(source,a.forge,keys[0]);configuration=registry(provider);registry(source,configuration)
   passed('fresh explicit v2 bulk relationship authenticates with independently selected signed endpoint',endpoints=ready,peer_slots=[0,0],stream=1)
   for item in (helper,app):
    progress('native network publication '+item['root']['name']);import_source(source,item)
@@ -106,7 +131,13 @@ def main():
   # Retire only this completed Forge process, not the native Registry or its
   # catalog. Its fresh incarnation selects a different approved bulk peer.
   progress('fresh second personal user retrieves the actual32-node provider closure')
-  source.stop();nodes.remove(source)
+  if a.resume_setup:
+   with source.client()as c:
+    try:c.request(70)
+    except EOFError:pass
+   source.ui.close();source.log.close()
+  else:source.stop()
+  nodes.remove(source)
   with provider.client()as c:c.request(26,struct.pack('<Q',provider.instance));provider.instance=struct.unpack_from('<Q',c.request(25,struct.pack('<Q',1)),8)[0]
   reader=actor('reader');second=relation('reader-provider',digest('Campaign010 MUX second user'));ready=link(provider,reader,second,1)
   with provider.client()as c:forge.configure(c,provider.instance,second[1],'seed','portable',peer_slot=1,stream=1);forge.federation_configure(c,provider.instance,configuration['federation_id'],3)

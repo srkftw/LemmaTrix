@@ -206,6 +206,10 @@ def main():
   # Preserve exactly this accepted graph and independent sealed operator key.
   alpha.focus(alpha.instance);alpha.select(next(r['name']for r in alpha.roots()if r['head']==head));committed=save(alpha)
   unlock=os.urandom(32);authority_ns=digest('Campaign010 alpha authority').hex()
+  credential_path=a.output/'alpha-retention.credential'
+  credential_fd=os.open(credential_path,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
+  try:os.write(credential_fd,unlock);os.fsync(credential_fd)
+  finally:os.close(credential_fd)
   with alpha.client() as c:
    retained=federation.retain_native(c,alpha.registry,alpha_config['key'],unlock,authority_ns,'consumer',895)
   passed('Alpha retains only its chosen accepted graph, catalog and typed independent operator seal',graph=committed,authority=retained)
