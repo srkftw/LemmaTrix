@@ -13,8 +13,37 @@ def read_project(directory):
  sdk.records(files)
  return files
 
+def native_dependency_work(releases,children):
+ """Count the shipped native queue, which revisits shared child references."""
+ weights={};active=set()
+ def weight(release):
+  if release in weights:return weights[release]
+  sdk.require(release in children,'native dependency reference is outside the verified closure')
+  sdk.require(release not in active,'cyclic native dependency references')
+  active.add(release);value=1+sum(weight(child) for child in children[release]);active.remove(release)
+  weights[release]=value;return value
+ references=sum(weight(release) for release in releases)
+ sdk.require(references<=16,'native release verification needs '+str(references)+' dependency references including repeated child pins; the supported limit is16. Select a smaller source dependency closure before building or signing.')
+ return references
+
+def native_dependency_references(lock,files):
+ # resolve() has already authenticated each carrier and its transitive pins.
+ # Recheck the exact content identity when reading it for this preflight; use
+ # signed manifest children because those are what the native verifier queues.
+ pins={pin['release_id']:pin for pin in lock['dependencies']};children={}
+ for release,pin in pins.items():
+  raw=files.get('deps/'+release+'.json')
+  if raw is None:raw=(sdk.DEPENDENCIES/release/'source.json').read_bytes()
+  sdk.require(sdk.sha(raw)==pin['content_id'],'verified dependency carrier changed during native preflight: '+release)
+  declared=json.loads(raw)['manifest'].get('dependencies')
+  sdk.require(isinstance(declared,list) and declared==pin.get('dependencies',[]),'signed native dependency children differ from the verified lock: '+release)
+  sdk.require(all(isinstance(child,dict) and child.get('release_id') in pins and pins[child['release_id']]==child for child in declared),'native dependency child is outside the exact verified closure: '+release)
+  children[release]=[child['release_id'] for child in declared]
+ return native_dependency_work(list(pins),children)
+
 def check(files):
  lock,manifest,_,dependencies,_,modules=sdk.resolve(files)
+ native_references=native_dependency_references(lock,files)
  sdk.require('lemma.project.json' in files,'missing lemma.project.json; run ./lt sdk init DIRECTORY')
  project=json.loads(files['lemma.project.json'])
  sdk.require(project.get('schema')==1 and project.get('facet') in ('NativeApplication','DevelopmentArtifact'),'unsupported project manifest/facet')
@@ -40,7 +69,7 @@ def check(files):
    match=re.search(pattern,clean)
    if match:diagnostics.append({'path':name,'line':clean[:match.start()].count('\n')+1,'message':label})
  sdk.require(not diagnostics,'app-check failed: '+json.dumps(diagnostics))
- return {'schema':1,'status':'ok','project':project['name'],'facet':project['facet'],'sdk':lock['sdk'],'dependency_lock_id':lock['content_id'],'dependencies':[p['release_id'] for p in lock['dependencies']],'source_files':sdk.records(files),'dependency_sources':sdk.records(dependencies) if dependencies else [],'modules':modules,'rights':project.get('rights',0),'license':project['license'],'distribution_authority':project['distribution_authority'],'checks':['canonical source/module paths','reserved namespaces','finite cycle-free pinned module closure','exact SDK/dependency cache bytes','manifest/recipe/profile agreement','license/distribution declarations','forbidden host/private calls'],'release_prerequisites':['actual frozen Build/Evidence','trusted exact native signing review','current publisher and federation policy','separate install/execution approval'],'assurance':'structural preflight; not compiler correctness, legal authorization or full verification'}
+ return {'schema':1,'status':'ok','project':project['name'],'facet':project['facet'],'sdk':lock['sdk'],'dependency_lock_id':lock['content_id'],'dependencies':[p['release_id'] for p in lock['dependencies']],'native_dependency_references':native_references,'source_files':sdk.records(files),'dependency_sources':sdk.records(dependencies) if dependencies else [],'modules':modules,'rights':project.get('rights',0),'license':project['license'],'distribution_authority':project['distribution_authority'],'checks':['canonical source/module paths','reserved namespaces','finite cycle-free pinned module closure','exact SDK/dependency cache bytes','native dependency reference budget','manifest/recipe/profile agreement','license/distribution declarations','forbidden host/private calls'],'release_prerequisites':['actual frozen Build/Evidence','trusted exact native signing review','current publisher and federation policy','separate install/execution approval'],'assurance':'structural preflight; not compiler correctness, legal authorization or full verification'}
 
 def write_lock(directory,module=None,entry=None,profile=None,dependencies=None):
  directory=Path(directory);project=json.loads((directory/'lemma.project.json').read_bytes())
