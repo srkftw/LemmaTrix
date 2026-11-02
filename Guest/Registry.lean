@@ -423,6 +423,20 @@ def currentIncoming (length t : UInt64) : UInt64 :=
       let t := store64 (wire+16) (load64 (latest+24) t) t
       let t := store64 (wire+24) (load64 (latest+48) t) t
       832+copy latest (wire+64) 768 t
+-- Explicit operator retention of already verified portable decisions. No
+-- supplied descriptor, new signature or live graph capability enters here.
+-- Include verified incoming sequences in the snapshot's recovery high-water
+-- mark; a seed's authoring counter may still be zero before this selection.
+partial def verifiedSequence (i highest t : UInt64) : UInt64 :=
+  if i == 16 then highest else
+  let n := load64 (entry i+48) t
+  verifiedSequence (i+1) (if load64 (entry i+768) t == 2 && n > highest then n else highest) t
+def retainVerified (t : UInt64) : UInt64 :=
+  if load64 (st+320) t == 0 then response 1 0 t else
+  let highest := verifiedSequence 0 (load64 (st+16) t) t
+  if highest == 0 then response 6 0 t else
+  let r := persist (store64 (st+16) highest t)
+  if r == error then response 6 0 r else response 0 highest r
 def revokeListing (slot expected t : UInt64) : UInt64 :=
   if slot >= 16 || load64 (entry slot+768) t != 2 || load64 (entry slot+48) t != expected then response 3 0 t else
     let vacant := freeEntry 0 t
@@ -471,6 +485,7 @@ def dispatch (caller rights length t : UInt64) : UInt64 :=
   else if op == 10 && admin && length == 64 then recover t
   else if op == 11 then verifyIncoming length t
   else if op == 22 then currentIncoming length t
+  else if op == 23 && admin && length == 64 then retainVerified t
   else if op == 21 then search length t
   else if op == 20 && length == 64 && h < 16 then
     if load64 (entry h+768) t != 2 || newer h 0 t ||

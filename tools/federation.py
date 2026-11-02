@@ -151,6 +151,7 @@ def main(argv=None):
   if command=='query':q.add_argument('--cursor',type=int,default=0)
  q=sub.add_parser('search');q.add_argument('query');q.add_argument('--cursor',type=int,default=0);q.add_argument('--facet',type=int,choices=(0,1,2),default=0)
  q=sub.add_parser('store');q.add_argument('--grant',type=int,required=True)
+ sub.add_parser('retain-verified',help='explicitly retain only the current natively verified decision catalog in its approved server namespace')
  a=p.parse_args(argv);c=live.Client(a.socket)
  try:
   if a.command=='configure':result=configure(c,a.instance,a.public,a.policy,a.store_grant,not a.no_bind,a.allowed_rights)
@@ -172,6 +173,7 @@ def main(argv=None):
    q,payload=call(c,a.instance,21,h=a.cursor,a=a.facet,b=len(query),data=query);result={'sequence':q[1],'next_cursor':q[3],'slot':q[2],'descriptor':payload.hex()}
   elif a.command=='store':result={'grant':call(c,a.instance,9,h=a.grant)[0][1]}
   elif a.command=='recover':result={'records':call(c,a.instance,10)[0][1]}
+  elif a.command=='retain-verified':result={'verified_sequence':call(c,a.instance,23)[0][1],'signing_authority':False,'live_authority_restored':False}
   else:
    q,payload=call(c,a.instance,6,h=a.cursor);result={'sequence':q[1],'next_cursor':q[3],'descriptor':payload.hex(),'listing':struct.unpack_from('<Q',payload,16)[0],'root':payload[320:352].hex()}
  finally:c.close()

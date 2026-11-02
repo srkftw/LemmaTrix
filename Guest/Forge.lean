@@ -503,254 +503,287 @@ def pollControl (t : UInt64) : UInt64 :=
     let t := if r == error then store64 wire 1 (zero wire 8 r) else r
     reply token (if r == error then 64 else r) t
 
-def label (id x y color t : UInt64) : UInt64 :=
-  if id == 0 then
-    let t := store64 (0x414000+0) 2318544865087082310 t
-    let t := store64 (0x414000+8) 7598819853104084321 t
-    let t := store64 (0x414000+16) 7309377810793259363 t
-    let t := store64 (0x414000+24) 8316866959935304293 t
-    let t := store64 (0x414000+32) 1701011824 t
-    Guest.Raster.text 0x414000 36 x y color 0x101b25 t
-  else
-  if id == 1 then
-    let t := store64 (0x414000+0) 8317989530370060870 t
-    let t := store64 (0x414000+8) 7162247809296506981 t
-    let t := store64 (0x414000+16) 5557498316454895732 t
-    let t := store64 (0x414000+24) 2333274043599385701 t
-    let t := store64 (0x414000+32) 521610294641 t
-    Guest.Raster.text 0x414000 37 x y color 0x101b25 t
-  else
-  if id == 2 then
-    let t := store64 (0x414000+0) 7596554927462167622 t
-    let t := store64 (0x414000+8) 7162249965381642355 t
-    let t := store64 (0x414000+16) 8317986209777608052 t
-    let t := store64 (0x414000+24) 3838791054734488181 t
-    let t := store64 (0x414000+32) 114776363845152 t
-    Guest.Raster.text 0x414000 38 x y color 0x101b25 t
-  else
-  if id == 3 then
-    let t := store64 (0x414000+0) 7164770998127129413 t
-    let t := store64 (0x414000+8) 2337172631513492581 t
-    let t := store64 (0x414000+16) 7809644653794452848 t
-    let t := store64 (0x414000+24) 7017488290243240992 t
-    let t := store64 (0x414000+32) 6645859 t
-    Guest.Raster.text 0x414000 35 x y color 0x101b25 t
-  else
-  if id == 4 then
-    let t := store64 (0x414000+0) 7306080083580904784 t
-    let t := store64 (0x414000+8) 64293318521966 t
-    Guest.Raster.text 0x414000 14 x y color 0x101b25 t
-  else
-  if id == 5 then
-    let t := store64 (0x414000+0) 2334381286471394643 t
-    let t := store64 (0x414000+8) 8751735924676977769 t
-    let t := store64 (0x414000+16) 58 t
-    Guest.Raster.text 0x414000 17 x y color 0x101b25 t
-  else
-  if id == 6 then
-    let t := store64 (0x414000+0) 7234316346692756819 t
-    let t := store64 (0x414000+8) 8223692085114399776 t
-    let t := store64 (0x414000+16) 980709231 t
-    Guest.Raster.text 0x414000 20 x y color 0x101b25 t
-  else
-  if id == 7 then
-    let t := store64 (0x414000+0) 7863396500148938066 t
-    let t := store64 (0x414000+8) 2333274043599385701 t
-    let t := store64 (0x414000+16) 7379555244527482152 t
-    let t := store64 (0x414000+24) 7593469619724379497 t
-    let t := store64 (0x414000+32) 975795053 t
-    Guest.Raster.text 0x414000 36 x y color 0x101b25 t
-  else
-  if id == 8 then
-    let t := store64 (0x414000+0) 2338323074193253714 t
-    let t := store64 (0x414000+8) 2336349459412426799 t
-    let t := store64 (0x414000+16) 2334097638073917808 t
-    let t := store64 (0x414000+24) 64267297782114 t
-    Guest.Raster.text 0x414000 30 x y color 0x101b25 t
-  else
-  if id == 9 then
-    let t := store64 (0x414000+0) 8243107338930713172 t
-    let t := store64 (0x414000+8) 2334116329619288608 t
-    let t := store64 (0x414000+16) 8387236764689834031 t
-    let t := store64 (0x414000+24) 58 t
-    Guest.Raster.text 0x414000 25 x y color 0x101b25 t
-  else
-  if id == 10 then
-    let t := store64 (0x414000+0) 16452496950129747 t
-    Guest.Raster.text 0x414000 7 x y color 0x101b25 t
-  else
-  if id == 11 then
-    let t := store64 (0x414000+0) 7310591762041630277 t
-    let t := store64 (0x414000+8) 2322568146409627748 t
-    let t := store64 (0x414000+16) 8389759083185729125 t
-    let t := store64 (0x414000+24) 8746942062486777888 t
-    let t := store64 (0x414000+32) 7811882189719500064 t
-    let t := store64 (0x414000+40) 1701601889 t
-    Guest.Raster.text 0x414000 44 x y color 0x101b25 t
-  else
-  if id == 12 then
-    let t := store64 (0x414000+0) 7022836301648127302 t
-    let t := store64 (0x414000+8) 2338324182060001644 t
-    let t := store64 (0x414000+16) 4284170527560331107 t
-    let t := store64 (0x414000+24) 7812726606361684256 t
-    let t := store64 (0x414000+32) 7022923206234235168 t
-    let t := store64 (0x414000+40) 8099006088108122220 t
-    let t := store64 (0x414000+48) 435744240225 t
-    Guest.Raster.text 0x414000 53 x y color 0x101b25 t
-  else
-  if id == 13 then
-    let t := store64 (0x414000+0) 7234316346692756819 t
-    let t := store64 (0x414000+8) 8027793262296068896 t
-    let t := store64 (0x414000+16) 7238811150377885812 t
-    let t := store64 (0x414000+24) 8223699863395660645 t
-    let t := store64 (0x414000+32) 2334102031773561957 t
-    let t := store64 (0x414000+40) 7954874742130894180 t
-    let t := store64 (0x414000+48) 1936025955 t
-    Guest.Raster.text 0x414000 52 x y color 0x101b25 t
-  else
-  if id == 14 then
-    let t := store64 (0x414000+0) 6998705298730217299 t
-    let t := store64 (0x414000+8) 7306080452725466222 t
-    let t := store64 (0x414000+16) 7166187310837752686 t
-    let t := store64 (0x414000+24) 7935454085697990508 t
-    let t := store64 (0x414000+32) 8104338719502525797 t
-    let t := store64 (0x414000+40) 3766733822698416492 t
-    Guest.Raster.text 0x414000 48 x y color 0x101b25 t
-  else
-  if id == 15 then
-    let t := store64 (0x414000+0) 8245937404618567759 t
-    let t := store64 (0x414000+8) 2319107953102123552 t
-    let t := store64 (0x414000+16) 3395847586914791280 t
-    let t := store64 (0x414000+24) 2338042715958506272 t
-    let t := store64 (0x414000+32) 64271742497383 t
-    Guest.Raster.text 0x414000 38 x y color 0x101b25 t
-  else
+@[noinline] def labelPart0 (x y color t : UInt64) : UInt64 :=
+  let t := store64 (0x414000+0) 2318544865087082310 t
+  let t := store64 (0x414000+8) 7598819853104084321 t
+  let t := store64 (0x414000+16) 7309377810793259363 t
+  let t := store64 (0x414000+24) 8316866959935304293 t
+  let t := store64 (0x414000+32) 1701011824 t
+  Guest.Raster.text 0x414000 36 x y color 0x101b25 t
+
+@[noinline] def labelPart1 (x y color t : UInt64) : UInt64 :=
+  let t := store64 (0x414000+0) 8317989530370060870 t
+  let t := store64 (0x414000+8) 7162247809296506981 t
+  let t := store64 (0x414000+16) 5557498316454895732 t
+  let t := store64 (0x414000+24) 2333274043599385701 t
+  let t := store64 (0x414000+32) 521610294641 t
+  Guest.Raster.text 0x414000 37 x y color 0x101b25 t
+
+@[noinline] def labelPart2 (x y color t : UInt64) : UInt64 :=
+  let t := store64 (0x414000+0) 7596554927462167622 t
+  let t := store64 (0x414000+8) 7162249965381642355 t
+  let t := store64 (0x414000+16) 8317986209777608052 t
+  let t := store64 (0x414000+24) 3838791054734488181 t
+  let t := store64 (0x414000+32) 114776363845152 t
+  Guest.Raster.text 0x414000 38 x y color 0x101b25 t
+
+@[noinline] def labelPart3 (x y color t : UInt64) : UInt64 :=
+  let t := store64 (0x414000+0) 7164770998127129413 t
+  let t := store64 (0x414000+8) 2337172631513492581 t
+  let t := store64 (0x414000+16) 7809644653794452848 t
+  let t := store64 (0x414000+24) 7017488290243240992 t
+  let t := store64 (0x414000+32) 6645859 t
+  Guest.Raster.text 0x414000 35 x y color 0x101b25 t
+
+@[noinline] def labelPart4 (x y color t : UInt64) : UInt64 :=
+  let t := store64 (0x414000+0) 7306080083580904784 t
+  let t := store64 (0x414000+8) 64293318521966 t
+  Guest.Raster.text 0x414000 14 x y color 0x101b25 t
+
+@[noinline] def labelPart5 (x y color t : UInt64) : UInt64 :=
+  let t := store64 (0x414000+0) 2334381286471394643 t
+  let t := store64 (0x414000+8) 8751735924676977769 t
+  let t := store64 (0x414000+16) 58 t
+  Guest.Raster.text 0x414000 17 x y color 0x101b25 t
+
+@[noinline] def labelPart6 (x y color t : UInt64) : UInt64 :=
+  let t := store64 (0x414000+0) 7234316346692756819 t
+  let t := store64 (0x414000+8) 8223692085114399776 t
+  let t := store64 (0x414000+16) 980709231 t
+  Guest.Raster.text 0x414000 20 x y color 0x101b25 t
+
+@[noinline] def labelPart7 (x y color t : UInt64) : UInt64 :=
+  let t := store64 (0x414000+0) 7863396500148938066 t
+  let t := store64 (0x414000+8) 2333274043599385701 t
+  let t := store64 (0x414000+16) 7379555244527482152 t
+  let t := store64 (0x414000+24) 7593469619724379497 t
+  let t := store64 (0x414000+32) 975795053 t
+  Guest.Raster.text 0x414000 36 x y color 0x101b25 t
+
+@[noinline] def labelPart8 (x y color t : UInt64) : UInt64 :=
+  let t := store64 (0x414000+0) 2338323074193253714 t
+  let t := store64 (0x414000+8) 2336349459412426799 t
+  let t := store64 (0x414000+16) 2334097638073917808 t
+  let t := store64 (0x414000+24) 64267297782114 t
+  Guest.Raster.text 0x414000 30 x y color 0x101b25 t
+
+@[noinline] def labelPart9 (x y color t : UInt64) : UInt64 :=
+  let t := store64 (0x414000+0) 8243107338930713172 t
+  let t := store64 (0x414000+8) 2334116329619288608 t
+  let t := store64 (0x414000+16) 8387236764689834031 t
+  let t := store64 (0x414000+24) 58 t
+  Guest.Raster.text 0x414000 25 x y color 0x101b25 t
+
+@[noinline] def labelPart10 (x y color t : UInt64) : UInt64 :=
+  let t := store64 (0x414000+0) 16452496950129747 t
+  Guest.Raster.text 0x414000 7 x y color 0x101b25 t
+
+@[noinline] def labelPart11 (x y color t : UInt64) : UInt64 :=
+  let t := store64 (0x414000+0) 7310591762041630277 t
+  let t := store64 (0x414000+8) 2322568146409627748 t
+  let t := store64 (0x414000+16) 8389759083185729125 t
+  let t := store64 (0x414000+24) 8746942062486777888 t
+  let t := store64 (0x414000+32) 7811882189719500064 t
+  let t := store64 (0x414000+40) 1701601889 t
+  Guest.Raster.text 0x414000 44 x y color 0x101b25 t
+
+@[noinline] def labelPart12 (x y color t : UInt64) : UInt64 :=
+  let t := store64 (0x414000+0) 7022836301648127302 t
+  let t := store64 (0x414000+8) 2338324182060001644 t
+  let t := store64 (0x414000+16) 4284170527560331107 t
+  let t := store64 (0x414000+24) 7812726606361684256 t
+  let t := store64 (0x414000+32) 7022923206234235168 t
+  let t := store64 (0x414000+40) 8099006088108122220 t
+  let t := store64 (0x414000+48) 435744240225 t
+  Guest.Raster.text 0x414000 53 x y color 0x101b25 t
+
+@[noinline] def labelPart13 (x y color t : UInt64) : UInt64 :=
+  let t := store64 (0x414000+0) 7234316346692756819 t
+  let t := store64 (0x414000+8) 8027793262296068896 t
+  let t := store64 (0x414000+16) 7238811150377885812 t
+  let t := store64 (0x414000+24) 8223699863395660645 t
+  let t := store64 (0x414000+32) 2334102031773561957 t
+  let t := store64 (0x414000+40) 7954874742130894180 t
+  let t := store64 (0x414000+48) 1936025955 t
+  Guest.Raster.text 0x414000 52 x y color 0x101b25 t
+
+@[noinline] def labelPart14 (x y color t : UInt64) : UInt64 :=
+  let t := store64 (0x414000+0) 6998705298730217299 t
+  let t := store64 (0x414000+8) 7306080452725466222 t
+  let t := store64 (0x414000+16) 7166187310837752686 t
+  let t := store64 (0x414000+24) 7935454085697990508 t
+  let t := store64 (0x414000+32) 8104338719502525797 t
+  let t := store64 (0x414000+40) 3766733822698416492 t
+  Guest.Raster.text 0x414000 48 x y color 0x101b25 t
+
+@[noinline] def labelPart15 (x y color t : UInt64) : UInt64 :=
+  let t := store64 (0x414000+0) 8245937404618567759 t
+  let t := store64 (0x414000+8) 2319107953102123552 t
+  let t := store64 (0x414000+16) 3395847586914791280 t
+  let t := store64 (0x414000+24) 2338042715958506272 t
+  let t := store64 (0x414000+32) 64271742497383 t
+  Guest.Raster.text 0x414000 38 x y color 0x101b25 t
+
+@[noinline] def label (id x y color t : UInt64) : UInt64 :=
+  if id == 0 then labelPart0 x y color t else
+  if id == 1 then labelPart1 x y color t else
+  if id == 2 then labelPart2 x y color t else
+  if id == 3 then labelPart3 x y color t else
+  if id == 4 then labelPart4 x y color t else
+  if id == 5 then labelPart5 x y color t else
+  if id == 6 then labelPart6 x y color t else
+  if id == 7 then labelPart7 x y color t else
+  if id == 8 then labelPart8 x y color t else
+  if id == 9 then labelPart9 x y color t else
+  if id == 10 then labelPart10 x y color t else
+  if id == 11 then labelPart11 x y color t else
+  if id == 12 then labelPart12 x y color t else
+  if id == 13 then labelPart13 x y color t else
+  if id == 14 then labelPart14 x y color t else
+  if id == 15 then labelPart15 x y color t else
   t
 
-def statusLabel (id x y color t : UInt64) : UInt64 :=
-  if id == 15 then
-    let t := store64 4276224 4707459271918634317 t
-    let t := store64 4276232 2318544951070052128 t
-    let t := store64 4276240 5989863728517957699 t
-    let t := store64 4276248 4474181 t
-    Guest.Raster.text 0x414000 27 x y color 0x101b25 t
-  else
-  if id == 14 then Guest.ForgeFederation.label 17 x y t else
-  if id == 0 then
-    let t := store64 (0x414000+0) 7142774401570792786 t
-    let t := store64 (0x414000+8) 2333181702055096168 t
-    let t := store64 (0x414000+16) 2338603393740665456 t
-    let t := store64 (0x414000+24) 7310874250626232943 t
-    let t := store64 (0x414000+32) 7233190455505089651 t
-    let t := store64 (0x414000+40) 6386785 t
-    Guest.Raster.text 0x414000 43 x y color 0x101b25 t
-  else
-  if id == 1 then
-    let t := store64 (0x414000+0) 2338603393740665424 t
-    let t := store64 (0x414000+8) 7234316346692756851 t
-    let t := store64 (0x414000+16) 7523110824066970656 t
-    let t := store64 (0x414000+24) 7234316415681066016 t
-    let t := store64 (0x414000+32) 30506450248757280 t
-    Guest.Raster.text 0x414000 39 x y color 0x101b25 t
-  else
-  if id == 2 then
-    let t := store64 (0x414000+0) 8511914842195454019 t
-    let t := store64 (0x414000+8) 8030604369980910689 t
-    let t := store64 (0x414000+16) 8007451953902871914 t
-    let t := store64 (0x414000+24) 7957695015158965616 t
-    let t := store64 (0x414000+32) 7811882189719500064 t
-    let t := store64 (0x414000+40) 1701601889 t
-    Guest.Raster.text 0x414000 44 x y color 0x101b25 t
-  else
-  if id == 3 then
-    let t := store64 (0x414000+0) 8462580807739994695 t
-    let t := store64 (0x414000+8) 7575180394847368303 t
-    let t := store64 (0x414000+16) 2338042707369226349 t
-    let t := store64 (0x414000+24) 7234316346692625778 t
-    let t := store64 (0x414000+32) 7810121858852353056 t
-    let t := store64 (0x414000+40) 435711996783 t
-    Guest.Raster.text 0x414000 45 x y color 0x101b25 t
-  else
-  if id == 4 then
-    let t := store64 (0x414000+0) 7810121863046199365 t
-    let t := store64 (0x414000+8) 8243311788032357231 t
-    let t := store64 (0x414000+16) 7236828443149957743 t
-    let t := store64 (0x414000+24) 7234314156275822368 t
-    let t := store64 (0x414000+32) 7957413521911673888 t
-    let t := store64 (0x414000+40) 32199633692288101 t
-    Guest.Raster.text 0x414000 47 x y color 0x101b25 t
-  else
-  if id == 5 then
-    let t := store64 (0x414000+0) 8243107338930713172 t
-    let t := store64 (0x414000+8) 7453301734227470624 t
-    let t := store64 (0x414000+16) 1936942450 t
-    Guest.Raster.text 0x414000 20 x y color 0x101b25 t
-  else
-  if id == 6 then
-    let t := store64 (0x414000+0) 7022344802737087821 t
-    let t := store64 (0x414000+8) 7311146929262785056 t
-    let t := store64 (0x414000+16) 8675375670380998244 t
-    let t := store64 (0x414000+24) 8749496172062272624 t
-    let t := store64 (0x414000+32) 8315167063373342240 t
-    let t := store64 (0x414000+40) 7019267274303434016 t
-    let t := store64 (0x414000+48) 108 t
-    Guest.Raster.text 0x414000 49 x y color 0x101b25 t
-  else
-  if id == 7 then
-    let t := store64 (0x414000+0) 2334956330750469456 t
-    let t := store64 (0x414000+8) 8316298529456878196 t
-    let t := store64 (0x414000+16) 7309940584803690867 t
-    let t := store64 (0x414000+24) 7310580662471848564 t
-    let t := store64 (0x414000+32) 7308339910637985906 t
-    let t := store64 (0x414000+40) 1852795252 t
-    Guest.Raster.text 0x414000 44 x y color 0x101b25 t
-  else
-  if id == 8 then
-    let t := store64 (0x414000+0) 7378707224642020688 t
-    let t := store64 (0x414000+8) 8675375632251513196 t
-    let t := store64 (0x414000+16) 8243593258495797616 t
-    let t := store64 (0x414000+24) 2338053340534173281 t
-    let t := store64 (0x414000+32) 8245933083814097524 t
-    let t := store64 (0x414000+40) 8247617492460380276 t
-    let t := store64 (0x414000+48) 101 t
-    Guest.Raster.text 0x414000 49 x y color 0x101b25 t
-  else
-  if id == 9 then
-    let t := store64 (0x414000+0) 7234316346692625746 t
-    let t := store64 (0x414000+8) 7306916068917079328 t
-    let t := store64 (0x414000+16) 8386114176404168763 t
-    let t := store64 (0x414000+24) 8390891584407281765 t
-    let t := store64 (0x414000+32) 7214878097738593056 t
-    let t := store64 (0x414000+40) 7234298818863526761 t
-    Guest.Raster.text 0x414000 48 x y color 0x101b25 t
-  else
-  if id == 10 then
-    let t := store64 (0x414000+0) 7957688057596306768 t
-    let t := store64 (0x414000+8) 7022836349060409702 t
-    let t := store64 (0x414000+16) 2334102057409341804 t
-    let t := store64 (0x414000+24) 7310579611546251107 t
-    let t := store64 (0x414000+32) 114831880513312 t
-    Guest.Raster.text 0x414000 38 x y color 0x101b25 t
-  else
-  if id == 11 then
-    let t := store64 (0x414000+0) 7022836353455191367 t
-    let t := store64 (0x414000+8) 2334102057409341804 t
-    let t := store64 (0x414000+16) 7885649433053130337 t
-    let t := store64 (0x414000+24) 8079591238084420457 t
-    let t := store64 (0x414000+32) 7234303221339808373 t
-    let t := store64 (0x414000+40) 7234303152804423200 t
-    let t := store64 (0x414000+48) 114831880513312 t
-    Guest.Raster.text 0x414000 54 x y color 0x101b25 t
-  else
-  if id == 12 then
-    let t := store64 (0x414000+0) 7308335478031147331 t
-    let t := store64 (0x414000+8) 7599372963416128356 t
-    let t := store64 (0x414000+16) 7089074235350676847 t
-    let t := store64 (0x414000+24) 8319396936106927468 t
-    let t := store64 (0x414000+32) 8534995790118154272 t
-    let t := store64 (0x414000+40) 25701 t
-    Guest.Raster.text 0x414000 42 x y color 0x101b25 t
-  else
+@[noinline] def statusLabelPart15 (x y color t : UInt64) : UInt64 :=
+  let t := store64 4276224 4707459271918634317 t
+  let t := store64 4276232 2318544951070052128 t
+  let t := store64 4276240 5989863728517957699 t
+  let t := store64 4276248 4474181 t
+  Guest.Raster.text 0x414000 27 x y color 0x101b25 t
+
+@[noinline] def statusLabelPart14 (x y color t : UInt64) : UInt64 :=
+  Guest.ForgeFederation.label 17 x y t
+
+@[noinline] def statusLabelPart0 (x y color t : UInt64) : UInt64 :=
+  let t := store64 (0x414000+0) 7142774401570792786 t
+  let t := store64 (0x414000+8) 2333181702055096168 t
+  let t := store64 (0x414000+16) 2338603393740665456 t
+  let t := store64 (0x414000+24) 7310874250626232943 t
+  let t := store64 (0x414000+32) 7233190455505089651 t
+  let t := store64 (0x414000+40) 6386785 t
+  Guest.Raster.text 0x414000 43 x y color 0x101b25 t
+
+@[noinline] def statusLabelPart1 (x y color t : UInt64) : UInt64 :=
+  let t := store64 (0x414000+0) 2338603393740665424 t
+  let t := store64 (0x414000+8) 7234316346692756851 t
+  let t := store64 (0x414000+16) 7523110824066970656 t
+  let t := store64 (0x414000+24) 7234316415681066016 t
+  let t := store64 (0x414000+32) 30506450248757280 t
+  Guest.Raster.text 0x414000 39 x y color 0x101b25 t
+
+@[noinline] def statusLabelPart2 (x y color t : UInt64) : UInt64 :=
+  let t := store64 (0x414000+0) 8511914842195454019 t
+  let t := store64 (0x414000+8) 8030604369980910689 t
+  let t := store64 (0x414000+16) 8007451953902871914 t
+  let t := store64 (0x414000+24) 7957695015158965616 t
+  let t := store64 (0x414000+32) 7811882189719500064 t
+  let t := store64 (0x414000+40) 1701601889 t
+  Guest.Raster.text 0x414000 44 x y color 0x101b25 t
+
+@[noinline] def statusLabelPart3 (x y color t : UInt64) : UInt64 :=
+  let t := store64 (0x414000+0) 8462580807739994695 t
+  let t := store64 (0x414000+8) 7575180394847368303 t
+  let t := store64 (0x414000+16) 2338042707369226349 t
+  let t := store64 (0x414000+24) 7234316346692625778 t
+  let t := store64 (0x414000+32) 7810121858852353056 t
+  let t := store64 (0x414000+40) 435711996783 t
+  Guest.Raster.text 0x414000 45 x y color 0x101b25 t
+
+@[noinline] def statusLabelPart4 (x y color t : UInt64) : UInt64 :=
+  let t := store64 (0x414000+0) 7810121863046199365 t
+  let t := store64 (0x414000+8) 8243311788032357231 t
+  let t := store64 (0x414000+16) 7236828443149957743 t
+  let t := store64 (0x414000+24) 7234314156275822368 t
+  let t := store64 (0x414000+32) 7957413521911673888 t
+  let t := store64 (0x414000+40) 32199633692288101 t
+  Guest.Raster.text 0x414000 47 x y color 0x101b25 t
+
+@[noinline] def statusLabelPart5 (x y color t : UInt64) : UInt64 :=
+  let t := store64 (0x414000+0) 8243107338930713172 t
+  let t := store64 (0x414000+8) 7453301734227470624 t
+  let t := store64 (0x414000+16) 1936942450 t
+  Guest.Raster.text 0x414000 20 x y color 0x101b25 t
+
+@[noinline] def statusLabelPart6 (x y color t : UInt64) : UInt64 :=
+  let t := store64 (0x414000+0) 7022344802737087821 t
+  let t := store64 (0x414000+8) 7311146929262785056 t
+  let t := store64 (0x414000+16) 8675375670380998244 t
+  let t := store64 (0x414000+24) 8749496172062272624 t
+  let t := store64 (0x414000+32) 8315167063373342240 t
+  let t := store64 (0x414000+40) 7019267274303434016 t
+  let t := store64 (0x414000+48) 108 t
+  Guest.Raster.text 0x414000 49 x y color 0x101b25 t
+
+@[noinline] def statusLabelPart7 (x y color t : UInt64) : UInt64 :=
+  let t := store64 (0x414000+0) 2334956330750469456 t
+  let t := store64 (0x414000+8) 8316298529456878196 t
+  let t := store64 (0x414000+16) 7309940584803690867 t
+  let t := store64 (0x414000+24) 7310580662471848564 t
+  let t := store64 (0x414000+32) 7308339910637985906 t
+  let t := store64 (0x414000+40) 1852795252 t
+  Guest.Raster.text 0x414000 44 x y color 0x101b25 t
+
+@[noinline] def statusLabelPart8 (x y color t : UInt64) : UInt64 :=
+  let t := store64 (0x414000+0) 7378707224642020688 t
+  let t := store64 (0x414000+8) 8675375632251513196 t
+  let t := store64 (0x414000+16) 8243593258495797616 t
+  let t := store64 (0x414000+24) 2338053340534173281 t
+  let t := store64 (0x414000+32) 8245933083814097524 t
+  let t := store64 (0x414000+40) 8247617492460380276 t
+  let t := store64 (0x414000+48) 101 t
+  Guest.Raster.text 0x414000 49 x y color 0x101b25 t
+
+@[noinline] def statusLabelPart9 (x y color t : UInt64) : UInt64 :=
+  let t := store64 (0x414000+0) 7234316346692625746 t
+  let t := store64 (0x414000+8) 7306916068917079328 t
+  let t := store64 (0x414000+16) 8386114176404168763 t
+  let t := store64 (0x414000+24) 8390891584407281765 t
+  let t := store64 (0x414000+32) 7214878097738593056 t
+  let t := store64 (0x414000+40) 7234298818863526761 t
+  Guest.Raster.text 0x414000 48 x y color 0x101b25 t
+
+@[noinline] def statusLabelPart10 (x y color t : UInt64) : UInt64 :=
+  let t := store64 (0x414000+0) 7957688057596306768 t
+  let t := store64 (0x414000+8) 7022836349060409702 t
+  let t := store64 (0x414000+16) 2334102057409341804 t
+  let t := store64 (0x414000+24) 7310579611546251107 t
+  let t := store64 (0x414000+32) 114831880513312 t
+  Guest.Raster.text 0x414000 38 x y color 0x101b25 t
+
+@[noinline] def statusLabelPart11 (x y color t : UInt64) : UInt64 :=
+  let t := store64 (0x414000+0) 7022836353455191367 t
+  let t := store64 (0x414000+8) 2334102057409341804 t
+  let t := store64 (0x414000+16) 7885649433053130337 t
+  let t := store64 (0x414000+24) 8079591238084420457 t
+  let t := store64 (0x414000+32) 7234303221339808373 t
+  let t := store64 (0x414000+40) 7234303152804423200 t
+  let t := store64 (0x414000+48) 114831880513312 t
+  Guest.Raster.text 0x414000 54 x y color 0x101b25 t
+
+@[noinline] def statusLabelPart12 (x y color t : UInt64) : UInt64 :=
+  let t := store64 (0x414000+0) 7308335478031147331 t
+  let t := store64 (0x414000+8) 7599372963416128356 t
+  let t := store64 (0x414000+16) 7089074235350676847 t
+  let t := store64 (0x414000+24) 8319396936106927468 t
+  let t := store64 (0x414000+32) 8534995790118154272 t
+  let t := store64 (0x414000+40) 25701 t
+  Guest.Raster.text 0x414000 42 x y color 0x101b25 t
+
+@[noinline] def statusLabel (id x y color t : UInt64) : UInt64 :=
+  if id == 15 then statusLabelPart15 x y color t else
+  if id == 14 then statusLabelPart14 x y color t else
+  if id == 0 then statusLabelPart0 x y color t else
+  if id == 1 then statusLabelPart1 x y color t else
+  if id == 2 then statusLabelPart2 x y color t else
+  if id == 3 then statusLabelPart3 x y color t else
+  if id == 4 then statusLabelPart4 x y color t else
+  if id == 5 then statusLabelPart5 x y color t else
+  if id == 6 then statusLabelPart6 x y color t else
+  if id == 7 then statusLabelPart7 x y color t else
+  if id == 8 then statusLabelPart8 x y color t else
+  if id == 9 then statusLabelPart9 x y color t else
+  if id == 10 then statusLabelPart10 x y color t else
+  if id == 11 then statusLabelPart11 x y color t else
+  if id == 12 then statusLabelPart12 x y color t else
   t
 
 def drawSummary (t : UInt64) : UInt64 :=
