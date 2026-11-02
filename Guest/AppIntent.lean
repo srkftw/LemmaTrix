@@ -130,8 +130,16 @@ def evidence (external phase evidence t : UInt64) : UInt64 :=
 -- Called only after the protected owner accepts the exact outbox commitment
 -- from its currently authorized delivery coordinator. Save this with the same
 -- atomic owner record; fresh recovery need not depend on a dead live reader.
+partial def outboxCachedEvidence (external phase evidence i t : UInt64) : UInt64 :=
+  if i == 3 then t else
+  let c := cache i
+  let previous := load64 (c+96) t
+  let preserve := previous == 5 || (previous == 4 && phase != 5)
+  let t := if external == 0 || load64 c t != cacheMagic || load64 (c+88) t != external || preserve then t else
+    store64 (c+96) phase (store64 (c+104) evidence t)
+  outboxCachedEvidence external phase evidence (i+1) t
 partial def outboxEvidence (external phase evidence i t : UInt64) : UInt64 :=
-  if i == 4 then t else
+  if i == 4 then outboxCachedEvidence external phase evidence 0 t else
   let p := row i
   let t := if load64 p t >= 3 && load64 p t <= 8 && load64 (p+56) t == external then
     Guest.AppIntent.evidence (load64 (p+8) t) phase evidence t else t

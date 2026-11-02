@@ -619,7 +619,11 @@ def lock (t : UInt64) : UInt64 :=
 def intentRefresh (caller t : UInt64) : UInt64 :=
   let p := Guest.AppIntent.find (load64 (command+16) t) 0 t
   if load64 (command+8) t != 1 || p == 0 || load64 (p+16) t != caller ||
-      !Guest.AppIntent.current p t || load64 p t < 3 || load64 p t > 5 then t else
+      !Guest.AppIntent.current p t || load64 p t < 3 || load64 p t > 8 then t else
+  let slot := findOutbox (load64 (p+56) t) 0 t
+  if slot != err && load64 (contactAt slot+2400) t == 1 then
+    Guest.AppIntent.evidence (load64 (p+8) t) 4 2 t else
+  if load64 p t > 5 then t else
   let target := syscall 128 4 461 0 0 t
   if target == err then t else
   let r := syscall 30 target wire 64 1024 (header 461 (load64 (p+56) target) 0 0 0 0 0 target)
