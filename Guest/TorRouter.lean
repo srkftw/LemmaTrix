@@ -54,7 +54,9 @@ def retireChannel (i t : UInt64) : UInt64 :=
   if i >= 12 then t else
   let t := Guest.Transport.close i t
   let t := zero (channel i) 2048 t
-  let t := zero (circuit i) 128 t
+  -- LiveSDK.zero counts64-bit words:16words clear exactly this128-byte
+  -- circuit record, including its pending END, without touching neighbors.
+  let t := zero (circuit i) 16 t
   Guest.TorCells.teardown (hop i) t
 def abort (reason t : UInt64) : UInt64 :=
   if load64 (state+8) t == 1 then stop reason t else

@@ -89,7 +89,12 @@ def check (t : UInt64) : UInt64 :=
   let t := Guest.TorRouter.relayEnd 5 23 4 t
   if t == error || load64 (Guest.TorRouter.circuit 5+56) t != 4 ||
     load64 (Guest.TorRouter.circuit 5+64) t != 23 ||
-    load64 (Guest.TorCells.count (Guest.TorRouter.hop 5) 1) t != 42 then 8 else 0
+    load64 (Guest.TorCells.count (Guest.TorRouter.hop 5) 1) t != 42 then 8 else
+  let t := store64 (Guest.TorRouter.circuit 6) 1 (store64 (Guest.TorRouter.circuit 6+56) 123 t)
+  let t := Guest.TorRouter.retireChannel 5 t
+  if load64 (Guest.TorRouter.circuit 5+56) t != 0 ||
+    load64 (Guest.TorRouter.circuit 6) t != 1 ||
+    load64 (Guest.TorRouter.circuit 6+56) t != 123 then 9 else 0
 end build.Campaign010TerminalSwitching
 '''
     return s
@@ -109,7 +114,8 @@ def main():
                             'fresh stream preserves ongoing crypto counters and circuit windows',
                             'authenticated terminal busy preserves the existing route',
                             'wrong-stream retirement is refused',
-                            'pending immutable output retains exact END without spending cipher state'],
+                            'pending immutable output retains exact END without spending cipher state',
+                            'retiring one circuit clears its pending END and preserves the neighboring circuit'],
                   limits='Locally linked three-hop fixture with published deterministic keys; no live peer enrollment, remote terminal, or independent network administration claim.')
     (native.B / 'execution.json').write_text(json.dumps(record, indent=2) + '\n')
     print(json.dumps(record, indent=2))
