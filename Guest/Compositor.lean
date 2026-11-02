@@ -1638,7 +1638,10 @@ def publisherFlow : UInt64 := 0x724000
   let launcher := syscall 97 1 0 0 0 t
   let r := Guest.ProjectSDK.delegate root launcher 127 launcher
   if r == error || status r != 0 then error else
-  let t := store64 wire (result r) (store64 (wire+8) job (store64 (wire+16) requester r))
+  let t := store64 (publisherFlow+144) (result r) r
+  let t := store64 wire (load64 (publisherFlow+144) t) t
+  let t := store64 (wire+8) job t
+  let t := store64 (wire+16) requester t
   let r := management 186 24 t
   if r == error || r < 64 || status r != 0 then error else
   let t := zero publisherFlow 17 r
