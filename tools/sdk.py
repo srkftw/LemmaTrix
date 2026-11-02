@@ -126,7 +126,7 @@ def main(argv=None):
   sdk.require(not args.directory.exists(),'project directory already exists; refusing to overwrite')
   sdk.require(re.fullmatch('[a-z0-9][a-z0-9._-]{0,47}',args.name),'invalid project name')
   args.directory.mkdir(parents=True)
-  project={'schema':1,'name':args.name,'facet':'NativeApplication','module':'Main','entry':'Main.main','machine':'LT-Dev-v2','profile':2,'rights':768 if args.template=='utility' else 831 if args.template=='objects' else 1855,'license':'NOASSERTION','distribution_authority':'local author declaration; review before distribution','persistence':'ephemeral' if args.template=='utility' else 'explicit-selected-objects','network':'reviewed-intents' if args.template=='social' else 'unavailable','assurance':['host-bootstrap Lean/LLVM; source-to-binary unverified'],'template':args.template}
+  project={'schema':1,'name':args.name,'facet':'NativeApplication','module':'Main','entry':'Main.main','machine':'LT-Dev-v2','profile':2,'rights':768 if args.template=='utility' else 831,'license':'NOASSERTION','distribution_authority':'local author declaration; review before distribution','persistence':'ephemeral' if args.template=='utility' else 'explicit-selected-objects','network':'reviewed-intents' if args.template=='social' else 'unavailable','assurance':['host-bootstrap Lean/LLVM; source-to-binary unverified'],'template':args.template}
   (args.directory/'lemma.project.json').write_bytes(sdk.canonical(project)+b'\n');(args.directory/'Main.lean').write_bytes(TEMPLATE)
   if args.template!='utility':
    # Reuse the same public object-backed client, with an actual staged immutable
