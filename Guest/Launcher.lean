@@ -4,6 +4,7 @@ import Guest.ServiceSignature
 import Guest.GameSaveFormat
 import Guest.ReleaseFormat
 import Guest.ProjectPublisher
+import Guest.IntentConsent
 namespace Guest.Launcher
 open Guest.LiveMemory
 @[never_extract, extern "lt_effect_value"] opaque keep : UInt64 → UInt64 → UInt64
@@ -658,6 +659,8 @@ def retainGameSave (handle t : UInt64) : UInt64 :=
 @[noinline] def commandIO (op len t : UInt64) : UInt64 :=
   if op == 70 then Guest.syscall 70 0 0 0 0 t
   else if op == 100 then if len >= 64 && len <= 1024 then forward 2 len t else err
+  else if op == 194 then Guest.IntentConsent.dispatch op len t
+  else if op == 195 then err
   else if op == 160 then if len >= 64 && len <= 1024 then forward 5 len t else err
   else if op == 170 then
     if len < 64 || len > 1024 then err else
@@ -736,7 +739,8 @@ def retainGameSave (handle t : UInt64) : UInt64 :=
       forward target (len-8) t
   else if op == 203 then if len == 8 then retain (Guest.load64 buf t) t else err
   else if op == 207 then recover t
-  else if op >= 226 && op <= 229 then Guest.ProjectPublisher.dispatch op len t
+  else if op == 226 || op == 228 || op == 229 then Guest.ProjectPublisher.dispatch op len t
+  else if op == 227 then err
   else if op >= 222 && op <= 225 then commandContent op len t
   else if op == 221 then if len == 8 then describeProjectRetention (Guest.load64 buf t) t else err
   else if op == 220 then
@@ -765,7 +769,7 @@ def pollGUI (t : UInt64) : UInt64 :=
     let op := Guest.load64 0x410820 n
     let length := n-40
     let t := copy 0x410828 buf length n
-    let allowed := op == 2 || op == 3 || op == 12 || op == 13 || op == 24 || op == 25 || op == 26 || op == 27 || op == 28 || op == 29 || op == 14 || op == 16 || op == 202 || op == 211 || op == 213 || op == 212 || op == 221 || op == 180 || op == 241 || op == 246 || op == 228 || op == 229
+    let allowed := op == 194 || op == 2 || op == 3 || op == 12 || op == 13 || op == 24 || op == 25 || op == 26 || op == 27 || op == 28 || op == 29 || op == 14 || op == 16 || op == 202 || op == 211 || op == 213 || op == 212 || op == 221 || op == 180 || op == 241 || op == 246 || op == 228 || op == 229
     let response := if (op == 200 && length == 104) || (op == 217 && length == 72) then
         let payload := length-8
         let gesture := Guest.load64 (buf+payload) t
@@ -777,9 +781,10 @@ def pollGUI (t : UInt64) : UInt64 :=
         let gesture := Guest.load64 (buf+payload) t
         let checked := Guest.syscall 98 gesture 0 0 0 t
         if checked == err then err else command op payload checked
-      else if op == 227 && length == 40 then
+      else if (op == 227 || op == 195) && length == 40 then
         let checked := Guest.syscall 98 (Guest.load64 (buf+32) t) 0 0 0 t
-        if checked == err then err else command op 32 checked
+        if checked == err then err else
+          if op == 227 then Guest.ProjectPublisher.dispatch op 32 checked else Guest.IntentConsent.dispatch op 32 checked
       else if (op == 23 || op == 220) && length == 48 then
         let gesture := Guest.load64 (buf+40) t
         let checked := Guest.syscall 98 gesture 0 0 0 t
