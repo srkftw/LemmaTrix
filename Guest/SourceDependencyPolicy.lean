@@ -1,6 +1,7 @@
 import Guest.ProjectSDK
 import Guest.ReleaseFormat
 import Guest.ReleaseClaims
+import Guest.ProjectDeclaration
 namespace Guest.SourceDependencyPolicy
 open Guest.LiveSDK Guest.ProjectSDK
 -- Private publisher/Registry verification workspace, outside their state,
@@ -21,6 +22,21 @@ def get (root id destination limit t : UInt64) : UInt64 :=
   let n := load64 (wire+16) r
   let r := readAll (result r) destination n 0 r
   if r == error then error else Guest.Effects.effectValue n r
+partial def projectFile (root i count t : UInt64) : UInt64 :=
+  if i == count then error else
+  let e := source+32+i*128
+  if load64 e t == 10 && load64 (e+8) t == 18 && load64 (e+48) t == 8246141913697969516 &&
+    load64 (e+56) t == 8316510739311716975 && load64 (e+64) t &&& 0xffff == 28271 then
+      get root (e+16) 0x7e0000 4096 t
+  else projectFile root (i+1) count t
+def checkProject (root sourceId manifest bytes t : UInt64) : UInt64 :=
+  let n := get root sourceId source 8224 t
+  let count := load64 (source+16) n
+  if n == error || n < 32 || count == 0 || count > 32 || load64 source n != 0x31464e4d544c || n < 32+count*128 then error else
+  let n := projectFile root 0 count n
+  if n == error then error else
+  let normalized := Guest.ProjectDeclaration.normalize 0x7e0000 (0x7e0000+n) 0x7e2000 0 0 0 n
+  if normalized == error || !Guest.ProjectDeclaration.consistent (manifest-608) manifest bytes 0x7e2000 normalized normalized then error else normalized
 partial def carrier (root pin pe i count t : UInt64) : Bool :=
   if i == count then false else
   let e := source+32+i*128
@@ -74,7 +90,8 @@ def one (root pin pe count sdk se t : UInt64) : UInt64 :=
     !carrier root pin pe 0 count h then error else
   let children := Guest.ReleaseClaims.field m me 13 h
   if children == 0 || load8 children h != 91 then error else
-  enqueue (release+48) (children+1) me sdk se h
+  let r := checkProject root (release+48) m (me-m) h
+  if r == error then error else enqueue (release+48) (children+1) me sdk se r
 partial def tasks (root cursor t : UInt64) : UInt64 :=
   if cursor == load64 state t then t else
   if cursor >= 16 then error else
@@ -90,7 +107,9 @@ def check (root sourceId manifest bytes t : UInt64) : UInt64 :=
   let dep := Guest.ReleaseClaims.field manifest end_ 13 t
   let sdk := Guest.ReleaseClaims.field manifest end_ 12 t
   if dep == 0 || sdk == 0 || load8 dep t != 91 then error else
-  if load8 (dep+1) t == 93 then t else
-  let r := enqueue sourceId (dep+1) end_ sdk end_ (store64 state 0 t)
+  let checked := checkProject root sourceId manifest bytes t
+  if checked == error then error else
+  if load8 (dep+1) checked == 93 then checked else
+  let r := enqueue sourceId (dep+1) end_ sdk end_ (store64 state 0 checked)
   if r == error then error else tasks root 0 r
 end Guest.SourceDependencyPolicy

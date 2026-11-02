@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "binary_sha256": "a57cf6e17a58a8bc12ebe131a5e88626285fac00a5a9abf3e7efa721981a6031",
+  "checks": [
+    "editable unordered pretty declaration",
+    "declaration rights escalation",
+    "declaration license substitution",
+    "distribution authority substitution",
+    "duplicate rights",
+    "escaped authority key",
+    "nested rights cannot supply authority",
+    "string whitespace preserved"
+  ],
+  "scope": "actual compiled native project declaration parser and signing prerequisites; signature/graph authority checked separately"
+}

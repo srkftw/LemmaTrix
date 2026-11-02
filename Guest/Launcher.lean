@@ -94,6 +94,11 @@ partial def freeProject (i t : UInt64) : UInt64 :=
   if i == 8 then 0 else if Guest.load64 (project i) t == 0 then i+1 else freeProject (i+1) t
 partial def freeRelease (i t : UInt64) : UInt64 :=
   if i == 16 then 0 else if Guest.load64 (catalog i+768) t == 0 then i+1 else freeRelease (i+1) t
+partial def knownRevoked (id i t : UInt64) : Bool :=
+  if i == 16 then false else
+    let r := catalog i
+    (Guest.load64 (r+768) t == 1 && Guest.load64 (r+776) t != 0 && equal id (r+160) 32 t) ||
+      knownRevoked id (i+1) t
 
 def launchable (index t : UInt64) : Bool :=
   if index == 0 || index > 16 then false else
@@ -116,7 +121,7 @@ partial def uploadCode (slot length offset t : UInt64) : UInt64 :=
     if status == err then err else uploadCode slot length (offset+count) status
 
 def install (t : UInt64) : UInt64 :=
-  if Guest.load64 (control+272) t != 1 || Guest.load64 (control+288) t != 1 || !equal (control+128) (stage+160) 32 t || Guest.load64 (control+160) t != Guest.load64 (stage+64) t || !validate t then err else
+  if Guest.load64 (control+272) t != 1 || Guest.load64 (control+288) t != 1 || !equal (control+128) (stage+160) 32 t || Guest.load64 (control+160) t != Guest.load64 (stage+64) t || knownRevoked (stage+160) 0 t || !validate t then err else
     let known := findProject (stage+128) 0 t
     let pi := if known == 0 then freeProject 0 t else known
     let free := freeRelease 0 t
