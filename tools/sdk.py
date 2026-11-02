@@ -101,7 +101,7 @@ def main(argv=None):
  if args.cmd=='import-dependency':
   pin=sdk.cache_dependency(json.loads(args.carrier.read_bytes()),publisher=args.publisher,release_id=args.release)
   if args.project:
-   destination=args.project/'dependencies'/(args.release+'.source.json');destination.parent.mkdir(parents=True,exist_ok=True);destination.write_bytes(sdk.canonical(json.loads(args.carrier.read_bytes())))
+   destination=args.project/'deps'/(args.release+'.json');destination.parent.mkdir(parents=True,exist_ok=True);destination.write_bytes(sdk.canonical(json.loads(args.carrier.read_bytes())))
    previous=json.loads((args.project/'lemma.lock.json').read_bytes());deps=[x for x in previous['dependencies'] if not set(x['exports'])&set(pin['exports'])]+[pin]
    write_lock(args.project,dependencies=sorted(deps,key=lambda x:x['release_id']))
   print(json.dumps(pin,indent=2));return 0

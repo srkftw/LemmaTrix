@@ -183,7 +183,7 @@ def resolve_dependencies(pins,sdk,carriers=None):
   if rid in visited:return
   require(rid not in active,'cyclic dependency release closure');active.add(rid)
   path=DEPENDENCIES/rid/'source.json'
-  raw=carriers.get('dependencies/'+rid+'.source.json')
+  raw=carriers.get('deps/'+rid+'.json')
   if raw is None:
    require(path.is_file(),'verified dependency unavailable offline: '+rid);raw=path.read_bytes()
   require(sha(raw)==pin['content_id'],'dependency carrier/cache differs from locked bytes')
@@ -194,7 +194,10 @@ def resolve_dependencies(pins,sdk,carriers=None):
   for child in children:
    require(child.get('release_id') in allpins and allpins[child['release_id']]==child,'dependency transitive pin absent/substituted');visit(child)
   for name,data in source.items():
-   require(name not in files,'dependency file collision: '+name);files[name]=data
+   # Standard package metadata is committed and verified, but is not an app's
+   # own root metadata. Keep its exact bytes under a release-scoped path.
+   mapped='dependency-metadata/'+rid+'/'+name if name in ('lemma.project.json','lemma.lock.json') else name
+   require(mapped not in files,'dependency file collision: '+mapped);files[mapped]=data
    if name.endswith('.lean'):
     module=name[:-5].replace('/','.');require(module not in modules,'dependency module collision: '+module);modules.add(module)
   active.remove(rid);visited.add(rid);ordered.append(rid)
