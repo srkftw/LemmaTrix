@@ -11,7 +11,7 @@ def equal (a b n t : UInt64) : Bool := Guest.LiveMemory.equal a b n t
 def st : UInt64 := 0x6a0000
 def candidate : UInt64 := 0x6a1000
 def payload : UInt64 := 0x6e0000
-def history (i : UInt64) : UInt64 := 0x6d0000+i*128
+def history (i : UInt64) : UInt64 := 0x6d0000+i*160
 def h : UInt64 := candidate+64
 def creator : UInt64 := st+512
 def creatorKey (i : UInt64) : UInt64 := 0x7d1000+i*64
@@ -121,6 +121,8 @@ def validJob (t : UInt64) : Bool :=
     syscall 34 (load64 (st+72) r) 0 0 0 r != error
 partial def known (i t : UInt64) : UInt64 :=
   if i == 4 then error else if load64 (history i) t == 1 && equal (history i+8) (h+128) 32 t then i else known (i+1) t
+partial def knownLogical (i t : UInt64) : UInt64 :=
+  if i == 4 then error else if load64 (history i) t == 1 && equal (history i+128) (st+128) 32 t then i else knownLogical (i+1) t
 partial def vacant (i t : UInt64) : UInt64 :=
   if i == 4 then error else if load64 (history i) t == 0 then i else vacant (i+1) t
 def newer (p q t : UInt64) : Bool :=
@@ -128,9 +130,42 @@ def newer (p q t : UInt64) : Bool :=
     (load64 (p+80) t > load64 (q+80) t || (load64 (p+80) t == load64 (q+80) t && load64 (p+88) t > load64 (q+88) t)))
 def lineageCurrent (t : UInt64) : Bool :=
   let k := known 0 t
-  if k == error then Guest.ReleaseFormat.zeros (h+288) 32 t && vacant 0 t != error else
+  if k == error then knownLogical 0 t == error && Guest.ReleaseFormat.zeros (h+288) 32 t && vacant 0 t != error else
   let p := history k
   equal (p+40) (h+288) 32 t && newer h p t && equal (p+96) (h+96) 32 t
+-- The selected authorized source may carry a published predecessor even after
+-- Launcher restart. Dependency releases do not establish project ownership.
+-- A different key must use Objects' explicit fork operation and new logical ID.
+partial def priorRelease (root i count t : UInt64) : UInt64 :=
+  if i == count then Guest.Effects.effectValue 0 t else
+  let e := 0x6c0020+i*128
+  if load64 e t != 13 || Guest.ReleaseFormat.dependencyEdge e t then priorRelease root (i+1) count t else
+  let r := resolve root (e+16) t
+  if r != 128 || status r != 0 || load64 (wire+32) r != 13 then error else
+  let handle := result r
+  let r := read handle 0 32 r
+  if r != 96 || status r != 0 then error else
+  let count := load64 (wire+80) r
+  if count == 0 || count > 32 then error else
+  let r := read handle (96+count*128) 512 r
+  if r != 576 || status r != 0 then error else
+  let r := copy (wire+64) 0x6c5000 512 r
+  if !Guest.ReleaseFormat.validHeader 0x6c5000 r || !equal 0x6c5060 (h+96) 32 r ||
+    !equal 0x6c50a0 (h+288) 32 r || !newer h 0x6c5000 r then error else Guest.Effects.effectValue 1 r
+partial def sourceLineage (root id fuel t : UInt64) : UInt64 :=
+  if fuel == 0 then error else
+  let r := resolve root id t
+  if r != 128 || status r != 0 || load64 (wire+32) r != 11 || load64 (wire+16) r > 8224 then error else
+  let handle := result r
+  let bytes := load64 (wire+16) r
+  let r := copy (wire+96) 0x6c2200 32 r
+  let r := readAll handle 0x6c0000 bytes 0 r
+  let count := load64 0x6c0010 r
+  if r == error || bytes < 32 || count > 32 || bytes < 32+count*128 then error else
+  let prior := priorRelease root 0 count r
+  if prior == error then error else
+  if prior == 1 || Guest.ReleaseFormat.zeros 0x6c2200 32 prior then prior else
+    sourceLineage root 0x6c2200 (fuel-1) prior
 def makeEntry (p kind id name n t : UInt64) : UInt64 :=
   let t := zero p 16 t
   let t := store64 p kind t
@@ -292,6 +327,8 @@ def prepare (length t : UInt64) : UInt64 :=
       let frozen := freeze root (st+160) r
       if frozen != 160 || status frozen != 0 then error else store64 (st+16) (result frozen) frozen
   if t == error || !lineageCurrent t then response 3 t else
+  let t := sourceLineage (load64 (st+16) t) (st+160) 64 t
+  if t == error then response 3 t else
   let r := Guest.IdentitySDK.exportPublic key t
   if r != 352 || status r != 0 || load64 (wire+80) r != 1 ||
     load64 (wire+88) r != load64 (h+392) r then response 1 r else
@@ -362,7 +399,8 @@ def finish (t : UInt64) : UInt64 :=
   let t := copy (h+128) (p+8) 32 t
   let t := copy (h+160) (p+40) 32 t
   let t := copy (h+72) (p+72) 24 t
-  response 0 (copy (h+96) (p+96) 32 t)
+  let t := copy (h+96) (p+96) 32 t
+  response 0 (copy (st+128) (p+128) 32 t)
 def cancel (t : UInt64) : UInt64 :=
   let t := if load64 creator t == 1 then syscall 135 (load64 (creator+56) t) 0 0 0 t else t
   let t := store64 creator 0 t

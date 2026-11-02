@@ -28,7 +28,7 @@ def activeSlot (t : UInt64) : UInt64 := load64 control t
 def bank (i : UInt64) : UInt64 := contexts+i*65536
 -- Explicit mode3 relationships retain four distinct adapter slots while the
 -- mode1 router owns0..11. Mode contracts and grants never change on coexistence.
-def transportSlot (i t : UInt64) : UInt64 := if load64 (control+128) t == 1 then 12+i else i
+def transportSlot (i t : UInt64) : UInt64 := if Guest.Transport.enabled t then 12+i else i
 def saveCrypto (t : UInt64) : UInt64 := copy Guest.Noise.state (bank (activeSlot t)) 416 t
 def restoreCrypto (t : UInt64) : UInt64 :=
   Guest.Transport.choose (transportSlot (activeSlot t) t) (copy (bank (activeSlot t)) Guest.Noise.state 416 t)
@@ -648,8 +648,6 @@ def dispatchSelected (caller rights length t : UInt64) : UInt64 :=
     let t := syscall 145 0 0 0 2 (Guest.NodeStore.clear t)
     failure 0 t
   else if (op >= 38 && op <= 42) || op == 46 || op == 47 || op == 49 || op == 50 then Guest.OnionTerminal.dispatch caller (if admin then 1 else 0) op length t else
-  if (op == 30 || op == 31) && admin && !Guest.TorRouter.enabled t &&
-    (load64 (st+8) t != 0 || load64 (bank 0+520) t != 0 || load64 (bank 1+520) t != 0 || load64 (bank 2+520) t != 0 || load64 (bank 3+520) t != 0) then failure 8 t else
   if op >= 30 && op <= 37 && admin then
     let t := if op == 30 || ((op == 31 || op == 35) && load64 (Guest.TorRouter.state+8) t == 2) then Guest.OnionTerminal.clearAll t
       else if op == 31 || op == 35 then Guest.OnionTerminal.pauseClientProfiles t else t
@@ -663,10 +661,17 @@ def dispatchSelected (caller rights length t : UInt64) : UInt64 :=
 -- request operation/handles remain unchanged; legacy version1 selects slot0.
 def dispatch (caller rights length t : UInt64) : UInt64 :=
   let version := load64 (command+56) t
+  let op := load64 command t
   let slot : UInt64 := if version == 1 then 0 else version >>> 8
   if length < 64 || (version != 1 && ((version &&& 255) != 2 || slot >= 4)) then failure 2 t else
-  if version == 1 && Guest.Transport.enabled t then failure 2 t else
-  let t := if version != 1 then store64 Guest.Transport.st 1 t else t
+  -- The frozen public SDK's caller-owned terminal requests use version1.
+  -- They select no bulk relationship and retain all terminal owner checks.
+  if version == 1 && Guest.Transport.enabled t && op != 39 && op != 40 then failure 2 t else
+  -- A raw legacy connection cannot be migrated into a multiplexed slot. MUX
+  -- reserves12..15 from its first RPC, so later router setup never moves peers.
+  if version != 1 && !Guest.Transport.enabled t && load64 (st+8) t != 0 then failure 8 t else
+  let t := if version != 1 && !Guest.Transport.enabled t then
+    Guest.Transport.choose (12+activeSlot t) (store64 Guest.Transport.st 1 t) else t
   let t := selectContext slot t
   -- Maintenance may skip an idle peer, but an RPC never spends authority
   -- against a cached clock or extends a lease by the maintenance interval.
