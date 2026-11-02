@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "owned_actors": [
+    {
+      "pid": 779775,
+      "start_ticks": "11481205",
+      "socket": "build/campaign010-forge-mux-1/source/portal.sock",
+      "result": "normal command70 requested",
+      "public_bytes_preserved": true,
+      "private_publisher_authority_present": false
+    },
+    {
+      "pid": 766137,
+      "start_ticks": "11290781",
+      "socket": "build/campaign010-forge-distribution-5/seed-surviving/portal.sock",
+      "result": "normal command70 requested",
+      "public_bytes_preserved": true,
+      "private_publisher_authority_present": false
+    },
+    {
+      "pid": 820385,
+      "start_ticks": "11997841",
+      "normal_command": 70,
+      "frame_sha256": "b1bc974972260ccf37d421eb73b0be6c7dd29173258a431d909c506e04c8bc08",
+      "accepted_store_and_operator_seal": "preserved; no private key export",
+      "personal_state": "public provider records and typed operator seal preserved"
+    },
+    {
+      "pid": 777678,
+      "start_ticks": "11451082",
+      "normal_command": 70,
+      "frame_sha256": "94a656448754c3fb70d95935b85cc22b5424d01e9e077120688d9ef76a37aa0a",
+      "accepted_store_and_operator_seal": "preserved; no private key export",
+      "personal_state": "selected note/project backing preserved; fresh Feed author/outbox intentionally unretained"
+    },
+    {
+      "pid": 798069,
+      "socket": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign010-feed-discovery-complete/personal/portal.sock",
+      "normal_command": 70,
+      "frame_sha256": "ce23be6fb7917eb19da95ee92b1fad604feb66493d90dc47f9fef450bd43a984",
+      "active_after_explicit_rollback": "5f5079d707eafd7fc51b3413b9aa3e8b05340dcec6b36a4b8cdbe9e68db170a9",
+      "private_note_retention": "not selected; ephemeral as declared",
+      "historical009_touched": false
+    }
+  ],
+  "historical009_touched": false,
+  "shutdown": "ordinary management command70; public graphs and typed native seals preserved",
+  "unselected_personal_private_state": "ephemeral as declared"
+}
