@@ -28,7 +28,7 @@ def main():
  write_attack={**good,'App/Main.lean':b'import App.Helper\n#eval IO.FS.writeFile "/input/resource.txt" "overwrite"\nnamespace App\ndef run (n : UInt64) : UInt64 := compute n\nend App\n'}
  readonly=build(write_attack,'input-write-denied')
  assert readonly['status']=='error' and ('read-only' in readonly['diagnostic_text'].lower() or 'permission denied' in readonly['diagnostic_text'].lower()),readonly
- py=str(Path(sys.executable).resolve())
+ py=build_jobs._toolchain()[0]['python']
  code='import os,socket,sys; assert "LT_SANDBOX_SECRET" not in os.environ; s=socket.socket(); s.settimeout(1)\ntry: s.connect(("1.1.1.1",443))\nexcept OSError: sys.exit(0)\nsys.exit(9)'
  check='import App.Helper\n#eval do\n  let r ← IO.Process.output {cmd := '+json.dumps(py)+', args := #['+json.dumps('-c')+','+json.dumps(code)+']}\n  if r.exitCode != 0 then throw (IO.userError "network/environment confinement failed")\nnamespace App\ndef run (n : UInt64) : UInt64 := compute n\nend App\n'
  os.environ['LT_SANDBOX_SECRET']='not-inherited'

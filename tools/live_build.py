@@ -22,10 +22,10 @@ def content(paths):
  h=hashlib.sha256()
  for p in paths:h.update(str(p.relative_to(ROOT)).encode());h.update(p.read_bytes())
  return h.hexdigest()
-def imports(source):
+def without_comments(data):
  # Lean permits whitespace and nested comments between import and its module.
  # Remove comments while retaining newlines and token separation.
- data=source.read_text();out=[];i=0;depth=0;quoted=False
+ out=[];i=0;depth=0;quoted=False
  while i<len(data):
   pair=data[i:i+2];char=data[i]
   if depth:
@@ -43,7 +43,10 @@ def imports(source):
   if pair=='/-':depth=1;out.extend('  ');i+=2;continue
   if char=='"':quoted=True;out.append(' ');i+=1;continue
   out.append(char);i+=1
- return re.findall(r'^\s*(?:public\s+)?import\s+([A-Za-z_][A-Za-z0-9_.]*)',''.join(out),re.M)
+ return ''.join(out)
+def imports(source):
+ text=without_comments(source.read_text())
+ return [name for m in re.finditer(r'^\s*(?:public\s+)?import\s+([^\n]+)',text,re.M) for name in m[1].split() if re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*',name)]
 def build_identity():
  return content([ROOT/'tools/driver.py',ROOT/'tools/live_build.py',ROOT/'toolchain.lock.json',ROOT/'lean-toolchain'])+repr([driver.tool(n) for n in ['lean','clang','ld.lld','llvm-objcopy']])
 def module_inputs(module_name,seen=None):
