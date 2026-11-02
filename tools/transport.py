@@ -3,6 +3,9 @@
 The guest explicitly requests numeric TCP/UNIX connect or numeric TCP listen.
 Each of sixteen channels has its own socket, epoch, bounded buffers and failures.
 All cryptography and relationship authorization remain inside the Lean broker.
+Each LISTEN command arms one accept. When all commands for an endpoint have
+been consumed, its listening socket closes; accepted sockets remain connected.
+An unarmed endpoint must not retain silently queued TCP connections indefinitely.
 
 The optional0600 UNIX fault-control socket accepts one JSON line (<=512 bytes)
 per connection: {"op":"status"}, {"op":"status","slot":0}, or
@@ -96,6 +99,16 @@ class MultiplexStream:
     return socket.AF_INET,(host,port)
    if listen or not text.startswith('/') or len(text)>96:raise ValueError('explicit numeric listener or absolute UNIX socket required')
    return socket.AF_UNIX,text
+  def retire_unarmed_listeners():
+   listeners={ch['listener']for ch in channels if ch['listener'] is not None}
+   for listener in listeners:
+    if any(ch['listener'] is listener and ch['accepting'] and ch['sock'] is None for ch in channels):continue
+    # LISTEN is a one-accept device command. Closing this descriptor supplies
+    # no application/federation judgment and does not close an accepted peer.
+    # A later guest LISTEN explicitly opens fresh receiving capacity.
+    for ch in channels:
+     if ch['listener'] is listener:ch['listener']=None;ch['accepting']=False
+    listener.close()
   try:
    while not self.closed.is_set():
     reads=([self.local] if len(incoming)<LIMIT and len(outgoing)<LIMIT else [])
@@ -210,6 +223,7 @@ class MultiplexStream:
         event(7,slot,data=data)
      except BlockingIOError:pass
      except OSError as error:disconnect(slot,error.errno or errno.EIO)
+    retire_unarmed_listeners()
   except BaseException as error:
    if not self.closed.is_set():self.error=str(error)
   finally:

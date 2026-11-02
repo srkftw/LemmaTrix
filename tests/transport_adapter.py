@@ -27,19 +27,21 @@ def run(output=None):
    q,data=event();assert q[1]==7;received[q[2]]=data
   assert received=={0:bytes(31),1:bytes([1])*31}
   remotes[0].close();q,_=event();assert q[1:3]==(5,0) and q[4]==2,q
+  # No armed accept command remains. Refuse transport promptly instead of
+  # leaving the next client apparently connected in an unserviced TCP backlog.
+  refused=time.monotonic()
+  try:socket.create_connection(address,timeout=1)
+  except ConnectionRefusedError:pass
+  else:raise AssertionError('unarmed native endpoint retained a TCP backlog')
+  assert time.monotonic()-refused<1
+  send(2,2,endpoint);assert event()[0][1:3]==(9,2)
   replacement=socket.create_connection(address);remotes.append(replacement)
-  # One native listen command admits one socket. A disconnected, accepted
-  # channel cannot steal a connection before the guest replenishes admission.
-  guest.settimeout(.1)
-  try:event()
-  except socket.timeout:pass
-  else:raise AssertionError('retired native listener accepted another client')
-  guest.settimeout(3);send(2,2,endpoint);assert event()[0][1:3]==(9,2)
   q,_=event();assert q[1:3]==(8,2) and q[4]==1,q
   send(7,0,b'stale',epoch=1);q,_=event();assert q[1:3]==(6,0),q
   send(7,1,b'alive',epoch=1);assert remotes[1].recv(5)==b'alive'
   send(7,2,b'fresh',epoch=1);assert replacement.recv(5)==b'fresh'
   checks.append('shared listener, native admission ownership, independent clients, epoch isolation and surviving writes')
+  checks.append('exhausted one-shot admission promptly refuses a new transport while established sockets survive; explicit replenishment accepts a fresh peer')
   # The final readiness-loop slot deliberately owns a live socket. Before the
   # fix, a malformed later command reused that function-scoped remote variable
   # during cleanup, closing this unrelated socket and then killing select().

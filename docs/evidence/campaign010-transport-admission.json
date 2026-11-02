@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "checks": [
+    "shared listener, native admission ownership, independent clients, epoch isolation and surviving writes",
+    "exhausted one-shot admission promptly refuses a new transport while established sockets survive; explicit replenishment accepts a fresh peer",
+    "invalid endpoint rejects only its command while independent established sockets remain bidirectionally usable at the same epochs",
+    "invalid receive window rejects only its command while independent established sockets remain bidirectionally usable at the same epochs"
+  ],
+  "seconds": 0.015736442990601063,
+  "adapter_sha256": "39d5c611655c278acdfbb5fffc1eb7d8f5793d29a1efd145f2936171c3871a00",
+  "scope": "isolated opaque host adapter commands and socket ownership only; no Native, cryptography, connected community or current Alice failure causality claim"
+}
