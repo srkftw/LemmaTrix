@@ -1,0 +1,40 @@
+{
+  "schema": 1,
+  "status": "pass",
+  "host": "native x86-64 Linux",
+  "sdk": {
+    "content_id": "3312ddcd277f401c377142b006bac6cf9aeefd8fa89f4d4c78f1fd5469caf533",
+    "version": "0.1.0"
+  },
+  "dependency_lock_id": "a0a54b4d7b9537c1d82a3b92bebad4dded368269d326d938e681e8f50408784d",
+  "artifact": {
+    "path": "/home/sreekumaar/Desktop/LemmaTrix/build/public-sdk-checks/valid/app.bin",
+    "sha256": "7e7bc1bf06637c79dd1f4e61b1f364f37d3913d3b3164a288f516accda2484b3",
+    "bytes": 15196
+  },
+  "toolchain_id": "8f59e044ac86279f0594a1092de7908a61146481433e421c5c2c803edb640309",
+  "snapshot_digest": "5cdbac9ed8c4676add0c3d15434677ad0663493ddb3b1f0357be02eff0e04f3d",
+  "checks": [
+    "pinned cached SDK remains usable without consulting checkout HEAD",
+    "missing pinned SDK refuses HEAD substitution",
+    "reserved/noncanonical Lemma/UI.lean",
+    "reserved/noncanonical Guest/Identity.lean",
+    "reserved/noncanonical Compiler/Main.lean",
+    "reserved/noncanonical ../escape.lean",
+    "reserved/noncanonical App//Main.lean",
+    "private/escaped/multiple import denied",
+    "private/escaped/multiple import denied",
+    "private/escaped/multiple import denied",
+    "source import cycle denied",
+    "normalized module collision denied",
+    "source byte bound enforced",
+    "lock/profile substitution denied",
+    "ordinary public Lemma client compiled to actual freestanding RV64 bytes inside normal sandbox",
+    "real Lean type error returns location bound to exact frozen source",
+    "native ARM64 direct dispatch and explicit cross-architecture qemu dispatch"
+  ],
+  "seconds": 43.579,
+  "limitations": [
+    "this component test does not establish native ARM hardware execution or the connected federation/user journey"
+  ]
+}

@@ -17,6 +17,36 @@
 <p>Explicit project retention produces an authenticated, typed encrypted seal for the existing Objects domain3 storage path. Recovery derives fresh handles and increments the key generation. An older sealed backup supplies no external freshness evidence: recovered publisher keys are restricted to inspection until a supported reconciliation or explicit fresh publisher/fork continuation establishes authority. The implementation does not claim whole-store rollback detection.</p>
 <p>Registry decisions use independently generated role 7 keys and purpose 7. The native Identity411 lifecycle binds an exact current Registry incarnation, policy hash, operation generation and finite decision allowance. Version-2 decision signatures cover the exact 26-byte domain <code>LT-FEDERATION-DECISION-V2\0</code> and 512-byte decision header. A repeated identical decision sequence and header returns its cached identical signature without renewing the allowance; a changed header at that sequence is refused. Registry descriptor transport can retain its 768-byte storage row with the unused tail explicitly zeroed.</p>
 <p>Operator sealing preserves its decision sequence and remaining allowance, increments key generation on recovery and creates a fresh operation binding. Accepted server state must be reconciled with that sealed identity; copying a backup does not establish independent freshness. Publisher authority and federation admission remain separate, and neither grants user execution consent.</p>
+<h2>Native operator commands</h2>
+<p>Start the current common image with an explicitly selected server backing and install the Identity, Registry and Forge roles using the <a href="networked-forge.html">existing operator package/start commands</a>. The service-package bootstrap publisher is separate from the native project publisher and federation decision keys. Record the actual Identity/Registry package release IDs and process incarnations from their command results. The examples below use <code>consumer</code> with an explicit rights mask895 for Project Notes; a second independently initialized operator can select256 and refuse the same release. These are declared policy choices, not a package-name exception.</p>
+<pre><code>./lt server-store mount --socket SERVER.sock
+./lt server-store permit --socket SERVER.sock --instance REGISTRY_INSTANCE \
+ --namespace CATALOG_NAMESPACE_HEX --role registry --bytes 1048576
+# Use the returned fresh grant, not a grant saved before restart:
+./lt federation --socket SERVER.sock --instance REGISTRY_INSTANCE native-init \
+ --policy consumer --allowed-rights 895 --limit 16 --store-grant CATALOG_GRANT \
+ --identity-release IDENTITY_RELEASE_ID --registry-release REGISTRY_RELEASE_ID
+./lt federation --socket SERVER.sock --instance REGISTRY_INSTANCE trust-publisher \
+ --public project-publisher.pub --project-id LOGICAL_PROJECT_ID
+./lt forge --socket SERVER.sock --instance FORGE_INSTANCE federation \
+ --identity FEDERATION_ID --policy consumer</code></pre>
+<p>Save the returned public key, federation ID, key handle and generation as configuration metadata. No host federation signing worker or private signing key is needed. The configured Forge receives an authorized closure and the native Registry decides from its actual objects. Client Forge separately selects the same federation and a public-only native Registry verifier:</p>
+<pre><code>./lt federation --socket PERSONAL.sock --instance VERIFIER_INSTANCE native-verifier \
+ --public FEDERATION_PUBLIC_HEX --policy consumer --allowed-rights 895 --generation KEY_GENERATION
+./lt forge --socket PERSONAL.sock --instance FORGE_INSTANCE federation \
+ --identity FEDERATION_ID --policy consumer</code></pre>
+<p>Configure the explicitly approved ordered endpoint using the existing Network provisioning commands and Forge <code>configure --peer-slot 0 --stream 1</code> for multiplexed bulk. The current private Forge client requires broker lease operation17: exact caller/context/peer/service/root/operation/stream stay fixed, remaining bytes and rate counters survive renewal, and an exhausted, revoked, dead or replaced grant cannot renew. A failure never mints another grant. Physical F3/F4/F11 refresh the existing lease; bounded background maintenance does the same while idle. New service incarnations after a deliberate restart need fresh configuration and authorization. Selected routed Feed/Messenger profiles remain independent.</p>
+<p>Choose a separate32-byte unlock credential and namespace for the operator seal; it is not an exported native seed. Create it once and preserve it independently from the backing, using the credential creation example in <a href="native-feed.html">the retention guide</a>. Explicitly retain the signed catalog and seal before stopping the server:</p>
+<pre><code>./lt federation --socket SERVER.sock --instance REGISTRY_INSTANCE retain-verified
+./lt federation --socket SERVER.sock --instance REGISTRY_INSTANCE native-retain \
+ --key OPERATOR_KEY_HANDLE --credential OPERATOR_UNLOCK_FILE \
+ --namespace OPERATOR_NAMESPACE_HEX --policy consumer --allowed-rights 895
+# After normal restart and fresh service installation/store grant:
+./lt federation --socket SERVER.sock --instance NEW_REGISTRY_INSTANCE native-recover \
+ --credential OPERATOR_UNLOCK_FILE --namespace OPERATOR_NAMESPACE_HEX \
+ --identity-release IDENTITY_RELEASE_ID --registry-release REGISTRY_RELEASE_ID \
+ --store-grant NEW_CATALOG_GRANT</code></pre>
+<p>Recover Forge's selected authorized graph archive separately with F9 and its freshly approved seed namespace. Native recovery checks the sealed policy/key against the retained catalog, advances generation and retains the remaining decision allowance. Use the new returned bindings. An older whole-store backup still needs explicit operator reconciliation; no independent freshness oracle is supplied.</p>
 <p>A seed can explicitly retain already verified public decisions with <code>./lt federation --socket SEED.sock --instance REGISTRY retain-verified</code>, after selecting an approved Registry-owned server-store grant. This operation accepts no descriptor bytes and creates no signature: it commits only the private catalog's previously validated records and their maximum verified sequence. Fresh verifier configuration and ordinary catalog recovery revalidate the original signed decisions. Forge can then reattach the unchanged descriptor for an exactly matching recovered root, chosen federation and policy. A retained rejection remains a rejection; no recovered live handle or seed key becomes federation signing authority.</p>
 <p><code>./lt release inspect build/project-notes.ltrel --public-key build/project-publisher.pub --manifest build/project-notes.ltrel.manifest.json</code> verifies an explicitly selected raw 32-byte or PEM Ed25519 public pin. Legacy RSA public PEM and exact 256-byte modulus pins remain supported. See the campaign report for the actual supported create, build, native review and distribution commands.</p>
 <p>A new publisher requires an explicit public pin independently of federation admission. Inspect the chosen release and provenance, save its exact public Ed25519 key (32 raw bytes), then approve that publication namespace through the normal public control interface:</p>

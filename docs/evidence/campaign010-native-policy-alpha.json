@@ -1,0 +1,57 @@
+{
+  "schema": 1,
+  "scope": "Actual native Registry policy/signature over an exported native release.\n\nThis focused component journey uses normal authorized graph import and operator\ninterfaces. It does not claim network discovery or second-user installation.\n",
+  "backend": "qemu",
+  "image": "ae15d33236b9e0b0ecf15ed632c63be0c047cd85f9b75144c84576cb7d8aab22",
+  "checks": [
+    {
+      "check": "independent guest-owned finite Registry signing authority",
+      "result": "pass",
+      "configuration": {
+        "instance": 5286491003434303752,
+        "policy": "consumer",
+        "federation_id": "004f02ae6ba2677c438c35c2c358c52e940126c8fe4b74af0ff87534f6503843",
+        "public_key": "d63a9af2a9eea6bc5042af16bed242ddb75bfd88609c19f6bc2bab83b344e91e",
+        "key": 5286490999139336454,
+        "generation": 1,
+        "policy_id": "5e09a8c8a5f53e01ad34cadbbef085c8ecea109f752f6abd98b662a03861566c",
+        "store_grant": 0,
+        "decision_budget": 16,
+        "signing": "native scoped Ed25519 admission-v2",
+        "session_only": true,
+        "execution_authority": false
+      }
+    },
+    {
+      "check": "actual graph policy evaluation and native signed decision verification",
+      "result": "pass",
+      "decision": {
+        "format": 2,
+        "classification": 2,
+        "reason": 0,
+        "policy": 3,
+        "rights": 895,
+        "sequence": 1,
+        "runtime_profile": 2,
+        "logical_project_id": "811de18db4868dcc7e4a56e3dbb2bfb9705192eb7c93fa64bab7cda34149af34",
+        "publication_id": "577b529b88dce64c18de360c414a32008d8875e3ce2e6a981b8d5ae2b29f8639",
+        "release_id": "c0e431a3677257c760290a0216f007da1e5c335f980cb243a098c362624081d4",
+        "source_commitment": "7aacfc2eebfe75c56f0bc926004c6cc95f8e0b0aeaf1d2374dc4463ba2201d34",
+        "artifact_commitment": "c5d6050bd043624b87089633dd84193754b7e740c39e3be2236a76a295bd5ca7",
+        "evidence_commitment": "d099f82a5e6b599804ea123d1f8857e4e7fee4344a4e4a61beca9e569386a601",
+        "policy_commitment": "5e09a8c8a5f53e01ad34cadbbef085c8ecea109f752f6abd98b662a03861566c",
+        "federation_id": "004f02ae6ba2677c438c35c2c358c52e940126c8fe4b74af0ff87534f6503843",
+        "root": "fd561fa77c3bee84955ee78054ef6e9bf9d8d895169edd7c105b8a201c70c7e0",
+        "publisher_key_id": "427e84fdaf182fea7c0b60d8e660bc0054f9e9bc70f183637f63e5d57b867dd7",
+        "signature_present": true
+      },
+      "verified_classification": 2
+    },
+    {
+      "check": "changed decision material fails native verification",
+      "result": "pass"
+    }
+  ],
+  "result": "pass",
+  "elapsed_seconds": 144.55511976400157
+}

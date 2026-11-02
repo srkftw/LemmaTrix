@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "command": [
+    "./lt",
+    "build",
+    "--clean"
+  ],
+  "exit_code": 0,
+  "seconds": 296.10464830699493,
+  "result": "pass",
+  "image_sha256": "fc991e1237ac5453331e87e6ed370293bbc60dd032d389c5b1a17151e8b7cd96",
+  "image_bytes": 6291456
+}

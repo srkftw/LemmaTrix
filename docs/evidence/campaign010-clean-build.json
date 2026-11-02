@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "command": [
+    "/home/sreekumaar/Desktop/LemmaTrix/lt",
+    "build",
+    "--clean"
+  ],
+  "exit_code": 0,
+  "seconds": 265.23235851500067,
+  "image_sha256": "b743de7abac5c508660a662041ef97ef3da7677bd7c33d9903123e9d8e5459ad",
+  "image_bytes": 6291456,
+  "result": "pass"
+}

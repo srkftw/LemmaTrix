@@ -1,0 +1,269 @@
+{
+  "schema": 1,
+  "started_utc": "2026-11-02T04:34:36.927583+00:00",
+  "method": "normal native Launcher command70 only; no host signals or file deletion",
+  "protected_historical_pids": [
+    540928,
+    540934,
+    540940,
+    540947,
+    540965,
+    540972,
+    540979,
+    616462
+  ],
+  "historical_before": {
+    "540928": {
+      "pid": 540928,
+      "state": "S",
+      "ppid": 540926,
+      "start_time_ticks": "7956141",
+      "command": "/nix/store/9ihv5zpj6l7fl12mdcxrbmiih3wgrmhw-qemu-11.1.1/bin/qemu-system-riscv64 -M virt -cpu rv64 -m 160M -smp 1 -bios none -display none -serial stdio -monitor none -global virtio-mmio.force-legacy=false -kernel /home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/guest.bin -object rng-random,filename=/dev/urandom,id=lt-rng -device virtio-rng-device,rng=lt-rng -device virtio-gpu-device,xres=640,yres=400 -device virtio-keyboard-device -device virtio-mouse-device -drive file=/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/mailbox.img,format=raw,if=none,id=lt-server -device virtio-blk-device,drive=lt-server,serial=lt-server-v1 -chardev socket,id=lt-stream,fd=4 -device virtio-serial-device,id=lt-streamdev,max_ports=2 -device virtserialport,chardev=lt-stream,bus=lt-streamdev.0,nr=1,name=lt-net1"
+    },
+    "540934": {
+      "pid": 540934,
+      "state": "T",
+      "ppid": 540932,
+      "start_time_ticks": "7956174",
+      "command": "/nix/store/9ihv5zpj6l7fl12mdcxrbmiih3wgrmhw-qemu-11.1.1/bin/qemu-system-riscv64 -M virt -cpu rv64 -m 160M -smp 1 -bios none -display none -serial stdio -monitor none -global virtio-mmio.force-legacy=false -kernel /home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/guest.bin -object rng-random,filename=/dev/urandom,id=lt-rng -device virtio-rng-device,rng=lt-rng -device virtio-gpu-device,xres=640,yres=400 -device virtio-keyboard-device -device virtio-mouse-device -drive file=/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/relay1.img,format=raw,if=none,id=lt-server -device virtio-blk-device,drive=lt-server,serial=lt-server-v1 -chardev socket,id=lt-stream,fd=4 -device virtio-serial-device,id=lt-streamdev,max_ports=2 -device virtserialport,chardev=lt-stream,bus=lt-streamdev.0,nr=1,name=lt-net1"
+    },
+    "540940": {
+      "pid": 540940,
+      "state": "T",
+      "ppid": 540938,
+      "start_time_ticks": "7956208",
+      "command": "/home/sreekumaar/Desktop/LemmaTrix/build/lt-x86_64 /home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/guest.bin --interactive --server-store /home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/relay2.img --network-fd 4"
+    },
+    "540947": {
+      "pid": 540947,
+      "state": "T",
+      "ppid": 540945,
+      "start_time_ticks": "7956364",
+      "command": "/nix/store/9ihv5zpj6l7fl12mdcxrbmiih3wgrmhw-qemu-11.1.1/bin/qemu-system-riscv64 -M virt -cpu rv64 -m 160M -smp 1 -bios none -display none -serial stdio -monitor none -global virtio-mmio.force-legacy=false -kernel /home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/guest.bin -object rng-random,filename=/dev/urandom,id=lt-rng -device virtio-rng-device,rng=lt-rng -device virtio-gpu-device,xres=640,yres=400 -device virtio-keyboard-device -device virtio-mouse-device -drive file=/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/relay3.img,format=raw,if=none,id=lt-server -device virtio-blk-device,drive=lt-server,serial=lt-server-v1 -chardev socket,id=lt-stream,fd=4 -device virtio-serial-device,id=lt-streamdev,max_ports=2 -device virtserialport,chardev=lt-stream,bus=lt-streamdev.0,nr=1,name=lt-net1"
+    },
+    "540965": {
+      "pid": 540965,
+      "state": "T",
+      "ppid": 540963,
+      "start_time_ticks": "7956513",
+      "command": "/nix/store/9ihv5zpj6l7fl12mdcxrbmiih3wgrmhw-qemu-11.1.1/bin/qemu-system-riscv64 -M virt -cpu rv64 -m 160M -smp 1 -bios none -display none -serial stdio -monitor none -global virtio-mmio.force-legacy=false -kernel /home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/guest.bin -object rng-random,filename=/dev/urandom,id=lt-rng -device virtio-rng-device,rng=lt-rng -device virtio-gpu-device,xres=640,yres=400 -device virtio-keyboard-device -device virtio-mouse-device -qmp unix:/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/alice.qmp,server=on,wait=off -drive file=/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/alice.img,format=raw,if=none,id=lt-vault -device virtio-blk-device,drive=lt-vault,serial=lt-objects-v1 -chardev socket,id=lt-stream,fd=4 -device virtio-serial-device,id=lt-streamdev,max_ports=2 -device virtserialport,chardev=lt-stream,bus=lt-streamdev.0,nr=1,name=lt-net1"
+    },
+    "540972": {
+      "pid": 540972,
+      "state": "S",
+      "ppid": 540970,
+      "start_time_ticks": "7956566",
+      "command": "/nix/store/9ihv5zpj6l7fl12mdcxrbmiih3wgrmhw-qemu-11.1.1/bin/qemu-system-riscv64 -M virt -cpu rv64 -m 160M -smp 1 -bios none -display none -serial stdio -monitor none -global virtio-mmio.force-legacy=false -kernel /home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/guest.bin -object rng-random,filename=/dev/urandom,id=lt-rng -device virtio-rng-device,rng=lt-rng -device virtio-gpu-device,xres=640,yres=400 -device virtio-keyboard-device -device virtio-mouse-device -qmp unix:/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/bob.qmp,server=on,wait=off -drive file=/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/bob.img,format=raw,if=none,id=lt-vault -device virtio-blk-device,drive=lt-vault,serial=lt-objects-v1 -chardev socket,id=lt-stream,fd=4 -device virtio-serial-device,id=lt-streamdev,max_ports=2 -device virtserialport,chardev=lt-stream,bus=lt-streamdev.0,nr=1,name=lt-net1"
+    },
+    "540979": {
+      "pid": 540979,
+      "state": "T",
+      "ppid": 540977,
+      "start_time_ticks": "7956618",
+      "command": "/nix/store/9ihv5zpj6l7fl12mdcxrbmiih3wgrmhw-qemu-11.1.1/bin/qemu-system-riscv64 -M virt -cpu rv64 -m 160M -smp 1 -bios none -display none -serial stdio -monitor none -global virtio-mmio.force-legacy=false -kernel /home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/guest.bin -object rng-random,filename=/dev/urandom,id=lt-rng -device virtio-rng-device,rng=lt-rng -device virtio-gpu-device,xres=640,yres=400 -device virtio-keyboard-device -device virtio-mouse-device -qmp unix:/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/charlie.qmp,server=on,wait=off -chardev socket,id=lt-stream,fd=5 -device virtio-serial-device,id=lt-streamdev,max_ports=2 -device virtserialport,chardev=lt-stream,bus=lt-streamdev.0,nr=1,name=lt-net1"
+    },
+    "616462": {
+      "pid": 616462,
+      "state": "S",
+      "ppid": 616440,
+      "start_time_ticks": "9199566",
+      "command": "/nix/store/9ihv5zpj6l7fl12mdcxrbmiih3wgrmhw-qemu-11.1.1/bin/qemu-system-riscv64 -M virt -cpu rv64 -m 160M -smp 1 -bios none -display none -serial stdio -monitor none -global virtio-mmio.force-legacy=false -kernel /home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/guest.bin -object rng-random,filename=/dev/urandom,id=lt-rng -device virtio-rng-device,rng=lt-rng -device virtio-gpu-device,xres=640,yres=400 -device virtio-keyboard-device -device virtio-mouse-device -drive file=/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/beta.img,format=raw,if=none,id=lt-server -device virtio-blk-device,drive=lt-server,serial=lt-server-v1 -chardev socket,id=lt-stream,fd=4 -device virtio-serial-device,id=lt-streamdev,max_ports=2 -device virtserialport,chardev=lt-stream,bus=lt-streamdev.0,nr=1,name=lt-net1"
+    }
+  },
+  "actors": [
+    {
+      "pid": 756705,
+      "node": 0,
+      "socket": "build/campaign010-terminal-profiles-qemu/node0/portal.sock",
+      "before": null,
+      "result": "already_stopped"
+    },
+    {
+      "pid": 756711,
+      "node": 1,
+      "socket": "build/campaign010-terminal-profiles-qemu/node1/portal.sock",
+      "before": {
+        "pid": 756711,
+        "state": "S",
+        "ppid": 1393,
+        "start_time_ticks": "11211063",
+        "command": "python3 /home/sreekumaar/Desktop/LemmaTrix/lt run --image build/campaign010-terminal-profiles-qemu/guest.bin --backend qemu --socket build/campaign010-terminal-profiles-qemu/node1/portal.sock --network-mux"
+      },
+      "children_before": [
+        {
+          "pid": 756713,
+          "state": "S",
+          "ppid": 756711,
+          "start_time_ticks": "11211070",
+          "command": "/nix/store/9ihv5zpj6l7fl12mdcxrbmiih3wgrmhw-qemu-11.1.1/bin/qemu-system-riscv64 -M virt -cpu rv64 -m 160M -smp 1 -bios none -display none -serial stdio -monitor none -global virtio-mmio.force-legacy=false -kernel build/campaign010-terminal-profiles-qemu/guest.bin -object rng-random,filename=/dev/urandom,id=lt-rng -device virtio-rng-device,rng=lt-rng -device virtio-gpu-device,xres=640,yres=400 -device virtio-keyboard-device -device virtio-mouse-device -chardev socket,id=lt-stream,fd=4 -device virtio-serial-device,id=lt-streamdev,max_ports=2 -device virtserialport,chardev=lt-stream,bus=lt-streamdev.0,nr=1,name=lt-net1"
+        }
+      ],
+      "completion": "normal_shutdown_closed_management_channel",
+      "after": null,
+      "children_after": [
+        null
+      ],
+      "seconds": 0.113,
+      "result": "normal70_stopped"
+    },
+    {
+      "pid": 756765,
+      "node": 2,
+      "socket": "build/campaign010-terminal-profiles-qemu/node2/portal.sock",
+      "before": {
+        "pid": 756765,
+        "state": "S",
+        "ppid": 1393,
+        "start_time_ticks": "11212177",
+        "command": "python3 /home/sreekumaar/Desktop/LemmaTrix/lt run --image build/campaign010-terminal-profiles-qemu/guest.bin --backend qemu --socket build/campaign010-terminal-profiles-qemu/node2/portal.sock --network-mux"
+      },
+      "children_before": [
+        {
+          "pid": 756767,
+          "state": "S",
+          "ppid": 756765,
+          "start_time_ticks": "11212186",
+          "command": "/nix/store/9ihv5zpj6l7fl12mdcxrbmiih3wgrmhw-qemu-11.1.1/bin/qemu-system-riscv64 -M virt -cpu rv64 -m 160M -smp 1 -bios none -display none -serial stdio -monitor none -global virtio-mmio.force-legacy=false -kernel build/campaign010-terminal-profiles-qemu/guest.bin -object rng-random,filename=/dev/urandom,id=lt-rng -device virtio-rng-device,rng=lt-rng -device virtio-gpu-device,xres=640,yres=400 -device virtio-keyboard-device -device virtio-mouse-device -chardev socket,id=lt-stream,fd=4 -device virtio-serial-device,id=lt-streamdev,max_ports=2 -device virtserialport,chardev=lt-stream,bus=lt-streamdev.0,nr=1,name=lt-net1"
+        }
+      ],
+      "completion": "normal_shutdown_closed_management_channel",
+      "after": null,
+      "children_after": [
+        null
+      ],
+      "seconds": 0.115,
+      "result": "normal70_stopped"
+    },
+    {
+      "pid": 756927,
+      "node": 3,
+      "socket": "build/campaign010-terminal-profiles-qemu/node3/portal.sock",
+      "before": {
+        "pid": 756927,
+        "state": "S",
+        "ppid": 1393,
+        "start_time_ticks": "11213561",
+        "command": "python3 /home/sreekumaar/Desktop/LemmaTrix/lt run --image build/campaign010-terminal-profiles-qemu/guest.bin --backend qemu --socket build/campaign010-terminal-profiles-qemu/node3/portal.sock --network-mux"
+      },
+      "children_before": [
+        {
+          "pid": 756929,
+          "state": "S",
+          "ppid": 756927,
+          "start_time_ticks": "11213570",
+          "command": "/nix/store/9ihv5zpj6l7fl12mdcxrbmiih3wgrmhw-qemu-11.1.1/bin/qemu-system-riscv64 -M virt -cpu rv64 -m 160M -smp 1 -bios none -display none -serial stdio -monitor none -global virtio-mmio.force-legacy=false -kernel build/campaign010-terminal-profiles-qemu/guest.bin -object rng-random,filename=/dev/urandom,id=lt-rng -device virtio-rng-device,rng=lt-rng -device virtio-gpu-device,xres=640,yres=400 -device virtio-keyboard-device -device virtio-mouse-device -chardev socket,id=lt-stream,fd=4 -device virtio-serial-device,id=lt-streamdev,max_ports=2 -device virtserialport,chardev=lt-stream,bus=lt-streamdev.0,nr=1,name=lt-net1"
+        }
+      ],
+      "completion": "normal_shutdown_closed_management_channel",
+      "after": null,
+      "children_after": [
+        null
+      ],
+      "seconds": 0.112,
+      "result": "normal70_stopped"
+    },
+    {
+      "pid": 758820,
+      "node": 4,
+      "socket": "build/campaign010-terminal-profiles-qemu/node4/portal.sock",
+      "before": null,
+      "result": "already_stopped"
+    },
+    {
+      "pid": 761708,
+      "node": 5,
+      "socket": "build/campaign010-terminal-profiles-qemu/node5/portal.sock",
+      "before": null,
+      "result": "already_stopped"
+    }
+  ],
+  "backings_seals_evidence_preserved": true,
+  "other_owned_actor_audit": [
+    {
+      "pid": 754092,
+      "name": "campaign010-notes-sharing-1",
+      "state": null,
+      "lifecycle": "previously normal-stopped"
+    },
+    {
+      "pid": 777678,
+      "name": "campaign010-card-session",
+      "state": null,
+      "lifecycle": "handed to native_release; not touched by this cleanup"
+    },
+    {
+      "pid": 792496,
+      "name": "campaign010-feed-discovery",
+      "state": null,
+      "lifecycle": "previously normal-stopped"
+    },
+    {
+      "pid": 798069,
+      "name": "campaign010-feed-discovery-complete",
+      "state": null,
+      "lifecycle": "handed to native_release; not touched by this cleanup"
+    }
+  ],
+  "historical_after": {
+    "540928": {
+      "pid": 540928,
+      "state": "S",
+      "ppid": 540926,
+      "start_time_ticks": "7956141",
+      "command": "/nix/store/9ihv5zpj6l7fl12mdcxrbmiih3wgrmhw-qemu-11.1.1/bin/qemu-system-riscv64 -M virt -cpu rv64 -m 160M -smp 1 -bios none -display none -serial stdio -monitor none -global virtio-mmio.force-legacy=false -kernel /home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/guest.bin -object rng-random,filename=/dev/urandom,id=lt-rng -device virtio-rng-device,rng=lt-rng -device virtio-gpu-device,xres=640,yres=400 -device virtio-keyboard-device -device virtio-mouse-device -drive file=/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/mailbox.img,format=raw,if=none,id=lt-server -device virtio-blk-device,drive=lt-server,serial=lt-server-v1 -chardev socket,id=lt-stream,fd=4 -device virtio-serial-device,id=lt-streamdev,max_ports=2 -device virtserialport,chardev=lt-stream,bus=lt-streamdev.0,nr=1,name=lt-net1"
+    },
+    "540934": {
+      "pid": 540934,
+      "state": "T",
+      "ppid": 540932,
+      "start_time_ticks": "7956174",
+      "command": "/nix/store/9ihv5zpj6l7fl12mdcxrbmiih3wgrmhw-qemu-11.1.1/bin/qemu-system-riscv64 -M virt -cpu rv64 -m 160M -smp 1 -bios none -display none -serial stdio -monitor none -global virtio-mmio.force-legacy=false -kernel /home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/guest.bin -object rng-random,filename=/dev/urandom,id=lt-rng -device virtio-rng-device,rng=lt-rng -device virtio-gpu-device,xres=640,yres=400 -device virtio-keyboard-device -device virtio-mouse-device -drive file=/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/relay1.img,format=raw,if=none,id=lt-server -device virtio-blk-device,drive=lt-server,serial=lt-server-v1 -chardev socket,id=lt-stream,fd=4 -device virtio-serial-device,id=lt-streamdev,max_ports=2 -device virtserialport,chardev=lt-stream,bus=lt-streamdev.0,nr=1,name=lt-net1"
+    },
+    "540940": {
+      "pid": 540940,
+      "state": "T",
+      "ppid": 540938,
+      "start_time_ticks": "7956208",
+      "command": "/home/sreekumaar/Desktop/LemmaTrix/build/lt-x86_64 /home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/guest.bin --interactive --server-store /home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/relay2.img --network-fd 4"
+    },
+    "540947": {
+      "pid": 540947,
+      "state": "T",
+      "ppid": 540945,
+      "start_time_ticks": "7956364",
+      "command": "/nix/store/9ihv5zpj6l7fl12mdcxrbmiih3wgrmhw-qemu-11.1.1/bin/qemu-system-riscv64 -M virt -cpu rv64 -m 160M -smp 1 -bios none -display none -serial stdio -monitor none -global virtio-mmio.force-legacy=false -kernel /home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/guest.bin -object rng-random,filename=/dev/urandom,id=lt-rng -device virtio-rng-device,rng=lt-rng -device virtio-gpu-device,xres=640,yres=400 -device virtio-keyboard-device -device virtio-mouse-device -drive file=/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/relay3.img,format=raw,if=none,id=lt-server -device virtio-blk-device,drive=lt-server,serial=lt-server-v1 -chardev socket,id=lt-stream,fd=4 -device virtio-serial-device,id=lt-streamdev,max_ports=2 -device virtserialport,chardev=lt-stream,bus=lt-streamdev.0,nr=1,name=lt-net1"
+    },
+    "540965": {
+      "pid": 540965,
+      "state": "T",
+      "ppid": 540963,
+      "start_time_ticks": "7956513",
+      "command": "/nix/store/9ihv5zpj6l7fl12mdcxrbmiih3wgrmhw-qemu-11.1.1/bin/qemu-system-riscv64 -M virt -cpu rv64 -m 160M -smp 1 -bios none -display none -serial stdio -monitor none -global virtio-mmio.force-legacy=false -kernel /home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/guest.bin -object rng-random,filename=/dev/urandom,id=lt-rng -device virtio-rng-device,rng=lt-rng -device virtio-gpu-device,xres=640,yres=400 -device virtio-keyboard-device -device virtio-mouse-device -qmp unix:/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/alice.qmp,server=on,wait=off -drive file=/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/alice.img,format=raw,if=none,id=lt-vault -device virtio-blk-device,drive=lt-vault,serial=lt-objects-v1 -chardev socket,id=lt-stream,fd=4 -device virtio-serial-device,id=lt-streamdev,max_ports=2 -device virtserialport,chardev=lt-stream,bus=lt-streamdev.0,nr=1,name=lt-net1"
+    },
+    "540972": {
+      "pid": 540972,
+      "state": "S",
+      "ppid": 540970,
+      "start_time_ticks": "7956566",
+      "command": "/nix/store/9ihv5zpj6l7fl12mdcxrbmiih3wgrmhw-qemu-11.1.1/bin/qemu-system-riscv64 -M virt -cpu rv64 -m 160M -smp 1 -bios none -display none -serial stdio -monitor none -global virtio-mmio.force-legacy=false -kernel /home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/guest.bin -object rng-random,filename=/dev/urandom,id=lt-rng -device virtio-rng-device,rng=lt-rng -device virtio-gpu-device,xres=640,yres=400 -device virtio-keyboard-device -device virtio-mouse-device -qmp unix:/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/bob.qmp,server=on,wait=off -drive file=/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/bob.img,format=raw,if=none,id=lt-vault -device virtio-blk-device,drive=lt-vault,serial=lt-objects-v1 -chardev socket,id=lt-stream,fd=4 -device virtio-serial-device,id=lt-streamdev,max_ports=2 -device virtserialport,chardev=lt-stream,bus=lt-streamdev.0,nr=1,name=lt-net1"
+    },
+    "540979": {
+      "pid": 540979,
+      "state": "T",
+      "ppid": 540977,
+      "start_time_ticks": "7956618",
+      "command": "/nix/store/9ihv5zpj6l7fl12mdcxrbmiih3wgrmhw-qemu-11.1.1/bin/qemu-system-riscv64 -M virt -cpu rv64 -m 160M -smp 1 -bios none -display none -serial stdio -monitor none -global virtio-mmio.force-legacy=false -kernel /home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/guest.bin -object rng-random,filename=/dev/urandom,id=lt-rng -device virtio-rng-device,rng=lt-rng -device virtio-gpu-device,xres=640,yres=400 -device virtio-keyboard-device -device virtio-mouse-device -qmp unix:/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/charlie.qmp,server=on,wait=off -chardev socket,id=lt-stream,fd=5 -device virtio-serial-device,id=lt-streamdev,max_ports=2 -device virtserialport,chardev=lt-stream,bus=lt-streamdev.0,nr=1,name=lt-net1"
+    },
+    "616462": {
+      "pid": 616462,
+      "state": "S",
+      "ppid": 616440,
+      "start_time_ticks": "9199566",
+      "command": "/nix/store/9ihv5zpj6l7fl12mdcxrbmiih3wgrmhw-qemu-11.1.1/bin/qemu-system-riscv64 -M virt -cpu rv64 -m 160M -smp 1 -bios none -display none -serial stdio -monitor none -global virtio-mmio.force-legacy=false -kernel /home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/guest.bin -object rng-random,filename=/dev/urandom,id=lt-rng -device virtio-rng-device,rng=lt-rng -device virtio-gpu-device,xres=640,yres=400 -device virtio-keyboard-device -device virtio-mouse-device -drive file=/home/sreekumaar/Desktop/LemmaTrix/build/campaign009-connected-v7/beta.img,format=raw,if=none,id=lt-server -device virtio-blk-device,drive=lt-server,serial=lt-server-v1 -chardev socket,id=lt-stream,fd=4 -device virtio-serial-device,id=lt-streamdev,max_ports=2 -device virtserialport,chardev=lt-stream,bus=lt-streamdev.0,nr=1,name=lt-net1"
+    }
+  },
+  "historical_identity_unchanged": true,
+  "result": "pass",
+  "finished_utc": "2026-11-02T04:34:37.277917+00:00",
+  "remaining_owned_prefix_runtime_processes": []
+}

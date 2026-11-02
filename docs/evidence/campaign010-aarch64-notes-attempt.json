@@ -1,0 +1,35 @@
+{
+  "schema": 1,
+  "result": "failure",
+  "backend": "AArch64 assembly emulator under qemu-aarch64 on x86-64 Linux",
+  "image_sha256": "6db8006f7543ad09299c881720a1d6424a5a97eb9e64e4da4390f8f4e6753b71",
+  "release_sha256": "5884bce6b3308dc6ff8a3cce550092660c9a537881d9021eea9b39edef805abb",
+  "commands": [
+    [
+      "/run/current-system/sw/bin/python3",
+      "/home/sreekumaar/Desktop/LemmaTrix/lt",
+      "run",
+      "--backend",
+      "aarch64",
+      "--image",
+      "/home/sreekumaar/Desktop/LemmaTrix/build/campaign010-final/guest.bin",
+      "--socket",
+      "/home/sreekumaar/Desktop/LemmaTrix/build/c010-notes-arm3/portal.sock",
+      "--graphics",
+      "/home/sreekumaar/Desktop/LemmaTrix/build/c010-notes-arm3/display"
+    ]
+  ],
+  "checks": [],
+  "timings": [
+    {
+      "action": "approve exact publisher",
+      "seconds": 1.983
+    },
+    {
+      "action": "upload exact guest-signed artifact",
+      "seconds": 814.922
+    }
+  ],
+  "error": "TimeoutError('timed out')",
+  "elapsed_seconds": 1172.612945048997
+}
