@@ -12,7 +12,8 @@ def validHeader (p t : UInt64) : Bool :=
   load64 p t == 0x314d4441544c && load64 (p+8) t == 2 &&
   load64 (p+48) t > 0 && load64 (p+384) t == 1 &&
   load64 (p+392) t > 0 && load64 (p+392) t <= 0xffffffff &&
-  !Guest.ReleaseFormat.zeros (p+128) 32 t && !Guest.ReleaseFormat.zeros (p+256) 32 t &&
+  (!Guest.ReleaseFormat.zeros (p+128) 32 t || load64 (p+16) t == 1 ||
+    (load64 (p+16) t == 3 && load64 (p+24) t == 1)) && !Guest.ReleaseFormat.zeros (p+256) 32 t &&
   !Guest.ReleaseFormat.zeros (p+288) 32 t && !Guest.ReleaseFormat.zeros (p+320) 32 t
 def verify (p publicKey t : UInt64) : Bool :=
   if !validHeader p t || !equal publicKey (p+576) 32 t then false else
