@@ -68,7 +68,10 @@ partial def forkScopeMatches (root i count t : UInt64) : Bool :=
 def adoptForkScope (t : UInt64) : UInt64 :=
   let root := load64 (st+16) t
   let origin := sourceOrigin root (st+160) 64 t
-  if origin == error || load64 (wire+40) origin != 2 || load64 (wire+16) origin > 8224 then error else
+  -- Objects' first fork is a schema1 source with a fresh logical identity and
+  -- exact ForkNode. A later checkpoint may be schema2. The actual ForkNode,
+  -- rather than a checkpoint schema, authorizes this unpublished key adoption.
+  if origin == error || load64 (wire+16) origin > 8224 then error else
   let r := readAll origin 0x6c0000 (load64 (wire+16) origin) 0 origin
   let count := load64 0x6c0010 r
   if r == error || count == 0 || count > 32 || !forkScopeMatches root 0 count r then error else
