@@ -898,6 +898,8 @@ partial def checkpointFiles (caller old fresh scope index count bytes t : UInt64
     if load64 e t == 15 then
       if load64 (checkpointTxn+48) t != 1 then checkpointFiles caller old fresh scope (index+1) count bytes t else
         checkpointFiles caller old fresh scope (index+1) (count+1) bytes (copy e (fresh+288+count*128) 128 t)
+    else if Guest.ReleaseFormat.dependencyEdge e t then
+      checkpointFiles caller old fresh scope (index+1) (count+1) bytes (copy e (fresh+288+count*128) 128 t)
     else if load64 e t != 10 then checkpointFiles caller old fresh scope (index+1) count bytes t else
       let found := ProjectGraph.findNode (e+16) 10 0 t
       if found == error then error else
@@ -998,7 +1000,7 @@ partial def sortForkEntries (r count i j t : UInt64) : UInt64 :=
 partial def selectedForkRelease (manifest index found t : UInt64) : UInt64 :=
   if index == load64 (manifest+272) t then Guest.Effects.effectValue found t else
     let e := manifest+288+index*128
-    if load64 e t != 13 then selectedForkRelease manifest (index+1) found t else
+    if load64 e t != 13 || Guest.ReleaseFormat.dependencyEdge e t then selectedForkRelease manifest (index+1) found t else
     if found != error then error else
       let node := ProjectGraph.findNode (e+16) 13 0 t
       if node == error then error else

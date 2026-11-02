@@ -358,6 +358,22 @@ partial def releaseLock (source i t : UInt64) : UInt64 :=
   let e := source+288+i*128
   if load64 e t == 10 && load64 (e+8) t == 15 && load64 (e+48) t == 8028843231677343084 && load64 (e+56) t == 31084788931521379 then
     findNode (e+16) 10 0 t else releaseLock source (i+1) t
+partial def forkClaims (origin manifest end_ i seen t : UInt64) : Bool :=
+  if i == load64 (origin+272) t then
+    seen != 0 || (let p := Guest.ReleaseClaims.field manifest end_ 32 t
+      p != 0 && Guest.ReleaseClaims.literal p end_ 1819047278 4 t == p+4)
+  else
+  let e := origin+288+i*128
+  if load64 e t != 15 then forkClaims origin manifest end_ (i+1) seen t else
+  let index := findNode (e+16) 15 0 t
+  let p := Guest.ReleaseClaims.field manifest end_ 32 t
+  if index == error || seen != 0 || p == 0 || load8 p t != 123 then false else
+  let d := recordAt index+288
+  Guest.ReleaseClaims.digestEquals (Guest.ReleaseClaims.field p end_ 11 t) end_ (d+16) t &&
+    Guest.ReleaseClaims.digestEquals (Guest.ReleaseClaims.field p end_ 9 t) end_ (d+112) t &&
+    Guest.ReleaseClaims.digestEquals (Guest.ReleaseClaims.field p end_ 29 t) end_ (d+80) t &&
+    Guest.ReleaseClaims.digestEquals (Guest.ReleaseClaims.field p end_ 33 t) end_ (d+48) t &&
+    forkClaims origin manifest end_ (i+1) 1 t
 -- V4 semantics are checked against actual authorized lock bytes. Legacy
 -- manifests retain their original encoding and historical acceptance rules.
 def releaseClaims (source h mn sn en ln t : UInt64) : UInt64 :=
@@ -369,6 +385,7 @@ def releaseClaims (source h mn sn en ln t : UInt64) : UInt64 :=
   let m := h+Guest.ReleaseFormat.prefix h t
   let l := m+mn+sn+en
   if !Guest.ReleaseClaims.check h m mn (lockRecord+256) (load64 (lockRecord+32) t) (logicalIdAt (recordAt origin) t) t ||
+    !forkClaims (recordAt origin) m (m+mn) 0 0 t ||
     Guest.ReleaseClaims.valueEnd l (l+ln) 32 t != l+ln ||
     !Guest.ReleaseClaims.valueEquals (Guest.ReleaseClaims.field m (m+mn) 24 t) (m+mn)
       (Guest.ReleaseClaims.field l (l+ln) 24 t) (l+ln) t then error else t

@@ -21,6 +21,57 @@ def inspect(client):
                 header=raw[64:576].hex(), session_only=True)
 
 
+def creator_request(client):
+    try:
+        raw = client.request(188)
+    except ValueError as error:
+        if str(error) == 'guest rejected command188, status1':
+            return None
+        raise
+    if len(raw) != 128:
+        raise ValueError('native creator returned an incompatible request')
+    q = struct.unpack_from('<8Q', raw)
+    if q[0] or q[1] != 2:
+        return None
+    return dict(phase=q[1], publisher=q[2], job=q[3], nonce=q[4], root=q[5],
+                requester=q[6], failure=q[7], project_id=raw[64:96].hex(),
+                source_root=raw[96:128].hex())
+
+
+def prepare_creator(client, request, result_path, output):
+    """Encode an inert proposal for a native UI request; never approve it."""
+    result = json.loads(Path(result_path).read_bytes())
+    if (result.get('status') != 'ok' or not result.get('delivered') or
+        result.get('source_root') != request['source_root'] or
+        result.get('guest_session', {}).get('job_id') != request['job']):
+        raise ValueError('native creator requires its exact successful frozen build')
+    raw = client.request(160, struct.pack('<8Q', 7, request['job'], 0, 0, 0, 0, 0, 1))
+    job = projects.frozen_build(client, raw)
+    _, files = projects.snapshot(client, job['source_root_capability'], request['source_root'])
+    project = json.loads(files.get('lemma.project.json', b'{}'))
+    prior = inspect(client)
+    previous = prior['phase'] == 3 and prior['key'] == request['publisher'] and prior['project_id'] == request['project_id']
+    version = project.get('release_version')
+    if version is None:
+        if previous:
+            words = struct.unpack_from('<3Q', bytes.fromhex(prior['header']), 72)
+            version = '.'.join(map(str, (words[0], words[1], words[2]+1)))
+        else:
+            version = '0.1.0'
+    try:
+        answer = prepare(client, root=request['root'], publisher=request['publisher'],
+            name=project['name'], version=version, output=output, result_path=result_path,
+            license=project.get('license', 'NOASSERTION'),
+            parent=prior['release_id'] if previous else None)
+    except BaseException:
+        client.request(189, struct.pack('<2Q', request['nonce'], 1))
+        raise
+    accepted = client.request(189, struct.pack('<2Q', request['nonce'], 0))
+    if len(accepted) != 128 or struct.unpack_from('<Q', accepted, 8)[0] != 3:
+        raise ValueError('native creator cancelled or replaced this proposal request')
+    return answer
+
+
 def retain(client, root, publisher, credential, vault_key=None, include_roots=()):
     import project_vault
     if len(credential) != 32:
@@ -65,6 +116,26 @@ def recover(client, root, credential):
         raise ValueError('recovered publisher scope differs from selected authenticated root')
     return dict(key=q[1], **info, session_only=True, signing_authorized=False,
         recovery='inspection only; establish fresh authorized fork/publisher or reconcile authenticated publication state')
+
+
+def fork_origin(client, root, source):
+    for _ in range(64):
+        handle = projects.resolve(client, root, source)
+        fields, identities = client.objects(21, handle)
+        entries = projects.decode_manifest(client.read_object(handle))
+        forks = [entry for entry in entries if entry[1] == 15]
+        if len(forks) > 1:
+            raise ValueError('ambiguous native fork origin')
+        if forks:
+            raw = client.read_object(projects.resolve(client, root, forks[0][2]))
+            if len(raw) != 208 or struct.unpack_from('<2Q', raw, 32) != (0x314b524f46544c, 1):
+                raise ValueError('malformed actual native fork object')
+            return dict(logical_project_id=raw[48:80].hex(), source_root=raw[80:112].hex(),
+                        release_id=raw[112:144].hex(), publisher_key_id=raw[144:176].hex())
+        if fields[5] == 2 or identities[32:64] == bytes(32):
+            return None
+        source = identities[32:64].hex()
+    raise ValueError('native project ancestry exceeds64nodes')
 
 
 def prepare(client, *, root, publisher, name, version, output, result_path=None,
@@ -130,6 +201,7 @@ def prepare(client, *, root, publisher, name, version, output, result_path=None,
         source_records_override=records, logical_project_id=logical, evidence=evidence,
         facet=facet, profile=profile, sdk=lock.get('sdk'), dependencies=lock.get('dependencies', []),
         build=build, provenance=dict(declaration=project.get('distribution_authority'), source_root=source_root),
+        fork_origin=fork_origin(client, actual['source_root_capability'] if result_path else root, source_root),
         exports=exports, recipe=dict(module=lock.get('module'), entry=lock.get('entry'),
                                     recipe=lock.get('recipe'), toolchain=lock.get('toolchain')))
     parts = [releases.pkg.canonical(manifest), releases.pkg.canonical(manifest['sources']),
@@ -164,9 +236,9 @@ def publish_snapshot(client, directory):
     source_handle = projects.resolve(client, source_root, state['source_root'])
     entries = projects.decode_manifest(client.read_object(source_handle))
     _, ids = client.objects(21, state['release_handle'])
-    entries = [e for e in entries if e[1] in (10, 15)]
-    if any(e[0] == 'release.ltrel' for e in entries):
+    if any(e[0] == 'release.ltrel' and e[1] != 13 for e in entries):
         raise ValueError('source member conflicts with reserved release attachment')
+    entries = [e for e in entries if e[1] in (10, 13, 15) and e[0] != 'release.ltrel']
     entries.append(('release.ltrel', 13, ids[:32].hex()))
     detail = releases.pkg.canonical(dict(schema=1, kind='native-published-snapshot',
         source_root=state['source_root'], release_id=state['release_id']))

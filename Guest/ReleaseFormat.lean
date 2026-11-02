@@ -20,6 +20,10 @@ partial def nameValid (p i n t : UInt64) : Bool :=
     (i > 0 && (c == 45 || c == 46 || c == 95))) && nameValid p (i+1) n t
 def executable (p t : UInt64) : Bool :=
   header p t != 0 && (load64 (p+8) t == 2 || load64 (p+384) t == 1)
+-- Dependency facets may share a project Manifest with its selected application.
+-- These reserved edges are never installation/fork/admission candidates.
+def dependencyEdge (e t : UInt64) : Bool :=
+  load64 e t == 13 && load64 (e+8) t > 5 && load64 (e+48) t &&& 0xffffffffff == 0x2f73706564
 def validHeader (p t : UInt64) : Bool :=
   let n := load64 (p+424) t
   let legacy := load64 (p+8) t == 2

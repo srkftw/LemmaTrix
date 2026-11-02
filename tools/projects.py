@@ -338,7 +338,20 @@ def serve(socket,project,sign_key,output,version='0.1.0',poll_interval=.5,*,root
   while True:
    client=None;job=None
    try:
-    client=live.Client(socket,timeout=240);raw=queued_build(client)
+    client=live.Client(socket,timeout=240)
+    if sign_key is None:
+     import native_publisher
+     pending=native_publisher.creator_request(client)
+     if pending is not None:
+      if pending['project_id']!=authority['project_id'] or pending['requester']!=authority['requester'] or client.objects(29,pending['root'])[0][7]!=authority['live_root_binding']:
+       client.request(189,struct.pack('<2Q',pending['nonce'],1));raise ValueError('native publisher preparation belongs to another worker scope')
+      matches=[path for path in output.glob('session-*/job-*/job.result.json') if json.loads(path.read_bytes()).get('guest_session',{}).get('job_id')==pending['job']]
+      if len(matches)!=1:
+       client.request(189,struct.pack('<2Q',pending['nonce'],2));raise ValueError('successful frozen build is unavailable in this worker output; rebuild the selected snapshot')
+      review=matches[0].parent/('native-review-'+str(pending['nonce']))
+      proposal=native_publisher.prepare_creator(client,pending,matches[0],review)
+      report('native-review-ready',job=pending['job'],source_root=pending['source_root'],review=str(review),release_id=proposal['release_id'],publication_approved=False)
+    raw=queued_build(client)
     if raw is None:
      client.close();client=None;time.sleep(delay);continue
     job=frozen_build(client,raw)

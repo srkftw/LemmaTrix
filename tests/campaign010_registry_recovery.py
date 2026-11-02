@@ -57,7 +57,7 @@ def main():
   _,retained=federation.call(node.client,instance,6,h=0);assert retained==decision
   q,_=federation.call(node.client,instance,11,data=decision+decision[320:352]);assert q[1]==1
   passed('server restart restores exact authenticated catalog and same sealed identity with fresh live bindings',recovery=recovered,old_instance=old_instance,new_instance=instance,old_grant=old_grant,new_grant=grant)
-  federation.call(node.client,instance,8,h=0)
+  federation.call(node.client,instance,8,h=0,a=struct.unpack_from('<Q',decision,48)[0])
   revoked=complete(node.client,instance,1)
   assert struct.unpack_from('<Q',revoked,16)[0]==3 and struct.unpack_from('<Q',revoked,392)[0]==recovered['generation']
   q,_=federation.call(node.client,instance,11,data=revoked+revoked[320:352]);assert q[1]==3

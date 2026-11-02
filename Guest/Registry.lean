@@ -55,7 +55,7 @@ partial def freeEntry (i t : UInt64) : UInt64 :=
   if i == 16 then error else if load64 (entry i+768) t == 0 then i else freeEntry (i+1) t
 partial def selectedRelease (i count found t : UInt64) : UInt64 :=
   if i == count then found else
-    if load64 (manifest+32+i*128) t == 13 then
+    if load64 (manifest+32+i*128) t == 13 && !Guest.ReleaseFormat.dependencyEdge (manifest+32+i*128) t then
       if found != error then error else selectedRelease (i+1) count i t
     else selectedRelease (i+1) count found t
 partial def sourceNamed (name0 name1 name2 nameLength i count found t : UInt64) : UInt64 :=
@@ -440,6 +440,7 @@ def revokeListing (slot expected t : UInt64) : UInt64 :=
         let t := store64 (entry vacant+16) 3 t
         let t := store64 (entry vacant+24) 6 t
         let t := store64 (entry vacant+48) sequence t
+        let t := if load64 (st+400) t == 4 then store64 (entry vacant+392) (load64 (st+416) t) t else t
         let t := store64 (entry vacant+768) 1 t
         response 0 sequence (store64 (st+16) sequence t)
 def dispatch (caller rights length t : UInt64) : UInt64 :=
