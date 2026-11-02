@@ -238,7 +238,8 @@ def nextFocus (t : UInt64) : UInt64 :=
   let t := Guest.syscall 91 0 0x415000 480 0 t
   let after := load64 st t &&& 255
   let who := chooseFocus 5 after t
-  focus (if who == 0 then chooseFocus 5 0 t else who) t
+  let chosen := if who == 0 then chooseFocus 5 0 t else who
+  if chosen == load64 st t then t else focus chosen t
 
 def boundedMotion (old delta limit : UInt64) : UInt64 :=
   if delta >= 0x80000000 then
@@ -1517,12 +1518,79 @@ partial def publisherDigest (p i y t : UInt64) : UInt64 :=
   let t := hex (load64 (header+392) t) 8 440 330 fg bg t
   let t := publisherDigest (header+96) 0 344 t
   let t := hex (load64 (publisherSummary+48) t) 8 550 28 fg bg t
+  let t := store64 (0x414000+0) 7451577422231004492 t
+  let t := store64 (0x414000+8) 7161137258223531112 t
+  let t := store64 (0x414000+16) 7017841271895826548 t
+  let t := store64 (0x414000+24) 8315165955200147828 t
+  let t := store64 (0x414000+32) 7094700071711678523 t
+  let t := store64 (0x414000+40) 8295740900323322220 t
+  let t := store64 (0x414000+48) 32773591702462830 t
+  let t := text 0x414000 55 12 366 fg bg t
+  let t := store64 (0x414000+0) 3622618570165481286 t
+  let t := store64 (0x414000+8) 8386658447326912570 t
+  let t := store64 (0x414000+16) 8027793262296068896 t
+  let t := store64 (0x414000+24) 2322222645562588020 t
+  let t := store64 (0x414000+32) 7598805615236113766 t
+  let t := store64 (0x414000+40) 7596836403026095727 t
+  let t := store64 (0x414000+48) 474315584371 t
+  let t := text 0x414000 53 12 382 fg bg t
   let t := upload 0 0 1024000 1 t
   store64 (st+32) 1 t
+def publisherPage : UInt64 := 0x723f00
+def publisherMetadata : UInt64 := 0x723c00
+def publicationRoot : UInt64 := 0x724100
+partial def metadataText (i n x y t : UInt64) : UInt64 :=
+  if i == n then t else
+  let c := load8 (publisherMetadata+64+i) t
+  if x > 606 then metadataText i n 14 (y+11) t else
+  metadataText (i+1) n (x+6) y (char x y (if c >= 32 && c < 127 then c else 63) fg bg t)
+@[noinline] def publisherMetadataDraw (t : UInt64) : UInt64 :=
+  let t := frameReady t
+  if t == error then t else
+  let t := fill 0 0 640 400 bg t
+  let t := publisherLabel 0 12 8 t
+  let head := publisherSummary+64
+  let n := load64 (head+424) t
+  let t := text (head+432) (if n > 80 then 80 else n) 12 30 fg bg t
+  let t := hex (load64 (head+72) t) 4 12 48 fg bg t
+  let t := hex (load64 (head+80) t) 4 50 48 fg bg t
+  let t := hex (load64 (head+88) t) 4 88 48 fg bg t
+  let t := hex (load64 (head+64) t) 16 160 48 fg bg t
+  let t := publisherLabel 3 12 66 t
+  let t := publisherDigest (head+160) 0 80 t
+  let t := publisherLabel 6 12 102 t
+  let t := publisherDigest (publisherSummary+576) 0 116 t
+  let t := hex (load64 (publisherMetadata+16) t) 8 12 142 fg bg t
+  let t := hex (load64 (publisherMetadata+8) t) 8 100 142 fg bg t
+  let t := metadataText 0 (load64 (publisherMetadata+24) t) 14 164 t
+  let t := publisherLabel 1 12 300 t
+  let t := hex (load64 (publisherMetadata+24) t) 4 12 322 fg bg t
+  store64 (st+32) 1 (upload 0 0 1024000 1 t)
+@[noinline] def publisherPageSelect (direction t : UInt64) : UInt64 :=
+  let mode := load64 publisherPage t
+  if direction == 0 && (mode == 0 || load64 (publisherPage+8) t == 0) then publisherDraw (store64 publisherPage 0 t) else
+  let offset := if mode == 0 then 0 else if direction == 0 then load64 (publisherPage+8) t-512 else load64 (publisherPage+8) t+512
+  if mode != 0 && direction != 0 && offset >= load64 (publisherMetadata+8) t then t else
+  let r := management 191 8 (store64 wire offset t)
+  if r < 64 || r > 576 || status r != 0 || load64 (wire+16) r != offset || load64 (wire+24) r != r-64 then t else
+  let t := copy wire publisherMetadata r r
+  publisherMetadataDraw (store64 publisherPage 1 (store64 (publisherPage+8) offset t))
+@[noinline] def publisherSnapshot (t : UInt64) : UInt64 :=
+  if load64 (publisherSummary+24) t != 3 then t else
+  let r := management 190 0 t
+  if r != 128 || status r != 0 || load64 (wire+24) r > 32 then publisherDraw (store64 (publisherSummary+48) 4 r) else
+  let t := copy wire publicationRoot 128 r
+  let t := frameReady (publisherDraw t)
+  let t := fill 0 364 640 32 bg t
+  let t := text (publicationRoot+96) (load64 (publicationRoot+24) t) 12 366 fg bg t
+  let t := hex (load64 (publicationRoot+8) t) 16 300 366 fg bg t
+  store64 (st+32) 1 (upload 0 (364*2560) (32*2560) 1 t)
+
 @[noinline] def publisherOpen (t : UInt64) : UInt64 :=
   let r := management 228 0 t
   if r != 640 || status r != 0 then error else
   let t := copy wire publisherSummary 640 r
+  let t := zero publisherPage 2 t
   let t := store64 (st+48) (load64 st t) t
   let t := syscall 85 0 0 0 0 t
   let t := store64 (st+40) 13 (store64 (st+120) 0 (store64 (st+64) 0 t))
@@ -1545,6 +1613,49 @@ partial def publisherDigest (p i y t : UInt64) : UInt64 :=
 @[noinline] def publisherCancel (t : UInt64) : UInt64 :=
   let r := management 229 0 t
   dismiss r
+
+-- Key creation and candidate preparation are separate asynchronous native
+-- coordinator work. The key-free compiler can only return inert proposal bytes.
+def publisherFlow : UInt64 := 0x724000
+@[noinline] def publisherFlowDraw (t : UInt64) : UInt64 :=
+  let t := frameReady t
+  if t == error then t else
+  let t := fill 0 0 640 400 bg t
+  let t := publisherLabel 0 12 12 t
+  let t := store64 0x414000 0x6e69726170657250 t
+  let t := store64 (0x414000+8) 0x65766974616e2067 t
+  let t := text 0x414000 16 12 44 fg bg t
+  let t := hex (load64 (publisherFlow+8) t) 2 12 70 fg bg t
+  let t := hex (load64 (publisherFlow+16) t) 16 48 70 fg bg t
+  let t := hex (load64 (publisherFlow+24) t) 16 200 70 fg bg t
+  let t := hex (load64 (publisherFlow+56) t) 8 370 70 fg bg t
+  let t := publisherDigest (publisherFlow+64) 0 104 t
+  let t := publisherDigest (publisherFlow+96) 0 144 t
+  let t := publisherLabel 11 12 200 t
+  store64 (st+32) 1 (upload 0 0 1024000 1 t)
+@[noinline] def publisherStart (root job requester t : UInt64) : UInt64 :=
+  if root == 0 || job == 0 then error else
+  let launcher := syscall 97 1 0 0 0 t
+  let r := Guest.ProjectSDK.delegate root launcher 127 launcher
+  if r == error || status r != 0 then error else
+  let t := store64 wire (result r) (store64 (wire+8) job (store64 (wire+16) requester r))
+  let r := management 186 24 t
+  if r == error || r < 64 || status r != 0 then error else
+  let t := zero publisherFlow 17 r
+  let t := store64 (st+48) requester t
+  let t := syscall 85 0 0 0 0 t
+  publisherFlowDraw (store64 (st+40) 16 (store64 (st+120) 0 (store64 (st+64) 0 t)))
+@[noinline] def publisherFlowPoll (t : UInt64) : UInt64 :=
+  if load64 (st+40) t != 16 then t else
+  let tick := load64 (publisherFlow+128) t+1
+  let t := store64 (publisherFlow+128) tick t
+  if tick%128 != 1 then t else
+  let r := management 187 0 t
+  if r != 128 || status r != 0 then t else
+  let phase := load64 (wire+8) r
+  if phase == 3 then publisherOpen r else
+  if phase == load64 (publisherFlow+8) r && load64 (wire+56) r == load64 (publisherFlow+56) r then r else
+  publisherFlowDraw (copy wire publisherFlow 128 r)
 
 -- Granting an app a queue endpoint does not approve sharing. Actual content and
 -- destination are separately reviewed inside the selected owner UI.
@@ -1594,6 +1705,95 @@ def intentConsentData : UInt64 := 0x723400
   if r == 64 && status r == 0 then dismiss r else
   intentConsentDraw (store64 intentConsentData (if r < 64 || r == error then 1 else status r) r)
 
+def terminalPanel : UInt64 := 0x723800
+def terminalLabel (id x y t : UInt64) : UInt64 :=
+  if id == 0 then
+    let t := store64 (0x414000+0) 7234318597473988673 t
+    let t := store64 (0x414000+8) 7305798977971385120 t
+    let t := store64 (0x414000+16) 32481173182575136 t
+    text 0x414000 23 x y fg bg t
+  else
+  if id == 1 then
+    let t := store64 (0x414000+0) 2334391181807415888 t
+    let t := store64 (0x414000+8) 3395839899007930144 t
+    let t := store64 (0x414000+16) 2319108008818602016 t
+    let t := store64 (0x414000+24) 2319107953218644080 t
+    let t := store64 (0x414000+32) 121424956188018 t
+    text 0x414000 38 x y fg bg t
+  else
+  if id == 2 then
+    let t := store64 (0x414000+0) 7956011615611872594 t
+    let t := store64 (0x414000+8) 2338324182462505063 t
+    let t := store64 (0x414000+16) 8101242855552524335 t
+    let t := store64 (0x414000+24) 7161137258223596404 t
+    let t := store64 (0x414000+32) 8079583511321780340 t
+    let t := store64 (0x414000+40) 28265 t
+    text 0x414000 42 x y fg bg t
+  else
+  if id == 3 then
+    let t := store64 (0x414000+0) 2336936576420900949 t
+    let t := store64 (0x414000+8) 2322578003091809651 t
+    let t := store64 (0x414000+16) 8462580850506362437 t
+    let t := store64 (0x414000+24) 7166147436814366053 t
+    let t := store64 (0x414000+32) 111546465018656 t
+    text 0x414000 38 x y fg bg t
+  else
+  if id == 4 then
+    let t := store64 (0x414000+0) 7599935561338220111 t
+    let t := store64 (0x414000+8) 8097789233594987635 t
+    let t := store64 (0x414000+16) 2322569198694265456 t
+    let t := store64 (0x414000+24) 7523097616837340777 t
+    let t := store64 (0x414000+32) 7575172712477696116 t
+    let t := store64 (0x414000+40) 8243121572520403059 t
+    let t := store64 (0x414000+48) 6579574 t
+    text 0x414000 51 x y fg bg t
+  else
+  t
+partial def terminalRows (i t : UInt64) : UInt64 :=
+  if i == 4 then t else
+  let p := terminalPanel+64+i*128
+  let y := 60+i*58
+  let t := fill 8 y 624 54 (if load64 (terminalPanel+576) t == i then 0x28374d else bg) t
+  let t := hex i 1 14 (y+2) fg bg t
+  let t := hex (load64 (p+8) t) 16 42 (y+2) fg bg t
+  let t := hex (load64 (p+16) t) 1 190 (y+2) fg bg t
+  let t := hex (load64 (p+32) t) 2 214 (y+2) fg bg t
+  let t := hex (load64 (p+40) t) 2 248 (y+2) fg bg t
+  let t := hex (load64 (p+48) t) 8 280 (y+2) fg bg t
+  let t := hex (load64 (p+56) t) 8 370 (y+2) fg bg t
+  terminalRows (i+1) (publisherDigest (p+64) 0 (y+20) t)
+@[noinline] def terminalDraw (t : UInt64) : UInt64 :=
+  let t := frameReady t
+  if t == error then t else
+  let t := fill 0 0 640 400 bg t
+  let t := terminalLabel 0 12 8 t
+  let t := terminalLabel 1 12 28 t
+  let t := terminalRows 0 t
+  let t := terminalLabel 2 12 300 t
+  let t := terminalLabel 3 12 324 t
+  let t := terminalLabel 4 12 348 t
+  let t := hex (load64 (terminalPanel+8) t) 1 500 8 fg bg t
+  let t := hex (load64 (terminalPanel+16) t) 1 530 8 fg bg t
+  let t := hex (load64 (terminalPanel+584) t) 2 560 8 fg bg t
+  store64 (st+32) 1 (upload 0 0 1024000 1 t)
+@[noinline] def terminalRefresh (t : UInt64) : UInt64 :=
+  let r := management 196 0 t
+  if r != 576 || status r != 0 then terminalDraw (store64 (terminalPanel+584) 3 r) else
+  terminalDraw (copy wire terminalPanel 576 r)
+@[noinline] def terminalOpen (t : UInt64) : UInt64 :=
+  let t := store64 (st+48) (load64 st t) t
+  let t := syscall 85 0 0 0 0 t
+  let t := zero terminalPanel 74 t
+  terminalRefresh (store64 (st+40) 15 (store64 (st+120) 0 (store64 (st+64) 0 t)))
+@[noinline] def terminalApprove (t : UInt64) : UInt64 :=
+  let index := load64 (terminalPanel+576) t
+  if load64 (terminalPanel+64+index*128) t != 1 then t else
+  let t := store64 wire index t
+  let gesture := syscall 99 0 0 0 0 t
+  let r := management 197 16 (store64 (wire+8) gesture gesture)
+  let t := store64 (terminalPanel+584) (if r != 64 then 3 else status r) r
+  terminalRefresh (store64 (st+120) 0 t)
+
 def pollApps (t : UInt64) : UInt64 :=
   let n := syscall 36 4 0x416000 1056 0 t
   if n < 96 || n > 1056 then t else
@@ -1622,7 +1822,7 @@ def pollApps (t : UInt64) : UInt64 :=
         if n == 128 && op == 2 then retentionRequest root 0x416060 caller n
         else if n == 96 && op == 3 && load64 0x416058 n == 1 then pickerRequest caller nonce 0 n
         else if n == 96 && op == 14 && load64 0x416058 n == 1 && (root == 1 || root == 25) then pickerRequest caller nonce root n
-        else if n == 96 && op == 15 && load64 0x416058 n == 1 then publisherOpen n
+        else if n == 96 && op == 15 && load64 0x416058 n == 1 then publisherStart root nonce caller n
         else if n == 96 && op == 5 && load64 0x416058 n == 1 then vaultStatusRequest caller n
         else if n == 96 && op == 6 && load64 0x416058 n == 1 then forgeInstallRequest root n
         else if n == 128 && op == 8 && load64 0x416058 n == 1 then contentRetainRequest root nonce 0x416060 caller n
@@ -1781,6 +1981,8 @@ def route (ev t : UInt64) : UInt64 :=
   let kind := ev >>> 48
   let code := (ev >>> 32) &&& 65535
   let value := ev &&& 0xffffffff
+  -- Modifier releases remain live while a trusted modal owns ordinary input.
+  let t := if kind == 1 && code == 56 then store64 (st+56) value t else t
   -- Full-screen trusted modals consume pointer input, but physical motion must
   -- still advance the shell's coordinates before ordinary focus resumes.
   let t := if kind == 2 && code == 0 then
@@ -1800,12 +2002,22 @@ def route (ev t : UInt64) : UInt64 :=
     if kind == 1 && value == 1 && code == 22 then unlockOpen t else
     if kind == 1 && value == 1 && code == 19 then recoveryOpen t else
     if kind == 1 && value == 1 && (code == 1 || (code == 28 && load64 (st+120) t == 1)) then dismiss t else t
+  else if load64 (st+40) t == 16 then
+    if kind == 1 && value == 1 && code == 1 then publisherCancel t else t
+  else if load64 (st+40) t == 15 then
+    if kind == 1 && value == 1 && code == 1 then dismiss t else
+    if kind == 1 && value == 1 && (code == 103 || code == 108) then
+      terminalDraw (store64 (terminalPanel+576) ((load64 (terminalPanel+576) t+(if code == 103 then 3 else 1))%4) t)
+    else if kind == 1 && value == 1 && code == 19 then terminalRefresh t else
+    if kind == 1 && value == 1 && code == 28 && load64 (st+120) t == 1 then terminalApprove t else t
   else if load64 (st+40) t == 14 then
     if kind == 1 && value == 1 && code == 1 then dismiss t else
     if kind == 1 && value == 1 && code == 33 then intentConsentSelect 5 t else
     if kind == 1 && value == 1 && code == 50 then intentConsentSelect 2 t else
     if kind == 1 && value == 1 && code == 28 && load64 (st+120) t == 1 then intentConsentApprove t else t
   else if load64 (st+40) t == 13 then
+    if kind == 1 && value == 1 && (code == 105 || code == 106) then publisherPageSelect (if code == 105 then 0 else 1) t else
+    if kind == 1 && value == 1 && code == 25 then publisherSnapshot t else
     if kind == 1 && value == 1 && code == 1 then publisherCancel t else
     if kind == 1 && value == 1 && code == 28 && load64 (st+120) t == 1 then publisherApprove t else t
   else if load64 (st+40) t == 4 then
@@ -1823,6 +2035,7 @@ def route (ev t : UInt64) : UInt64 :=
     else if kind == 1 && value == 1 && load64 (st+40) t == 3 && (code == 15 || code == 105 || code == 106 || code == 103 || code == 108) then
       pickerSelect (if code == 105 || code == 103 then 1 else 0) t
     else t
+  else if kind == 1 && code == 49 && value == 1 && load64 (st+56) t == 1 then terminalOpen t
   else if kind == 1 && code == 87 && value == 1 && load64 (st+56) t == 1 then intentConsentOpen t
   else if kind == 1 && code == 67 && value == 1 && load64 (st+56) t == 1 then lifecycleOpen t
   else if kind == 1 && code == 88 && value == 1 then
@@ -1865,7 +2078,7 @@ def composite (who epoch t : UInt64) : UInt64 :=
 
 partial def loop (t : UInt64) : UInt64 :=
   let t := Guest.syscall 88 0 0 0 0 t
-  let t := publisherPoll (pollApps t)
+  let t := publisherFlowPoll (publisherPoll (pollApps t))
   let pending := load64 (st+424) t
   let t := if pending != 0 && syscall 82 pending 0 0 0 t != error then focus pending (store64 (st+424) 0 t) else t
   let ev := Guest.syscall 84 0 0 0 0 t

@@ -36,6 +36,24 @@ def selectContext (i t : UInt64) : UInt64 :=
   if selected t == i then t else loadContext i (saveContext (selected t) t)
 def terminalRole (role : UInt64) : Bool := role == 8 || role == 16
 def active (t : UInt64) : Bool := load64 st t != 0
+-- Client profiles0..3 share only the routed terminal. Their owner, immutable
+-- peer pin, finite remaining totals, request and completed response stay banked.
+-- control128 is active index+1;136 requested index+1;144 last stream;
+--160 is the fair scheduling cursor. No live binding is serialized.
+def context (i t : UInt64) : UInt64 := if selected t == i then st else bank i
+partial def ownerProfile (owner i t : UInt64) : UInt64 :=
+  if i == 4 then error else
+  let p := context i t
+  if load64 p t == 1 && load64 (p+128) t == owner then i else ownerProfile owner (i+1) t
+partial def vacantProfile (i t : UInt64) : UInt64 :=
+  if i == 4 then error else
+  let p := context i t
+  if load64 p t == 0 || (load64 p t == 1 && load64 (control+128) t != i+1 && syscall 34 (load64 (p+128) t) 0 0 0 t == error) then i else vacantProfile (i+1) t
+partial def queuedProfile (n t : UInt64) : UInt64 :=
+  if n == 4 then 0 else
+  let i := (load64 (control+160) t+n)%4
+  let p := context i t
+  if load64 p t == 1 && load64 (p+8) t == 5 && load64 (p+72) t != 0 then i+1 else queuedProfile (n+1) t
 def response (code value t : UInt64) : UInt64 := 64+header code value (load64 (st+8) t) 0 0 0 0 t
 def save (t : UInt64) : UInt64 := copy Guest.Noise.state noiseBank 416 t
 def restore (t : UInt64) : UInt64 := copy noiseBank Guest.Noise.state 416 t
@@ -53,7 +71,34 @@ def clearAll (t : UInt64) : UInt64 :=
   let t := clearAllContexts 0 t
   let t := zero 0x770000 8192 t
   store64 (control+16) generation (zero control 64 (selectContext 0 t))
-def fail (reason t : UInt64) : UInt64 := store64 (st+160) reason (clear t)
+def fail (reason t : UInt64) : UInt64 :=
+  if load64 st t != 1 then store64 (st+160) reason (clear t) else
+  -- Losing a transport does not grant a fresh budget or erase another owner.
+  let complete := load64 (st+48) t != 0 && load64 (st+48) t == load64 (st+56) t
+  let t := if !complete && load64 (st+240) t != 0 then store64 (st+256) (load64 (st+64) t) (store64 (st+264) reason t) else t
+  let t := zero noiseBank 52 (zero outgoing 128 t)
+  let t := if complete then t else zero received 128 (store64 (st+48) 0 (store64 (st+56) 0 t))
+  store64 (st+160) reason (store64 (st+8) 4
+    (store64 (st+72) 0 (store64 (st+80) 0 (store64 (st+184) 0 (store64 (st+224) 0 (store64 (st+240) 0 t))))))
+
+partial def pauseClientRows (i t : UInt64) : UInt64 :=
+  if i == 4 then t else
+  let t := selectContext i t
+  let t := if load64 st t != 1 then t else
+    let pending := load64 (st+240) t != 0 && (load64 (st+48) t == 0 || load64 (st+48) t != load64 (st+56) t)
+    let t := if load64 (st+8) t == 3 && pending then fail 26 t else t
+    let complete := load64 (st+48) t != 0 && load64 (st+48) t == load64 (st+56) t
+    let t := if complete then store64 (st+240) 0 t else t
+    store64 (st+8) 5 (store64 (st+224) 0 (store64 (st+184) 0 (zero noiseBank 52 t)))
+  pauseClientRows (i+1) t
+-- Replacing a route destroys live terminal crypto, never the selected owner's
+-- remaining totals, complete result or durable application outbox. Lost live
+-- requests retain an exact failure marker until their owner explicitly retries.
+def pauseClientProfiles (t : UInt64) : UInt64 :=
+  let wanted := load64 (control+136) t
+  let current := load64 (control+128) t
+  let t := pauseClientRows 0 t
+  store64 (control+128) 0 (store64 (control+136) (if wanted == 0 then current else wanted) t)
 
 def elapsedDue (deadline clock : UInt64) : Bool := deadline != 0 && clock >= deadline
 theorem healthy_idle_has_no_deadline (clock : UInt64) : elapsedDue 0 clock = false := by
@@ -61,12 +106,12 @@ theorem healthy_idle_has_no_deadline (clock : UInt64) : elapsedDue 0 clock = fal
 def workDeadline (clock interval : UInt64) : UInt64 :=
   if clock > 0xffffffffffffffff-interval then 0xffffffffffffffff else clock+interval
 @[noinline] def retireOwned (reason t : UInt64) : UInt64 :=
-  let ch := if load64 st t == 1 then 0 else load64 (st+32) t
-  -- Capture ownership before wiping keys or retiring the dependent pair.
-  let current := load64 st t == 1 ||
-    (Guest.TorRouter.ready ch t && load64 (Guest.TorRouter.channel ch+24) t == load64 (st+168) t)
+  if load64 st t == 1 then fail reason t else
+  let ch := load64 (st+32) t
+  let current := Guest.TorRouter.ready ch t && load64 (Guest.TorRouter.channel ch+24) t == load64 (st+168) t
   let t := if current then Guest.TorRouter.abort 59 (store64 (Guest.TorRouter.state+72) ch t) else t
   fail reason t
+
 def serviceTargetAllowed (pinned target : UInt64) : Bool := pinned == 0 || pinned == target
 theorem changed_service_instance_denied (pinned target : UInt64)
     (bound : pinned ≠ 0) (changed : pinned ≠ target) :
@@ -93,22 +138,74 @@ def writeOpaque (source n t : UInt64) : UInt64 :=
 
 def beginClient (peer stream owner budget attempts t : UInt64) : UInt64 :=
   let p := Guest.NodeEnrollment.peer peer
-  if peer >= 4 || stream == 0 || stream > 65535 || owner == 0 || budget == 0 || budget > 8388608 || attempts == 0 || attempts > 65536 ||
+  if peer >= 8 || stream == 0 || stream > 65535 || owner == 0 || budget == 0 || budget > 8388608 || attempts == 0 || attempts > 65536 ||
     !Guest.TorRouter.peerValid p t || !terminalRole (load64 (p+208) t) || budget > load64 (p+232) t || attempts > load64 (p+240) t || load64 (Guest.TorRouter.state+24) t != 3 then response 8 0 t else
-  let t := clear (selectContext 0 t)
-  let t := store64 st 1 t
-  let t := store64 (st+8) 1 t
-  let t := store64 (st+16) peer t
-  let t := store64 (st+24) stream t
-  let t := store64 (st+128) owner t
-  let t := store64 (st+136) budget t
-  let t := store64 (st+144) attempts t
-  let clock := syscall 110 0 0 0 0 t
-  let t := store64 (st+224) (workDeadline clock 100000) clock
-  let t := store64 (Guest.TorRouter.state+112) 0 t
+  -- Reconfiguration cannot silently replace a peer or renew consumed totals.
+  let existing := ownerProfile owner 0 t
+  if existing != error then response 4 existing t else
+  let index := vacantProfile 0 t
+  if index == error then response 4 0 t else
+  let t := clear (selectContext index t)
+  let t := store64 st 1 (store64 (st+8) 5 (store64 (st+16) peer t))
+  let t := store64 (st+128) owner (store64 (st+136) budget (store64 (st+144) attempts t))
   let t := copy (p+512) (st+192) 32 t
+  let serial := load64 (control+144) t
+  let t := if serial < stream-1 then store64 (control+144) (stream-1) t else t
+  response 0 index (store64 (control+136) (index+1) t)
+
+-- A selection queues a previously approved relationship; it cannot change its
+-- peer, owner or totals. Pending committed work finishes before switching.
+def selectProfile (index t : UInt64) : UInt64 :=
+  if index >= 4 then response 8 0 t else
+  let t := selectContext index t
+  let p := Guest.NodeEnrollment.peer (load64 (st+16) t)
+  if load64 st t != 1 || !Guest.TorRouter.peerValid p t || !Guest.NodeEnrollment.eq (p+512) (st+192) 32 t then response 8 0 t else
+  let t := if load64 (st+8) t == 4 && load64 (control+128) t != index+1 then store64 (st+8) 5 t else t
+  response 0 index (store64 (control+136) (index+1) t)
+
+@[noinline] def startProfile (chosen t : UInt64) : UInt64 :=
+  let t := selectContext (chosen-1) t
+  let serial := load64 (control+144) t
+  let p := Guest.NodeEnrollment.peer (load64 (st+16) t)
+  if load64 st t != 1 then store64 (control+136) 0 t else
+  if load64 (Guest.TorRouter.state+24) t != 3 then t else
+  if serial >= 65535 then fail 30 (store64 (control+136) 0 t) else
+  if !Guest.TorRouter.peerValid p t || !Guest.NodeEnrollment.eq (p+512) (st+192) 32 t then fail 24 (store64 (control+136) 0 t) else
+  if !Guest.TorRouter.idleOutput 0 t then t else
+  let stream := serial+1
   let r := Guest.TorRouter.clientRelay 1 stream (p+144) 32 0 t
-  if r == error then response 8 0 (fail 1 r) else response 0 stream r
+  if r == error then r else
+  let clock := syscall 110 0 0 0 0 r
+  let t := store64 (st+24) stream (store64 (st+8) 1 (store64 (st+160) 0 clock))
+  let t := store64 (st+224) (workDeadline clock 100000) t
+  let t := store64 (Guest.TorRouter.state+144) 0 (store64 (Guest.TorRouter.state+152) stream (store64 (Guest.TorRouter.state+112) 0 t))
+  store64 (control+144) stream (store64 (control+136) 0 (store64 (control+128) chosen (store64 (control+160) (chosen%4) t)))
+
+@[noinline] def scheduleClient (t : UInt64) : UInt64 :=
+  if load64 (Guest.TorRouter.state+8) t != 1 then t else
+  let current := load64 (control+128) t
+  let wanted := load64 (control+136) t
+  let target := if wanted != 0 then wanted else queuedProfile 0 t
+  if current == 0 then if target == 0 then t else startProfile target t else
+  let t := selectContext (current-1) t
+  let phase := load64 (st+8) t
+  let endPhase := load64 (Guest.TorRouter.state+144) t
+  let failed := phase == 4 || endPhase == 3 || !Guest.TorRouter.enabled t
+  let busy := load64 (st+72) t != 0 || (load64 (st+240) t != 0 &&
+    (load64 (st+48) t == 0 || load64 (st+48) t != load64 (st+56) t)) || phase == 1 || phase == 2
+  if !failed && (target == 0 || target == current || busy) then
+    if wanted == current then store64 (control+136) 0 t else t
+  else if endPhase == 1 then t else
+  if endPhase != 2 && endPhase != 3 && Guest.TorRouter.enabled t then
+    let r := Guest.TorRouter.endTerminal (load64 (st+24) t) t
+    if r == error then t else r
+  else
+    let retired := load64 (st+272) t != 0
+    let t := if retired then clear t else zero noiseBank 52 t
+    let t := store64 (st+224) 0 (store64 (st+240) 0 t)
+    let t := if retired then t else store64 (st+8) (if failed then 4 else 5) (store64 (st+160) (if endPhase == 3 then 4 else load64 (st+160) t) t)
+    let t := store64 (control+128) 0 (store64 (Guest.TorRouter.state+152) 0 t)
+    if target == 0 || (target == current && wanted == 0) || !Guest.TorRouter.enabled t then store64 (control+136) 0 t else startProfile target t
 
 def setupNoise (role descriptor t : UInt64) : UInt64 :=
   let r := syscall 104 0 fresh 32 0 t
@@ -196,8 +293,8 @@ def processInput (t : UInt64) : UInt64 :=
   let stream := load64 (Guest.TorRouter.state+88) t
   let source := load64 (Guest.TorRouter.state+96) t
   let epoch := load64 (Guest.TorRouter.channel source+24) t
-  let index := if client then 0 else findContext source stream epoch 0 t
-  let chosen := if index == error then freeContext 0 t else index
+  let index := if client then (if load64 (control+128) t == 0 then error else load64 (control+128) t-1) else findContext source stream epoch 0 t
+  let chosen := if index == error && !client then freeContext 0 t else index
   let t := copy Guest.TorRouter.inbox incomingCopy n t
   let t := store64 (Guest.TorRouter.state+80) 0 (zero Guest.TorRouter.inbox 64 t)
   if chosen == error || (!client && !terminalRole (load64 (own+208) t)) then t else
@@ -288,26 +385,28 @@ def pumpContext (i t : UInt64) : UInt64 :=
   let t := if load64 st t == 2 &&
     (!Guest.TorRouter.ready (load64 (st+32) t) t ||
       load64 (Guest.TorRouter.channel (load64 (st+32) t)+24) t != load64 (st+168) t) then fail 27 t else t
+  let t := if load64 st t == 1 && syscall 34 (load64 (st+128) t) 0 0 0 t == error then store64 (st+272) 1 (fail 31 t) else t
   let t := if load64 st t == 1 && (!Guest.TorRouter.peerValid p t || !Guest.NodeEnrollment.eq (p+512) (st+192) 32 t) then fail 24 t else t
   let t := if load64 st t == 1 && load64 (st+8) t == 1 && load64 (Guest.TorRouter.state+112) t == 1 && Guest.TorRouter.idleOutput 0 t then handshakeFirst t else t
-  if !active t then t else sendQuantum (serverQuantum t)
+  if !active t || (load64 st t == 1 && (load64 (control+128) t != i+1 || load64 (st+8) t != 3)) then t else sendQuantum (serverQuantum t)
 partial def pumpContexts (n t : UInt64) : UInt64 :=
   if n == 16 then t else
   let i := (load64 (control+8) t+n)%16
   let p := if selected t == i then st else bank i
   let role := load64 p t
   let ch := load64 (p+32) t
-  let work := role == 1 || (role == 2 &&
+  let work := (role == 1 && (load64 (control+128) t == i+1 || load64 (p+240) t != 0)) || (role == 2 &&
     (load64 (p+112) t != 0 || load64 (p+72) t != 0 || load64 (p+48) t != 0 || load64 (p+224) t != 0 ||
      !Guest.TorRouter.ready ch t || load64 (Guest.TorRouter.channel ch+24) t != load64 (p+168) t))
   pumpContexts (n+1) (if work then pumpContext i t else t)
 def pump (t : UInt64) : UInt64 :=
   let t := processInput t
   let t := pumpContexts 0 t
+  let t := scheduleClient t
   store64 (control+8) ((load64 (control+8) t+1)%16) t
 
 def submitRequest (caller length t : UInt64) : UInt64 :=
-  if caller != load64 (st+128) t || load64 st t != 1 || load64 (st+8) t != 3 then response 8 0 t else
+  if !Guest.TorRouter.enabled t || caller != load64 (st+128) t || load64 st t != 1 || (load64 (st+8) t != 3 && load64 (st+8) t != 5) then response 8 0 t else
   let request := load64 (command+8) t
   let n := length-64
   let operation := load64 (command+64) t
@@ -315,7 +414,7 @@ def submitRequest (caller length t : UInt64) : UInt64 :=
   if length < 128 || length > 1024 || request == 0 || load64 (st+72) t != 0 || load64 (st+48) t != 0 ||
     (operation != 441 && operation != 491 && !metadataRead) || n > load64 (st+136) t || load64 (st+144) t == 0 then response 4 0 t else
   let t := copy (command+64) outgoing n t
-  let t := store64 (st+64) request t
+  let t := store64 (st+64) request (store64 (st+256) 0 (store64 (st+264) 0 t))
   let t := store64 (st+72) n t
   let t := store64 (st+136) (load64 (st+136) t-n) t
   let t := store64 (st+144) (load64 (st+144) t-1) t
@@ -325,22 +424,45 @@ def submitRequest (caller length t : UInt64) : UInt64 :=
 
 def collectResponse (caller length t : UInt64) : UInt64 :=
   if caller != load64 (st+128) t || length != 64 then response 8 0 t else
+  if load64 (command+8) t != 0 && load64 (command+8) t == load64 (st+256) t then response 14 (load64 (st+264) t) t else
   -- A stale request cannot await or collect a replacement relationship.
   if load64 (command+8) t != load64 (st+64) t then response 3 0 t else
   let n := load64 (st+48) t
-  if n == 0 || load64 (st+56) t != n then response 6 0 t else
+  if n == 0 || load64 (st+56) t != n then response (if load64 (st+8) t == 4 || !Guest.TorRouter.enabled t then 14 else 6) 0 t else
   if load64 (command+8) t != load64 (st+40) t then response 3 0 t else
   let t := header 0 (load64 (st+40) t) n 0 0 0 0 t
   let t := copy received (wire+64) n t
   64+n+store64 (st+240) 0 (store64 (st+48) 0 (store64 (st+56) 0 (zero received 128 t)))
 
 def statusResponse (t : UInt64) : UInt64 :=
+  let t := if load64 st t == 1 && !Guest.TorRouter.enabled t then fail 26 t else t
   let t := header 0 (load64 st t) (load64 (st+8) t) (load64 (st+160) t) (load64 (st+136) t) (load64 (st+144) t) 0 t
   96+copy (st+192) (wire+64) 32 t
 
+partial def profileRows (i t : UInt64) : UInt64 :=
+  if i == 4 then t else
+  let p := bank i
+  let o := wire+64+i*128
+  let t := zero o 16 t
+  let t := store64 o (load64 p t) (store64 (o+8) (load64 (p+128) t) (store64 (o+16) (load64 (p+16) t) t))
+  let t := store64 (o+24) (load64 (p+24) t) (store64 (o+32) (load64 (p+8) t) (store64 (o+40) (load64 (p+160) t) t))
+  let t := store64 (o+48) (load64 (p+136) t) (store64 (o+56) (load64 (p+144) t) t)
+  let t := copy (p+192) (o+64) 32 t
+  let t := store64 (o+96) (load64 (p+240) t) (store64 (o+104) (load64 (p+64) t) (store64 (o+112) (load64 (p+56) t) (store64 (o+120) i t)))
+  profileRows (i+1) t
+
 def dispatch (caller admin op length t : UInt64) : UInt64 :=
-  let t := selectContext 0 t
-  if op == 47 && length == 64 then
+  let index := if op == 39 || op == 40 then ownerProfile caller 0 t else if admin == 1 then
+      (if load64 (control+128) t == 0 then selected t else load64 (control+128) t-1)
+    else ownerProfile caller 0 t
+  let t := if index == error then t else selectContext index t
+  if op == 49 && admin == 1 && length == 64 then
+    let t := header 0 (load64 (control+128) t) (load64 (control+136) t) 4 128 1 0 t
+    let t := saveContext (selected t) t
+    576+profileRows 0 t
+  else if op == 50 && admin == 1 && length == 64 then selectProfile (load64 (command+8) t) t
+  else if admin != 1 && index == error then response 8 0 t
+  else if op == 47 && length == 64 then
     let p := Guest.NodeEnrollment.peer (load64 (st+16) t)
     if load64 st t != 1 || (admin != 1 && caller != load64 (st+128) t) ||
       !Guest.TorRouter.peerValid p t || !Guest.NodeEnrollment.eq (p+512) (st+192) 32 t then response 8 0 t else
@@ -367,6 +489,6 @@ def dispatch (caller admin op length t : UInt64) : UInt64 :=
     -- asynchronous cancellation must name its still-current request.
     let request := load64 (command+8) t
     if request != 0 && request != load64 (st+64) t then response 3 0 t else
-    response 0 0 (clear t)
+    response 0 0 (fail 29 t)
   else response 8 0 t
 end Guest.OnionTerminal

@@ -17,7 +17,7 @@ def currentGrant (caller target operation generation expectedCaller expectedTarg
   operation == expectedOperation && generation == expectedGeneration
 
 def builtInAsyncAllowed (caller service operation generation : UInt64) : Bool :=
-  caller == 1 && service == 6 && operation >= 20 && operation <= 48 && generation == 0
+  caller == 1 && service == 6 && operation >= 20 && operation <= 50 && generation == 0
 def terminalRegistryRead (caller service operation generation : UInt64) : Bool :=
   caller == 6 && service != 0 && (operation == 6 || operation == 7) && generation == 0
 def receiptConsumer (role rights : UInt64) : Bool := role == 3 && rights == 2048

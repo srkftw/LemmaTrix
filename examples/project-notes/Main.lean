@@ -31,6 +31,10 @@ def bg : UInt64 := 0x14232c
 def fg : UInt64 := 0xdce9ec
 def accent : UInt64 := 0xa6d7b1
 def notice (n t : UInt64) : UInt64 := store64 (st+48) n (store64 st 1 t)
+-- Ordinary local typing needs only its affected rows. Full view changes keep
+-- the stronger dirty state when several physical events arrive together.
+def editing (n t : UInt64) : UInt64 :=
+  store64 (st+48) n (store64 st (if load64 st t == 1 then 1 else 2) t)
 def label (id x y t : UInt64) : UInt64 :=
   if id == 0 then
     let t := store64 (0x414000+0) 2338603393740665424 t
@@ -278,6 +282,50 @@ def draw (surface t : UInt64) : UInt64 :=
   let t := hex (load64 (p+64) t) 16 368 322 accent bg t
   let t := label 19 14 338 t
   upload surface 0 901120 (store64 st 0 t)
+partial def endLine (p n i line column t : UInt64) : UInt64 :=
+  if i == n then line else
+  let c := load8 (p+i) t
+  if c >= 128 && c < 192 then endLine p n (i+1) line column t else
+  if c == 10 || column == 98 then endLine p n (if c == 10 then i+1 else i) (line+1) 0 t else
+  endLine p n (i+1) line (column+1) t
+partial def renderRange (p n i line column first last t : UInt64) : UInt64 :=
+  if i == n || line > last then t else
+  let c := load8 (p+i) t
+  if c >= 128 && c < 192 then renderRange p n (i+1) line column first last t else
+  if c == 10 || column == 98 then renderRange p n (if c == 10 then i+1 else i) (line+1) 0 first last t else
+  let t := if line < first then t else char (18+column*6) (122+line*11) (if c >= 128 then 63 else c) fg bg t
+  renderRange p n (i+1) line (column+1) first last t
+@[noinline] def drawEditing (surface t : UInt64) : UInt64 :=
+  let p := selected t
+  let mode := load64 (st+16) t
+  let t := fill 0 104 640 12 bg t
+  let t := label (if mode == 1 then 5 else if mode == 3 then 6 else if mode == 6 then 20 else 14+load64 (p+16) t) 14 104 t
+  let t := upload surface (104*2560) (12*2560) t
+  let t := if mode == 1 then
+      let t := fill 0 80 640 20 bg t
+      upload surface (80*2560) (20*2560) (noteList 0 t)
+    else if mode == 3 || mode == 6 then
+      let t := fill 0 120 640 14 bg t
+      let t := if mode == 3 then text query (load64 (st+56) t) 14 122 accent bg t else hex (load64 (st+224) t) 6 14 122 accent bg t
+      upload surface (120*2560) (14*2560) t
+    else
+      let off := load64 (st+184) t
+      let n := load64 (p+40) t-off
+      let line := endLine (p+192+off) n 0 0 0 t
+      let first := if line >= 16 then 14 else if line == 0 then 0 else line-1
+      let y := 122+first*11
+      let t := fill 0 y 640 22 bg t
+      let t := renderRange (p+192+off) n 0 0 0 first (first+1) t
+      upload surface (y*2560) (22*2560) t
+  let t := fill 0 304 640 32 bg t
+  let t := label (load64 (st+48) t) 14 306 t
+  let t := label 13 14 322 t
+  let t := hex (load64 (st+88) t) 2 220 322 accent bg t
+  let t := hex (load64 (st+96) t) 2 260 322 accent bg t
+  let t := hex (load64 (p+24) t) 4 320 322 accent bg t
+  let t := hex (load64 (p+64) t) 16 368 322 accent bg t
+  upload surface (304*2560) (32*2560) (store64 st 0 t)
+
 def newNote (t : UInt64) : UInt64 :=
   let count := load64 (st+24) t
   if count >= 4 then notice 10 t else
@@ -467,7 +515,7 @@ def insertByte (c t : UInt64) : UInt64 :=
   let n := load64 length t
   if n >= bound then notice 10 t else
   let t := store8 (target+n) c (store64 length (n+1) t)
-  notice (if mode == 3 then 6 else 8) (if mode == 3 then t else store64 (selectedRow t+16) 1 t)
+  editing (if mode == 3 then 6 else 8) (if mode == 3 then t else store64 (selectedRow t+16) 1 t)
 def unicode (value t : UInt64) : UInt64 :=
   if value < 32 || value > 0x10ffff || (value >= 0xd800 && value <= 0xdfff) then notice 10 t else
   let prior := load64 (st+216) t
@@ -476,7 +524,7 @@ def unicode (value t : UInt64) : UInt64 :=
   let bound : UInt64 := if prior == 1 || prior == 3 then 63 else Notes.Schema.capacity
   let bytes : UInt64 := if value < 128 then 1 else if value < 2048 then 2 else if value < 65536 then 3 else 4
   if n > bound || bytes > bound-n then notice 10 t else
-  let t := store64 (st+16) prior t
+  let t := store64 (st+16) prior (store64 st 1 t)
   if value < 128 then insertByte value t else
   if value < 2048 then insertByte (128+value%64) (insertByte (192+value/64) t) else
   if value < 65536 then insertByte (128+value%64)
@@ -498,7 +546,7 @@ def key (code down t : UInt64) : UInt64 :=
     let c := scanCode code 0
     let d := if c >= 48 && c <= 57 then c-48 else if c >= 97 && c <= 102 then c-87 else 16
     if d == 16 || load64 (st+232) t == 6 then t else
-    notice 20 (store64 (st+224) (load64 (st+224) t*16+d) (store64 (st+232) (load64 (st+232) t+1) t))
+    editing 20 (store64 (st+224) (load64 (st+224) t*16+d) (store64 (st+232) (load64 (st+232) t+1) t))
   else if code == 1 then notice 8 (store64 (st+16) 2 t) else
   if code == 60 then newNote t else
   if code == 61 then chooseProject 1 t else
@@ -526,21 +574,28 @@ def key (code down t : UInt64) : UInt64 :=
     let length := if mode == 1 then p+32 else if mode == 3 then st+56 else p+40
     let target := if mode == 1 then p+128 else if mode == 3 then query else p+192
     let n := Notes.Schema.previous target (load64 length t) t
-    notice 8 (store64 length n (if mode == 3 then t else store64 (selectedRow t+16) 1 t))
+    editing 8 (store64 length n (if mode == 3 then t else store64 (selectedRow t+16) 1 t))
   else if code == 104 then notice 8 (store64 (st+184) 0 t) else
   if code == 109 then
     let n := load64 (selected t+40) t
     notice 8 (store64 (st+184) (if n > 1200 then n-1200 else 0) t) else
   let c := scanCode code shift
   if c == 0 || (mode == 1 && c == 10) then t else insertByte c t
-partial def loop (surface t : UInt64) : UInt64 :=
-  let t := pollProject t
+-- Drain a finite event batch before painting. Rendering one full framebuffer
+-- after each key used to overflow the actual native input queue during typing.
+partial def drainInput (remaining t : UInt64) : UInt64 :=
+  if remaining == 0 then t else
   let ev := Lemma.UI.event t
-  let t := if ev == 0 || ev == err then t else
-    if ev >>> 48 == 1 then key ((ev >>> 32) &&& 65535) (ev &&& 0xffffffff) t else
+  if ev == 0 || ev == err then t else
+  let t := if ev >>> 48 == 1 then key ((ev >>> 32) &&& 65535) (ev &&& 0xffffffff) t else
     if ev >>> 48 == 65535 then store64 (st+32) 0 (store64 (st+40) 0 t) else t
-  let t := if load64 st t == 1 then draw surface t else t
+  drainInput (remaining-1) t
+partial def loop (surface t : UInt64) : UInt64 :=
+  let t := drainInput 128 (pollProject t)
+  let dirty := load64 st t
+  let t := if dirty == 1 then draw surface t else if dirty == 2 then drawEditing surface t else t
   loop surface (Lemma.UI.wait (Lemma.UI.now t+1) t)
+
 def main (t : UInt64) : UInt64 :=
   let surface := createSurface t
   if surface == err then Lemma.UI.exit 1 t else

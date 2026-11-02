@@ -58,7 +58,7 @@ partial def templateFiles (i t : UInt64) : UInt64 :=
   templateFiles (i+1) t
 
 def newProject (t : UInt64) : UInt64 :=
-  let t := zero st 32 t
+  let t := store64 (st+392) 0 (zero st 32 t)
   let t := store64 (st+312) 0 t
   let t := store64 (st+352) 0 t
   let t := store64 (st+320) 0 t
@@ -257,7 +257,7 @@ def openRootReply (r : UInt64) : UInt64 :=
       let t := initFiles 0 t
       let t := store64 st count t
       let t := store64 (st+8) 0 t
-      let t := store64 (st+24) root t
+      let t := store64 (st+24) root (store64 (st+392) 0 t)
       let t := store64 (st+32) h t
       let t := store64 (st+40) next t
       let t := openFiles root h count 0 0 0 t
@@ -501,6 +501,7 @@ def pollBuild (t : UInt64) : UInt64 :=
     let r := syscall 30 (load64 (st+152) t) wire 64 1024 t
     if r == error || status r != 0 || load64 (wire+16) r == 1 then t else
       let t := if load64 (wire+48) r != 0 then store64 (st+216) (load64 (wire+48) r) r else r
+      let t := if load64 (wire+16) t == 2 then store64 (st+392) (load64 (st+144) t) t else t
       let t := store64 (st+144) 0 t
       let t := copy (wire+128) 0x6e5000 (if r > 128 then r-128 else 0) t
       let t := store64 (st+160) (if r > 128 then r-128 else 0) t
@@ -672,8 +673,11 @@ def key (code down surface t : UInt64) : UInt64 :=
     else if code == 68 then requestRetention t
     else if code == 87 then requestVaultStatus t
     else if ctrl == 1 && code == 25 then
+      if load64 (st+24) t == 0 || load64 (st+392) t == 0 then message 24 t else
       let shell := syscall 97 4 0 0 0 t
-      let r := syscall 30 shell wire 64 1024 (header 15 0 0 0 0 0 0 shell)
+      let r := delegate (load64 (st+24) t) shell 127 shell
+      if r == error || status r != 0 then message 24 r else
+      let r := syscall 30 shell wire 64 1024 (header 15 (result r) (load64 (st+392) r) 0 0 0 0 r)
       if r != 64 || status r != 0 then message 24 r else r
     else if ctrl == 1 && code == 33 then requestFork t
     else if ctrl == 1 && code == 37 then requestCheckpoint t

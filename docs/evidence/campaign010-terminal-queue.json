@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "image_sha256": "5d85ad7e64325c1c556b0bf8767c9f53b9ba13a6783c14c5f24e04e7bbb4f1ec",
+  "source_sha256": "5e99a9b4123d751ae0acb9f43cf38a6d879a927d7c452f21674179405d3b677d",
+  "checks": [
+    {
+      "backend": "qemu",
+      "seconds": 0.23898999398807064,
+      "result": "pass"
+    },
+    {
+      "backend": "aarch64",
+      "seconds": 0.4624532699963311,
+      "result": "pass"
+    }
+  ],
+  "boundaries": [
+    "exact owner request/collection",
+    "finite byte/attempt charge",
+    "duplicate configuration cannot renew totals",
+    "completed banked result survives route replacement",
+    "unsent queued work retains original deadline and charge",
+    "lost live request retains exact failure through rebind",
+    "dead owner reclamation preserves another owner totals"
+  ],
+  "limits": "Compiled production queue/pause ownership predicates with public state fixtures.\n\nThis is not live route/delivery evidence. The test trap supplies a clock and exact\nowner liveness, while deterministic public bytes stand in for buffered results.\n"
+}
