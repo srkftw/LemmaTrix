@@ -29,6 +29,12 @@ def digest(label):return hashlib.sha256(label.encode()).digest()
 class Node(Seed):
  server_package=None
  def client(self):return Client(self.sock,timeout=300)
+ def select(self,name):
+  self.focus(self.instance)
+  if rendered_text(self.ui.frame(),10,56,10,0x9fc6a5)=='FEDERATION':
+   self.ui.press(59)
+   wait(lambda:rendered_text(self.ui.frame(),10,56,5,0xd8e6ed)=='FORGE','return from native admission review')
+  return super().select(name)
  def setup_link(self,package,credential,namespace=None,recover=False,role='client'):
   self.install(self.server_package if namespace else package,PUBLIC)
   with self.client() as c:
@@ -38,6 +44,7 @@ class Node(Seed):
     server_store.call(c,230)
     grant=server_store.call(c,231,self.instance,2,1048576,namespace)[0][1]
    forge.configure(c,self.instance,credential,role,'portable',grant,recover)
+  (self.path/'live-runtime.json').write_text(json.dumps(dict(schema=1,live_only=True,pid=self.proc.pid,socket=str(self.sock),graphics=str(self.qmp),forge=self.instance,role=role,credential_path=str(credential.resolve()),store_grant=grant,store_namespace=namespace.hex()if namespace else None),indent=2)+'\n')
   return grant
 
 
@@ -45,6 +52,7 @@ def main():
  p=argparse.ArgumentParser(description=__doc__)
  for name in ('image','archive','identity','registry','forge','server-forge','output'):p.add_argument('--'+name,type=Path,required=True)
  p.add_argument('--helper-archive',type=Path)
+ p.add_argument('--keep-on-failure',action='store_true',help='leave exact native actors running and release UI clients for public-interface diagnosis/continuation')
  a=p.parse_args();a.output=a.output.resolve();a.output.mkdir(parents=True,exist_ok=False)
  os.environ['LT_GUEST_IMAGE']=str(a.image.resolve())
  Node.server_package=a.server_forge
@@ -96,6 +104,7 @@ def main():
     configured=federation.configure_native(c,instance,policy,service['release'],registry_info['release_id'],store_grant=grant,allowed_rights=allowed)
     federation.call(c,instance,3,data=publication+publisher)
   n.registry=instance;n.configuration=configured;n.catalog_grant=grant
+  (n.path/'live-registry.json').write_text(json.dumps(dict(schema=1,live_only=True,configuration=configured,store_namespace=namespace),indent=2)+'\n')
   return configured
  def verifier(n,configuration,policy='consumer',allowed=895,namespace=None,recover=False):
   with n.client() as c:
@@ -216,7 +225,8 @@ def main():
   observer.ui.press(61)
   observed=wait(lambda:publication_result(observer),'native Forge discovery of Beta policy refusal',180)
   assert observed['remote_phase']==3 and observed['classification']==3 and not observer.roots()
-  observer.ui.press(59);time.sleep(.4)
+  if rendered_text(observer.ui.frame(),10,56,10,0x9fc6a5)!='FEDERATION':observer.ui.press(59)
+  wait(lambda:rendered_text(observer.ui.frame(),10,56,10,0x9fc6a5)=='FEDERATION','actual signed policy refusal panel')
   (observer.path/'policy-refusal.ppm').write_bytes(observer.ui.frame().ppm())
   passed('independently initialized Beta refuses the same immutable release and Forge displays that signed decision',configuration=beta_config,decision=refusal,forge=observed)
   stop_all()
@@ -260,7 +270,16 @@ def main():
   for n in nodes:
    try:(n.path/'final.ppm').write_bytes(n.ui.frame().ppm())
    except Exception:pass
-  stop_all();write()
+  if record['result']=='failure'and a.keep_on_failure:
+   live_actors=[]
+   for n in nodes:
+    live_actors.append(dict(pid=n.proc.pid,socket=str(n.sock),graphics=str(n.qmp),forge=getattr(n,'instance',None),registry=getattr(n,'registry',None),live_only=True))
+    if n.ui:n.ui.close();n.ui=None
+    if n.log:n.log.close()
+   (a.output/'failed-live-actors.json').write_text(json.dumps(dict(schema=1,image=str(a.image.resolve()),actors=live_actors,warning='Session handles describe only these still-live incarnations; they are not recovery authority.'),indent=2)+'\n')
+   record['live_continuation']=str(a.output/'failed-live-actors.json')
+  else:stop_all()
+  write()
  return 0
 
 
