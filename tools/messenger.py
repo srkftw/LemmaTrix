@@ -67,6 +67,7 @@ def delivery_start(client,a):
     try:
         for op in (427,428,434):bind(client,2,owner,delivery,op,owner_sid,did)
         for op in range(460,464):bind(client,4,delivery,a.ui,op,did,uid)
+        bind(client,4,delivery,owner,461,did,owner_sid)
         bind(client,4,delivery,who,464,did)
         invoke(client,4,464,h=owner)
     except BaseException:
@@ -148,6 +149,7 @@ def main(argv=None):
                     delivery,did=install(client,a.delivery,a.public,1024)
                     for op in (427,428,434):bind(client,2,owner,delivery,op,sid,did)
                     for op in range(460,464):bind(client,4,delivery,ui,op,did,uid)
+                    bind(client,4,delivery,owner,461,did,sid)
                     bind(client,4,delivery,who,464,did)
                     invoke(client,4,464,h=owner)
             except BaseException:

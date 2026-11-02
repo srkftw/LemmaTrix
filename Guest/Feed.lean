@@ -699,12 +699,13 @@ def draw (_surface t : UInt64) : UInt64 :=
   let t := fill 12 92 616 1 0x355064 t
   let mode := load64 (st+24) t
   let t := label (load64 (st+32) t) 14 102 accent t
-  let t := if mode == 1 || mode == 6 || mode == 7 || mode == 9 then
-      let t := label (if mode == 9 then 8 else if mode == 6 then 19 else if mode == 7 then 20 else 7) 14 122 fg t
+  let t := if mode == 1 || mode == 6 || mode == 7 || mode == 9 || mode == 11 then
+      let t := label (if mode == 9 || mode == 11 then 8 else if mode == 6 then 19 else if mode == 7 then 20 else 7) 14 122 fg t
       let t := if mode == 9 then
           if load64 (st+144) t == 5 then label 60 14 134 accent t else
           if load64 (st+208) t == 1 then label 59 14 134 accent t else t
         else t
+      let t := if mode == 11 then hexBytes (references+128) 16 14 134 t else t
       let n := load64 (st+40) t
       let offset := if n > 1300 then n-1300 else 0
       let card := load64 (st+144) t == 3
@@ -962,6 +963,19 @@ partial def readPortable (object offset t : UInt64) : UInt64 :=
     let offset := result t
     let t := store64 (st+48) offset t
     if offset == load64 (st+40) t then submit 4 0 0 0 0 0 0 t else sendChunk t
+  else if action == 21 then
+    let bytes := load64 (wire+16) t
+    if bytes == 0 || bytes > 512 || n != 96+bytes then notice 14 t else
+    let t := copy compose 0x730000 (load64 (st+40) t) (store64 (st+384) (load64 (st+40) t)
+      (store64 (st+392) (load64 (st+24) t) (store64 (st+400) (load64 (st+208) t) t)))
+    let t := store64 (st+376) (result t) (store64 (st+40) bytes (store64 (st+208) (load64 (wire+24) t) t))
+    let t := copy (wire+64) (references+128) 32 (copy (wire+96) compose bytes t)
+    notice 8 (store64 (st+24) 11 t)
+  else if action == 22 || action == 23 then
+    let t := copy 0x730000 compose (load64 (st+384) t) t
+    let t := store64 (st+40) (load64 (st+384) t) (store64 (st+24) (load64 (st+392) t)
+      (store64 (st+208) (load64 (st+400) t) (store64 (st+376) 0 t)))
+    notice (if action == 22 then 9 else 5) t
   else if action == 4 || action == 10 then notice 9 (store64 (st+24) 0 t)
   else if action == 5 || action == 6 then store64 (st+200) action t
   else if action == 7 then
@@ -1092,7 +1106,10 @@ def projectKey (code t : UInt64) : UInt64 :=
     if c == 16 || n >= 64 then t else dirty (store64 (st+240) (n+1) (store8 (credentialText+n) c t))
  def key (code t : UInt64) : UInt64 :=
   let mode := load64 (st+24) t
-  if mode == 5 then retentionKey code t else
+  if mode == 11 then
+    if code == 1 then submit 23 (load64 (st+376) t) 0 0 0 0 0 t else
+    if code == 63 then submit 22 (load64 (st+376) t) (load64 (st+208) t) 0 0 compose (load64 (st+40) t) t else t
+  else if mode == 5 then retentionKey code t else
   if mode == 10 then projectKey code t else
   if code == 1 then
     let token := load64 (st+8) t
@@ -1111,6 +1128,7 @@ def projectKey (code t : UInt64) : UInt64 :=
   else if code == 67 then beginCompose 6 t
   else if code == 68 then beginCompose 7 t
   else if code == 87 then
+    if load64 (st+104) t == 1 then submit 21 0 0 0 0 0 0 t else
     if load64 (st+168) t == 0 then selectFederation t else projectSelect t
   else if code == 59 then notice 30 (store64 (st+24) 5 t)
   else if mode == 1 || mode == 6 || mode == 7 then
@@ -1200,7 +1218,7 @@ partial def loop (surface t : UInt64) : UInt64 :=
   let t := paintPump surface t
   loop surface (Guest.WaitSDK.deadline (Guest.WaitSDK.now t+1) t)
 def main (t : UInt64) : UInt64 :=
-  let t := notice 4 (zero st 48 (zero accountScope 8 (zero identity 12 (zero eventId 4 t))))
+  let t := notice 4 (zero st 64 (zero accountScope 8 (zero identity 12 (zero eventId 4 t))))
   let t := store64 (st+112) 320 (store64 (st+120) 200 t)
   let surface := syscall 80 0 0 0 0 t
   if surface == error then error else loop surface (draw surface surface)

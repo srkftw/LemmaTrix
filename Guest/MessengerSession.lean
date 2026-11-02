@@ -1,3 +1,4 @@
+import Guest.AppIntent
 import Guest.MessengerCrypto
 import Guest.MessengerPolicy
 import Guest.MessengerAttachment
@@ -415,6 +416,105 @@ def readMessage (t : UInt64) : UInt64 :=
   let t := header 0 serial n (load64 (p+16) t) 1 (load64 (p+576) t) 0 t
   64+n+copy (p+64) (wire+64) n t
 
+-- Branch-local frames preserve the existing protocol and guards while keeping
+-- the secret owner within the ordinary256KiB code profile.
+@[noinline] def attachmentClaim (rights token length h t : UInt64) : UInt64 :=
+  if (rights &&& 1024) == 0 then fail 1 t else
+  if h == 0 || h > 4 || length != 320 then fail 2 t else
+  let c := contactAt (h-1)
+  let b := command+64
+  if load64 c t != 2 then fail 8 t else
+  if load64 (c+16) t != 0 || load64 (c+1600) t != 1 ||
+    load64 (command+24) t != load64 (c+1608) t then fail 12 t else
+  if !validBundle b t || !eq (b+32) (c+128) 32 t || !eq (b+192) (c+288) 64 t ||
+    load64 (b+16) t != load64 (c+112) t ||
+    (load64 (b+24) t == 1 && Guest.Ed25519.nonzero (b+96) 32 0 t == 0) then fail 8 t else
+  let t := encodeKey (b+64) temporary t
+  if !Guest.MessengerCrypto.verify (b+32) temporary 33 (b+128) t || !current token t then fail 9 t else
+  let t := saveRollback t
+  let t := copy (b+64) (c+160) 128 t
+  let t := store64 (c+3136) (load64 (c+1608) t) t
+  let r := durable (store64 (c+120) (load64 (b+24) t) t)
+  if r == err then fail 13 r else response 0 h (load64 (c+120) r) 0 0 0 (clearWork r)
+
+@[noinline] def attachmentBegin (token length h t : UInt64) : UInt64 :=
+  let total := load64 (command+24) t
+  let titleLength := length-64
+  if h == 0 || h > 4 || titleLength == 0 || titleLength > 256 then fail 2 t else
+  let c := contactAt (h-1)
+  if !Guest.MessengerPolicy.contactAllowed (load64 c t) then fail 8 t else
+  if load64 (c+1600) t != 0 && load64 (c+2400) t != 1 then fail 4 t else
+  let serial := load64 (st+16) t+1
+  let transferId := 0x100000000+load64 (st+408) t+1
+  if serial > 0xffffffff || transferId >= 0x200000000 then fail 4 t else
+  let t := saveRollback t
+  let r := Guest.MessengerAttachment.create transferId total plaintext t
+  if r == err || !current token r then fail 4 (rollback r) else
+  let t := store64 (st+16) serial r
+  let t := store64 (st+408) (transferId-0x100000000) t
+  let a := Guest.MessengerAttachment.find transferId 0 t
+  let t := store64 (a+16) h t
+  let t := store64 (a+24) serial t
+  let t := store64 (c+1600) 1 t
+  let t := store64 (c+1608) serial t
+  let t := store64 (c+1616) (128+titleLength) t
+  let t := store64 (c+1624) 2 t
+  let t := store64 (c+2400) 0 t
+  let t := copy plaintext (c+1664) 128 t
+  let t := copy (command+64) (c+1792) titleLength t
+  response 0 serial transferId total 0 0 (clearWork t)
+
+@[noinline] def attachmentSlots (rights _token length h action t : UInt64) : UInt64 :=
+  let a := Guest.MessengerAttachment.find h 0 t
+  let index := load64 (command+24) t
+  let n := length-64
+  if a == err then fail 3 t else
+  if action == 22 && length == 96 then
+    let contact := load64 (a+16) t
+    if load64 a t != 1 || contact == 0 || contact > 4 || load64 (a+120) t != 0 ||
+      Guest.Ed25519.nonzero (command+64) 32 0 t == 0 then fail 8 t else
+    let c := contactAt (contact-1)
+    if load64 c t != 2 || load64 (c+1600) t != 1 || load64 (c+1608) t != load64 (a+24) t then fail 3 t else
+    let t := copy (command+64) (a+128) 32 t
+    response 0 h 32 0 0 0 (copy (command+64) (c+1760) 32 t)
+  else if action == 2 || action == 3 || action == 16 then
+    if action != 3 && (n != Guest.MessengerAttachment.chunkLength a index t || n == 0) then fail 2 t else
+    let t := saveRollback t
+    let r := if action != 3 then Guest.MessengerAttachment.sealChunk a index (command+64) n plaintext t
+      else Guest.MessengerAttachment.openChunk a index (command+64) n plaintext t
+    if r == err then fail 9 r else
+    if action == 16 then response 0 h 0 index (load64 (a+96) r) 0 (clearWork r) else
+    let r := if action == 2 then durable (store64 (a+112) (load64 (a+104) r) r) else r
+    if r == err then fail 13 r else
+    let outputLength := if action == 3 then n-16 else n+16
+    let t := header 0 h outputLength index (load64 (a+96) r) 0 0 r
+    let t := copy plaintext (wire+64) outputLength t
+    64+outputLength+clearWork t
+  else if action == 4 then
+    let t := saveRollback t
+    let r := durable (zero a 1280 t)
+    if r == err then fail 13 r else response 0 h 0 0 0 0 (clearWork r)
+  else if action == 5 then
+    let t := header 0 h (load64 a t) (load64 (a+96) t) (load64 (a+104) t) 512 (load64 (a+112) t) t
+    let t := copy (a+64) (wire+64) 32 t
+    128+copy (a+128) (wire+96) 32 t
+  else if action == 17 && length == 64 && load64 a t == 1 then
+    let t := saveRollback t
+    let r := durable (store64 (a+112) (load64 (a+104) t) t)
+    if r == err then fail 13 r else response 0 h (load64 (a+112) r) 0 0 0 (clearWork r)
+  else if action == 18 && length == 64 then
+    let contact := load64 (a+16) t
+    if (rights &&& 1024) != 0 && (contact == 0 || contact > 4 || load64 (a+120) t != 1 ||
+      load64 (contactAt (contact-1)) t != 2) then fail 8 t else
+    let r := Guest.MessengerAttachment.committedChunk a index plaintext t
+    if r == err then fail 12 r else
+    let n := Guest.MessengerAttachment.chunkLength a index r+16
+    let t := header 0 h n index (load64 (a+96) r) (load64 (a+112) r) 0 r
+    let t := copy (a+64) (wire+64) 32 t
+    let t := copy plaintext (wire+96) n t
+    96+n+clearWork t
+  else fail 2 t
+
 def attachment (rights token length t : UInt64) : UInt64 :=
   let action := load64 (command+16) t
   let h := load64 (command+8) t
@@ -496,24 +596,7 @@ def attachment (rights token length t : UInt64) : UInt64 :=
     let t := hash temporary 88 (wire+64) t
     96+header 0 h (load64 (c+16) t) (load64 (c+1608) t)
       (load64 (c+112) t) (load64 (c+120) t) 0 (clearWork t)
-  else if action == 24 then
-    if (rights &&& 1024) == 0 then fail 1 t else
-    if h == 0 || h > 4 || length != 320 then fail 2 t else
-    let c := contactAt (h-1)
-    let b := command+64
-    if load64 c t != 2 then fail 8 t else
-    if load64 (c+16) t != 0 || load64 (c+1600) t != 1 ||
-      load64 (command+24) t != load64 (c+1608) t then fail 12 t else
-    if !validBundle b t || !eq (b+32) (c+128) 32 t || !eq (b+192) (c+288) 64 t ||
-      load64 (b+16) t != load64 (c+112) t ||
-      (load64 (b+24) t == 1 && Guest.Ed25519.nonzero (b+96) 32 0 t == 0) then fail 8 t else
-    let t := encodeKey (b+64) temporary t
-    if !Guest.MessengerCrypto.verify (b+32) temporary 33 (b+128) t || !current token t then fail 9 t else
-    let t := saveRollback t
-    let t := copy (b+64) (c+160) 128 t
-    let t := store64 (c+3136) (load64 (c+1608) t) t
-    let r := durable (store64 (c+120) (load64 (b+24) t) t)
-    if r == err then fail 13 r else response 0 h (load64 (c+120) r) 0 0 0 (clearWork r)
+  else if action == 24 then attachmentClaim rights token length h t
   else if action == 20 then
     if (rights &&& 1024) == 0 || length != 96 then fail 1 t else
     let slot := findOutbox h 0 t
@@ -523,91 +606,40 @@ def attachment (rights token length t : UInt64) : UInt64 :=
     let t := saveRollback t
     let r := durable (store64 (c+2400) 1 t)
     if r == err then fail 13 r else response 0 h 2 0 0 0 (clearWork r)
-  else if action == 1 then
-    let total := load64 (command+24) t
-    let titleLength := length-64
-    if h == 0 || h > 4 || titleLength == 0 || titleLength > 256 then fail 2 t else
-    let c := contactAt (h-1)
-    if !Guest.MessengerPolicy.contactAllowed (load64 c t) then fail 8 t else
-    if load64 (c+1600) t != 0 && load64 (c+2400) t != 1 then fail 4 t else
-    let serial := load64 (st+16) t+1
-    let transferId := 0x100000000+load64 (st+408) t+1
-    if serial > 0xffffffff || transferId >= 0x200000000 then fail 4 t else
-    let t := saveRollback t
-    let r := Guest.MessengerAttachment.create transferId total plaintext t
-    if r == err || !current token r then fail 4 (rollback r) else
-    let t := store64 (st+16) serial r
-    let t := store64 (st+408) (transferId-0x100000000) t
-    let a := Guest.MessengerAttachment.find transferId 0 t
-    let t := store64 (a+16) h t
-    let t := store64 (a+24) serial t
-    let t := store64 (c+1600) 1 t
-    let t := store64 (c+1608) serial t
-    let t := store64 (c+1616) (128+titleLength) t
-    let t := store64 (c+1624) 2 t
-    let t := store64 (c+2400) 0 t
-    let t := copy plaintext (c+1664) 128 t
-    let t := copy (command+64) (c+1792) titleLength t
-    response 0 serial transferId total 0 0 (clearWork t)
-  else
-    let a := Guest.MessengerAttachment.find h 0 t
-    let index := load64 (command+24) t
-    let n := length-64
-    if a == err then fail 3 t else
-    if action == 22 && length == 96 then
-      let contact := load64 (a+16) t
-      if load64 a t != 1 || contact == 0 || contact > 4 || load64 (a+120) t != 0 ||
-        Guest.Ed25519.nonzero (command+64) 32 0 t == 0 then fail 8 t else
-      let c := contactAt (contact-1)
-      if load64 c t != 2 || load64 (c+1600) t != 1 || load64 (c+1608) t != load64 (a+24) t then fail 3 t else
-      let t := copy (command+64) (a+128) 32 t
-      response 0 h 32 0 0 0 (copy (command+64) (c+1760) 32 t)
-    else if action == 2 || action == 3 || action == 16 then
-      if action != 3 && (n != Guest.MessengerAttachment.chunkLength a index t || n == 0) then fail 2 t else
-      let t := saveRollback t
-      let r := if action != 3 then Guest.MessengerAttachment.sealChunk a index (command+64) n plaintext t
-        else Guest.MessengerAttachment.openChunk a index (command+64) n plaintext t
-      if r == err then fail 9 r else
-      if action == 16 then response 0 h 0 index (load64 (a+96) r) 0 (clearWork r) else
-      let r := if action == 2 then durable (store64 (a+112) (load64 (a+104) r) r) else r
-      if r == err then fail 13 r else
-      let outputLength := if action == 3 then n-16 else n+16
-      let t := header 0 h outputLength index (load64 (a+96) r) 0 0 r
-      let t := copy plaintext (wire+64) outputLength t
-      64+outputLength+clearWork t
-    else if action == 4 then
-      let t := saveRollback t
-      let r := durable (zero a 1280 t)
-      if r == err then fail 13 r else response 0 h 0 0 0 0 (clearWork r)
-    else if action == 5 then
-      let t := header 0 h (load64 a t) (load64 (a+96) t) (load64 (a+104) t) 512 (load64 (a+112) t) t
-      let t := copy (a+64) (wire+64) 32 t
-      128+copy (a+128) (wire+96) 32 t
-    else if action == 17 && length == 64 && load64 a t == 1 then
-      let t := saveRollback t
-      let r := durable (store64 (a+112) (load64 (a+104) t) t)
-      if r == err then fail 13 r else response 0 h (load64 (a+112) r) 0 0 0 (clearWork r)
-    else if action == 18 && length == 64 then
-      let contact := load64 (a+16) t
-      if (rights &&& 1024) != 0 && (contact == 0 || contact > 4 || load64 (a+120) t != 1 ||
-        load64 (contactAt (contact-1)) t != 2) then fail 8 t else
-      let r := Guest.MessengerAttachment.committedChunk a index plaintext t
-      if r == err then fail 12 r else
-      let n := Guest.MessengerAttachment.chunkLength a index r+16
-      let t := header 0 h n index (load64 (a+96) r) (load64 (a+112) r) 0 r
-      let t := copy (a+64) (wire+64) 32 t
-      let t := copy plaintext (wire+96) n t
-      96+n+clearWork t
-    else fail 2 t
+  else if action == 1 then attachmentBegin token length h t
+  else attachmentSlots rights token length h action t
 
 def lock (t : UInt64) : UInt64 :=
+  let t := Guest.AppIntent.clear t
   let t := Guest.MessengerAttachment.clear (zero st 4096 t)
   let t := Guest.MessengerVault.clear t
   response 0 0 0 0 0 0 (clearWork t)
 
+def intentRefresh (t : UInt64) : UInt64 :=
+  let p := Guest.AppIntent.find (load64 (command+16) t) 0 t
+  if p == 0 || load64 p t < 3 || load64 p t > 5 then t else
+  let target := syscall 128 4 461 0 0 t
+  if target == err then t else
+  let r := syscall 30 target wire 64 1024 (header 461 (load64 (p+56) target) 0 0 0 0 0 target)
+  if r != 64 || status r != 0 then t else
+  let evidence := load64 (wire+16) r
+  Guest.AppIntent.evidence (load64 (p+8) r) (if evidence == 3 then 5 else if evidence == 2 then 4 else 3) evidence r
+def intentApprove (token length t : UInt64) : UInt64 :=
+  let handle := load64 (command+8) t
+  let destination := load64 (command+24) t
+  let bytes := length-64
+  let p := Guest.AppIntent.approve (load64 (st+8) t) handle destination (command+64) bytes t
+  if p == err then fail 9 t else
+  if Guest.AppIntent.cacheFind (p+128) (load64 (p+24) t) 0 t == 0 && Guest.AppIntent.cacheVacant 0 t == 0 then fail 4 t else
+  let t := store64 (command+8) destination (store64 (command+16) bytes t)
+  let r := queue token t
+  if status r != 0 then r else
+  let t := Guest.AppIntent.reserveCommit p (load64 (st+16) r) r
+  64+Guest.AppIntent.committed p (load64 (st+16) t) t
 def dispatch (caller rights token length t : UInt64) : UInt64 :=
   let op := load64 command t
   if length < 64 || length > 784 || load64 (command+56) t != 1 || !current token t then fail 2 t else
+  if op == 436 then Guest.AppIntent.request (load64 (st+8) t) caller token op length (intentRefresh t) else
   if op == 420 then response 0 (load64 st t) (countContacts 0 0 t) (countOutboxes 0 0 t)
     (load64 (st+400) t) (load64 Guest.MessengerVault.state t) t else
   if op == 421 then if length == 96 then create caller token t else fail 2 t else
@@ -629,7 +661,7 @@ def dispatch (caller rights token length t : UInt64) : UInt64 :=
       let retired := Guest.MessengerVault.retireForHistory t
       if retired == err then fail 13 (lock retired) else
       let historySerial := load64 (st+400) retired
-      let t := zero st 3072 retired
+      let t := zero st 3072 (Guest.AppIntent.clear retired)
       let t := store64 (st+400) historySerial t
       let t := store64 (st+416) 1 t
       let t := Guest.MessengerAttachment.clear t
@@ -661,6 +693,11 @@ def dispatch (caller rights token length t : UInt64) : UInt64 :=
     let t := saveRollback t
     let r := durable (zero (contactAt slot+1600) 128 t)
     if r == err then fail 13 r else response 0 (load64 (command+8) r) 0 0 0 0 (clearWork r)
+  else if op == 434 && load64 (command+16) t >= 28 && load64 (command+16) t <= 30 then
+    if (rights &&& 1024) != 0 || (rights &&& 512) == 0 then fail 1 t else
+    if load64 (command+16) t == 28 && length == 64 then Guest.AppIntent.review (load64 (st+8) t) t else
+    if load64 (command+16) t == 29 && length > 64 then intentApprove token length t else
+    if load64 (command+16) t == 30 && length == 64 then Guest.AppIntent.reject (load64 (command+8) t) t else fail 2 t
   else if op == 434 then attachment rights token length t
   else fail 7 t
 
@@ -672,5 +709,7 @@ partial def serve (t : UInt64) : UInt64 :=
     dispatch (load64 incoming n) (load64 (incoming+16) n) token (n-32) n else fail 2 n
   let t := reply token result result
   serve (zero incoming 128 (zero wire 128 (clearWork t)))
-def main (t : UInt64) : UInt64 := serve (lock t)
+def main (t : UInt64) : UInt64 :=
+  let t := Guest.AppIntent.clear t
+  serve (lock t)
 end Guest.MessengerSession

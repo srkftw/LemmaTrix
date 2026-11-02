@@ -1,3 +1,4 @@
+import Guest.AppIntent
 import Guest.FeedAccountSDK
 import Guest.IdentitySDK
 import Guest.ServiceHash
@@ -81,6 +82,7 @@ def persist (t : UInt64) : UInt64 :=
   let t := if (load64 (st+200) t &&& 2) != 0 then copy preferences (retained+1120) 1536 t else t
   -- The exact signed pending outbox is mandatory; optional drafts are separate.
   let t := if load64 (st+8) t != 0 && load64 (st+208) t <= 16384 then copy outboxBody (retained+2656) (load64 (st+208) t) t else t
+  let t := copy Guest.AppIntent.durable (retained+19040) 384 t
   let t := hash retained recordBytes hashed t
   let r := Guest.FeedRetentionSDK.begin recordBytes hashed t
   if r != 64 || status r != 0 then error else writeRecord 0 r
@@ -89,6 +91,7 @@ partial def readRecord (offset t : UInt64) : UInt64 :=
   let r := Guest.FeedRetentionSDK.read offset 512 t
   if r != 576 || status r != 0 then error else readRecord (offset+512) (copy (wire+64) (retained+offset) 512 r)
 def clearAccount (t : UInt64) : UInt64 :=
+  let t := Guest.AppIntent.clear t
   let t := if load64 (st+64) t == 0 then t else net 42 (load64 (st+64) t) t
   let t := Guest.FeedRetentionSDK.lock t
   let r := Guest.IdentitySDK.lockFeed t
@@ -127,6 +130,8 @@ def retention (length t : UInt64) : UInt64 :=
     let r := Guest.IdentitySDK.recoverFeed unlockSecret (retained+128+96) (retained+416) r
     if r != 352 || status r != 0 then response (if r == error then 1 else status r) 0 0 0 (zero unlockSecret 4 r) else
     let t := store64 st (result r) (copy (wire+64) publicIdentity 288 r)
+    let t := copy (retained+19040) Guest.AppIntent.durable 384 t
+    let t := if Guest.AppIntent.cacheValid 0 t then t else Guest.AppIntent.clear t
     let r := Guest.IdentitySDK.sealFeed (load64 st t) unlockSecret t
     -- Preserve the IPC byte count before clearing scratch: memory operations
     -- return an effect token, not the preceding response length.
@@ -286,12 +291,7 @@ def complete (bytes purpose t : UInt64) : UInt64 :=
     let t := net 42 serial now
     failed 12 t
   else failed 14 r
-partial def validText (p n i t : UInt64) : Bool :=
-  if i == n then true else
-  let c := load8 (p+i) t
-  -- v1 deliberately supports printable ASCII and LF. Unsupported UTF8 is a
-  -- typed refusal, never executable markup or silent replacement.
-  (c == 10 || (c >= 32 && c <= 126)) && validText p n (i+1) t
+def validText (p n i t : UInt64) : Bool := Guest.FeedEvent.utf8 p n i 0 0 0 t
  def createIdentity (token t : UInt64) : UInt64 :=
   if load64 st t != 0 || load64 (st+64) t != 0 then response 4 0 0 0 t else
   let t := copy (command+64) scope 64 t
@@ -408,7 +408,7 @@ partial def followedProject (project i t : UInt64) : Bool :=
     response 15 (load64 (answer+8) t) (load64 (answer+16) t) 1 t else
   n+copy answer wire n t
  def lock (t : UInt64) : UInt64 :=
-  let r := clearAccount t
+  let r := clearAccount (Guest.AppIntent.clear t)
   response (if r == error then 1 else 0) 0 0 0 r
 def exportPortable (length t : UInt64) : UInt64 :=
   let includePreferences := load64 (command+16) t
@@ -445,10 +445,41 @@ partial def validPreferences (p i t : UInt64) : Bool :=
   -- The destination must admit a newly created scoped identity independently.
   let t := if load64 (portable+16) t == 1 then copy (portable+256) preferences 1536 t else t
   response 0 2048 0 0 (copy (portable+32) (scope+768) 128 t)
+def intentApprove (token length t : UInt64) : UInt64 :=
+  let handle := load64 (command+16) t
+  let destination := load64 (command+24) t
+  let bytes := length-64
+  let p := Guest.AppIntent.approve (load64 st t) handle destination (command+64) bytes t
+  if p == error then response 9 0 0 0 t else
+  if load64 st t == 0 || load64 (st+64) t != 0 || load64 (st+32) t == 8 ||
+      (load64 (st+32) t >= 1 && load64 (st+32) t <= 5) then response 4 0 0 0 t else
+  let t := Guest.AppIntent.reserveCommit p (load64 (st+8) t+1) t
+  if t == error then response 4 0 0 0 t else
+  let t := copy (p+256) draft bytes (zero refs 12 t)
+  let t := store64 (st+16) 1 (store64 (st+24) bytes (store64 (st+120) bytes
+    (store64 (st+176) destination (store64 (st+32) 0 t))))
+  let r := publish token t
+  if status r != 0 then
+    let phase : UInt64 := if load64 (st+8) r == load64 (p+56) r then 8 else 7
+    64+Guest.AppIntent.evidence handle phase (status r) r
+  else
+  let t := Guest.AppIntent.committed p (load64 (st+8) r) r
+  64+store64 (st+312) handle t
+partial def intentRows (i t : UInt64) : UInt64 :=
+  if i == 4 then t else
+  let p := Guest.AppIntent.row i
+  let handle := load64 (p+8) t
+  let phase := load64 (st+32) t
+  let t := if load64 p t < 3 || load64 (p+56) t != load64 (st+8) t then t else
+    if phase == 6 || phase == 7 then Guest.AppIntent.evidence handle (if phase == 7 then 5 else 4) phase t else
+    if phase == 8 then Guest.AppIntent.evidence handle 8 (load64 (st+40) t) t else t
+  intentRows (i+1) t
+def intentPump (t : UInt64) : UInt64 := intentRows 0 t
  def dispatch (caller token length t : UInt64) : UInt64 :=
   let op := load64 command t
   let action := load64 (command+8) t
   if syscall 131 token 0 0 0 t != 0 || length < 64 || length > 960 || load64 (command+56) t != 1 then response 1 0 0 0 t else
+  if op == 482 then Guest.AppIntent.request (load64 st t) caller token op length t else
   if op == 481 then
     if (load64 (incoming+16) t &&& 0x100000000) == 0 || length != 128 then response 1 0 0 0 t else
     response 0 0 0 0 (copy (command+64) scope 64 t)
@@ -489,6 +520,9 @@ partial def validPreferences (p i t : UInt64) : Bool :=
     if r != 832 || status r != 0 || !Guest.RegistrySDK.admitted (result r) then response 11 0 0 0 r else r
   else if action == 18 && length == 64 && load64 (command+16) t <= 1 && load64 (st+32) t == 0 then
     response 0 0 0 0 (store64 (st+176) (load64 (command+16) t) t)
+  else if action == 21 && length == 64 then Guest.AppIntent.review (load64 st t) t
+  else if action == 22 && length > 64 then intentApprove token length t
+  else if action == 23 && length == 64 then Guest.AppIntent.reject (load64 (command+16) t) t
   else if action == 16 && length == 64 then outcome t
   else if action == 17 && length == 64 then
     let phase := load64 (st+32) t
@@ -504,7 +538,7 @@ partial def loop (t : UInt64) : UInt64 :=
       let r := dispatch (load64 incoming n) token (n-32) n
       reply token r r
     else n
-  let t := pump t
+  let t := intentPump (pump t)
   loop (Guest.WaitSDK.deadline (Guest.WaitSDK.now t+1) t)
-def main (t : UInt64) : UInt64 := loop (zero st 64 (zero publicIdentity 36 (zero preferences 192 (zero scope 8 t))))
+def main (t : UInt64) : UInt64 := loop (Guest.AppIntent.clear (zero st 64 (zero publicIdentity 36 (zero preferences 192 (zero scope 8 t)))))
 end Guest.FeedAccount

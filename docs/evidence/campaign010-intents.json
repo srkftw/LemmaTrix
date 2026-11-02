@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "binary_sha256": "ea19affffbb0209923aea9d72282887b0d5d96ef973ed359119fb0e15279208c",
+  "production_source_sha256": "311d94368219674925ecacae2c293de93fcc95208aad13a13cc4969ca1c5a1ed",
+  "checks": [
+    {
+      "backend": "qemu",
+      "result": "pass",
+      "seconds": 0.15736030800326262,
+      "emulated_aarch64": false
+    },
+    {
+      "backend": "aarch64",
+      "result": "pass",
+      "seconds": 0.19519429598585702,
+      "emulated_aarch64": true
+    }
+  ],
+  "boundaries": [
+    "cross-app result denial",
+    "frozen payload mismatch",
+    "one-use approval",
+    "uncertain cancellation",
+    "durable exact outbox association after fresh caller",
+    "changed payload refusal",
+    "revoked generation refusal",
+    "changed owner authority refusal",
+    "precommit cancellation",
+    "malformed UTF-8 refusal"
+  ],
+  "limits": "Native queue transition fixture with test-only public authority snapshots/clock; not actual kernel grants, protected vault recovery, installed-app UI, Feed publication or Messenger delivery evidence."
+}

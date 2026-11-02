@@ -1,3 +1,4 @@
+import Guest.PublicTemplate
 import Guest.Labels
 import Guest.Keyboard
 import Guest.ProjectSDK
@@ -10,6 +11,9 @@ open Guest.Raster
 open Guest.ProjectSDK
 def st : UInt64 := 0x6e0000
 def file (i : UInt64) : UInt64 := 0x6e2000+i*256
+-- Twenty-four editable source/resource members use768KiB; two32KiB undo
+-- buffers remain disjoint. The canonical manifest still permits32 total nodes.
+def maxFiles : UInt64 := 24
 def dataAt (i : UInt64) : UInt64 := 0x700000+i*32768
 def row : UInt64 := file (load64 (st+8) 0)
 def fg : UInt64 := 0xd8e6ed
@@ -41,9 +45,17 @@ def saveBytes (src n kind parent t : UInt64) : UInt64 :=
         if r == error || status r != 0 then error else h
 
 partial def initFiles (i t : UInt64) : UInt64 :=
-  if i == 8 then t else
+  if i == maxFiles then t else
     let t := zero (file i) 32 t
     initFiles (i+1) (store64 (file i+48) (dataAt i) t)
+
+partial def templateFiles (i t : UInt64) : UInt64 :=
+  if i == 3 then t else
+  let f := file i
+  let t := Guest.PublicTemplate.write i (dataAt i) t
+  let t := Guest.PublicTemplate.writeName i (f+128) t
+  let t := store64 (f+40) (Guest.PublicTemplate.nameLength i) (store64 f (Guest.PublicTemplate.length i) (store64 (f+16) 1 t))
+  templateFiles (i+1) t
 
 def newProject (t : UInt64) : UInt64 :=
   let t := zero st 32 t
@@ -54,25 +66,20 @@ def newProject (t : UInt64) : UInt64 :=
   let t := store64 (st+304) 0 t
   let t := zero 0x6e1000 24 t
   let t := initFiles 0 t
-  let t := store64 st 2 t
-  let t := store64 (file 0+40) 9 t
-  let t := store64 (file 0+128) 0x61656c2e6e69614d t
-  let t := store8 (file 0+136) 110 t
-  let t := store64 (file 1+40) 9 t
-  let t := store64 (file 1+128) 0x61656c2e6c697455 t
-  let t := store8 (file 1+136) 110 t
+  let t := store64 st 3 (templateFiles 0 t)
   let t := store64 (st+72) 1 t
   let t := store64 (st+80) 0 t
   message 15 t
 
 partial def sourceLines (src total i line col scroll caret t : UInt64) : UInt64 :=
+  let horizontal := load64 (selected t+56) t
   if i == total then
-    if line >= scroll && line < scroll+25 && col < 78 then char (164+col*6) (48+(line-scroll)*11) 95 fg bg t else t
+    if line >= scroll && line < scroll+25 && col >= horizontal && col < horizontal+78 then char (164+(col-horizontal)*6) (48+(line-scroll)*11) 95 fg bg t else t
   else if line >= scroll+25 then t else
     let c := load8 (src+i) t
     if Guest.Structured.continuation c then sourceLines src total (i+1) line col scroll caret t else
-    let t := if line >= scroll && col < 78 then
-        char (164+col*6) (48+(line-scroll)*11) (if c >= 128 then 63 else if c == 9 then 32 else if c == 10 then 32 else c)
+    let t := if line >= scroll && col >= horizontal && col < horizontal+78 then
+        char (164+(col-horizontal)*6) (48+(line-scroll)*11) (if c >= 128 then 63 else if c == 9 then 32 else if c == 10 then 32 else c)
           fg (if i == caret then 0x506780 else if load64 (st+88) t == 1 then 0x34485b else
             if load64 (st+88) t == 2 && i >= (if load64 (st+224) t < caret then load64 (st+224) t else caret) &&
               i < (if load64 (st+224) t > caret then load64 (st+224) t else caret) then 0x34485b else bg) t else t
@@ -81,8 +88,9 @@ partial def sourceLines (src total i line col scroll caret t : UInt64) : UInt64 
 partial def fileList (i t : UInt64) : UInt64 :=
   if i == load64 st t then t else
     let f := file i
-    let t := text (f+128) (load64 (f+40) t) 8 (52+i*16) fg (if i == load64 (st+8) t then 0x364c61 else bg) t
-    let t := if load64 (f+16) t != 0 then char 142 (52+i*16) 42 0xe9bc75 bg t else t
+    let first := (load64 (st+8) t/16)*16
+    let t := if i < first || i >= first+16 then t else text (f+128) (load64 (f+40) t) 8 (52+(i-first)*16) fg (if i == load64 (st+8) t then 0x364c61 else bg) t
+    let t := if load64 (f+16) t != 0 && i >= first && i < first+16 then char 142 (52+(i-first)*16) 42 0xe9bc75 bg t else t
     fileList (i+1) t
 
 def checkpointDraw (t : UInt64) : UInt64 :=
@@ -218,7 +226,7 @@ partial def openFiles (root manifest count i sources artifacts t : UInt64) : UIn
         if artifacts >= 24 || (kind != 12 && kind != 13 && kind != 14 && kind != 15) then error else
           let t := copy e (0x6eb000+artifacts*128) 128 r
           openFiles root manifest count (i+1) sources (artifacts+1) t
-      else if sources >= 8 || load64 (wire+16) r > 32768 then error else
+      else if sources >= maxFiles || load64 (wire+16) r > 32768 then error else
         let h := result r
         let n := load64 (wire+16) r
         let f := file sources
@@ -326,7 +334,7 @@ partial def shiftRight (p beginIndex count t : UInt64) : UInt64 :=
   if count <= beginIndex then t else shiftRight p beginIndex (count-1) (store8 (p+count) (load8 (p+count-1) t) t)
 
 def remember (f t : UInt64) : UInt64 :=
-  let t := copy (load64 (f+48) t) 0x750000 (load64 f t) t
+  let t := copy (load64 (f+48) t) 0x7e0000 (load64 f t) t
   let t := store64 (st+96) (load64 f t) t
   let t := store64 (st+104) (load64 (f+8) t) t
   let t := store64 (st+112) (load64 (st+8) t+1) t
@@ -336,8 +344,8 @@ def undo (redo t : UInt64) : UInt64 :=
   let f := selected t
   let expected := load64 (st+(if redo == 1 then 120 else 112)) t
   if expected != load64 (st+8) t+1 then t else
-    let src := if redo == 1 then 0x760000 else 0x750000
-    let dst := if redo == 1 then 0x750000 else 0x760000
+    let src := if redo == 1 then 0x7e8000 else 0x7e0000
+    let dst := if redo == 1 then 0x7e0000 else 0x7e8000
     let t := copy (load64 (f+48) t) dst (load64 f t) t
     let oldLen := load64 f t
     let oldCaret := load64 (f+8) t
@@ -436,7 +444,7 @@ def acceptPrompt (t : UInt64) : UInt64 :=
     message 27 t
   else
     let count := load64 st t
-    if mode == 2 && count >= 8 then message 24 t else
+    if mode == 2 && count >= maxFiles then message 24 t else
       let f := if mode == 2 then file count else selected t
       let t := if mode == 2 then
           let p := load64 (f+48) t
@@ -663,6 +671,10 @@ def key (code down surface t : UInt64) : UInt64 :=
     else if code == 67 then removeFile t
     else if code == 68 then requestRetention t
     else if code == 87 then requestVaultStatus t
+    else if ctrl == 1 && code == 25 then
+      let shell := syscall 97 4 0 0 0 t
+      let r := syscall 30 shell wire 64 1024 (header 15 0 0 0 0 0 0 shell)
+      if r != 64 || status r != 0 then message 24 r else r
     else if ctrl == 1 && code == 33 then requestFork t
     else if ctrl == 1 && code == 37 then requestCheckpoint t
     else if ctrl == 1 && code == 18 then openResource t
@@ -689,12 +701,12 @@ def key (code down surface t : UInt64) : UInt64 :=
       store64 (f+8) (position (load64 (f+48) t) (load64 f t) target (here &&& 0xffffffff) 0 0 0 t) t
     else if code == 102 then store64 (selected t+8) 0 t
     else if code == 107 then store64 (selected t+8) (load64 (selected t) t) t
-    else if code == 104 then
+    else if code == 104 || code == 109 then
       let f := selected t
-      store64 (f+32) (if load64 (f+32) t < 20 then 0 else load64 (f+32) t-20) t
-    else if code == 109 then
-      let f := selected t
-      store64 (f+32) (load64 (f+32) t+20) t
+      let here := lineColumn (load64 (f+48) t) (load64 f t) (load64 (f+8) t) 0 0 0 t
+      let line := here >>> 32
+      let target := if code == 104 then (if line < 20 then 0 else line-20) else line+20
+      store64 (f+8) (position (load64 (f+48) t) (load64 f t) target (here &&& 0xffffffff) 0 0 0 t) t
     else if c != 0 && ctrl == 0 then insert c t
     else Guest.syscall 9 surface 0 0 0 t
 
@@ -709,12 +721,12 @@ def pointer (kind code value t : UInt64) : UInt64 :=
     let y := load64 (st+192) t
     if y < 96 || y >= 370 then t else
     if x < 156 then
-      let i := (y-100)/16
-      if i < load64 st t then store64 (st+8) i t else t
+      let i := (load64 (st+8) t/16)*16+(y-100)/16
+      if i < load64 st t && i < (load64 (st+8) t/16)*16+16 then store64 (st+8) i t else t
     else if x >= 164 then
       let f := selected t
       let target := load64 (f+32) t+(y-96)/11
-      let off := position (load64 (f+48) t) (load64 f t) target ((x-164)/6) 0 0 0 t
+      let off := position (load64 (f+48) t) (load64 f t) target (load64 (f+56) t+(x-164)/6) 0 0 0 t
       store64 (f+8) off t
     else t
   else t
@@ -819,10 +831,10 @@ def partialDraw (surface first lastRow t : UInt64) : UInt64 :=
     let t := fill 0 322 640 30 bg t
     let t := Guest.Labels.say (load64 (st+56) t) 8 322 0xe9bc75 bg t
     let t := Guest.Labels.say (if load64 (f+16) t != 0 then 13 else 12) 8 338 fg bg t
-    let t := char 142 (52+load64 (st+8) t*16) (if load64 (f+16) t != 0 then 42 else 32) 0xe9bc75 bg t
+    let t := char 142 (52+(load64 (st+8) t%16)*16) (if load64 (f+16) t != 0 then 42 else 32) 0xe9bc75 bg t
     let t := upload surface (y*2560) (height*2560) 0 t
     let t := upload surface (322*2560) (30*2560) 0 t
-    upload surface ((52+load64 (st+8) t*16)*2560) (10*2560) 0 t
+    upload surface ((52+(load64 (st+8) t%16)*16)*2560) (10*2560) 0 t
 
 partial def loop (surface t : UInt64) : UInt64 :=
   let count := load64 (st+168) t+1
@@ -850,12 +862,17 @@ partial def loop (surface t : UInt64) : UInt64 :=
       | .ok code => if ev.kind == 1 then key code ev.sequence surface t else t
       | .error _ => if packed >>> 48 == 65535 || packed == 0x300000000 then store64 (st+64) 0 (store64 (st+136) 0 t) else t
     let afterFile := selected t
-    let newLine := (lineColumn (load64 (afterFile+48) t) (load64 afterFile t) (load64 (afterFile+8) t) 0 0 0 t) >>> 32
+    let here := lineColumn (load64 (afterFile+48) t) (load64 afterFile t) (load64 (afterFile+8) t) 0 0 0 t
+    let newLine := here >>> 32
+    let column := here &&& 0xffffffff
+    let horizontal := load64 (afterFile+56) t
+    let nextHorizontal := if column < horizontal then column else if column >= horizontal+78 then column-77 else horizontal
+    let t := store64 (afterFile+56) nextHorizontal t
     let scroll := load64 (afterFile+32) t
     let nextScroll := if newLine < scroll then newLine else if newLine >= scroll+25 then newLine-24 else scroll
     let t := if nextScroll != scroll then store64 (afterFile+32) nextScroll t else t
     let partialKey := ev.kind == 1 && ev.sequence != 0 && oldMode == 0 && beforeFile == afterFile &&
-      load64 (st+72) t == 0 && nextScroll == scroll && ((ev.code >= 2 && ev.code <= 57 && ev.code != 28 && ev.code != 29 && ev.code != 42 && ev.code != 54) || ev.code == 105 || ev.code == 106) &&
+      load64 (st+72) t == 0 && nextScroll == scroll && nextHorizontal == horizontal && ((ev.code >= 2 && ev.code <= 57 && ev.code != 28 && ev.code != 29 && ev.code != 42 && ev.code != 54) || ev.code == 105 || ev.code == 106) &&
       load64 (st+136) t == 0 && oldLength <= load64 afterFile t+1
     let redraw := ev.kind == 1 && ev.sequence != 0 && ev.code != 42 && ev.code != 54 && ev.code != 29 && ev.code != 97
     let first := if oldLine < newLine then oldLine else newLine

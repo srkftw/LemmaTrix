@@ -1,3 +1,4 @@
+import Guest.AppIntent
 import Guest.MessengerCrypto
 import Guest.MessengerRetentionPolicy
 import Guest.MessengerAttachment
@@ -135,6 +136,7 @@ partial def hideHistory (i t : UInt64) : UInt64 :=
 
 def capture (history t : UInt64) : UInt64 :=
   let t := copy 0x650000 plain 32768 t
+  let t := copy Guest.AppIntent.durable (plain+0x1800) 384 t
   let t := copy (Guest.MessengerAttachment.slotAt 0) (plain+32768) 20480 t
   -- Exact ciphertext cache and published high-water are one atomic snapshot.
   -- Staging never exports ciphertext; only a committed batch becomes readable.
@@ -192,6 +194,8 @@ def unlock (input mode history t : UInt64) : UInt64 :=
 
 def restore (t : UInt64) : UInt64 :=
   let t := copy plain 0x650000 32768 t
+  let t := copy (plain+0x1800) Guest.AppIntent.durable 384 t
+  let t := if Guest.AppIntent.cacheValid 0 t then t else Guest.AppIntent.clear t
   copy (plain+32768) (Guest.MessengerAttachment.slotAt 0) 20480 t
 
 def clear (t : UInt64) : UInt64 :=

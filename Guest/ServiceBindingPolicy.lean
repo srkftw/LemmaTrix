@@ -3,11 +3,11 @@ namespace Guest.ServiceBindingPolicy
 def roleValid (role : UInt64) : Bool := role > 0 && role <= 6
 def operationValid (role operation : UInt64) : Bool :=
   operation > 0 && operation < 1024 &&
-  (role != 1 || (operation >= 400 && operation <= 410)) &&
-  (role != 2 || (operation >= 420 && operation <= 435)) &&
+  (role != 1 || (operation >= 400 && operation <= 411)) &&
+  (role != 2 || (operation >= 420 && operation <= 436)) &&
   (role != 3 || operation == 440 || operation == 441) &&
   (role != 4 || (operation >= 460 && operation <= 464)) &&
-  (role != 5 || operation == 480 || operation == 481) &&
+  (role != 5 || operation == 480 || operation == 481 || operation == 482) &&
   (role != 6 || operation == 490 || operation == 491)
 def serviceRightsValid (role rights : UInt64) : Bool :=
   ((role != 1 && role != 2) || rights == 0) &&
