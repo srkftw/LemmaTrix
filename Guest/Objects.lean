@@ -1,4 +1,5 @@
 import Guest.LiveSDK
+import Guest.SourceImportPolicy
 import Guest.ServiceHash
 import Guest.Policy
 import Guest.ProjectGraph
@@ -593,8 +594,7 @@ def beginImport (caller rights length t : UInt64) : UInt64 :=
   let nodes := load64 (command+24) t
   let bytes := load64 (command+32) t
   if !has rights 6 then respond 1 0 0 0 t else
-  if count == 0 || count > 6 || nodes == 0 || nodes > 64 || bytes > 4194304 || length != 64+count*128 ||
-    (!importPrivileged rights && (count > 4 || nodes > 24 || bytes > 1048576)) ||
+  if !Guest.SourceImportPolicy.accepts (importPrivileged rights) count nodes bytes length ||
     !importRootQuota caller rights count t then respond 4 0 0 0 t else
   if !importNames caller 0 count t then respond 2 0 0 0 t else
     let slot := freeImport 0 t
