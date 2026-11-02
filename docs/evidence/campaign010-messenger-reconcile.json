@@ -1,0 +1,67 @@
+{
+  "schema": 1,
+  "result": "pass-real-mailbox-acceptance-and-scoped-status",
+  "checks": [
+    {
+      "check": "physical native update replaces only Delivery; protected Session and its accepted outbox stay live",
+      "result": "pass",
+      "old_delivery": 4011373272619811086,
+      "new_delivery": 4011373272619811342,
+      "release": "b30b8cd834e6098d888e13c2b7a1a4df9cf96e6447f825eee3a9b9eb8a7bcc87",
+      "parent": "10b089c8f38bd8766e12a5814f2f4354c490e495095d291f5133fadda0f1159c",
+      "rights": 1024,
+      "owner": 4011373272619811084,
+      "outbox_serial": 1
+    },
+    {
+      "check": "actual native retry preserves originating ciphertext operation and reports only app-owned mailbox acceptance",
+      "result": "pass",
+      "app_status": "04",
+      "outboxes": 1,
+      "request_identity_sha256": "d6b1ec4a3f89732b13109880100618c1330d321a97ea1072d5b907d66229b535",
+      "remaining_budget_carried": [
+        8330368,
+        65089
+      ]
+    }
+  ],
+  "elapsed_seconds": 52.29732103800052,
+  "session": {
+    "socket": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign010-notes-sharing-1/personal/portal.sock",
+    "graphics": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign010-notes-sharing-1/personal/display.qmp",
+    "pid": 754092,
+    "app": 4011373272619811081,
+    "feed": {
+      "identity": 4011373272619811080,
+      "owner": 4011373272619811082,
+      "ui": 4011373272619811083,
+      "rights": [
+        1024,
+        799
+      ],
+      "federation": "0c7e9f6f0dcc617b96f96332a3e156b33a788d4cac38debce13af342f275cfba",
+      "selected_peer": "0c7e9f6f0dcc617b96f96332a3e156b33a788d4cac38debce13af342f275cfba",
+      "default_retention": "ephemeral",
+      "controls": "native Feed window: create identity, compose, select audience, publish, timeline and reply",
+      "transport": "selected native mode1 circuit and Feed terminal required; no direct fallback"
+    },
+    "messenger": {
+      "owner": 4011373272619811084,
+      "owner_release": "94f628e0a7ed5e422aea44c03d399095ba1f7bbf79b6455081f82f5ca24c3aa4",
+      "ui": 4011373272619811085,
+      "delivery": null,
+      "retention": "ephemeral until separately authorized and unlocked",
+      "route_configured": false
+    },
+    "delivery": {
+      "owner": 4011373272619811084,
+      "ui": 4011373272619811085,
+      "delivery": 4011373272619811342,
+      "delivery_release": "b30b8cd834e6098d888e13c2b7a1a4df9cf96e6447f825eee3a9b9eb8a7bcc87",
+      "route_configured": false,
+      "exact_grant_count": 33,
+      "binding_capacity": 96
+    }
+  },
+  "limits": "Mailbox acceptance is evidenced. Recipient confirmation is not claimed. Session stayed live; no protected seed, ratchet or app approval was exported/recovered."
+}

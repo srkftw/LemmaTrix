@@ -1,19 +1,20 @@
+Lean IR → RV64IM: 43 definitions → /home/sreekumaar/Desktop/LemmaTrix/build/campaign010-intents/check.S
 {
   "schema": 1,
   "result": "pass",
-  "binary_sha256": "ec4ba641e31e1922c5161ad828e719e26b17a281b4552aab975ab393db2c52cf",
-  "production_source_sha256": "8b072f54a404d87f44585a8ce261362e62355fd177984504d941f2996b489a9d",
+  "binary_sha256": "be372ce01aba895d5ee517470ba0d71b91d973f82a769d1f819283e64584fb12",
+  "production_source_sha256": "749539bb773d39e48bb74b8923a6f697f2b557a09f7c94aed9da3a473dd9810a",
   "checks": [
     {
       "backend": "qemu",
       "result": "pass",
-      "seconds": 0.2496989610081073,
+      "seconds": 0.13360582099994645,
       "emulated_aarch64": false
     },
     {
       "backend": "aarch64",
       "result": "pass",
-      "seconds": 0.18555760399613064,
+      "seconds": 0.22015355799521785,
       "emulated_aarch64": true
     }
   ],
@@ -27,7 +28,9 @@
     "revoked generation refusal including duplicate request",
     "changed owner authority refusal",
     "precommit cancellation",
-    "malformed UTF-8 refusal"
+    "malformed UTF-8 refusal",
+    "exact outbox acceptance updates retained association",
+    "known acceptance/confirmation cannot regress to pending/uncertain"
   ],
   "limits": "Native queue transition fixture with test-only public authority snapshots/clock; not actual kernel grants, protected vault recovery, installed-app UI, Feed publication or Messenger delivery evidence."
 }

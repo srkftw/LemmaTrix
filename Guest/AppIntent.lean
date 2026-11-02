@@ -120,9 +120,22 @@ def committed (p external t : UInt64) : UInt64 := store64 p 3 (store64 (p+56) ex
 def evidence (external phase evidence t : UInt64) : UInt64 :=
   let p := find external 0 t
   if p == 0 then t else
+  let previous := load64 p t
+  let preserve := previous == 5 || (previous == 4 && phase != 5)
+  let phase := if preserve then previous else phase
+  let evidence := if preserve then load64 (p+64) t else evidence
   let c := cacheFind (p+128) (load64 (p+24) t) 0 t
   let t := if c == 0 then t else store64 (c+96) phase (store64 (c+104) evidence t)
   store64 p phase (store64 (p+64) evidence t)
+-- Called only after the protected owner accepts the exact outbox commitment
+-- from its currently authorized delivery coordinator. Save this with the same
+-- atomic owner record; fresh recovery need not depend on a dead live reader.
+partial def outboxEvidence (external phase evidence i t : UInt64) : UInt64 :=
+  if i == 4 then t else
+  let p := row i
+  let t := if load64 p t >= 3 && load64 p t <= 8 && load64 (p+56) t == external then
+    Guest.AppIntent.evidence (load64 (p+8) t) phase evidence t else t
+  outboxEvidence external phase evidence (i+1) t
 def reject (handle t : UInt64) : UInt64 :=
   let p := find handle 0 t
   if p == 0 || load64 p t > 2 then response 12 handle 0 0 t else state p (store64 p 6 (zero (p+256) 64 t))

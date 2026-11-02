@@ -604,7 +604,8 @@ def attachment (rights token length t : UInt64) : UInt64 :=
     let c := contactAt slot
     if load64 c t != 2 || load64 (c+1600) t != 2 || !eq (command+64) (c+1632) 32 t then fail 9 t else
     let t := saveRollback t
-    let r := durable (store64 (c+2400) 1 t)
+    let t := Guest.AppIntent.outboxEvidence h 4 2 0 (store64 (c+2400) 1 t)
+    let r := durable t
     if r == err then fail 13 r else response 0 h 2 0 0 0 (clearWork r)
   else if action == 1 then attachmentBegin token length h t
   else attachmentSlots rights token length h action t
@@ -624,7 +625,7 @@ def intentRefresh (caller t : UInt64) : UInt64 :=
   let r := syscall 30 target wire 64 1024 (header 461 (load64 (p+56) target) 0 0 0 0 0 target)
   if r != 64 || status r != 0 then t else
   let evidence := load64 (wire+16) r
-  Guest.AppIntent.evidence (load64 (p+8) r) (if evidence == 3 then 5 else if evidence == 2 then 4 else 3) evidence r
+  Guest.AppIntent.evidence (load64 (p+8) r) (if evidence == 3 then 5 else if evidence == 2 then 4 else if evidence == 4 then 8 else 3) evidence r
 def intentApprove (token length t : UInt64) : UInt64 :=
   let handle := load64 (command+8) t
   let destination := load64 (command+24) t

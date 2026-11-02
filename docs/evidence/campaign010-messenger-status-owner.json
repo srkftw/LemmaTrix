@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "image_sha256": "9781a2a6e9e46d683458fd0745e1df4e090b017cc429ccec74c6e8930d16fd9f",
+  "delivery_source_sha256": "256df5ee548ee9bb4f86de67d398a59304486fdd661afcf3dff1377029484cf5",
+  "fixture_source_sha256": "6dede8cc38c638acdf17785abe535503a9eca5e64c6a2057cc713fbccde23137",
+  "checks": [
+    {
+      "backend": "qemu",
+      "seconds": 0.19208875599724706,
+      "result": "pass"
+    },
+    {
+      "backend": "aarch64",
+      "seconds": 0.06399099399277475,
+      "result": "pass"
+    }
+  ],
+  "boundaries": [
+    "actual rpc admits90000tick bounded deadline with10000tick margin before parent100000; addition saturates",
+    "late response available beyond old5000tick limit and ready at harddeadline both complete without cancellation",
+    "pending read does not renew its deadline; expiry polls then cancels exact nonzero current request before dropping its local handle",
+    "malformed or failed network results also cancel the exact owned request before failure; ciphertext commitment and stable request state survive",
+    "no pending local request causes no poll or cancellation",
+    "actual valid configuration preserves the maximum live RPC serial across a session-owner change; completed Forge counter synchronization cannot rewind it",
+    "configuration refuses active or queued foreground work without discarding its ownership",
+    "only the exact configured Session or original requester UI may read text461; zero and other callers are refused"
+  ],
+  "limits": "Actual compiled MessengerDelivery rpc/collectRPC transitions. Declared Network/clock and current Owner endpoint/grant/admission oracles supply response bytes, permit configuration, and record exact42 request/local handle; it does not implement a kernel grant, real Network cancellation, mailbox, wire, durability or AEAD. The separate c514 terminal-request fixture verifies actual stale42 refusal/isolation. AArch64 assembly backend is emulated under qemu-aarch64."
+}
