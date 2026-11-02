@@ -156,28 +156,43 @@ partial def readChunks (node part blocks t : UInt64) : UInt64 :=
       if decrypted != 0 then error else
         readChunks node (part+1) blocks (copy blockPlain (recordPlain+part*4096) bytes decrypted)
 
-partial def validEdges (node i count t : UInt64) : Bool :=
+partial def validEdges (base nodes node i count t : UInt64) : Bool :=
   if i == count then true else
     let e := recordPlain+32+i*128
     let kind := load64 e t
     let n := load64 (e+8) t
     ProjectGraph.edgeAllowed (load64 node t) kind && ProjectGraph.validName (e+48) n 80 t &&
-      ProjectGraph.allZero (e+48+n) (80-n) t && findNode index (e+16) kind 0 (load64 (state+16) t) t != error &&
-      (i == 0 || ProjectGraph.lessName (e-80) (load64 (e-120) t) (e+48) n 0 t) && validEdges node (i+1) count t
+      ProjectGraph.allZero (e+48+n) (80-n) t && findNode base (e+16) kind 0 nodes t != error &&
+      (i == 0 || ProjectGraph.lessName (e-80) (load64 (e-120) t) (e+48) n 0 t) && validEdges base nodes node (i+1) count t
 
 partial def requiredEdge (kind i count t : UInt64) : Bool :=
   if i == count then kind == 14 || kind == 15 else
     let child := load64 (recordPlain+32+i*128) t
     (kind == 11 && child == 10) || (kind == 12 && child == 11) || (kind == 13 && child == 12) || requiredEdge kind (i+1) count t
 
-def validRecord (node t : UInt64) : Bool :=
+-- A source-only v4 release has one SourceManifest and no dummy Build or code.
+-- This storage check mirrors the facet layout; ImportJobs rechecks its actual
+-- signature, commitments and dependency closure before recovered publication.
+def sourceOnlyRecord (node t : UInt64) : Bool :=
+  let d := recordPlain+160
+  let h := d+64
+  if load64 (node+8) t < 832 || load64 (recordPlain+32) t != 11 then false else
+  if load64 d t != 0x31544e43524c544c || load64 (d+8) t != 1 || load64 (d+16) t != 608 || load64 (d+56) t != 0 then false else
+  if load64 (d+24) t > 49152 || load64 (d+32) t > 49152 || load64 (d+40) t > 49152 || load64 (d+48) t > 512 then false else
+  if load64 (node+8) t != 832+load64 (d+24) t+load64 (d+32) t+load64 (d+40) t+load64 (d+48) t then false else
+  load64 (h+8) t == 4 && load64 (h+384) t == 2 && Guest.ReleaseFormat.validHeader h t
+
+def validRecordAt (base nodes node t : UInt64) : Bool :=
   let kind := load64 node t
-  if nodeSchema node t == 1 && !ProjectGraph.allZero (node+48) 32 t && findNode index (node+48) kind 0 (load64 (state+16) t) t == error then false else
+  if nodeSchema node t == 1 && !ProjectGraph.allZero (node+48) 32 t && findNode base (node+48) kind 0 nodes t == error then false else
   if kind == 10 then true else
     let n := load64 (node+8) t
     let count := load64 (recordPlain+16) t
     n >= 32 && load64 recordPlain t == 0x31464e4d544c && load64 (recordPlain+8) t == nodeSchema node t && count <= 32 &&
-      n == 32+count*128+load64 (recordPlain+24) t && requiredEdge kind 0 count t && validEdges node 0 count t
+      n == 32+count*128+load64 (recordPlain+24) t &&
+      (if kind == 13 && count == 1 then sourceOnlyRecord node t else requiredEdge kind 0 count t) && validEdges base nodes node 0 count t
+
+def validRecord (node t : UInt64) : Bool := validRecordAt index (load64 (state+16) t) node t
 
 def checkRecord (node t : UInt64) : UInt64 :=
   let t := ServiceHash.sha256At hashScratch recordPlain (load64 (node+8) t) hashResult t
@@ -301,7 +316,7 @@ partial def writeNodes (i count t : UInt64) : UInt64 :=
       else fetchObject h 0 (load64 (node+8) t) t
     if loaded != 0 then error else
       let checked := checkRecord node loaded
-      if checked != 0 then error else
+      if checked != 0 || !validRecordAt staged count node checked then error else
         let written := writeChunks node 0 (load64 (node+120) checked) checked
         if written != 0 then error else writeNodes (i+1) count written
 
