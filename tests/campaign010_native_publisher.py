@@ -73,7 +73,7 @@ def main():
                 except ValueError:pass
                 else:raise AssertionError('source-only helper acquired native application admission')
             passed('real source-only helper is natively signed as an inert DevelopmentArtifact',release=helper_info,source=str(a.helper.resolve()),envelope=str(out/'notes-schema.ltrel'),public_key=str(out/'notes-schema.pub'))
-            j.ui.press(1);time.sleep(.3)
+            j.ui.press(1);j.ui.key(56,False);time.sleep(.3)
         imported=subprocess.run([sys.executable,ROOT/'lt','project','--socket',j.socket,'import',a.project,'--name','sdk-checkpoint'],capture_output=True,text=True,check=True)
         imported=json.loads(imported.stdout);root=imported['root']
         j.open_named_project('sdk-checkpoint')
@@ -91,7 +91,7 @@ def main():
             value=json.loads(paths[-1].read_bytes());return (paths[-1],value)if value.get('delivered')and value.get('status')=='error'else None
         bad_path,bad=wait(failed,'real native build diagnostic',300)
         require(any(d.get('path')=='Main.lean'and d.get('line')==1 for d in bad.get('diagnostics',[])),'missing located Main.lean diagnostic')
-        passed('ordinary public SDK source reaches isolated compiler and reports a real located error',result=str(bad_path),diagnostics=bad['diagnostics'])
+        passed('ordinary public SDK source reaches isolated compiler and reports a real located error',result_path=str(bad_path),diagnostics=bad['diagnostics'])
         j.ui.press(64);time.sleep(.4);(out/'located-diagnostic.ppm').write_bytes(j.ui.frame().ppm())
         j.ui.press(102)
         for _ in 'unknownCheckpointCommand\n':j.ui.press(111,.02)
@@ -101,7 +101,7 @@ def main():
                 value=json.loads(path.read_bytes())
                 if value.get('status')=='ok'and value.get('delivered'):return path,value
         result_path,result=wait(built,'corrected native public SDK build',300)
-        passed('native correction builds exact frozen public SDK source through key-free serve',source=result['source_root'],artifact=result['artifact'],result=str(result_path),sdk=result.get('sdk'),recipe=result['recipe'])
+        passed('native correction builds exact frozen public SDK source through key-free serve',source=result['source_root'],artifact=result['artifact'],result_path=str(result_path),sdk=result.get('sdk'),recipe=result['recipe'])
         with j.client()as c:
             logical=projects.project_identity(c,root)
             fields,public=identity.invoke(c,400,a=1,data=hashlib.sha256(b'LT-PROJECT-PUBLISHER\0').digest()+bytes.fromhex(logical))
@@ -118,6 +118,7 @@ def main():
         raw=(out/'external-sdk-checkpoint.ltrel').read_bytes();public_key=bytes.fromhex(decoded['public_key'])
         require(info['signature_verified']and releases.release_prefix(raw)==608,'native release was not independently verified')
         passed('trusted physical review signs actual Ed25519 release without host publisher key',release=info,signature_sha256=hashlib.sha256(raw[512:576]).hexdigest())
+        j.ui.press(1);j.ui.key(56,False);time.sleep(.4)
         with j.client()as c:
             c.request(10,bytes.fromhex(info['project_id'])+public_key);staged=c.stage(out/'external-sdk-checkpoint.ltrel')
         j.ui.press(88);time.sleep(.4);j.ui.press(28);time.sleep(1)
