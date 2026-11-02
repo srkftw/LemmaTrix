@@ -47,7 +47,7 @@
 <div class="tables"><table><tr><th>Range or address</th><th>Current use</th></tr>
 <tr><td>PA 0x80000000..0x87ffffff</td><td>128 MiB emulated RAM. Kernel link bound: 0x80000000..0x8007ffff.</td></tr>
 <tr><td>0x80088000; 0x800ed000; 0x800ff000</td><td>Dedicated machine timer saves; supervisor trap-stack top; bootstrap-stack top.</td></tr>
-<tr><td>0x80100000 + p×4096; 0x80110000 + p×4096; 0x80120000 + p×4096</td><td>Separate Sv39 root, middle and leaf tables for slots p=0..14. The supervisor identity mapping and low MMIO have U=0.</td></tr>
+<tr><td>0x80100000 + p×4096; 0x80110000 + p×4096; 0x80120000 + p×4096</td><td>Separate Sv39 root, middle and leaf tables for slots p=0..11. The supervisor identity mapping and low MMIO have U=0.</td></tr>
 <tr><td>U VA 0x400000..0x40ffff</td><td>Per-process RX executable, at most 65,536 bytes; entry 0x400000 for native releases.</td></tr>
 <tr><td>U VA 0x410000..0x41ffff</td><td>Per-process 64 KiB RW/NX data and IPC buffers.</td></tr>
 <tr><td>U VA 0x420000..0x423fff</td><td>Per-process 16 KiB RW/NX stack, initial SP 0x424000. Adjacent unmapped memory bounds the stack.</td></tr>

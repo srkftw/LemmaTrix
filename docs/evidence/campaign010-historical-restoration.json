@@ -1,0 +1,72 @@
+{
+  "schema": 1,
+  "purpose": "Restore only historical processes temporarily paused for Campaign010 CPU measurement",
+  "checked_at_unix": 1793595482.7605553,
+  "processes": [
+    {
+      "pid": 540928,
+      "expected_start": "7956141",
+      "identity_matches": true,
+      "state_before": "S",
+      "action": "already running; no signal",
+      "state_after": "S"
+    },
+    {
+      "pid": 540934,
+      "expected_start": "7956174",
+      "identity_matches": true,
+      "state_before": "T",
+      "action": "SIGCONT exact previously paused process",
+      "state_after": "R"
+    },
+    {
+      "pid": 540940,
+      "expected_start": "7956208",
+      "identity_matches": true,
+      "state_before": "T",
+      "action": "SIGCONT exact previously paused process",
+      "state_after": "R"
+    },
+    {
+      "pid": 540947,
+      "expected_start": "7956364",
+      "identity_matches": true,
+      "state_before": "T",
+      "action": "SIGCONT exact previously paused process",
+      "state_after": "D"
+    },
+    {
+      "pid": 540965,
+      "expected_start": "7956513",
+      "identity_matches": true,
+      "state_before": "T",
+      "action": "SIGCONT exact previously paused process",
+      "state_after": "D"
+    },
+    {
+      "pid": 540972,
+      "expected_start": "7956566",
+      "identity_matches": true,
+      "state_before": "R",
+      "action": "already running; no signal",
+      "state_after": "S"
+    },
+    {
+      "pid": 540979,
+      "expected_start": "7956618",
+      "identity_matches": true,
+      "state_before": "T",
+      "action": "SIGCONT exact previously paused process",
+      "state_after": "R"
+    },
+    {
+      "pid": 616462,
+      "expected_start": "9199566",
+      "identity_matches": true,
+      "state_before": "S",
+      "action": "already running; no signal",
+      "state_after": "S"
+    }
+  ],
+  "result": "pass"
+}

@@ -1,11 +1,11 @@
 {
   "schema": 1,
   "campaign": "010",
-  "result": "pass_connected_workflow_final_arm_followup_pending",
+  "result": "pass_connected_workflow_with_recorded_backend_failure",
   "date": "2026-11-01",
   "repository": "srkftw/LemmaTrix",
   "baseline": "8b854817f7c0a4f671d9641fc0e6ee6d03254158",
-  "source_commit_at_record": "6f7b7e6adc3daa5076291691ee76343f56e62f93",
+  "source_commit_at_record": "53067d8331341392e34106fa791a1812f13e610a",
   "host": {
     "system": "Linux",
     "machine": "x86_64",
@@ -47,6 +47,20 @@
       "result": "failure",
       "image_sha256": "6db8006f7543ad09299c881720a1d6424a5a97eb9e64e4da4390f8f4e6753b71",
       "elapsed_seconds": 1172.612945048997
+    },
+    "aarch64-notes-controlled-command": {
+      "path": "campaign010-aarch64-notes-controlled-command.json",
+      "sha256": "43f0f9271032afefbe5604d2cd4b01e1e28ed3a1a5f50fc4839d32c5ccd431ff",
+      "result": null,
+      "image_sha256": null,
+      "elapsed_seconds": 1010.4351518500043
+    },
+    "aarch64-notes-controlled": {
+      "path": "campaign010-aarch64-notes-controlled.json",
+      "sha256": "b24854949be6700676880fe51d9e6c8c57abfe16ec97e8ed9c49b46f307a6b43",
+      "result": "failure",
+      "image_sha256": "2189f4d91a80adfedb11a6dc61d060daf0a6e8c668f3079923b89517804f8e09",
+      "elapsed_seconds": 1010.185914851987
     },
     "card-reader-update": {
       "path": "campaign010-card-reader-update.json",
@@ -154,6 +168,13 @@
       "result": "pass",
       "image_sha256": null,
       "elapsed_seconds": 31.269
+    },
+    "historical-restoration": {
+      "path": "campaign010-historical-restoration.json",
+      "sha256": "9587113ced7c29300dceefb571ec0830731c9a9139b6715b5b8ee62dae211425",
+      "result": "pass",
+      "image_sha256": null,
+      "elapsed_seconds": null
     },
     "intents": {
       "path": "campaign010-intents.json",
@@ -1763,13 +1784,14 @@
     "installed_project_metadata": 16
   },
   "limitations": [
-    "Connected workflow passed across individually identified guest images and retained intermediate failures; the latest clean image and final ARM follow-up have separate evidence. No claim that every historical action ran on one identical image.",
+    "Connected workflow passed across individually identified guest images and retained intermediate failures. No claim that every historical action ran on one identical image. The latest clean image has a separate failed full Notes AArch64 follow-up.",
     "Host Lean/LLVM are an isolated key-free bootstrap; no native self-hosting.",
     "One x86-64 Linux host; distinct guests/keys/local verifier workers do not establish independent administration.",
-    "Full installed Notes failed fixed300-second AArch64 verification; focused crypto/intent/queue checks passed separately. Native ARM hardware and macOS/Windows unvalidated.",
+    "Both full installed Notes AArch64 attempts failed the unchanged300-second guest verification request bound. The latest controlled run uploaded the genuine release in662.548 seconds, then timed out before installation. Focused crypto/intent/queue checks passed separately. Native ARM hardware and macOS/Windows remain unvalidated.",
     "Recovered publisher backups provide no external freshness; inspection-only without explicit fresh authorized continuation.",
     "No post-quantum, security review, Tor interoperability or hostile-state-resilience assurance. Wallet/LemmaCoin, modes2/4, private groups, broader Feed compaction and full MVP/release gates remain open.",
-    "Native dependency verification currently bounds total root/child references to16, including repeated diamond references; hostbuilds bound16unique releases. Current single-helper workflow passes; larger transitive publication needs checked deduplication or a smaller closure."
+    "Native dependency verification currently bounds total root/child references to16, including repeated diamond references; hostbuilds bound16unique releases. Current single-helper workflow passes; larger transitive publication needs checked deduplication or a smaller closure.",
+    "RemoteBuild MUX wrappers typecheck; the remote compiler path was not executed. Same-host local builder/verifier reproduction does not establish independent administration."
   ],
   "final_image": {
     "path": "build/campaign010-peer-complete/guest.bin",
@@ -1840,13 +1862,30 @@
     }
   },
   "final_arm_followup": {
-    "status": "running",
-    "command_record": "build/c010-notes-arm-controlled-command.json",
+    "status": "failure",
+    "record": "campaign010-aarch64-notes-controlled.json",
+    "command_record": "campaign010-aarch64-notes-controlled-command.json",
+    "image_sha256": "2189f4d91a80adfedb11a6dc61d060daf0a6e8c668f3079923b89517804f8e09",
     "request_timeout_seconds": 300,
     "timeout_increased": false,
     "cpu_affinity": [
       13
     ],
-    "environment_change": "Completed Campaign010 test guests shut down normally; affinity is not an exclusive host CPU reservation."
-  }
+    "elapsed_seconds": 1010.185914851987,
+    "failure_stage": "Launcher public request22: guest Ed25519 release verification",
+    "environment_change": "Completed Campaign010 actors stopped normally; earlier historical actors temporarily paused, with exact process identities checked and subsequently restored. CPU affinity is not an exclusive host CPU reservation."
+  },
+  "cleanup": {
+    "owned_test_guests": "Normal native command70; approved durable state preserved",
+    "records": [
+      "campaign010-distribution-cleanup.json",
+      "campaign010-relay-cleanup.json"
+    ],
+    "historical_guest_restoration": "campaign010-historical-restoration.json"
+  },
+  "next_dependencies": [
+    "Reduce guest release-verification/interpreter cost and complete actual Project Notes installation/use on emulated AArch64 without extending deadlines or moving cryptography to the host.",
+    "Add authenticated publication-freshness reconciliation before an older retained publisher backup may continue an existing publication lineage.",
+    "Execute the RemoteBuild MUX compiler/verifier path; current evidence covers separately configured local isolated workers."
+  ]
 }
