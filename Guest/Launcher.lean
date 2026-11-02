@@ -684,7 +684,6 @@ def retainGameSave (handle t : UInt64) : UInt64 :=
 @[noinline] def commandIO (op len t : UInt64) : UInt64 :=
   if op == 70 then Guest.syscall 70 0 0 0 0 t
   else if op == 100 then if len >= 64 && len <= 1024 then forward 2 len t else err
-  else if op >= 186 && op <= 191 then Guest.ProjectPublisher.dispatch op len t
   else if op == 196 then
     if len != 0 then err else
     let t := zero buf 8 t
@@ -776,7 +775,6 @@ def retainGameSave (handle t : UInt64) : UInt64 :=
       forward target (len-8) t
   else if op == 203 then if len == 8 then retain (Guest.load64 buf t) t else err
   else if op == 207 then recover t
-  else if op == 226 || op == 228 || op == 229 then Guest.ProjectPublisher.dispatch op len t
   else if op == 227 then err
   else if op >= 222 && op <= 225 then commandContent op len t
   else if op == 221 then if len == 8 then describeProjectRetention (Guest.load64 buf t) t else err
@@ -794,7 +792,10 @@ def retainGameSave (handle t : UInt64) : UInt64 :=
   else err
 
 def command (op len t : UInt64) : UInt64 :=
-  if op < 20 then commandControl op len t
+  -- Native GUI requests already carry pollGUI's bounded frame. Keep publisher
+  -- hashing/verification off the unrelated large I/O command stack.
+  if (op >= 186 && op <= 191) || op == 226 || op == 228 || op == 229 then Guest.ProjectPublisher.dispatch op len t
+  else if op < 20 then commandControl op len t
   else if op < 25 then commandStage op len t
   else if op < 34 then commandProcess op len t
   else commandIO op len t

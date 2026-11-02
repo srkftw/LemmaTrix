@@ -84,12 +84,15 @@ def creatorRequest (length t : UInt64) : UInt64 :=
   let t := store64 (creator+16) job (store64 (creator+24) nonce (store64 (creator+32) root (store64 (creator+40) requester t)))
   let r := describeRoot root t
   if r != 160 || status r != 0 then creatorReply (store64 creator 4 (store64 (creator+48) 1 r)) else
-  let binding := load64 (wire+56) r
+  -- Preserve the selected live-root origin before the next IPC overwrites
+  -- wire. A delayed memory load from the reply cannot stand in for a frozen
+  -- value across another service call.
+  let r := store64 (creator+160) (load64 (wire+56) r) r
   let r := projectIdentity root r
   if r != 192 || status r != 0 then creatorReply (store64 creator 4 (store64 (creator+48) 1 r)) else
   let t := copy (wire+160) (creator+64) 32 r
   let r := buildCall 7 job t
-  if r != 256 || status r != 0 || load64 (wire+16) r != 2 || load64 (wire+192) r != binding ||
+  if r != 256 || status r != 0 || load64 (wire+16) r != 2 || load64 (wire+192) r != load64 (creator+160) r ||
     load64 (wire+200) r != requester || !equal (wire+160) (creator+64) 32 r then
     creatorReply (store64 creator 4 (store64 (creator+48) 3 r)) else
   let t := copy (wire+64) (creator+96) 32 r
