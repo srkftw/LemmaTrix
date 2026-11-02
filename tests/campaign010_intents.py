@@ -58,6 +58,8 @@ def request (action operation destination bytes t : UInt64) : UInt64 :=
   if status r != 9 then 11 else
   let t := store8 payload 110 r
   let t := store64 authority 8 t
+  let r := Guest.AppIntent.request 55 3001 88 482 69 (request 0 123 0 5 t)
+  if status r != 3 then 17 else
   let r := Guest.AppIntent.request 55 3001 88 482 64 (request 1 h 0 0 t)
   if status r != 3 then 12 else
   let r := Guest.AppIntent.request 56 3001 88 482 64 (request 1 h 0 0 r)
@@ -152,6 +154,6 @@ def main():
   started=time.monotonic();r=subprocess.run(list(map(str,command)),capture_output=True,timeout=60)
   if r.returncode or r.stdout!=b'P':raise RuntimeError((backend,r.returncode,r.stdout.hex(),r.stderr.decode()))
   checks.append(dict(backend=backend,result='pass',seconds=time.monotonic()-started,emulated_aarch64=backend=='aarch64'))
- report=dict(schema=1,result='pass',binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),production_source_sha256=hashlib.sha256((ROOT/'Guest/AppIntent.lean').read_bytes()).hexdigest(),checks=checks,boundaries=['cross-app result denial','frozen payload mismatch','one-use approval','uncertain cancellation','durable exact outbox association after fresh caller','changed payload refusal','revoked generation refusal','changed owner authority refusal','precommit cancellation','malformed UTF-8 refusal'],limits='Native queue transition fixture with test-only public authority snapshots/clock; not actual kernel grants, protected vault recovery, installed-app UI, Feed publication or Messenger delivery evidence.')
+ report=dict(schema=1,result='pass',binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),production_source_sha256=hashlib.sha256((ROOT/'Guest/AppIntent.lean').read_bytes()).hexdigest(),checks=checks,boundaries=['cross-app result denial','frozen payload mismatch','one-use approval','uncertain cancellation','durable exact outbox association after fresh caller','changed payload refusal','revoked generation refusal including duplicate request','changed owner authority refusal','precommit cancellation','malformed UTF-8 refusal'],limits='Native queue transition fixture with test-only public authority snapshots/clock; not actual kernel grants, protected vault recovery, installed-app UI, Feed publication or Messenger delivery evidence.')
  (B/'evidence.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2))
 if __name__=='__main__':main()

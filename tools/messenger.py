@@ -159,21 +159,15 @@ def main(argv=None):
             client.request(174,struct.pack('<2Q',a.owner,1));result=dict(domain=2,authorized_owner=a.owner,unlocked=False)
         elif a.command=='certify-contact':
             import identity
-            # Admission order intentionally leaves room for three temporary
-            # signer grants before the eight coordinator grants fill the32.
-            try:
-                endpoint(client,4,464)
-            except ValueError:pass
-            else:raise ValueError('certify the local contact before delivery-start; all32 coordinator/UI bindings are already admitted')
-            try:
-                identity.endpoint(client,400)
-            except ValueError:pass
-            else:raise ValueError('an Identity service is already bound; this command requires a separate temporary personal signer')
             _,bundle=invoke(client,2,422)
             if len(bundle)!=256:raise ValueError('create the native messaging device first')
-            signer,sid=install(client,a.identity_release,a.public,0)
+            sid=bytes.fromhex(releases.inspect(a.identity_release.read_bytes())['release_id'])
+            temporary=False;key=None
+            try:signer=identity.endpoint(client,400)
+            except ValueError:
+                signer,sid=install(client,a.identity_release,a.public,0);temporary=True
             try:
-                for operation in (400,405,402):identity.bind(client,signer,launcher(client),sid,bytes(32),operation)
+                for operation in (400,405,402,403):identity.bind(client,signer,launcher(client),sid,bytes(32),operation)
                 fields,_=identity.invoke(client,400,a=2,data=bundle[192:224]+identity.digest(a.scope));key=fields[1]
                 device_generation=struct.unpack_from('<Q',bundle,16)[0]
                 subject=bundle[32:64]+bundle[192:224]+bundle[224:256]
@@ -184,8 +178,10 @@ def main(argv=None):
                 _,invitation=invoke(client,2,434,a=27)
                 if len(invitation)!=672:raise ValueError('native bound invitation must be672 bytes')
                 a.output.write_bytes(invitation)
-                result=dict(public_invitation=str(a.output),bytes=len(invitation),certificate_sha256=hashlib.sha256(certificate).hexdigest(),fingerprint=hashlib.sha256(subject).hexdigest(),private_keys_exported=False,certification_seed_retention='ephemeral; temporary signer is stopped after its public certificate is committed')
-            finally:client.request(26,struct.pack('<Q',signer))
+                result=dict(public_invitation=str(a.output),bytes=len(invitation),certificate_sha256=hashlib.sha256(certificate).hexdigest(),fingerprint=hashlib.sha256(subject).hexdigest(),private_keys_exported=False,certification_seed_retention='ephemeral; only the created role2 certification key is revoked after committing its public certificate',shared_identity_preserved=not temporary)
+            finally:
+                if temporary:client.request(26,struct.pack('<Q',signer))
+                elif key is not None:identity.invoke(client,403,h=key)
         elif a.command=='delivery-start':result=delivery_start(client,a)
         elif a.command=='delivery-status':
             f,_=invoke(client,4,464,a=1)

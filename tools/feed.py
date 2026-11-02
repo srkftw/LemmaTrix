@@ -70,7 +70,9 @@ def package(output, publisher, account_parent=None, federation_parent=None, ui_p
 def start(client,a):
     who=messenger.launcher(client)
     try: signer=identity.endpoint(client,410)
-    except ValueError: signer=identity.start(client,a.identity,a.public)['service']
+    except ValueError:
+        try: signer=identity.endpoint(client,400)
+        except ValueError: signer=identity.start(client,a.identity,a.public)['service']
     owner,oid=install_or_launch(client,a.owner,a.public,1024)
     ui,uid=install_or_launch(client,a.ui,a.public,799)
     sid=bytes.fromhex(releases.inspect(a.identity.read_bytes())['release_id'])
@@ -93,7 +95,9 @@ def federation_start(client,a):
         messenger.bind(client,ROLE,owner,network_owner,491,sid)
         moderator=digest(a.moderator) if a.moderator else None
         try: signer=identity.endpoint(client,410)
-        except ValueError: signer=identity.start(client,a.identity,a.public)['service']
+        except ValueError:
+            try: signer=identity.endpoint(client,400)
+            except ValueError: signer=identity.start(client,a.identity,a.public)['service']
         signer_release=bytes.fromhex(releases.inspect(a.identity.read_bytes())['release_id'])
         for operation in (402,410):identity.bind(client,signer,owner,signer_release,sid,operation)
         if moderator is None:

@@ -1,19 +1,19 @@
 {
   "schema": 1,
   "result": "pass",
-  "binary_sha256": "ea19affffbb0209923aea9d72282887b0d5d96ef973ed359119fb0e15279208c",
-  "production_source_sha256": "311d94368219674925ecacae2c293de93fcc95208aad13a13cc4969ca1c5a1ed",
+  "binary_sha256": "ec4ba641e31e1922c5161ad828e719e26b17a281b4552aab975ab393db2c52cf",
+  "production_source_sha256": "8b072f54a404d87f44585a8ce261362e62355fd177984504d941f2996b489a9d",
   "checks": [
     {
       "backend": "qemu",
       "result": "pass",
-      "seconds": 0.15736030800326262,
+      "seconds": 0.2496989610081073,
       "emulated_aarch64": false
     },
     {
       "backend": "aarch64",
       "result": "pass",
-      "seconds": 0.19519429598585702,
+      "seconds": 0.18555760399613064,
       "emulated_aarch64": true
     }
   ],
@@ -24,7 +24,7 @@
     "uncertain cancellation",
     "durable exact outbox association after fresh caller",
     "changed payload refusal",
-    "revoked generation refusal",
+    "revoked generation refusal including duplicate request",
     "changed owner authority refusal",
     "precommit cancellation",
     "malformed UTF-8 refusal"

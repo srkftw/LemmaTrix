@@ -57,7 +57,8 @@ def request (authority caller token op length t : UInt64) : UInt64 :=
         !Guest.FeedEvent.utf8 (command+64) bytes 0 0 0 0 t then response 2 0 0 0 t else
     let existing := duplicate caller selected 0 t
     if existing != 0 then
-      if load64 (existing+80) t != authority || load64 (existing+32) t != destination || load64 (existing+40) t != bytes ||
+      if load64 (existing+80) t != authority || !current existing t then response 3 selected 7 3 (store64 existing 7 t) else
+      if load64 (existing+32) t != destination || load64 (existing+40) t != bytes ||
           !Guest.LiveMemory.equal (existing+256) (command+64) bytes t then response 9 0 0 0 t else state existing t
     else
     let p := vacant 0 t
