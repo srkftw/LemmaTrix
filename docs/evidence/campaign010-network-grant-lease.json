@@ -1,24 +1,24 @@
 {
   "schema": 1,
   "result": "pass",
-  "image_sha256": "6f0e8c0f656f58f6983c26a37fa6a3a7c69d334630317249a273ad2b8f3ebd88",
+  "image_sha256": "2f853ac45ee02491451d9162316b908e8e3c323108bd25dba5f34e66a6cf40b5",
   "source_sha256": {
-    "Guest/Network.lean": "6bbc872c4a0510660f9fd53947ce776efc0f421c5b8379476c7b66c64960b21c",
+    "Guest/Network.lean": "bce374ff52259c537f8001474e784238dcc84595a5e295e45bb29e6ac6f124b1",
     "Guest/NetworkGrantLease.lean": "e4259685da79a000fc45e4b18538c92ff9c3bc3d289c7929c17664e37b73226a"
   },
   "checks": [
     {
       "backend": "qemu",
-      "seconds": 0.2015764469979331,
+      "seconds": 0.30642642099701334,
       "result": "pass"
     },
     {
       "backend": "aarch64",
-      "seconds": 0.7111190009891288,
+      "seconds": 1.0306524990010075,
       "result": "pass"
     }
   ],
-  "cases": 33,
+  "cases": 35,
   "boundaries": [
     "owner inspection returns exact remaining/used and changes no bytes",
     "active refresh changes only lease state/expiry",
@@ -31,9 +31,10 @@
     "explicit revocation of expired tombstone erases authority permanently",
     "relationship reset and dead-owner cleanup erase authority",
     "slot reuse cannot revive old incarnation-bound handle",
+    "malformed used greater than budget refuses inspection and refresh without unsigned underflow",
     "actual op17 dispatch reaches the same shipped refresh helper",
     "policy independently rejects missing ownership/current context/idle state, exhaustion and invalid lifetime"
   ],
-  "limitations": "Execute shipped finite grant refresh rules with public broker state fixtures.\n\nThe trap supplies exact owner liveness. These checks exercise the real refresh,\nexpiry, revoke and reset helpers; they establish no network delivery or signing.\n",
-  "environment": "x86-64 Linux: QEMU RV64 system emulation and AArch64 assembly emulator under qemu-aarch64; no physical ARM hardware claim"
+  "environment": "x86-64 Linux: QEMU RV64 system emulation and AArch64 assembly emulator under qemu-aarch64; no physical ARM hardware claim",
+  "limitations": "Execute shipped finite grant refresh rules with public broker state fixtures.\n\nThe trap supplies exact owner liveness. These checks exercise the real refresh,\nexpiry, revoke and reset helpers; they establish no network delivery or signing.\n"
 }

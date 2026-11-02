@@ -105,10 +105,15 @@ def check (t : UInt64) : UInt64 :=
   if Guest.NetworkGrantLease.accepts true true true 4096 512 0 1000 then 30 else
   if Guest.NetworkGrantLease.accepts true true true 4096 512 100001 1000 then 31 else
   if Guest.NetworkGrantLease.accepts true true true 4096 512 100 18446744073709551600 then 32 else
-  if !Guest.NetworkGrantLease.accepts true true true 4096 4095 100000 1000 then 33 else 0
+  if !Guest.NetworkGrantLease.accepts true true true 4096 4095 100000 1000 then 33 else
+  let t := store64 (g+40) 4097 (seed r)
+  let r := refreshLease 101 handle 0 t
+  if status r != 3 || load64 (g+40) r != 4097 || load64 (g+56) r != 1100 || load64 (wire+16) r != 0 then 34 else
+  let r := refreshLease 101 handle 100 r
+  if status r != 3 || load64 (g+40) r != 4097 || load64 (g+56) r != 1100 then 35 else 0
 end build.Campaign010GrantLease
 '''
-BOUNDARIES=['owner inspection returns exact remaining/used and changes no bytes','active refresh changes only lease state/expiry','expired tombstone retains exact contract and finite spent allowance','exhausted grants refuse refresh while owner inspection reports zero remaining','wrong caller, peer, service or absent relationship refuses refresh','pending immutable send blocks refresh until reconciled/cancelled','lifetime100001 and UInt64 clock wrap refuse refresh','wrong context cannot collect or refresh another context grant','explicit revocation of expired tombstone erases authority permanently','relationship reset and dead-owner cleanup erase authority','slot reuse cannot revive old incarnation-bound handle','actual op17 dispatch reaches the same shipped refresh helper','policy independently rejects missing ownership/current context/idle state, exhaustion and invalid lifetime']
+BOUNDARIES=['owner inspection returns exact remaining/used and changes no bytes','active refresh changes only lease state/expiry','expired tombstone retains exact contract and finite spent allowance','exhausted grants refuse refresh while owner inspection reports zero remaining','wrong caller, peer, service or absent relationship refuses refresh','pending immutable send blocks refresh until reconciled/cancelled','lifetime100001 and UInt64 clock wrap refuse refresh','wrong context cannot collect or refresh another context grant','explicit revocation of expired tombstone erases authority permanently','relationship reset and dead-owner cleanup erase authority','slot reuse cannot revive old incarnation-bound handle','malformed used greater than budget refuses inspection and refresh without unsigned underflow','actual op17 dispatch reaches the same shipped refresh helper','policy independently rejects missing ownership/current context/idle state, exhaustion and invalid lifetime']
 def main():
  B.mkdir(parents=True,exist_ok=True);live_build.compile_module('Guest.Network')
  path=ROOT/'build/Campaign010GrantLease.lean';path.write_text(SOURCE);driver.lean(['-o',path.with_suffix('.olean'),path])
@@ -118,6 +123,6 @@ def main():
  for i,p in enumerate((assembly,B/'boot.S',ROOT/'runtime/primitives.S')):
   obj=B/f'{i}.o';driver.asm(p,obj);objects.append(obj)
  elf=B/'check.elf';binary=B/'check.bin';driver.run([driver.tool('ld.lld'),'-m','elf64lriscv','--no-relax','-T',ROOT/'runtime/kernel.ld',*objects,'-o',elf]);driver.run([driver.tool('llvm-objcopy'),'-O','binary',elf,binary]);onion_crypto.B=B
- report=dict(schema=1,result='pass',image_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),source_sha256={n:hashlib.sha256((ROOT/n).read_bytes()).hexdigest()for n in('Guest/Network.lean','Guest/NetworkGrantLease.lean')},checks=[onion_crypto.execute(binary,b)for b in('qemu','aarch64')],cases=33,boundaries=BOUNDARIES,environment='x86-64 Linux: QEMU RV64 system emulation and AArch64 assembly emulator under qemu-aarch64; no physical ARM hardware claim',limitations=__doc__)
+ report=dict(schema=1,result='pass',image_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),source_sha256={n:hashlib.sha256((ROOT/n).read_bytes()).hexdigest()for n in('Guest/Network.lean','Guest/NetworkGrantLease.lean')},checks=[onion_crypto.execute(binary,b)for b in('qemu','aarch64')],cases=35,boundaries=BOUNDARIES,environment='x86-64 Linux: QEMU RV64 system emulation and AArch64 assembly emulator under qemu-aarch64; no physical ARM hardware claim',limitations=__doc__)
  (B/'evidence.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2))
 if __name__=='__main__':main()
