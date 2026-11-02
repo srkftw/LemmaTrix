@@ -81,7 +81,15 @@ def check (t : UInt64) : UInt64 :=
     load64 (Guest.TorCells.count (Guest.TorRouter.hop 2) 1) t != 5 ||
     load64 (Guest.TorCells.deliverWindow (Guest.TorRouter.hop 2) 1) t != 999 then 6 else
   let r := Guest.TorCells.retireStream (Guest.TorRouter.hop 2) 18 t
-  if r != error then 7 else 0
+  if r != error then 7 else
+  -- An existing immutable output cell retains the exact pending END instead
+  -- of spending a digest/cipher state that cannot yet be queued.
+  let t := store64 (Guest.TorRouter.channel 5) 4 (store64 (Guest.TorRouter.channel 5+48) 532
+    (store64 (Guest.TorCells.count (Guest.TorRouter.hop 5) 1) 42 t))
+  let t := Guest.TorRouter.relayEnd 5 23 4 t
+  if t == error || load64 (Guest.TorRouter.circuit 5+56) t != 4 ||
+    load64 (Guest.TorRouter.circuit 5+64) t != 23 ||
+    load64 (Guest.TorCells.count (Guest.TorRouter.hop 5) 1) t != 42 then 8 else 0
 end build.Campaign010TerminalSwitching
 '''
     return s
@@ -100,7 +108,8 @@ def main():
                             'authenticated END acknowledgement releases only its stream',
                             'fresh stream preserves ongoing crypto counters and circuit windows',
                             'authenticated terminal busy preserves the existing route',
-                            'wrong-stream retirement is refused'],
+                            'wrong-stream retirement is refused',
+                            'pending immutable output retains exact END without spending cipher state'],
                   limits='Locally linked three-hop fixture with published deterministic keys; no live peer enrollment, remote terminal, or independent network administration claim.')
     (native.B / 'execution.json').write_text(json.dumps(record, indent=2) + '\n')
     print(json.dumps(record, indent=2))

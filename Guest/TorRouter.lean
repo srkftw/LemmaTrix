@@ -54,7 +54,7 @@ def retireChannel (i t : UInt64) : UInt64 :=
   if i >= 12 then t else
   let t := Guest.Transport.close i t
   let t := zero (channel i) 2048 t
-  let t := zero (circuit i) 16 t
+  let t := zero (circuit i) 128 t
   Guest.TorCells.teardown (hop i) t
 def abort (reason t : UInt64) : UInt64 :=
   if load64 (state+8) t == 1 then stop reason t else
@@ -242,6 +242,12 @@ def endTerminal (stream t : UInt64) : UInt64 :=
   if r == error then r else
     store64 (state+144) 1 (store64 (state+160) stream (store64 (state+112) 0 r))
 def relayEnd (i stream reason t : UInt64) : UInt64 :=
+  -- A terminal connect can fail while a circuit control cell is draining.
+  -- Retain the exact END without advancing digest/cipher state until its
+  -- immutable output slot is available. Per-circuit56/64 hold reason/stream.
+  if !ready i t || !idleOutput i t then
+    store64 (circuit i+56) reason (store64 (circuit i+64) stream t)
+  else
   let r := freshPadding t
   if r == error then abort 6 r else
   let t := store8 temporary reason r
@@ -250,7 +256,8 @@ def relayEnd (i stream reason t : UInt64) : UInt64 :=
   if t == error then abort 54 t else
   let t := Guest.TorCells.frame cell (load64 (circuit i+8) t) 3 body t
   let r := queueCell i cell t
-  if r == error then r else Guest.TorCells.retireStream (hop i) stream r
+  if r == error then r else
+    Guest.TorCells.retireStream (hop i) stream (store64 (circuit i+56) 0 (store64 (circuit i+64) 0 r))
 def retireTerminal (i stream t : UInt64) : UInt64 :=
   let c := circuit i
   let next := load64 (c+16) t
@@ -494,7 +501,7 @@ def canProcess (i t : UInt64) : Bool :=
     if load64 c t == 4 || load64 c t == 6 then idleOutput (load64 (c+40) t) t else
       if load64 c t == 1 then
         let next := load64 (c+16) t
-        idleOutput i t && (if next < 12 then idleOutput next t else load64 (state+80) t == 0)
+        load64 (c+56) t == 0 && idleOutput i t && (if next < 12 then idleOutput next t else load64 (state+80) t == 0)
       else if load64 c t == 7 || (load64 (localDescription t+208) t == 8 || load64 (localDescription t+208) t == 16) then idleOutput i t && load64 (state+80) t == 0 else idleOutput i t
 -- All fixed cells are carried on authenticated Noise records. Unknown command,
 -- ID substitution, terminal integrity failure and unavailable extension fail shut.
@@ -632,6 +639,8 @@ def pumpChannel (i t : UInt64) : UInt64 :=
         startHandshake i (store64 (p+24) epoch status)
     else
       let t := flushChannel i status
+      let t := if load64 (circuit i) t == 1 && load64 (circuit i+56) t != 0 then
+        relayEnd i (load64 (circuit i+64) t) (load64 (circuit i+56) t) t else t
       let t := readChannel i t
       if load64 (state+8) t == 2 then advanceRelay i t else t
 -- Circuit-level authenticated SENDME is control work and may proceed even
