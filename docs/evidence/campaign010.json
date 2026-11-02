@@ -1738,7 +1738,7 @@
     },
     "F": {
       "status": "pass_same_feed_reader",
-      "detail": "The same no-author Feed-card reader independently inspected the genuine card, explicitly selected the original federation, fetched all24 nodes and physically installed/used1.0. It then explicitly selected Alpha2, fetched the real32-node successor, reviewed and installed its current-parent update. No Feed action granted installation consent.",
+      "detail": "The same no-author Feed-card reader independently inspected the genuine card, explicitly selected the original federation, fetched all24 nodes and physically installed/opened1.0. It then explicitly selected Alpha2, fetched the real32-node successor, reviewed and installed its current-parent update, then created and saved an actual note in1.1. No Feed action granted installation consent.",
       "record": "campaign010-card-reader-update.json"
     },
     "G": {
