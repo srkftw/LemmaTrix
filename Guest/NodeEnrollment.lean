@@ -60,7 +60,7 @@ def installLocal (length t : UInt64) : UInt64 :=
   96+copy (localNode+512) (wire+64) 32 t
 
 def stage (slot length t : UInt64) : UInt64 :=
-  if slot >= 4 || length != 544 || !certificateValid (command+64) t then response 2 0 t else
+  if slot >= 8 || length != 544 || !certificateValid (command+64) t then response 2 0 t else
   let t := copy (command+64) (candidate+32) 480 t
   let t := hash (candidate+32) 480 (candidate+512) t
   let t := store64 candidate (slot+1) t
@@ -68,7 +68,7 @@ def stage (slot length t : UInt64) : UInt64 :=
   576+copy (candidate+32) (wire+64) 512 t
 
 def approve (slot length t : UInt64) : UInt64 :=
-  if slot >= 4 || length != 96 || load64 candidate t != slot+1 ||
+  if slot >= 8 || length != 96 || load64 candidate t != slot+1 ||
     !eq (command+64) (candidate+512) 32 t then response 2 0 t else
   let old := peer slot
   -- A pin may rotate only its same identity/federation/scope, monotonically.
@@ -85,7 +85,15 @@ def dispatch (op slot length t : UInt64) : UInt64 :=
   if op == 21 then installLocal length t else
   if op == 22 then stage slot length t else
   if op == 23 then approve slot length t else
-  if op == 24 && slot < 4 && length == 64 then response 0 slot (store64 (peer slot) 2 t) else
+  if op == 24 && slot < 8 && length == 64 then response 0 slot (store64 (peer slot) 2 t) else
+  if op == 26 && length == 64 then
+    let p := if slot == 8 then localNode else peer slot
+    if slot > 8 || load64 p t == 0 then response 3 0 t else
+    let t := header 0 slot (load64 p t) 0 0 0 0 t
+    576+copy (p+32) (wire+64) 512 t
+  else
+  -- Legacy operation25 keeps its local sentinel4. Operation26 explicitly
+  -- addresses all eight peer slots and local sentinel8 without ambiguity.
   if op == 25 && length == 64 then
     let p := if slot == 4 then localNode else peer slot
     if slot > 4 || load64 p t == 0 then response 3 0 t else

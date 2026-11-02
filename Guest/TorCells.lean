@@ -96,7 +96,11 @@ def recordSent (c s d body t : UInt64) : UInt64 :=
       let t := digest c s d (digestQueue c d+index*20) t
       store64 (queueCount c d) (qn+1) t
 -- Only an authenticated/locally authorized endpoint message may bind a stream.
--- A second stream requires a fresh circuit instead of evicting live authority.
+-- A second live stream cannot evict authority. An ordered authenticated
+-- END/ack exchange may retire precisely the selected stream while preserving
+-- circuit credit, digests, counters and keys.
+def retireStream (c expected t : UInt64) : UInt64 :=
+  if expected == 0 || load64 (streamId c) t != expected then err else zero (streamId c) 56 t
 def selectStream (c body t : UInt64) : UInt64 :=
   let id := be16 (body+3) t
   let selected := load64 (streamId c) t

@@ -72,7 +72,7 @@ def abort (reason t : UInt64) : UInt64 :=
 def peerValid (p t : UInt64) : Bool := load64 p t == 1 && load64 (p+360) t == 0
 def localDescription (t : UInt64) : UInt64 := Guest.NodeEnrollment.localNode+Guest.Effects.effectValue 0 t
 partial def findPeer (identity i t : UInt64) : UInt64 :=
-  if i == 4 then error else
+  if i == 8 then error else
     let p := Guest.NodeEnrollment.peer i
     if peerValid p t && Guest.NodeEnrollment.eq identity (p+144) 32 t then i else findPeer identity (i+1) t
 partial def freeChannel (i t : UInt64) : UInt64 :=
@@ -110,7 +110,7 @@ def connectPending (i t : UInt64) : UInt64 :=
 -- explicitly approved responder descriptor. Channel state is banked separately.
 def openChannel (i role peerIndex t : UInt64) : UInt64 :=
   let p := if role == 2 then localDescription t else Guest.NodeEnrollment.peer peerIndex
-  if i >= 12 || (role != 1 && role != 2) || (role == 1 && (peerIndex >= 4 || !peerValid p t)) || (role == 2 && load64 p t != 1) then error else
+  if i >= 12 || (role != 1 && role != 2) || (role == 1 && (peerIndex >= 8 || !peerValid p t)) || (role == 2 && load64 p t != 1) then error else
     let t := zero (channel i) 2048 t
     let t := store64 (channel i+8) role t
     let t := store64 (channel i+16) peerIndex t
@@ -218,7 +218,8 @@ partial def clientLayers (n direction t : UInt64) : UInt64 :=
     if r == error then r else clientLayers (n-1) direction r
 def clientRelay (command stream data n early t : UInt64) : UInt64 :=
   let built := load64 (state+24) t
-  if built == 0 || built > 3 || !idleOutput 0 t then error else
+  if built == 0 || built > 3 || !idleOutput 0 t ||
+    (command == 2 && (load64 (state+112) t != 1 || load64 (state+152) t != stream)) then error else
     let r := freshPadding t
     if r == error then error else
       let t := Guest.TorCells.prepare body command stream data n padding r
@@ -229,6 +230,35 @@ def clientRelay (command stream data n early t : UInt64) : UInt64 :=
       if t == error then Guest.Effects.effectValue error (abort 54 t) else
       let t := Guest.TorCells.frame cell (load64 (circuit 0+8) t) (if early == 1 then 9 else 3) body t
       queueCell 0 cell t
+-- Terminal relationships are serialized over one existing three-hop route.
+-- END phase144:0none/1pending/2acknowledged/3busy;152active stream,
+-- 160ending stream,168reason. These are live state, never retained authority.
+def endTerminal (stream t : UInt64) : UInt64 :=
+  if load64 (state+8) t != 1 || load64 (state+24) t != 3 || stream == 0 ||
+    stream != load64 (state+152) t || load64 (state+80) t != 0 then error else
+  if load64 (state+144) t == 1 || load64 (state+144) t == 2 then t else
+  let t := store8 temporary 6 t
+  let r := clientRelay 3 stream temporary 1 0 t
+  if r == error then r else
+    store64 (state+144) 1 (store64 (state+160) stream (store64 (state+112) 0 r))
+def relayEnd (i stream reason t : UInt64) : UInt64 :=
+  let r := freshPadding t
+  if r == error then abort 6 r else
+  let t := store8 temporary reason r
+  let t := Guest.TorCells.prepare body 3 stream temporary 1 padding t
+  let t := Guest.TorCells.originate (hop i) hopScratch 1 body t
+  if t == error then abort 54 t else
+  let t := Guest.TorCells.frame cell (load64 (circuit i+8) t) 3 body t
+  let r := queueCell i cell t
+  if r == error then r else Guest.TorCells.retireStream (hop i) stream r
+def retireTerminal (i stream t : UInt64) : UInt64 :=
+  let c := circuit i
+  let next := load64 (c+16) t
+  if stream == 0 || load64 (c+48) t != stream || next >= 12 ||
+    (load64 (circuit next) t != 5 && load64 (circuit next) t != 6) then abort 60 t else
+  let t := retireChannel next t
+  let t := store64 (c+16) error (store64 (c+48) 0 t)
+  relayEnd i stream 6 t
 -- Draw channel-local circuit identifiers independently of all DH scalars.
 -- The connection initiator uses the high-bit half mandated by link-v4 rules.
 def newCircuitId (record t : UInt64) : UInt64 :=
@@ -322,14 +352,18 @@ def relayBegin (i stream input n t : UInt64) : UInt64 :=
   if n != 32 || stream == 0 || load64 (c+16) t != error then abort 45 t else
     let target := findPeer input 0 t
     let next := freeChannel 0 t
-    if target == error || next == error || (load64 (Guest.NodeEnrollment.peer target+208) t != 8 && load64 (Guest.NodeEnrollment.peer target+208) t != 16) then abort 46 t else
+    if target == error || (load64 (Guest.NodeEnrollment.peer target+208) t != 8 && load64 (Guest.NodeEnrollment.peer target+208) t != 16) then abort 46 t else
+    if next == error then relayEnd i stream 4 t else
       let t := store64 (c+16) next t
       let t := store64 (c+48) stream t
       let t := store64 (circuit next) 5 t
       let t := store64 (circuit next+40) i t
       let t := store64 (circuit next+48) stream t
       let r := openChannel next 1 target t
-      if r == error then abort 47 r else r
+      if r == error then
+        let t := retireChannel next r
+        relayEnd i stream 4 (store64 (c+16) error (store64 (c+48) 0 t))
+      else r
 -- Only an authenticated adjacent mailbox may contribute terminal proxy bytes;
 -- innerNK still authenticates its actual service answer for the client.
 def terminalFrame (i input n t : UInt64) : UInt64 :=
@@ -382,8 +416,31 @@ partial def clientPeel (i built t : UInt64) : UInt64 :=
       if status != 0 then abort 20 t else
         let command := load8 body t
         if command == 15 && i+1 == built then clientCreated (body+11) (Guest.TorCells.be16 (body+9) t) t else
-        if command == 4 && i+1 == built then store64 (state+112) 1 t else
-        if command == 2 && i+1 == built then acceptTerminal body t else
+        if command == 4 && i+1 == built && Guest.TorCells.be16 (body+3) t == load64 (state+152) t then
+          if load64 (state+144) t == 0 then store64 (state+112) 1 t else
+          -- A locally cancelled BEGIN can race its authenticated CONNECTED.
+          -- The ordered END acknowledgement, rather than CONNECTED, releases
+          -- the selected stream and permits the next relationship.
+          if load64 (state+144) t == 1 && Guest.TorCells.be16 (body+3) t == load64 (state+160) t then t
+          else abort 61 t
+        else
+        if command == 3 && i+1 == built && Guest.TorCells.be16 (body+9) t == 1 then
+          let stream := Guest.TorCells.be16 (body+3) t
+          let reason := load8 (body+11) t
+          let ack := load64 (state+144) t == 1 && stream == load64 (state+160) t && reason == 6
+          let busy := stream == load64 (state+152) t && load64 (state+112) t == 0 && reason == 4
+          if !ack && !busy then abort 61 t else
+          let r := Guest.TorCells.retireStream (hop i) stream t
+          if r == error then abort 61 r else
+            store64 (state+168) reason (store64 (state+144) (if ack then 2 else 3) (store64 (state+112) 0 r))
+        else if command == 2 && i+1 == built && Guest.TorCells.be16 (body+3) t == load64 (state+152) t then
+          if load64 (state+112) t == 1 then acceptTerminal body t else
+          -- Peeling already authenticated and charged this exact stream's
+          -- DATA. Drain a response racing cancellation without exposing it to
+          -- a newly selected client or resetting circuit credit/counters.
+          if load64 (state+144) t == 1 && Guest.TorCells.be16 (body+3) t == load64 (state+160) t then t
+          else abort 61 t
+        else
         if command == 5 && i+1 == built then
           let stream := Guest.TorCells.be16 (body+3) t
           let r := if stream == 0 then Guest.TorCells.acceptSendme (hop i) 0 (body+11) (Guest.TorCells.be16 (body+9) t) t
@@ -414,6 +471,8 @@ def relayCell (i command input t : UInt64) : UInt64 :=
       else if status != 0 then abort 25 t else
         let relayCommand := load8 body t
         if relayCommand == 14 && command == 9 then relayExtend i (body+11) (Guest.TorCells.be16 (body+9) t) t else
+        if relayCommand == 3 && Guest.TorCells.be16 (body+9) t == 1 && load8 (body+11) t == 6 then
+          retireTerminal i (Guest.TorCells.be16 (body+3) t) t else
         if relayCommand == 1 && load64 (c+16) t == error then
           relayBegin i (Guest.TorCells.be16 (body+3) t) (body+11) (Guest.TorCells.be16 (body+9) t) t
         else if relayCommand == 2 && load64 (c+16) t < 12 && load64 (circuit (load64 (c+16) t)) t == 6 then
@@ -552,7 +611,19 @@ def pumpChannel (i t : UInt64) : UInt64 :=
     let status := Guest.Transport.status t
     let epoch := status >>> 32
     if (status &&& 3) != 3 then
-      if listenerLost i status then
+      let transport := Guest.Transport.channel i
+      let failedConnect := load64 p status == 1 && load64 (p+8) status == 1 &&
+        load64 (transport+24) status == 0 && load64 (transport+16) status != 0 &&
+        (load64 (transport+1104) status == 5 || load64 (transport+1104) status == 6)
+      if failedConnect then
+        if load64 (state+8) status == 2 && load64 (circuit i) status == 5 then
+          let origin := load64 (circuit i+40) status
+          let stream := load64 (circuit i+48) status
+          let t := retireChannel i status
+          if origin >= 12 then abort 59 t else
+          relayEnd origin stream 4 (store64 (circuit origin+16) error (store64 (circuit origin+48) 0 t))
+        else abort 59 status
+      else if listenerLost i status then
         if load64 (Guest.Transport.channel i+1104) status == 6 then listenerFailure i clock status
         else abort 38 status
       else if load64 p status == 1 then status else abort 38 status
@@ -663,8 +734,12 @@ def dispatch (op slot length t : UInt64) : UInt64 :=
       64+n+store64 (state+80) 0 (zero inbox 64 t)
   else if op == 35 && length == 64 then response 0 0 (stop 0 t)
   else if op == 37 && length == 96 && load64 (state+24) t == 3 && load64 (state+8) t == 1 then
-    let r := clientRelay 1 (load64 (command+16) t) (command+64) 32 0 t
-    response (if r == error then 4 else 0) 0 r
+    let stream := load64 (command+16) t
+    if stream == 0 || stream > 65535 || load64 (state+144) t == 1 || load64 (state+112) t != 0 ||
+      (load64 (state+152) t != 0 && load64 (state+144) t == 0) then response 4 0 t else
+    let r := clientRelay 1 stream (command+64) 32 0 t
+    if r == error then response 4 0 r else
+      response 0 0 (store64 (state+144) 0 (store64 (state+168) 0 (store64 (state+152) stream r)))
   else if op == 36 && length > 64 && length <= 562 && load64 (state+8) t == 2 then
     let i := load64 (state+96) t
     if i >= 12 || !idleOutput i t then response 4 0 t else

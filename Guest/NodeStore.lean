@@ -5,6 +5,8 @@ open Guest.LiveSDK
 -- Explicit protected operator retention: static DH keys, the already signed
 -- public certificate and an optional opaque Identity-owned sealed seed blob.
 -- Network cannot unwrap that blob. Live Noise/ntor/circuit state never survives.
+-- Peer certificates are deliberately re-enrolled through normal native review
+-- after recovery; v2/v3 do not serialize the approved peer table or live grants.
 -- Two three-sector records in purpose2's dedicated credential extent1..6.
 def st : UInt64 := 0x7a0000
 def key : UInt64 := st+32
