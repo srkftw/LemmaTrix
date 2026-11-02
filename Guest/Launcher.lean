@@ -689,6 +689,7 @@ def retainGameSave (handle t : UInt64) : UInt64 :=
   else if op == 175 then
     if len < 72 || len > 1024 then err else
     if Guest.load64 (buf+8) t == 405 && Guest.load64 (buf+32) t == 6 then err else
+    if Guest.load64 (buf+8) t == 408 && Guest.load64 (buf+16) t == 4 then err else
     let r := Guest.syscall 133 (Guest.load64 buf t) (buf+8) (len-8) 1016 t
     let t := zero buf 128 r
     if r == err then err else 8+Guest.store64 buf r t
@@ -734,6 +735,7 @@ def retainGameSave (handle t : UInt64) : UInt64 :=
       -- The portal cannot turn its Launcher transport identity into a release
       -- approval. Only the native coordinator can issue purpose6 after review.
       if Guest.load64 (buf+8) t == 405 && Guest.load64 (buf+32) t == 6 then err else
+      if Guest.load64 (buf+8) t == 408 && Guest.load64 (buf+16) t == 4 then err else
       let target := Guest.load64 buf t
       let t := copy (buf+8) buf (len-8) t
       forward target (len-8) t

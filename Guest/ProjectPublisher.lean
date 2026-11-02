@@ -23,6 +23,30 @@ partial def readAll (handle dst bytes offset t : UInt64) : UInt64 :=
   let n := if bytes-offset > 512 then 512 else bytes-offset
   let r := read handle offset n t
   if r != 64+n || status r != 0 then error else readAll handle dst bytes (offset+n) (copy (wire+64) (dst+offset) n r)
+partial def sourceOrigin (root id fuel t : UInt64) : UInt64 :=
+  if fuel == 0 then error else
+  let r := resolve root id t
+  if r != 128 || status r != 0 || load64 (wire+32) r != 11 then error else
+  if load64 (wire+40) r == 2 || Guest.ReleaseFormat.zeros (wire+96) 32 r then result r else
+    sourceOrigin root (wire+96) (fuel-1) r
+partial def forkScopeMatches (root i count t : UInt64) : Bool :=
+  if i == count then false else
+  let e := 0x6c0020+i*128
+  if load64 e t != 15 then forkScopeMatches root (i+1) count t else
+  let r := resolve root (e+16) t
+  if r != 128 || status r != 0 || load64 (wire+32) r != 15 || load64 (wire+40) r != 1 ||
+    load64 (wire+16) r != 208 then false else
+  let r := readAll (result r) 0x6c4000 208 0 r
+  r != error && load64 0x6c4020 r == 0x314b524f46544c && load64 0x6c4028 r == 1 &&
+    equal 0x6c4030 (st+384) 32 r && equal 0x6c4090 (h+96) 32 r
+def adoptForkScope (t : UInt64) : UInt64 :=
+  let root := load64 (st+16) t
+  let origin := sourceOrigin root (st+160) 64 t
+  if origin == error || load64 (wire+40) origin != 2 || load64 (wire+16) origin > 8224 then error else
+  let r := readAll origin 0x6c0000 (load64 (wire+16) origin) 0 origin
+  let count := load64 0x6c0010 r
+  if r == error || count == 0 || count > 32 || !forkScopeMatches root 0 count r then error else
+  Guest.IdentitySDK.adoptUnpublishedProject (load64 st r) (st+384) (st+128) r
 def buildCall (op job t : UInt64) : UInt64 := syscall 30 5 wire 64 1024 (header op job 0 0 0 0 0 t)
 def validJob (t : UInt64) : Bool :=
   let r := buildCall 7 (load64 (st+8) t) t
@@ -119,7 +143,10 @@ def prepare (length t : UInt64) : UInt64 :=
   if t == error || !lineageCurrent t then response 3 t else
   let r := Guest.IdentitySDK.exportPublic key t
   if r != 352 || status r != 0 || load64 (wire+80) r != 1 ||
-    load64 (wire+88) r != load64 (h+392) r || !equal (wire+128) (st+128) 32 r then response 1 r else
+    load64 (wire+88) r != load64 (h+392) r then response 1 r else
+  let r := if equal (wire+128) (st+128) 32 r then r else
+    adoptForkScope (copy (wire+128) (st+384) 32 r)
+  if r != 352 || status r != 0 || !equal (wire+128) (st+128) 32 r then response 1 r else
   let t := hash (wire+160) 32 (st+192) r
   if !equal (st+192) (h+96) 32 t then response 1 t else
   let t := copy (wire+160) (h+576) 32 t

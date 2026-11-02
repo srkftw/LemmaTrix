@@ -33,6 +33,9 @@ def recoverProject (credential publicKey sealed t : UInt64) : UInt64 :=
   let t := copy credential (wire+64) 32 (header 408 3 0 0 0 0 0 t)
   let t := copy publicKey (wire+96) 32 t
   invoke 408 320 (copy sealed (wire+128) 192 t)
+def adoptUnpublishedProject (key oldScope newScope t : UInt64) : UInt64 :=
+  let t := copy oldScope (wire+64) 32 (header 408 4 key 0 0 0 0 t)
+  invoke 408 128 (copy newScope (wire+96) 32 t)
 def revokeKey (key t : UInt64) : UInt64 := invoke 403 64 (header 403 key 0 0 0 0 0 t)
 def lock (t : UInt64) : UInt64 := invoke 404 64 (header 404 0 0 0 0 0 0 t)
 def inspect (t : UInt64) : UInt64 := invoke 406 64 (header 406 0 0 0 0 0 0 t)

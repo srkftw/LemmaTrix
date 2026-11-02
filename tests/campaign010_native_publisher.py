@@ -26,17 +26,18 @@ def main():
     p.add_argument('--output',type=Path,required=True)
     p.add_argument('--editor',type=Path);p.add_argument('--identity',type=Path)
     p.add_argument('--helper',type=Path,default=ROOT/'examples/notes-schema')
+    p.add_argument('--skip-helper',action='store_true',help='reuse previously recorded independently signed helper evidence')
     a=p.parse_args();out=a.output.resolve();out.mkdir(parents=True,exist_ok=False)
     key=ROOT/'tests/keys/development-rsa.pem';pub=ROOT/'tests/keys/development-rsa-public.pem'
     def package(module,name):
         binary=live_build.app('Guest.'+module,'Guest.'+module+'.main',name,2)
-        raw,manifest=releases.make(binary,name,'1.0.0',799 if module=='Desktop'else 0,key,profile=2)
+        raw,manifest=releases.make(binary,name,'1.0.0',895 if module=='Desktop'else 0,key,profile=2)
         target=out/(name+'.ltrel');target.write_bytes(raw)
         Path(str(target)+'.manifest.json').write_bytes(releases.pkg.canonical(manifest));return target
     editor=a.editor or package('Desktop','native-editor')
     signer=a.identity or package('Identity','identity')
     j=Journey(SimpleNamespace(output=out/'personal',image=a.image,public=pub,key=key,backend='qemu'))
-    worker=None;worker_log=None;began=time.monotonic();record=dict(schema=1,result='running',image_sha256=hashlib.sha256(a.image.read_bytes()).hexdigest(),checks=[])
+    worker=None;worker_log=None;began=time.monotonic();record=dict(schema=1,result='running',scope='Native publisher/public SDK checkpoint; not the complete Campaign010 acceptance journey',backend='QEMU RV64 emulation',image_sha256=hashlib.sha256(a.image.read_bytes()).hexdigest(),checks=[],limitations=['No federation publication, second-user fork, update or retained recovery is established by this checkpoint.','The bootstrap editor and Identity packages retain explicit disclosed legacy RSA provisioning. The project publisher key is generated only inside the guest.'])
     def save():
         record['elapsed_seconds']=time.monotonic()-began;(out/'execution.json').write_text(json.dumps(record,indent=2)+'\n')
     def passed(label,**fields):
@@ -47,31 +48,39 @@ def main():
         j.ui.press(1);time.sleep(.2)
         with j.client()as c:service=identity.start(c,signer,pub)
         passed('legacy packages install and start without changing their original signatures',editor_instance=editor_instance,identity_service=service)
-        helper_import=subprocess.run([sys.executable,ROOT/'lt','project','--socket',j.socket,'import',a.helper,'--name','notes-schema'],capture_output=True,text=True,check=True)
-        helper_root=json.loads(helper_import.stdout)['root']
-        with j.client()as c:
-            helper_logical=projects.project_identity(c,helper_root)
-            fields,helper_public=identity.invoke(c,400,a=1,data=hashlib.sha256(b'LT-PROJECT-PUBLISHER\0').digest()+bytes.fromhex(helper_logical))
-            helper_key=fields[1];helper_decoded=identity.decode_public(helper_public)
-            helper_proposal=native_publisher.prepare(c,root=helper_root,publisher=helper_key,name='notes-schema',version='1.0.0',license='MIT',exports=['Notes.Schema'],output=out/'helper-review')
-            try:c.request(227,bytes.fromhex(helper_proposal['release_id']))
-            except ValueError:pass
-            else:raise AssertionError('management portal bypassed trusted physical signing review')
-        j.ui.chord(56,88);time.sleep(.5);j.ui.press(28)
-        def helper_signed():
-            with j.client()as c:state=native_publisher.inspect(c)
-            if state['phase']==4:raise AssertionError('helper native signature failed '+repr(state))
-            return state if state['phase']==3 else None
-        wait(helper_signed,'source-only native helper signature',300)
-        with j.client()as c:helper_info=native_publisher.export(c,out/'helper-review',out/'notes-schema.ltrel')
-        (out/'notes-schema.pub').write_bytes(bytes.fromhex(helper_decoded['public_key']))
-        passed('real source-only helper is natively signed as an inert DevelopmentArtifact',release=helper_info,source=str(a.helper.resolve()),envelope=str(out/'notes-schema.ltrel'),public_key=str(out/'notes-schema.pub'))
-        j.ui.press(1);time.sleep(.3)
+        if not a.skip_helper:
+            helper_import=subprocess.run([sys.executable,ROOT/'lt','project','--socket',j.socket,'import',a.helper,'--name','notes-schema'],capture_output=True,text=True,check=True)
+            helper_root=json.loads(helper_import.stdout)['root']
+            with j.client()as c:
+                helper_logical=projects.project_identity(c,helper_root)
+                fields,helper_public=identity.invoke(c,400,a=1,data=hashlib.sha256(b'LT-PROJECT-PUBLISHER\0').digest()+bytes.fromhex(helper_logical))
+                helper_key=fields[1];helper_decoded=identity.decode_public(helper_public)
+                helper_proposal=native_publisher.prepare(c,root=helper_root,publisher=helper_key,name='notes-schema',version='1.0.0',license='MIT',exports=['Notes.Schema'],output=out/'helper-review')
+                try:c.request(227,bytes.fromhex(helper_proposal['release_id']))
+                except ValueError:pass
+                else:raise AssertionError('management portal bypassed trusted physical signing review')
+            j.ui.chord(56,88);time.sleep(.5);j.ui.press(28)
+            def helper_signed():
+                with j.client()as c:state=native_publisher.inspect(c)
+                if state['phase']==4:raise AssertionError('helper native signature failed '+repr(state))
+                return state if state['phase']==3 else None
+            wait(helper_signed,'source-only native helper signature',300)
+            with j.client()as c:helper_info=native_publisher.export(c,out/'helper-review',out/'notes-schema.ltrel')
+            (out/'notes-schema.pub').write_bytes(bytes.fromhex(helper_decoded['public_key']))
+            with j.client()as c:
+                c.request(10,bytes.fromhex(helper_info['project_id'])+bytes.fromhex(helper_decoded['public_key']))
+                try:c.stage(out/'notes-schema.ltrel')
+                except ValueError:pass
+                else:raise AssertionError('source-only helper acquired native application admission')
+            passed('real source-only helper is natively signed as an inert DevelopmentArtifact',release=helper_info,source=str(a.helper.resolve()),envelope=str(out/'notes-schema.ltrel'),public_key=str(out/'notes-schema.pub'))
+            j.ui.press(1);time.sleep(.3)
         imported=subprocess.run([sys.executable,ROOT/'lt','project','--socket',j.socket,'import',a.project,'--name','sdk-checkpoint'],capture_output=True,text=True,check=True)
         imported=json.loads(imported.stdout);root=imported['root']
         j.open_named_project('sdk-checkpoint')
+        time.sleep(.8);(out/'opened-project.ppm').write_bytes(j.ui.frame().ppm())
         # Introduce an actual elaboration error through the native editor.
         j.ui.press(102);j.ui.textASCII('unknownCheckpointCommand\n',delay=.03);j.ui.press(62)
+        time.sleep(.4);(out/'edited-project.ppm').write_bytes(j.ui.frame().ppm())
         worker_log=(out/'compiler-worker.log').open('wb')
         worker=subprocess.Popen(list(map(str,[sys.executable,ROOT/'lt','project','--socket',j.socket,'serve','--project','external-sdk-checkpoint','--root',root,'--requester',editor_instance,'--output',out/'worker'])),cwd=ROOT,stdout=worker_log,stderr=worker_log,start_new_session=True)
         j.ui.press(63)
@@ -128,6 +137,9 @@ def main():
         passed('native Launcher validates installs and runs the exact v4 public SDK artifact; tamper and approval bypass fail',release_id=info['release_id'],running=running,staged=staged)
         record['result']='pass';save()
     except BaseException as error:
+        if j.ui:
+            try:(out/'failure.ppm').write_bytes(j.ui.frame().ppm())
+            except BaseException:pass
         record.update(result='failure',error=repr(error),traceback=traceback.format_exc());save();raise
     finally:
         if worker and worker.poll()is None:

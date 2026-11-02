@@ -184,6 +184,7 @@ def signProject (k token t : UInt64) : UInt64 :=
   let t := hash p 512 hashed (zero (p+160) 4 t)
   let t := copy publicDescriptor (p+160) 32 t
   if !eq hashed (p+160) 32 t || !current token t then fail 1 t else
+  let t := store64 (k+176) 1 t
   let t := Guest.ReleaseFormat.signedMessage p canonical t
   let t := Guest.Ed25519.sign (k+96) (k+128) canonical Guest.ReleaseFormat.messageLength signature t
   if t == error || !current token t then fail 3 t else
@@ -461,6 +462,14 @@ def projectRecover (caller token t : UInt64) : UInt64 :=
   -- inspection only; it cannot silently authorize a conflicting successor.
   let t := store64 (keyAt slot+160) caller t
   exportKey (keyAt slot) token (clearReceipt (store64 (keyAt slot+168) 1 t))
+def adoptProject (caller token t : UInt64) : UInt64 :=
+  let k := findKey (load64 (command+16) t) 0 t
+  if k == error || caller%256 != 1 || load64 (k+16) t != 1 || load64 (k+160) t != caller ||
+    load64 (k+168) t != 0 || load64 (k+176) t != 0 ||
+    !eq (k+64) (command+64) 32 t || zeros (command+96) 32 t ||
+    eq (command+64) (command+96) 32 t then fail 1 t else
+  let t := copy (command+96) (k+64) 32 (revokeGrants (load64 (k+8) t) 0 t)
+  exportKey k token t
 def decisionCache (k : UInt64) : UInt64 := 0x657000+(k-0x651000)/256*128
 def decisionReply (k token t : UInt64) : UInt64 :=
   if !current token t then fail 3 t else
@@ -631,7 +640,8 @@ def dispatch (caller rights token length t : UInt64) : UInt64 :=
     if load64 (command+8) t == 0 && length == 96 then sealKeys token t else
     if load64 (command+8) t == 1 && length == 320 then recoverKeys token t else
     if caller%256 == 1 && load64 (command+8) t == 2 && length == 96 then projectSeal caller (load64 (command+16) t) token t else
-    if caller%256 == 1 && load64 (command+8) t == 3 && length == 320 then projectRecover caller token t else receiptFail 2 t
+    if caller%256 == 1 && load64 (command+8) t == 3 && length == 320 then projectRecover caller token t else
+    if caller%256 == 1 && load64 (command+8) t == 4 && length == 128 then adoptProject caller token t else receiptFail 2 t
   else if op == 409 then
     if admin && load64 (command+8) t == 0 && length == 128 then authorizeReceipt token t else
     if !admin && length == 256 then signReceipt caller token t else receiptFail 2 t
