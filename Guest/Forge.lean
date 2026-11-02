@@ -97,8 +97,9 @@ def prepare (t : UInt64) : UInt64 :=
     if r != 160 || status r != 0 then message 2 r else
       let t := copy (wire+64) localHead 32 r
       let t := copy (wire+96) localName 64 t
-      let t := Guest.ForgeFederation.reuseRemote localHead t
+      -- Save all root metadata before a federation/catalog IPC reuses wire.
       let t := store64 (st+168) (load64 (wire+16) t) t
+      let t := Guest.ForgeFederation.reuseRemote localHead t
       let r := projectIdentity (load64 (st+24) t) t
       if r != 192 || status r != 0 then message 2 r else
       let t := copy (wire+160) logical 32 r
