@@ -7,6 +7,7 @@ import Guest.NodeEnrollment
 import Guest.TorRouter
 import Guest.OnionTerminal
 import Guest.NodeStore
+import Guest.NetworkGrantLease
 namespace Guest.Network
 open Guest.LiveSDK
 -- Service6 owns this memory. No compiler/publisher key or graph root lives here.
@@ -95,6 +96,15 @@ partial def findGrant (id owner i t : UInt64) : UInt64 :=
   if i == 4 then error else
     let g := grantAt i
     if load64 g t == 1 && load64 (g+8) t == id && load64 (g+16) t == owner && now t < load64 (g+56) t then i else findGrant id owner (i+1) t
+-- Expiration leaves a bounded, reusable tombstone. Revocation/reset clears the
+-- entire record; reuse overwrites its unique incarnation-bound handle. Only
+-- the still-live original caller can refresh a surviving exact contract.
+partial def findLease (id owner i t : UInt64) : UInt64 :=
+  if i == 4 then error else
+    let g := grantAt i
+    if id != 0 && load64 (g+8) t == id && load64 (g+16) t == owner &&
+      (load64 g t == 1 || (load64 g t == 0 && load64 (g+56) t != 0 && now t >= load64 (g+56) t)) then i
+    else findLease id owner (i+1) t
 partial def findJob (id owner i t : UInt64) : UInt64 :=
   if i == 8 then error else
     let j := jobAt i
@@ -328,7 +338,8 @@ partial def expireGrants (i t : UInt64) : UInt64 :=
     let g := grantAt i
     let caller := load64 (g+16) t
     let alive := if load64 g t == 1 then syscall 34 caller 0 0 0 t else 0
-    let t := if load64 g alive == 1 && (now alive >= load64 (g+56) alive || alive == error) then store64 g 0 alive else alive
+    let t := if load64 g alive == 1 && alive == error then zero g 32 alive
+      else if load64 g alive == 1 && now alive >= load64 (g+56) alive then store64 g 0 alive else alive
     expireGrants (i+1) t
 
 -- Only the explicitly selected native Feed bulk relationship may reconnect.
@@ -577,6 +588,35 @@ def receiveMessage (caller handle t : UInt64) : UInt64 :=
         let t := copy (p+32) (wire+64) n t
         64+n+zero p 128 t
 
+-- Private broker operation17 renews the *same* caller/context contract. There
+-- is no new byte/work allowance, peer, service, root, operation or stream.
+-- Lifetime0 is an owner-only inspection; an unavailable tombstone is a denial,
+-- never an instruction to mint replacement authority. Pending sends keep their
+-- original expiry and must reconcile/cancel before a lease can change.
+@[noinline] def refreshLease (caller handle lifetime t : UInt64) : UInt64 :=
+  let selected := findLease handle caller 0 t
+  if selected == error then failure 3 selected else
+    let g := grantAt selected
+    let alive := syscall 34 caller 0 0 0 selected
+    let peer := pins+(if load64 (st+8) alive == 1 then 32 else 0)
+    let ceiling := if Guest.PeerDescription.verified alive then load64 (Guest.PeerDescription.description+48) alive else 16777216
+    let current := alive != error && nativePeerCurrent alive && load64 (st+8) alive != 0 &&
+      equal (g+96) peer 32 alive && equal (g+128) (pins+64) 32 alive &&
+      Guest.PeerDescription.permits (load64 (g+80) alive) alive &&
+      (!protocol2 alive || load64 (g+88) alive != 0) && load64 (g+32) alive <= ceiling &&
+      load64 (g+40) alive <= load64 (g+32) alive
+    if !current then failure 3 alive else
+    if lifetime != 0 && !Guest.NetworkGrantLease.accepts true current (!activeForGrant handle 0 alive)
+        (load64 (g+32) alive) (load64 (g+40) alive) lifetime (now alive) then failure 4 alive else
+      let t := if lifetime == 0 then alive else store64 g 1 (store64 (g+56) (now alive+lifetime) alive)
+      let t := zero wire 8 t
+      let t := store64 (wire+8) handle t
+      let t := store64 (wire+16) (load64 (g+32) t-load64 (g+40) t) t
+      let t := store64 (wire+24) (load64 (g+40) t) t
+      let t := store64 (wire+32) (load64 (g+56) t) t
+      let t := store64 (wire+40) (now t) t
+      64+store64 (wire+48) (load64 g t) t
+
 @[noinline] def dispatchOrdinary (caller op handle length t : UInt64) : UInt64 :=
   if op == 15 && length == 64 then
     if !Guest.PeerDescription.verified t then failure 3 t else
@@ -601,9 +641,10 @@ def receiveMessage (caller handle t : UInt64) : UInt64 :=
     let t := store64 (wire+48) (inboxCount 0 0 t) t
     64+store64 (wire+40) (load64 (st+80) t) t
   else if op == 8 && length == 64 then
-    let selected := findGrant handle caller 0 t
+    let selected := findLease handle caller 0 t
     if selected == error then failure 3 selected else
-      failure 0 (store64 (grantAt selected) 0 selected)
+      failure 0 (zero (grantAt selected) 32 selected)
+  else if op == 17 && length == 64 then refreshLease caller handle (load64 (command+16) t) t
   else if (op == 4 || op == 5) && length == 64 then
     let selected := findJob handle caller 0 t
     if selected == error then failure 3 selected else
