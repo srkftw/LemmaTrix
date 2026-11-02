@@ -17,7 +17,7 @@ from creator_journey import rendered_text
 def main():
  p=argparse.ArgumentParser(description=__doc__)
  for field in ('state','archive','forge','registry','image'):p.add_argument('--'+field,type=Path,required=True)
- p.add_argument('--fork',type=Path);a=p.parse_args();base=a.state.parent;report=json.loads(a.state.read_text());nodes=[attach(r)for r in report['live_actors']];provider,source=nodes;app=archive(a.archive);configuration=json.loads((base/'alpha-public-verifier.json').read_text());started=time.monotonic();phase='continue native selected32-node publication';os.environ['LT_GUEST_IMAGE']=str(a.image.resolve())
+ p.add_argument('--fork',type=Path);p.add_argument('--publication-only',action='store_true',help='preserve the provider for an existing card-discovery reader handoff');a=p.parse_args();base=a.state.parent;report=json.loads(a.state.read_text());nodes=[attach(r)for r in report['live_actors']];provider,source=nodes;app=archive(a.archive);configuration=json.loads((base/'alpha-public-verifier.json').read_text());started=time.monotonic();phase='continue native selected32-node publication';os.environ['LT_GUEST_IMAGE']=str(a.image.resolve())
  def write():
   report.pop('error',None);report.update(result='running',phase=phase,continuation_elapsed_seconds=round(time.monotonic()-started,3),live_actors=[dict(pid=n.pid if hasattr(n,'pid')else n.proc.pid,socket=str(n.sock),graphics=str(n.qmp),forge=n.instance,registry=getattr(n,'registry',None),image=str(a.image.resolve()))for n in nodes]);a.state.write_text(json.dumps(report,indent=2)+'\n')
  def passed(label,**fields):report['checks'].append(dict(check=label,result='pass',**fields));write();print('PASS',label,flush=True)
@@ -34,13 +34,14 @@ def main():
    grant=server_store.call(c,231,provider.instance,2,1048576,digest('Campaign010 MUX '+item['root']['name']+' graph'))[0][1];raw=c.request(150,struct.pack('<Q8Q',provider.instance,61,0,grant,0,0,0,0,1));assert struct.unpack_from('<Q',raw)[0]==0
   retained=save(provider);passed('actual signed '+item['root']['name']+' native admission and exact network closure retention',release=item['release'],transfer=exact,decision=accepted,retention=retained)
  def select(n,name):
+  before=n.inspect()['selected_root']
   n.focus(n.instance);n.ui.press(60)
   def ready():
    f=n.ui.frame();rows=[rendered_text(f,32,107+i*12,len(name)+1).rstrip()for i in range(16)];return rows if name in rows else None
   rows=wait(ready,'native trusted project rows',60)
   for _ in range(rows.index(name)):n.ui.press(108);time.sleep(.5)
   time.sleep(.5);n.ui.press(28)
-  wait(lambda:n.inspect()['status']==1,'native exact selected project delegation',90)
+  wait(lambda:(state if(state:=n.inspect())['status']==1 and state['selected_root']!=before else None),'new native exact selected project delegation',90)
  try:
   assert source.inspect()['status']==1,'continue requires actual native selected root'
   assert any(r['head']==app['root']['head']for r in source.roots()),'selected public source is unavailable'
@@ -51,6 +52,8 @@ def main():
    with source.client()as c:
     root=projects.import_records(c,fork['doc']['selected'],fork['rows'])[0]['cap'];shell=struct.unpack_from('<Q',c.request(2),4*32)[0];c.objects(27,root,shell,127)
    select(source,fork['root']['name']);publish(fork)
+  if a.publication_only:
+   report['result']='pass-native-helper-successor-fork-publication';write();report['result']='pass-native-helper-successor-fork-publication';a.state.write_text(json.dumps(report,indent=2)+'\n');return
   phase='fresh reader32-object retrieval';write()
   from campaign010_forge_continue import stop
   stop(source);nodes.remove(source)

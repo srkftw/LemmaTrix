@@ -52,7 +52,7 @@ def inspect(client,instance):
  raw=client.request(150,struct.pack('<Q',instance)+struct.pack('<8Q',2,0,0,0,0,0,0,1))
  if len(raw)!=320 or struct.unpack_from('<Q',raw)[0]:raise ValueError('native Forge unavailable')
  q=struct.unpack_from('<32Q',raw,64)
- return dict(configured=bool(q[0]),selected_root=q[3],frozen_root=q[4],offered_nodes=q[5],offered_bytes=q[6],send_phase=q[7],send_ordinal=q[8],send_offset=q[9],pending_job=q[10],import_transaction=q[14],received_nodes=q[15],status=q[17],metadata_nodes=q[18],metadata_bytes=q[19],role=q[25],policy=q[26],server_store_grant=q[27],queued_fetch=bool(q[22]),last_native_key=q[30])
+ return dict(configured=bool(q[0]),metadata_grant=q[1],root_grant=q[2],selected_root=q[3],frozen_root=q[4],offered_nodes=q[5],offered_bytes=q[6],send_phase=q[7],send_ordinal=q[8],send_offset=q[9],pending_job=q[10],import_transaction=q[14],received_nodes=q[15],status=q[17],metadata_nodes=q[18],metadata_bytes=q[19],role=q[25],policy=q[26],server_store_grant=q[27],queued_fetch=bool(q[22]),last_native_key=q[30])
 
 def main(argv=None):
  p=argparse.ArgumentParser(description='Provision native Forge peer settings; normal actions are graphical')

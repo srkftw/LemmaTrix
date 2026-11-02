@@ -23,6 +23,7 @@ class MuxNode(Node):
   self.proc=subprocess.Popen(command,cwd=ROOT,stdout=self.log,stderr=subprocess.STDOUT,start_new_session=True)
   wait(self.sock.exists,'fresh multiplexed personal/provider boot');self.ui=DeviceInput('qemu',self.qmp)
  def select(self,name):
+  before=self.inspect()['selected_root']
   self.focus(self.instance)
   if rendered_text(self.ui.frame(),10,56,10,0x9fc6a5)=='FEDERATION':self.ui.press(59);time.sleep(.5)
   self.ui.press(60)
@@ -31,7 +32,7 @@ class MuxNode(Node):
   rows=wait(ready,'native selected project rows',60)
   for _ in range(rows.index(name)):self.ui.press(108);time.sleep(.5)
   time.sleep(.5);self.ui.press(28)
-  wait(lambda:self.inspect()['status']==1,'native selected project delivered to Forge',90)
+  wait(lambda:(state if(state:=self.inspect())['status']==1 and state['selected_root']!=before else None),'new native selected project delivered to Forge',90)
 
 def archive(path):
  doc=json.loads(path.read_text());rows=[dict(row,payload=base64.b64decode(row['payload'],validate=True))for row in doc['nodes']]
