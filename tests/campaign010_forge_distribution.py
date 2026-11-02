@@ -27,9 +27,10 @@ def digest(label):return hashlib.sha256(label.encode()).digest()
 
 
 class Node(Seed):
+ server_package=None
  def client(self):return Client(self.sock,timeout=300)
  def setup_link(self,package,credential,namespace=None,recover=False,role='client'):
-  self.install(package,PUBLIC)
+  self.install(self.server_package if namespace else package,PUBLIC)
   with self.client() as c:
    network.configure(c,credential)
    grant=0
@@ -42,9 +43,11 @@ class Node(Seed):
 
 def main():
  p=argparse.ArgumentParser(description=__doc__)
- for name in ('image','archive','identity','registry','forge','output'):p.add_argument('--'+name,type=Path,required=True)
+ for name in ('image','archive','identity','registry','forge','server-forge','output'):p.add_argument('--'+name,type=Path,required=True)
+ p.add_argument('--helper-archive',type=Path)
  a=p.parse_args();a.output=a.output.resolve();a.output.mkdir(parents=True,exist_ok=False)
  os.environ['LT_GUEST_IMAGE']=str(a.image.resolve())
+ Node.server_package=a.server_forge
  document=json.loads(a.archive.read_bytes())
  records=[dict(n,payload=base64.b64decode(n['payload'],validate=True)) for n in document['nodes']]
  selected=document['selected'][0];head=selected['head'];name=selected['name']
@@ -53,14 +56,20 @@ def main():
  assert len(header)==608 and struct.unpack_from('<Q',header,8)[0]==4
  publisher=header[576:608];publication=header[128:160];release_id=header[160:192].hex()
  identity_info=releases.inspect(a.identity.read_bytes());registry_info=releases.inspect(a.registry.read_bytes())
+ detail=release_node[32+count*128:];manifest_length=struct.unpack_from('<Q',detail,24)[0]
+ signed_manifest=json.loads(detail[64+608:64+608+manifest_length])
  disks=[a.output/'alpha.img',a.output/'seed.img',a.output/'beta.img']
  for disk in disks:server_store.provision(disk)
  nodes=[];checks=[];started=time.monotonic();stage='setup'
  record=dict(schema=1,result='running',scope=__doc__,image_sha256=hashlib.sha256(a.image.read_bytes()).hexdigest(),archive_sha256=hashlib.sha256(a.archive.read_bytes()).hexdigest(),release_id=release_id,checks=checks,commands=[],limitations=['Local independently initialized guest state on one x86-64 Linux host; no independent security administration or public deployment claim.','Legacy first-party package bootstrap remains explicitly RSA; release/admission authority is native guest Ed25519.'])
+ record.update(services={n:dict(path=str(path.resolve()),sha256=hashlib.sha256(path.read_bytes()).hexdigest(),release_id=releases.inspect(path.read_bytes())['release_id'])for n,path in [('identity',a.identity),('registry',a.registry),('forge',a.forge),('server_forge',a.server_forge)]},sdk=signed_manifest['sdk'],dependencies=signed_manifest['dependencies'],recipe=signed_manifest['recipe'],source=signed_manifest['provenance'],artifact_sha256=header[192:224].hex())
  def write():
   record['elapsed_seconds']=round(time.monotonic()-started,3);record['stage']=stage
   (a.output/'execution.json').write_text(json.dumps(record,indent=2)+'\n')
  def passed(label,**fields):checks.append(dict(check=label,result='pass',**fields));write();print('PASS',label,flush=True)
+ def progress(label):
+  nonlocal stage
+  stage=label;write();print('PROGRESS',label,flush=True)
  def relation(label,client_id,server_id):
   path=a.output/label;path.mkdir();s=socket.socket();s.bind(('127.0.0.1',0));port=s.getsockname()[1];s.close()
   client,server=path/'client.credential',path/'server.credential'
@@ -100,9 +109,10 @@ def main():
     restored=federation.call(c,n.registry,10)[0][1]
     if not restored:raise AssertionError('independent seed lost retained admission evidence')
    forge.federation_configure(c,n.instance,configuration['federation_id'],{'portable':1,'restricted':2,'consumer':3}[policy])
- def publication_result(n,remote=True):
+ def publication_result(n,remote=True,expected_release=release_id):
   with n.client() as c:
    result=forge.federation_inspect(c,n.instance,not remote)
+  if result['descriptor']['release_id']!=expected_release:return None
   if remote:
    return result if result['remote_phase']in(2,3) else None
   return result if result['local_phase']==2 else None
@@ -138,6 +148,13 @@ def main():
   wait(running,'exact fetched native release activated',180)
   frame=wait(lambda:(f if rendered_text(f:=n.ui.frame(),14,56,len('Project Notes'),0xdce9ec)=='Project Notes'else None),'ordinary native Notes application surface',120)
   (n.path/'project-notes-running.ppm').write_bytes(frame.ppm())
+  n.ui.textASCII('Distribution review',delay=.08);n.ui.press(28)
+  n.ui.textASCII('Verified the surviving provider supplied the signed source and helper.',delay=.08)
+  n.ui.chord(29,31)
+  wait(lambda:rendered_text(n.ui.frame(),14,354,len('Saved immutable revision'),0xdce9ec)=='Saved immutable revision','second user native note revision saved',90)
+  n.ui.chord(29,33);n.ui.textASCII('surviving',delay=.08);n.ui.press(28);n.ui.press(1)
+  frame=wait(lambda:(f if rendered_text(f:=n.ui.frame(),18,170,len('Verified the surviving provider'),0xdce9ec)=='Verified the surviving provider'else None),'second user searches actual note content',90)
+  (n.path/'project-notes-used.ppm').write_bytes(frame.ppm())
   return frame.digest
  try:
   # One source relationship, one independently signing federation/provider.
@@ -146,18 +163,37 @@ def main():
   alpha=actor('alpha',endpoint,True,disks[0]);source=actor('source',endpoint)
   alpha.setup_link(a.forge,alpha_key,digest('Campaign010 alpha graph'),role='registry')
   source.setup_link(a.forge,client_key);authenticate(source,alpha)
+  progress('Alpha link authenticated; initialize independent native operator')
   alpha_config=start_registry(alpha,'consumer',895,'alpha catalog')
   verifier(source,alpha_config)
   with alpha.client() as c:forge.federation_configure(c,alpha.instance,alpha_config['federation_id'],3)
   with source.client() as c:
    root=projects.import_records(c,document['selected'],records)[0]['cap']
    shell=struct.unpack_from('<Q',c.request(2),4*32)[0];c.objects(27,root,shell,127)
+  progress('Exact signed Notes graph imported; native Forge publication requested')
   source.select(name);source.ui.press(87)
   admitted=wait(lambda:publication_result(source),'Forge F11 exact native federation publication',300)
-  assert admitted['classification']==5 and admitted['descriptor']['release_id']==release_id
+  assert admitted['classification']==2 and admitted['descriptor']['release_id']==release_id
   local=wait(lambda:publication_result(alpha,False),'operator accepted source closure and native decision',180)
-  assert local['descriptor']['classification']==5
+  assert local['descriptor']['classification']==2
   passed('native Forge F11 transfers actual signed closure and obtains guest-owned Alpha admission',remote=admitted,operator=local)
+  if a.helper_archive:
+   progress('Publish separately signed source-only Notes.Schema through the same real Alpha path')
+   helper=json.loads(a.helper_archive.read_bytes())
+   helper_records=[dict(n,payload=base64.b64decode(n['payload'],validate=True))for n in helper['nodes']]
+   helper_head=helper['selected'][0]['head']
+   helper_manifest=projects.decode_manifest(next(n['payload']for n in helper_records if n['id']==helper_head))
+   helper_release=next(n['payload']for n in helper_records if n['id']==next(i for path,kind,i in helper_manifest if kind==13 and not path.startswith('deps/')))
+   detail=96+struct.unpack_from('<Q',helper_release,16)[0]*128
+   helper_header=helper_release[detail:detail+608];helper_id=helper_header[160:192].hex()
+   with alpha.client()as c:federation.call(c,alpha.registry,3,data=helper_header[128:160]+helper_header[576:608])
+   with source.client()as c:
+    helper_root=projects.import_records(c,helper['selected'],helper_records)[0]['cap']
+    shell=struct.unpack_from('<Q',c.request(2),4*32)[0];c.objects(27,helper_root,shell,127)
+   source.select(helper['selected'][0]['name']);source.ui.press(87)
+   helper_decision=wait(lambda:publication_result(source,expected_release=helper_id),'separately published native helper development decision',180)
+   assert helper_decision['classification']==1
+   passed('separately signed helper is published through Forge as DevelopmentArtifact without installation authority',release_id=helper_id,archive_sha256=hashlib.sha256(a.helper_archive.read_bytes()).hexdigest(),decision=helper_decision)
   # Preserve exactly this accepted graph and independent sealed operator key.
   alpha.focus(alpha.instance);alpha.select(next(r['name']for r in alpha.roots()if r['head']==head));committed=save(alpha)
   unlock=os.urandom(32);authority_ns=digest('Campaign010 alpha authority').hex()
@@ -166,7 +202,7 @@ def main():
   passed('Alpha retains only its chosen accepted graph, catalog and typed independent operator seal',graph=committed,authority=retained)
   stop_all()
   # The Beta operator is independently initialized and makes a real refusal.
-  stage='independent Beta policy refusal'
+  progress('independent Beta policy refusal')
   observer_key,beta_key,endpoint=relation('beta-only',digest('beta observer'),digest('beta'))
   beta=actor('beta',endpoint,True,disks[2]);beta.setup_link(a.forge,beta_key,digest('Campaign010 beta graph'),role='registry')
   observer=actor('beta-observer',endpoint);observer.setup_link(a.forge,observer_key)
@@ -185,7 +221,7 @@ def main():
   passed('independently initialized Beta refuses the same immutable release and Forge displays that signed decision',configuration=beta_config,decision=refusal,forge=observed)
   stop_all()
   # Alpha restarts from its own approved durable store and sealed identity.
-  stage='restarted Alpha replication to independent seed'
+  progress('restarted Alpha replication to independent seed')
   alpha_key,seed_key,endpoint=relation('alpha-seed',digest('alpha'),digest('seed'))
   seed=actor('seed',endpoint,True,disks[1]);alpha=actor('alpha-restarted',endpoint,False,disks[0])
   seed.setup_link(a.forge,seed_key,digest('Campaign010 seed graph'),role='seed')
@@ -202,7 +238,7 @@ def main():
   stop_all()
   # Neither source nor original Alpha provider is running now. No archive is
   # imported into the seed or recipient after this point.
-  stage='surviving seed retrieval and native install'
+  progress('surviving seed retrieval and native install')
   reader_key,seed_key,endpoint=relation('reader-seed',digest('new personal reader'),digest('seed'))
   seed=actor('seed-restarted',endpoint,True,disks[1]);reader=actor('reader',endpoint)
   seed.setup_link(a.forge,seed_key,digest('Campaign010 seed graph'),role='seed')
