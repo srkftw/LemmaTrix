@@ -1,19 +1,21 @@
-import argparse, hashlib, json, os, shutil, subprocess, sys
+import argparse, hashlib, json, os, platform, shutil, subprocess, sys
 from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 LOCK = json.loads((ROOT/'toolchain.lock.json').read_text())
 BUILD = ROOT/'build'
 
 def tool(name):
-    candidate = os.environ.get('LT_'+name.upper().replace('-','_').replace('.','_')) or LOCK['nix_store'].get(name)
+    config_path=BUILD/'toolchain-host.json'
+    configured=json.loads(config_path.read_text()).get('tools',{}) if config_path.exists() else {}
+    candidate = os.environ.get('LT_'+name.upper().replace('-','_').replace('.','_')) or configured.get(name) or LOCK['nix_store'].get(name)
     if candidate and Path(candidate).exists(): return candidate
     candidate = shutil.which(name)
     if candidate: return candidate
     raise RuntimeError(f'Missing {name}; install version pinned in toolchain.lock.json or set LT_{name.upper().replace("-","_").replace(".","_")}')
 
-def validate_toolchain():
-    requirements={'lean':LOCK['lean'],'clang':LOCK['llvm'],'ld.lld':LOCK['llvm'],
-                  'llvm-objcopy':LOCK['llvm'],'qemu-system-riscv64':LOCK['qemu'],'openssl':LOCK['openssl']}
+def validate_toolchain(full=False):
+    requirements={'lean':LOCK['lean'],'clang':LOCK['llvm'],'ld.lld':LOCK['llvm'],'llvm-objcopy':LOCK['llvm']}
+    if full:requirements.update({'qemu-system-riscv64':LOCK['qemu'],'openssl':LOCK['openssl']})
     versions={}
     for name,expected in requirements.items():
         r=subprocess.run([tool(name), 'version' if name=='openssl' else '--version'],capture_output=True,text=True,check=True)
@@ -101,8 +103,10 @@ def backend(name):
     image=BUILD/'guest.bin'
     if name=='qemu':
         args=[tool('qemu-system-riscv64'),'-M','virt','-cpu','rv64','-m','16M','-smp','1','-bios','none','-nographic','-monitor','none','-kernel',image]
-    elif name=='x86_64':args=[BUILD/'lt-x86_64',image]
-    else:args=[tool('qemu-aarch64'),BUILD/'lt-aarch64',image]
+    else:
+        args=[BUILD/('lt-'+name),image]
+        native={'x86_64':'x86_64','aarch64':'aarch64','arm64':'aarch64'}.get(platform.machine())
+        if name!=native:args.insert(0,tool('qemu-'+('aarch64' if name=='aarch64' else 'x86_64')))
     r=subprocess.run([str(x) for x in args],cwd=ROOT,timeout=45,capture_output=True,text=True)
     print(r.stdout,end='');print(r.stderr,end='',file=sys.stderr)
     if r.returncode:raise RuntimeError(f'{name} guest exited{r.returncode}')
@@ -117,7 +121,9 @@ def main():
               '  run --socket PATH        long-lived session; --backend, --vault supported\n'
               '  ctl --socket PATH ...    trusted guest management; use ctl --help\n'
               '  app --module M --entry E --name N   independent native client build\n'
-              '  release keygen/create/inspect      publisher-signed envelopes\n'
+              '  sdk init/lock/check/build          versioned public SDK and offline dependencies\n'
+              '  publisher ...                      native guest-owned release review/signing\n'
+              '  release keygen/create/inspect      inspect native/legacy envelopes\n'
               '  vault-init IMAGE [--key-out KEY]   explicit development storage\n'
               '  project / project-vault / display   graphical creator graph/build/vault tools\n'
               '  network / forge / federation       encrypted peer setup and guest discovery/admission\n'
@@ -147,6 +153,16 @@ def main():
         p.add_argument('--profile',type=int,choices=(1,2),default=1);p.add_argument('--module',required=True);p.add_argument('--entry',required=True);p.add_argument('--name',required=True)
         a=p.parse_args(sys.argv[2:]);import live_build
         print(live_build.app(a.module,a.entry,a.name,a.profile));return
+    if len(sys.argv)>1 and sys.argv[1]=='publisher':
+        import native_publisher
+        try:sys.exit(native_publisher.main(sys.argv[2:]))
+        except (ValueError,KeyError,OSError,RuntimeError) as error:
+            print('lt publisher:',error,file=sys.stderr);sys.exit(1)
+    if len(sys.argv)>1 and sys.argv[1]=='sdk':
+        import sdk
+        try:sys.exit(sdk.main(sys.argv[2:]))
+        except (ValueError,KeyError,OSError,RuntimeError) as error:
+            print('lt sdk:',error,file=sys.stderr);sys.exit(1)
     if len(sys.argv)>1 and sys.argv[1]=='display':
         p=argparse.ArgumentParser(description='Thin raw pixel/input adapter for assembly backends')
         p.add_argument('--graphics',type=Path,required=True);a=p.parse_args(sys.argv[2:])
@@ -252,22 +268,9 @@ def main():
             a.text=content.decode('utf-8')
         policy=dict(allow_development=a.allow_development,trust_keys=a.trust_key,
                     approved_caps=a.approve_cap,require_signature=True)
-        if a.command=='doctor':
-            for name,version in validate_toolchain().items():print(name,version,tool(name))
-        elif a.command=='setup':
-            try:
-                validate_toolchain()
-                print('Pinned dependencies ready; ordinary builds perform no downloads')
-                return
-            except RuntimeError:pass
-            paths=sorted(set(str(Path(value).parent.parent) for value in LOCK['nix_store'].values()))
-            missing=[path for path in paths if not Path(path).exists()]
-            if missing:
-                nix=shutil.which('nix-store')
-                if not nix:raise RuntimeError('Install Nix or supply exact pinned tools via LT_* variables; see docs/development.html')
-                run([nix,'--realise',*missing])
-            validate_toolchain()
-            print('Pinned dependencies ready; ordinary builds perform no downloads')
+        if a.command in ('doctor','setup'):
+            import setup_toolchain
+            print(json.dumps(setup_toolchain.setup() if a.command=='setup' else setup_toolchain.doctor(),indent=2))
         elif a.command=='build':build(a.text,a.package,policy)
         elif a.command=='emulators':emulators()
         elif a.command=='app':

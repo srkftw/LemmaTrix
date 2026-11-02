@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "binary_sha256": "e2bdef54ea13fc99cca4089b183c519522c3c216cdbfd7dfe4d6cc9c1f2b8464",
+  "production_source_sha256": "ef0522eeeff39e36ac1a6e2610e42cb0fec0496224031ec6257c1ed665b1378f",
+  "checks": [
+    {
+      "backend": "qemu",
+      "result": "pass",
+      "seconds": 0.23441158200148493,
+      "emulated_aarch64": false
+    },
+    {
+      "backend": "aarch64",
+      "result": "pass",
+      "seconds": 0.3064261510007782,
+      "emulated_aarch64": true
+    }
+  ],
+  "boundaries": [
+    "cross-app result denial",
+    "frozen payload mismatch",
+    "one-use approval",
+    "uncertain cancellation",
+    "durable exact outbox association after fresh caller",
+    "changed payload refusal",
+    "revoked generation refusal including duplicate request",
+    "changed owner authority refusal",
+    "precommit cancellation",
+    "malformed UTF-8 refusal",
+    "exact outbox acceptance updates retained association",
+    "known acceptance/confirmation cannot regress to pending/uncertain",
+    "late exact outbox receipt updates retained key without a live row and fresh caller rebind observes acceptance"
+  ],
+  "limits": "Native queue transition fixture with test-only public authority snapshots/clock; not actual kernel grants, protected vault recovery, installed-app UI, Feed publication or Messenger delivery evidence."
+}

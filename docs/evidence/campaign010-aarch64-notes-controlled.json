@@ -1,0 +1,40 @@
+{
+  "schema": 1,
+  "result": "failure",
+  "backend": "AArch64 assembly emulator under qemu-aarch64 on x86-64 Linux",
+  "image_sha256": "2189f4d91a80adfedb11a6dc61d060daf0a6e8c668f3079923b89517804f8e09",
+  "release_sha256": "5884bce6b3308dc6ff8a3cce550092660c9a537881d9021eea9b39edef805abb",
+  "commands": [
+    [
+      "/run/current-system/sw/bin/python3",
+      "/home/sreekumaar/Desktop/LemmaTrix/lt",
+      "run",
+      "--backend",
+      "aarch64",
+      "--image",
+      "/home/sreekumaar/Desktop/LemmaTrix/build/campaign010-peer-complete/guest.bin",
+      "--socket",
+      "/home/sreekumaar/Desktop/LemmaTrix/build/c010-notes-arm-controlled/portal.sock",
+      "--graphics",
+      "/home/sreekumaar/Desktop/LemmaTrix/build/c010-notes-arm-controlled/display"
+    ]
+  ],
+  "checks": [],
+  "timings": [
+    {
+      "action": "approve exact publisher",
+      "seconds": 1.445
+    },
+    {
+      "action": "upload exact guest-signed artifact",
+      "seconds": 662.548
+    }
+  ],
+  "error": "TimeoutError('timed out')",
+  "elapsed_seconds": 1010.185914851987,
+  "failure_stage": "Launcher public request22: guest Ed25519 release verification",
+  "request_timeout_seconds": 300,
+  "timeout_increased": false,
+  "full_application_installed": false,
+  "native_arm_hardware": false
+}

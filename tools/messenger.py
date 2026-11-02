@@ -67,11 +67,12 @@ def delivery_start(client,a):
     try:
         for op in (427,428,434):bind(client,2,owner,delivery,op,owner_sid,did)
         for op in range(460,464):bind(client,4,delivery,a.ui,op,did,uid)
+        bind(client,4,delivery,owner,461,did,owner_sid)
         bind(client,4,delivery,who,464,did)
         invoke(client,4,464,h=owner)
     except BaseException:
         client.request(26,struct.pack('<Q',delivery));raise
-    return dict(owner=owner,ui=a.ui,delivery=delivery,delivery_release=did.hex(),route_configured=False,exact_grant_count=32)
+    return dict(owner=owner,ui=a.ui,delivery=delivery,delivery_release=did.hex(),route_configured=False,exact_grant_count=33,binding_capacity=96)
 
 def delivery_parent(value):
     if len(value)!=64 or any(c not in'0123456789abcdefABCDEF'for c in value)or not any(bytes.fromhex(value)):
@@ -81,7 +82,7 @@ def delivery_parent(value):
 def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--socket',type=Path)
     sub=p.add_subparsers(dest='command',required=True)
-    q=sub.add_parser('package');q.add_argument('--publisher-private',type=Path,required=True);q.add_argument('--output',type=Path,required=True);q.add_argument('--delivery-version',choices=('0.8.0','0.8.1','0.8.2'),default='0.8.2',help='Delivery release version (default0.8.2); other components remain0.8.0');q.add_argument('--delivery-parent',type=delivery_parent,help='exact active Delivery release hash for a normal native upgrade')
+    q=sub.add_parser('package');q.add_argument('--publisher-private',type=Path,required=True);q.add_argument('--output',type=Path,required=True);q.add_argument('--delivery-version',choices=('0.8.0','0.8.1','0.8.2','0.8.3'),default='0.8.3',help='Delivery release version (default0.8.3); other components remain0.8.0');q.add_argument('--delivery-parent',type=delivery_parent,help='exact active Delivery release hash for a normal native upgrade')
     q=sub.add_parser('vault-init');q.add_argument('image',type=Path)
     q=sub.add_parser('start');q.add_argument('--owner',type=Path,required=True);q.add_argument('--public',type=Path,required=True);q.add_argument('--ui',type=Path);q.add_argument('--delivery',type=Path)
     q=sub.add_parser('certify-contact');q.add_argument('--identity-release',type=Path,required=True);q.add_argument('--public',type=Path,required=True);q.add_argument('--scope',required=True);q.add_argument('--output',type=Path,required=True)
@@ -148,6 +149,7 @@ def main(argv=None):
                     delivery,did=install(client,a.delivery,a.public,1024)
                     for op in (427,428,434):bind(client,2,owner,delivery,op,sid,did)
                     for op in range(460,464):bind(client,4,delivery,ui,op,did,uid)
+                    bind(client,4,delivery,owner,461,did,sid)
                     bind(client,4,delivery,who,464,did)
                     invoke(client,4,464,h=owner)
             except BaseException:
@@ -157,21 +159,19 @@ def main(argv=None):
             client.request(174,struct.pack('<2Q',a.owner,1));result=dict(domain=2,authorized_owner=a.owner,unlocked=False)
         elif a.command=='certify-contact':
             import identity
-            # Admission order intentionally leaves room for three temporary
-            # signer grants before the eight coordinator grants fill the32.
-            try:
-                endpoint(client,4,464)
-            except ValueError:pass
-            else:raise ValueError('certify the local contact before delivery-start; all32 coordinator/UI bindings are already admitted')
-            try:
-                identity.endpoint(client,400)
-            except ValueError:pass
-            else:raise ValueError('an Identity service is already bound; this command requires a separate temporary personal signer')
             _,bundle=invoke(client,2,422)
             if len(bundle)!=256:raise ValueError('create the native messaging device first')
-            signer,sid=install(client,a.identity_release,a.public,0)
+            sid=bytes.fromhex(releases.inspect(a.identity_release.read_bytes())['release_id'])
+            temporary=False;key=None
+            try:signer=identity.endpoint(client,400)
+            except ValueError:
+                signer,sid=install(client,a.identity_release,a.public,0);temporary=True
             try:
-                for operation in (400,405,402):identity.bind(client,signer,launcher(client),sid,bytes(32),operation)
+                for operation in (400,405,402,403):
+                    try:current=identity.endpoint(client,operation)
+                    except ValueError:identity.bind(client,signer,launcher(client),sid,bytes(32),operation)
+                    else:
+                        if current!=signer:raise ValueError('contact certification requires the exact current shared Identity service')
                 fields,_=identity.invoke(client,400,a=2,data=bundle[192:224]+identity.digest(a.scope));key=fields[1]
                 device_generation=struct.unpack_from('<Q',bundle,16)[0]
                 subject=bundle[32:64]+bundle[192:224]+bundle[224:256]
@@ -182,8 +182,10 @@ def main(argv=None):
                 _,invitation=invoke(client,2,434,a=27)
                 if len(invitation)!=672:raise ValueError('native bound invitation must be672 bytes')
                 a.output.write_bytes(invitation)
-                result=dict(public_invitation=str(a.output),bytes=len(invitation),certificate_sha256=hashlib.sha256(certificate).hexdigest(),fingerprint=hashlib.sha256(subject).hexdigest(),private_keys_exported=False,certification_seed_retention='ephemeral; temporary signer is stopped after its public certificate is committed')
-            finally:client.request(26,struct.pack('<Q',signer))
+                result=dict(public_invitation=str(a.output),bytes=len(invitation),certificate_sha256=hashlib.sha256(certificate).hexdigest(),fingerprint=hashlib.sha256(subject).hexdigest(),private_keys_exported=False,certification_seed_retention='ephemeral; only the created role2 certification key is revoked after committing its public certificate',shared_identity_preserved=not temporary)
+            finally:
+                if temporary:client.request(26,struct.pack('<Q',signer))
+                elif key is not None:identity.invoke(client,403,h=key)
         elif a.command=='delivery-start':result=delivery_start(client,a)
         elif a.command=='delivery-status':
             f,_=invoke(client,4,464,a=1)

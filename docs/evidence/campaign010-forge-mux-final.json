@@ -1,0 +1,315 @@
+{
+  "schema": 1,
+  "result": "pass-helper-successor-fork-and-strict-lease",
+  "environment": "Independently initialized guest/storage state on one Linux x86-64 host; QEMU RV64, no independent administration claim.",
+  "commands": [
+    "python3 tests/campaign010_forge_mux.py --help",
+    "python3 tests/campaign010_forge_final_provider.py --help",
+    "python3 tests/campaign010_forge_fork_retry.py --state build/campaign010-forge-mux-1/final-provider.json --fork build/campaign010-notes-fork-2/project-notes-fork-graph.json"
+  ],
+  "sdk_content_id": "3312ddcd277f401c377142b006bac6cf9aeefd8fa89f4d4c78f1fd5469caf533",
+  "release_build_toolchain": "48abf5a902482720d547b388bad65d284254123aaa33347ca46b26cf55ebef4e",
+  "final_provider_image": {
+    "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign010-final-lease/guest.bin",
+    "sha256": "fc991e1237ac5453331e87e6ed370293bbc60dd032d389c5b1a17151e8b7cd96"
+  },
+  "source_image": {
+    "path": "build/campaign010-coexistence/guest.bin",
+    "sha256": "0010511b5f49ef0756d09a74196a5b1fa4bead8c7bfa3587278045d430b39e71",
+    "basis": "actual running source QEMU -kernel argument; source was not restarted during provider recovery"
+  },
+  "first_party_packages": {
+    "forge": {
+      "path": "build/campaign010-lease-services/forge.ltrel",
+      "sha256": "abec5397ffa35c232ca3c77dfb52e1321799e8e6b482cc565ed4d7f76fc9e5d5"
+    },
+    "server-forge": {
+      "path": "build/campaign010-lease-services/server-forge.ltrel",
+      "sha256": "b70a7ca58d580e8b097633f65303a5068727b6db0dfe949146745c8345c06d5f"
+    }
+  },
+  "native_federation": {
+    "public_key": "52bab3f25a6716bd9e9383733cf022370af217d63c59af617ab87f231161afe7",
+    "federation_id": "1467ce15228e217491c329ffe7d6382a175fe1cb63f2c4ecd602f12828121189",
+    "generation": 3,
+    "policy": "consumer",
+    "allowed_rights": 895,
+    "policy_id": "5e09a8c8a5f53e01ad34cadbbef085c8ecea109f752f6abd98b662a03861566c",
+    "signature_profile": "nativeEd25519FDv2",
+    "inspection": "ordinary nativeRegistry6 signed public descriptor"
+  },
+  "checks": [
+    {
+      "check": "fresh explicit v2 bulk relationship authenticates with independently selected signed endpoint",
+      "result": "pass",
+      "endpoints": [
+        {
+          "protocol_version": 2,
+          "connection_slot": 0,
+          "profile": "Noise_NNpsk0_25519_ChaChaPoly_SHA256",
+          "session_phase": 3,
+          "endpoint_authenticated": true,
+          "configured_role": "server",
+          "device_status": 8589934595,
+          "broker_ticks": 25867,
+          "last_error": 10,
+          "inbox_records": 0,
+          "public_service_description_verified": true,
+          "traffic_privacy": "direct endpoints visible; no anonymity",
+          "modes_available": [
+            "encrypted_bulk"
+          ]
+        },
+        {
+          "protocol_version": 2,
+          "connection_slot": 0,
+          "profile": "Noise_NNpsk0_25519_ChaChaPoly_SHA256",
+          "session_phase": 3,
+          "endpoint_authenticated": true,
+          "configured_role": "client",
+          "device_status": 8589934595,
+          "broker_ticks": 25960,
+          "last_error": 10,
+          "inbox_records": 0,
+          "public_service_description_verified": true,
+          "traffic_privacy": "direct endpoints visible; no anonymity",
+          "modes_available": [
+            "encrypted_bulk"
+          ]
+        }
+      ],
+      "peer_slots": [
+        0,
+        0
+      ],
+      "stream": 1
+    },
+    {
+      "check": "separately published source-only helper",
+      "result": "pass",
+      "release": "a4e39b5b087822dd3054501afc425bcbcfa6dcbc8faa98293e626f6256fb55c2",
+      "transfer": {
+        "head": "11ef977f7e39766f819f334a5449f3703c16df3de8108ca324133e700328b5e1",
+        "records": 6,
+        "payload_bytes": 7292
+      },
+      "decision": {
+        "required": true,
+        "local_phase": 0,
+        "local_slot": 0,
+        "local_sequence": 0,
+        "send_phase": 0,
+        "local_classification": 0,
+        "local_reason": 0,
+        "remote_phase": 2,
+        "classification": 1,
+        "reason": 0,
+        "remote_sequence": 1,
+        "metadata_epoch": 1,
+        "error": 0,
+        "descriptor": {
+          "format": 2,
+          "classification": 1,
+          "reason": 0,
+          "policy": 3,
+          "rights": 0,
+          "sequence": 1,
+          "runtime_profile": 0,
+          "logical_project_id": "db432a166587df4e984b4e7877d2fab61049dfa3cf190b31637a2fc9c64bc97f",
+          "publication_id": "b6508a836dc006d4eaac784fd999bde4eee5d47b8d909e436205a0e265221f29",
+          "release_id": "a4e39b5b087822dd3054501afc425bcbcfa6dcbc8faa98293e626f6256fb55c2",
+          "source_commitment": "db432a166587df4e984b4e7877d2fab61049dfa3cf190b31637a2fc9c64bc97f",
+          "artifact_commitment": "0000000000000000000000000000000000000000000000000000000000000000",
+          "evidence_commitment": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "policy_commitment": "5e09a8c8a5f53e01ad34cadbbef085c8ecea109f752f6abd98b662a03861566c",
+          "federation_id": "1467ce15228e217491c329ffe7d6382a175fe1cb63f2c4ecd602f12828121189",
+          "root": "11ef977f7e39766f819f334a5449f3703c16df3de8108ca324133e700328b5e1",
+          "publisher_key_id": "36aa1fd2be2a8c3753ef57a5169e696580862af0f546eb0e0541646e6657a2f7",
+          "signature_present": true
+        }
+      },
+      "retention": {
+        "phase": 8,
+        "done": 8252,
+        "total": 8252,
+        "code": 0,
+        "root": 0,
+        "head": "11ef977f7e39766f819f334a5449f3703c16df3de8108ca324133e700328b5e1",
+        "name": "notes-schema-1.0.0-11ef977f7e39766f"
+      }
+    },
+    {
+      "check": "provider normalrestart recovers same native sealed operator with fresh generation, signedacceptedcatalog and ownhelpergraph",
+      "result": "pass",
+      "generation": 2,
+      "catalog_sequence": 1,
+      "public_key": "52bab3f25a6716bd9e9383733cf022370af217d63c59af617ab87f231161afe7",
+      "helper": {
+        "head": "11ef977f7e39766f819f334a5449f3703c16df3de8108ca324133e700328b5e1",
+        "records": 6,
+        "payload_bytes": 7292
+      },
+      "image_sha256": "98e18e47f16e478b9da5037460d303545c46bc27deb3fd2060d800ca4c812fdc",
+      "old_live_bindings_restored": false,
+      "last_offer_expiry": "oldmetadata grant expired; explicit samepeer configure refreshed authorization without resetting transport"
+    },
+    {
+      "check": "actual signed project-notes-1.1.0 native admission and exact network closure retention",
+      "result": "pass",
+      "release": "ce2fa5fae0b27cfaacd476c493917ac5de9053706fbdfd49a9356065e5897112",
+      "transfer": {
+        "head": "5e65e399196041a5048161c893984eccb2238807a010a757c2cc465a5c8cf2ef",
+        "records": 32,
+        "payload_bytes": 280261
+      },
+      "decision": {
+        "required": true,
+        "local_phase": 0,
+        "local_slot": 0,
+        "local_sequence": 0,
+        "send_phase": 0,
+        "local_classification": 0,
+        "local_reason": 0,
+        "remote_phase": 2,
+        "classification": 2,
+        "reason": 0,
+        "remote_sequence": 2,
+        "metadata_epoch": 2,
+        "error": 0,
+        "descriptor": {
+          "format": 2,
+          "classification": 2,
+          "reason": 0,
+          "policy": 3,
+          "rights": 895,
+          "sequence": 2,
+          "runtime_profile": 2,
+          "logical_project_id": "811de18db4868dcc7e4a56e3dbb2bfb9705192eb7c93fa64bab7cda34149af34",
+          "publication_id": "19474c4c7d84e36473fece33e5b59d6e35dfb9d790e22980087e879c71f3bbb7",
+          "release_id": "ce2fa5fae0b27cfaacd476c493917ac5de9053706fbdfd49a9356065e5897112",
+          "source_commitment": "4d0b09400229d6365a8a8bc6df38ba0eb3f07e8aef8d215d08eaa6e1f0d50b43",
+          "artifact_commitment": "0e950cc85f883dce8c2ec912b606539b96936838ed79159f09e72d97700742dd",
+          "evidence_commitment": "81c26cfb217e7bb01f2013fe1b1ae56d79dc9c7172f7c545139b21be32ed89d6",
+          "policy_commitment": "5e09a8c8a5f53e01ad34cadbbef085c8ecea109f752f6abd98b662a03861566c",
+          "federation_id": "1467ce15228e217491c329ffe7d6382a175fe1cb63f2c4ecd602f12828121189",
+          "root": "5e65e399196041a5048161c893984eccb2238807a010a757c2cc465a5c8cf2ef",
+          "publisher_key_id": "3be87c52b8d89ab5d467caa3815f117a5948d6760519f24cd85edaef014f512a",
+          "signature_present": true
+        }
+      },
+      "retention": {
+        "phase": 8,
+        "done": 284549,
+        "total": 284549,
+        "code": 0,
+        "root": 0,
+        "head": "5e65e399196041a5048161c893984eccb2238807a010a757c2cc465a5c8cf2ef",
+        "name": "project-notes-1.1.0-5e65e399196041a5"
+      }
+    },
+    {
+      "check": "final-image strict17 Forge recovers actual selected32-node store and offers complete closure",
+      "result": "pass",
+      "preview": {
+        "phase": 4,
+        "done": 4288,
+        "total": 284549,
+        "code": 0,
+        "root": 0,
+        "head": "5e65e399196041a5048161c893984eccb2238807a010a757c2cc465a5c8cf2ef",
+        "name": "project-notes-1.1.0-5e65e399196041a5"
+      },
+      "namespace": "b1149b6bf58a22f5be4d9cbc090ef6846ae4c87f1979573af5310ee024b3efb3",
+      "configuration_after_authentication": true
+    },
+    {
+      "check": "actual useful second-user fork native admission and24 exact network objects retained",
+      "result": "pass",
+      "release": "3eaf40c375f522806cab6fb1bdb02579ad688ce8c0f0640f25a2cc09d538b077",
+      "decision": {
+        "required": true,
+        "local_phase": 0,
+        "local_slot": 0,
+        "local_sequence": 0,
+        "send_phase": 0,
+        "local_classification": 0,
+        "local_reason": 0,
+        "remote_phase": 2,
+        "classification": 2,
+        "reason": 0,
+        "remote_sequence": 3,
+        "metadata_epoch": 2,
+        "error": 0,
+        "descriptor": {
+          "format": 2,
+          "classification": 2,
+          "reason": 0,
+          "policy": 3,
+          "rights": 895,
+          "sequence": 3,
+          "runtime_profile": 2,
+          "logical_project_id": "c4d06297c005739cc59cb4ad66add4d396e5ba7a7732c90f6eac2c72756a66e7",
+          "publication_id": "9e1d3ebeb4848fbeb2648c4bd3cdd1cae7f1d9528e51ece68af358281b3ee9d7",
+          "release_id": "3eaf40c375f522806cab6fb1bdb02579ad688ce8c0f0640f25a2cc09d538b077",
+          "source_commitment": "00d374d8faad4dbb342301860530a64d5c074b80cccade0cc883ca9c95d679f3",
+          "artifact_commitment": "876dd4a458825ca9cbef885e409547b0d68afa5248e6584cdaf089ad3bb97afc",
+          "evidence_commitment": "78c04cdd4a3f100b56d7db71166b29a1bd8f213e6de7778769b9e19e53f07043",
+          "policy_commitment": "5e09a8c8a5f53e01ad34cadbbef085c8ecea109f752f6abd98b662a03861566c",
+          "federation_id": "1467ce15228e217491c329ffe7d6382a175fe1cb63f2c4ecd602f12828121189",
+          "root": "66068a319dac7121582b3b2d54efd7a040f53f8a3ac91292764727cf538c3e3f",
+          "publisher_key_id": "eb33b26e8ada980fd314d008a0a4f4f434adc5d7b1523f2b3a9b582ba7f52efc",
+          "signature_present": true
+        }
+      },
+      "transfer": {
+        "head": "66068a319dac7121582b3b2d54efd7a040f53f8a3ac91292764727cf538c3e3f",
+        "records": 24,
+        "payload_bytes": 186326
+      },
+      "retention": {
+        "phase": 8,
+        "done": 189590,
+        "total": 189590,
+        "code": 0,
+        "root": 0,
+        "head": "66068a319dac7121582b3b2d54efd7a040f53f8a3ac91292764727cf538c3e3f",
+        "name": "project-notes-1.0.1-66068a319dac7121"
+      }
+    }
+  ],
+  "lease": {
+    "metadata_handle": 5869968293485346820,
+    "live_evidence_only": true,
+    "reusable_authority": false,
+    "exact_scope_unchanged": true,
+    "no_reconfiguration_during_transfer": true,
+    "new_allowance_created": false
+  },
+  "coexistence": {
+    "result": "pass-live-bulk-and-routed-feed",
+    "record": "build/campaign010-forge-coexistence/execution.json",
+    "actual_routed_feed_query": true,
+    "actual_bulk_peer": true,
+    "profiles_and_lifetime_allowances_preserved": true
+  },
+  "bounds": {
+    "ordinary_application_code_bytes": 261160,
+    "ordinary_application_limit_bytes": 262144,
+    "source_closure_nodes": 64,
+    "source_closure_bytes": 1048576,
+    "ordinary_roots": 4,
+    "global_records": 64,
+    "approved_bulk_contexts": 4
+  },
+  "failures_preserved": [
+    "build/campaign010-forge-mux-1/ordinary24-refusal.json",
+    "build/campaign010-forge-mux-1/setup-failure.json",
+    "build/campaign010-forge-mux-1/final-provider-scope-failure.json"
+  ],
+  "limitations": [
+    "Actual Forge transfer/publication is covered; RemoteBuild v2 wrapper typechecking is not a remote-worker execution.",
+    "Legacy RSA first-party/bootstrap endpoint packages are separate from guest-owned Ed25519 project and federation authority.",
+    "The current card reader still uses identified98e with the earlier finite-lease client; strict17 executes in the identifiedfc991 provider.",
+    "Cold helper admission, native policy rejections, accepted graph/provider recovery and fork signatures are independently initialized but run on one host."
+  ]
+}

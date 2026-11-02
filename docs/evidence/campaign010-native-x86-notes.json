@@ -1,0 +1,82 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "backend": "native x86-64 assembly emulator on x86-64 Linux",
+  "image_sha256": "b900ff02dbb6312c2c2d11baeab1073161d94212e971f5dd1551dbce50362f50",
+  "release_sha256": "5884bce6b3308dc6ff8a3cce550092660c9a537881d9021eea9b39edef805abb",
+  "commands": [
+    [
+      "/run/current-system/sw/bin/python3",
+      "/home/sreekumaar/Desktop/LemmaTrix/lt",
+      "run",
+      "--backend",
+      "x86_64",
+      "--image",
+      "/home/sreekumaar/Desktop/LemmaTrix/build/campaign010-creator-stack-fixed/guest.bin",
+      "--socket",
+      "/home/sreekumaar/Desktop/LemmaTrix/build/c010-notes-x86/portal.sock",
+      "--graphics",
+      "/home/sreekumaar/Desktop/LemmaTrix/build/c010-notes-x86/display"
+    ]
+  ],
+  "checks": [
+    {
+      "check": "exact guest-signed v4 release independently verifies and runs under separate assembly guest authority",
+      "result": "pass",
+      "release": {
+        "project": "project-notes",
+        "version": "1.1.0",
+        "release_id": "ce2fa5fae0b27cfaacd476c493917ac5de9053706fbdfd49a9356065e5897112",
+        "publisher_key_id": "3be87c52b8d89ab5d467caa3815f117a5948d6760519f24cd85edaef014f512a",
+        "project_id": "19474c4c7d84e36473fece33e5b59d6e35dfb9d790e22980087e879c71f3bbb7",
+        "rights": 895,
+        "executable_sha256": "0e950cc85f883dce8c2ec912b606539b96936838ed79159f09e72d97700742dd",
+        "source_root": "a8e4536dee865f98d430215e4d706f641df2bc0d8d89d6dad523cfcb0e36d9a5",
+        "manifest_root": "ab6a8298e7f1b8fb9587a69bce86e4194b7e496a194037046758c79bf3214d18",
+        "parent": "5f5079d707eafd7fc51b3413b9aa3e8b05340dcec6b36a4b8cdbe9e68db170a9",
+        "size": 109700,
+        "signature_verified": true,
+        "manifest_checked": false,
+        "identity_scheme": 4,
+        "logical_project_id": null,
+        "facet": "NativeApplication",
+        "signature_profile": "Ed25519-pure-LT-PROJECT-RELEASE-V1",
+        "publisher_generation": 1,
+        "prefix_size": 608,
+        "public_key": "d665c040a2dc1fac33dd7be69651853bdf78c6e5b5e0a60abe3b5b0ff07c161b"
+      },
+      "instance": 316266745838960903,
+      "frame_sha256": "2cb8d209c06cd19b214286b3d591f6debb24110bbc506cffe2e277cfb95045d5"
+    },
+    {
+      "check": "actual ordinary Project Notes consumes native title and body input",
+      "result": "pass",
+      "title": "ARM note",
+      "body": "AArch64 public SDK",
+      "frame_sha256": "ddbb901d95b721e87706e40f4fbd2601ac05ed35a80650a75c427922fbd14f47"
+    },
+    {
+      "check": "tampered new-profile executable is refused",
+      "result": "pass"
+    }
+  ],
+  "timings": [
+    {
+      "action": "approve exact publisher",
+      "seconds": 0.187
+    },
+    {
+      "action": "upload exact guest-signed artifact",
+      "seconds": 82.895
+    },
+    {
+      "action": "native Launcher Ed25519 verification",
+      "seconds": 161.804
+    },
+    {
+      "action": "explicit native installation approval",
+      "seconds": 37.422
+    }
+  ],
+  "elapsed_seconds": 854.7140247560019
+}

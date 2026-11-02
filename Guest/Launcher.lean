@@ -2,6 +2,9 @@ import Guest.LiveMemory
 import Guest.ServiceSHA256
 import Guest.ServiceSignature
 import Guest.GameSaveFormat
+import Guest.ReleaseFormat
+import Guest.ProjectPublisher
+import Guest.IntentConsent
 namespace Guest.Launcher
 open Guest.LiveMemory
 @[never_extract, extern "lt_effect_value"] opaque keep : UInt64 → UInt64 → UInt64
@@ -9,8 +12,31 @@ def control : UInt64 := 0x630000
 def stage : UInt64 := 0x700000
 def catalog (i : UInt64) : UInt64 := 0x640000+i*1024
 def project (i : UInt64) : UInt64 := 0x660000+i*128
+-- Installed projects are catalog metadata, independent of the eight live app
+-- slots. Match the sixteen retained release entries within this private page.
+def projectCapacity : UInt64 := 16
 def trust (i : UInt64) : UInt64 := 0x620000+i*384
 def hash (src len out t : UInt64) : UInt64 := Guest.ServiceHash.sha256At 0x600200 src len out t
+-- Session-local memoization of a successful pure-Ed25519 check, never an
+-- installation grant. This private record commits to the complete608-byte
+-- envelope, selected current trust key and exact staging epoch. validate still
+-- rehashes the executable/header and rechecks current trust on every use.
+def verificationCache : UInt64 := 0x63c000
+def resetStageVerification (t : UInt64) : UInt64 :=
+  Guest.store64 (control+568) (Guest.load64 (control+568) t+1)
+    (Guest.store64 verificationCache 0 t)
+def verifyStaged (key t : UInt64) : Bool :=
+  if Guest.load64 (stage+8) t != 4 then Guest.ReleaseFormat.verify stage key t else
+  let t := hash stage 608 (verificationCache+80) t
+  let t := hash key 32 (verificationCache+112) t
+  if Guest.load64 verificationCache t == 1 &&
+    Guest.load64 (verificationCache+72) t == Guest.load64 (control+568) t &&
+    equal (verificationCache+8) (verificationCache+80) 32 t &&
+    equal (verificationCache+40) (verificationCache+112) 32 t then true else
+  if !Guest.ReleaseFormat.verify stage key t then false else
+  let t := copy (verificationCache+80) (verificationCache+8) 64 t
+  let t := Guest.store64 (verificationCache+72) (Guest.load64 (control+568) t) t
+  Guest.Effects.effectValue 1 (Guest.store64 verificationCache 1 t) == 1
 
 
 def respond (rid status src len t : UInt64) : UInt64 :=
@@ -49,33 +75,33 @@ partial def paddingZero (p n t : UInt64) : Bool :=
 def validate (t : UInt64) : Bool :=
   let size := Guest.load64 (stage+24) t
   let n := Guest.load64 (stage+424) t
-  if Guest.load64 stage t != 0x3253454c544c || Guest.load64 (stage+8) t != 2 || Guest.load64 (stage+16) t != 512 ||
-     size == 0 || size > (if Guest.load64 (stage+400) t == 2 then 262144 else 65536) || size%4 != 0 || Guest.load64 (control+256) t != size+768 ||
-     Guest.load64 (stage+32) t != (if Guest.load64 (stage+400) t == 2 then 0x200000 else 0x400000) || Guest.load64 (stage+40) t != 2 || Guest.load64 (stage+48) t != 2 || Guest.load64 (stage+56) t != 2 ||
-     Guest.load64 (stage+64) t > 8191 || Guest.load64 (stage+72) t > 0xffffffff || Guest.load64 (stage+80) t > 0xffffffff || Guest.load64 (stage+88) t > 0xffffffff ||
-     Guest.load64 (stage+384) t != 0 || Guest.load64 (stage+392) t != 0 || (Guest.load64 (stage+400) t != 1 && Guest.load64 (stage+400) t != 2) ||
-     Guest.load64 (stage+408) t != 65536+(if Guest.load64 (stage+400) t == 2 then 2097152 else 0) || Guest.load64 (stage+416) t != 16384 || n == 0 || n > 48 || !nameValid 0 n t ||
-     !paddingZero (stage+432+n) (48-n) t || Guest.load64 (stage+480) t != 65537 ||
-     (Guest.load64 (stage+488) t != 0 && Guest.load64 (stage+488) t != 3) || !paddingZero (stage+496) 16 t then false else
+  let start := Guest.ReleaseFormat.prefix stage t
+  if !Guest.ReleaseFormat.validHeader stage t || !Guest.ReleaseFormat.executable stage t ||
+    Guest.load64 (control+256) t != size+start then false else
     let key := findTrust (stage+128) (stage+96) 0 t
     if key == 0 then false else
       let t := hash (stage+432) n (control+64) t
       if Guest.load64 (stage+488) t == 0 && !equal (control+64) (stage+128) 32 t then false else
-        let t := hash (stage+768) size (control+64) t
+        let t := hash (stage+start) size (control+64) t
         if !equal (control+64) (stage+192) 32 t then false else
           let t := copy (stage+160) (control+96) 32 t
           let t := zero (stage+160) 4 t
           let t := hash stage 512 (control+64) t
           let t := copy (control+96) (stage+160) 32 t
           if !equal (control+64) (stage+160) 32 t then false else
-            Guest.ServiceSignature.verify stage 512 (stage+512) (trust (key-1)+40) t
+            verifyStaged (trust (key-1)+40) t
 
 partial def findProject (id i t : UInt64) : UInt64 :=
-  if i == 8 then 0 else if Guest.load64 (project i) t == 1 && equal id (project i+8) 32 t then i+1 else findProject id (i+1) t
+  if i == projectCapacity then 0 else if Guest.load64 (project i) t == 1 && equal id (project i+8) 32 t then i+1 else findProject id (i+1) t
 partial def freeProject (i t : UInt64) : UInt64 :=
-  if i == 8 then 0 else if Guest.load64 (project i) t == 0 then i+1 else freeProject (i+1) t
+  if i == projectCapacity then 0 else if Guest.load64 (project i) t == 0 then i+1 else freeProject (i+1) t
 partial def freeRelease (i t : UInt64) : UInt64 :=
   if i == 16 then 0 else if Guest.load64 (catalog i+768) t == 0 then i+1 else freeRelease (i+1) t
+partial def knownRevoked (id i t : UInt64) : Bool :=
+  if i == 16 then false else
+    let r := catalog i
+    (Guest.load64 (r+768) t == 1 && Guest.load64 (r+776) t != 0 && equal id (r+160) 32 t) ||
+      knownRevoked id (i+1) t
 
 def launchable (index t : UInt64) : Bool :=
   if index == 0 || index > 16 then false else
@@ -93,12 +119,12 @@ def newer (candidate old t : UInt64) : Bool :=
 partial def uploadCode (slot length offset t : UInt64) : UInt64 :=
   if offset == length then Guest.syscall 54 slot 0 0 0 t else
     let count := if length-offset > 1024 then 1024 else length-offset
-    let t := copy (stage+768+offset) 0x410000 count t
+    let t := copy (stage+Guest.ReleaseFormat.prefix stage t+offset) 0x410000 count t
     let status := Guest.syscall 53 slot 0x410000 count offset t
     if status == err then err else uploadCode slot length (offset+count) status
 
 def install (t : UInt64) : UInt64 :=
-  if Guest.load64 (control+272) t != 1 || Guest.load64 (control+288) t != 1 || !equal (control+128) (stage+160) 32 t || Guest.load64 (control+160) t != Guest.load64 (stage+64) t || !validate t then err else
+  if Guest.load64 (control+272) t != 1 || Guest.load64 (control+288) t != 1 || !equal (control+128) (stage+160) 32 t || Guest.load64 (control+160) t != Guest.load64 (stage+64) t || knownRevoked (stage+160) 0 t || !validate t then err else
     let known := findProject (stage+128) 0 t
     let pi := if known == 0 then freeProject 0 t else known
     let free := freeRelease 0 t
@@ -118,7 +144,8 @@ def install (t : UInt64) : UInt64 :=
         if status == err then err else
           let status := uploadCode slot size 0 status
           if status == err then err else
-            let t := copy stage (catalog slot) 768 status
+            let t := zero (catalog slot) 96 status
+            let t := copy stage (catalog slot) (Guest.ReleaseFormat.prefix stage t) t
             let t := Guest.store64 (catalog slot+768) 1 t
             let t := Guest.store64 pr 1 t
             let t := copy (stage+128) (pr+8) 32 t
@@ -133,7 +160,7 @@ partial def releaseById (id i t : UInt64) : UInt64 :=
   if i == 16 then 0 else
     if Guest.load64 (catalog i+768) t == 1 && equal id (catalog i+160) 32 t then i+1 else releaseById id (i+1) t
 partial def referenced (slot i t : UInt64) : Bool :=
-  if i == 8 then false else
+  if i == projectCapacity then false else
     (Guest.load64 (project i) t == 1 && (Guest.load64 (project i+72) t == slot+1 || Guest.load64 (project i+80) t == slot+1)) || referenced slot (i+1) t
 partial def collect (i count t : UInt64) : UInt64 :=
   if i == 16 then result count t else
@@ -294,7 +321,7 @@ def graphResolve (root id t : UInt64) : UInt64 :=
 partial def selectedRelease (i count found t : UInt64) : UInt64 :=
   if i == count then found else
     let e := 0x680020+i*128
-    if Guest.load64 e t == 13 then
+    if Guest.load64 e t == 13 && !Guest.ReleaseFormat.dependencyEdge e t then
       if found != err then err else selectedRelease (i+1) count i t
     else selectedRelease (i+1) count found t
 partial def materialBinary (root count i used t : UInt64) : UInt64 :=
@@ -305,10 +332,10 @@ partial def materialBinary (root count i used t : UInt64) : UInt64 :=
     if h == err then err else
     let n := Guest.load64 (buf+16) h
     if n == 0 || n > 65536 || used > 262144 || n > 262144-used then err else
-      let r := graphRead h (stage+768+used) n 0 h
+      let r := graphRead h (stage+Guest.ReleaseFormat.prefix stage h+used) n 0 h
       if r == err then err else materialBinary root count (i+1) (used+n) r
 def stageProject (root t : UInt64) : UInt64 :=
-  let t := zero (control+256) 8 t
+  let t := resetStageVerification (zero (control+256) 8 t)
   let r := forward 2 64 (graphHeader 24 root 0 0 t)
   if r != 128 || Guest.load64 buf r != 0 then err else
   let h := Guest.load64 (buf+8) r
@@ -323,7 +350,11 @@ def stageProject (root t : UInt64) : UInt64 :=
   if h == err then err else
   let r := graphRead h 0x681000 544 0 h
   if r == err || Guest.load64 0x681010 r != 4 then err else
-  let r := graphRead h (stage-608) 1376 608 r
+  let r := graphRead h (stage-608) 1120 608 r
+  if r == err then err else
+  let start := Guest.ReleaseFormat.prefix stage r
+  if start == 0 then err else
+  let r := graphRead h (stage-608) (608+start) 1120 r
   if r == err then err else
   let binary := graphResolve root 0x6810b0 r
   if binary == err then err else
@@ -335,8 +366,8 @@ def stageProject (root t : UInt64) : UInt64 :=
   if r == err || count == 0 || count > 4 || detail > 512 || n != 32+count*128+detail then err else
   let bytes := materialBinary root count 0 0 r
   if bytes == err || bytes != Guest.load64 (stage+24) bytes then err else
-    let t := Guest.store64 (control+256) (bytes+768) bytes
-    let t := Guest.store64 (control+264) (bytes+768) t
+    let t := Guest.store64 (control+256) (bytes+start) bytes
+    let t := Guest.store64 (control+264) (bytes+start) t
     if !validate t then err else
       let t := Guest.store64 (control+272) 1 t
       let t := Guest.store64 (control+304) 1 t
@@ -346,18 +377,22 @@ def stageProject (root t : UInt64) : UInt64 :=
   if op == 1 then result 2 t
   else if op == 2 then Guest.syscall 42 0 buf 480 0 t
   else if op == 3 then
-    let t := zero (control+256) 8 t
+    let t := resetStageVerification (zero (control+256) 8 t)
     result 0 t
   else if op == 10 then
-    if len != 288 || (Guest.load8 (buf+32) t &&& 128) == 0 || (Guest.load8 (buf+287) t &&& 1) == 0 then err else
-      let t := hash (buf+32) 256 (control+64) t
+    if (len != 64 && len != 288) || (len == 288 &&
+      ((Guest.load8 (buf+32) t &&& 128) == 0 || (Guest.load8 (buf+287) t &&& 1) == 0)) ||
+      (len == 64 && paddingZero (buf+32) 32 t) then err else
+      let keyLength := len-32
+      let t := hash (buf+32) keyLength (control+64) t
       let known := findTrust buf (control+64) 0 t
       let slot := if known == 0 then freeTrust 0 t else known
       if slot == 0 then err else
         let r := trust (slot-1)
         let t := Guest.store64 r 1 t
         let t := copy buf (r+8) 32 t
-        let t := copy (buf+32) (r+40) 256 t
+        let t := zero (r+40) 32 t
+        let t := copy (buf+32) (r+40) keyLength t
         let t := copy (control+64) (r+296) 32 t
         let t := copy (control+64) buf 32 t
         keep 32 t
@@ -386,9 +421,9 @@ def stageProject (root t : UInt64) : UInt64 :=
 
 @[noinline] def commandStage (op len t : UInt64) : UInt64 :=
   if op == 20 then
-    if len != 8 || Guest.load64 buf t < 772 || Guest.load64 buf t > 262912 then err else
+    if len != 8 || Guest.load64 buf t < 612 || Guest.load64 buf t > 262912 then err else
       let size := Guest.load64 buf t
-      let t := zero (control+256) 8 t
+      let t := resetStageVerification (zero (control+256) 8 t)
       let t := Guest.store64 (control+256) size t
       result size t
   else if op == 21 then
@@ -652,6 +687,17 @@ def retainGameSave (handle t : UInt64) : UInt64 :=
 @[noinline] def commandIO (op len t : UInt64) : UInt64 :=
   if op == 70 then Guest.syscall 70 0 0 0 0 t
   else if op == 100 then if len >= 64 && len <= 1024 then forward 2 len t else err
+  else if op == 196 then
+    if len != 0 then err else
+    let t := zero buf 8 t
+    forward 6 64 (Guest.store64 buf 49 (Guest.store64 (buf+56) 2 t))
+  else if op == 197 then
+    if len != 8 || Guest.load64 buf t >= 4 then err else
+    let index := Guest.load64 buf t
+    let t := zero buf 8 t
+    forward 6 64 (Guest.store64 buf 50 (Guest.store64 (buf+8) index (Guest.store64 (buf+56) 2 t)))
+  else if op == 194 then Guest.IntentConsent.dispatch op len t
+  else if op == 195 then err
   else if op == 160 then if len >= 64 && len <= 1024 then forward 5 len t else err
   else if op == 170 then
     if len < 64 || len > 1024 then err else
@@ -679,6 +725,8 @@ def retainGameSave (handle t : UInt64) : UInt64 :=
     if r == err then err else 8+Guest.store64 buf 0 r
   else if op == 175 then
     if len < 72 || len > 1024 then err else
+    if Guest.load64 (buf+8) t == 405 && Guest.load64 (buf+32) t == 6 then err else
+    if Guest.load64 (buf+8) t == 408 && Guest.load64 (buf+16) t == 4 then err else
     let r := Guest.syscall 133 (Guest.load64 buf t) (buf+8) (len-8) 1016 t
     let t := zero buf 128 r
     if r == err then err else 8+Guest.store64 buf r t
@@ -721,11 +769,16 @@ def retainGameSave (handle t : UInt64) : UInt64 :=
       8+Guest.store64 buf r r
   else if op == 150 then
     if len < 72 || len > 1032 then err else
+      -- The portal cannot turn its Launcher transport identity into a release
+      -- approval. Only the native coordinator can issue purpose6 after review.
+      if Guest.load64 (buf+8) t == 405 && Guest.load64 (buf+32) t == 6 then err else
+      if Guest.load64 (buf+8) t == 408 && Guest.load64 (buf+16) t == 4 then err else
       let target := Guest.load64 buf t
       let t := copy (buf+8) buf (len-8) t
       forward target (len-8) t
   else if op == 203 then if len == 8 then retain (Guest.load64 buf t) t else err
   else if op == 207 then recover t
+  else if op == 227 then err
   else if op >= 222 && op <= 225 then commandContent op len t
   else if op == 221 then if len == 8 then describeProjectRetention (Guest.load64 buf t) t else err
   else if op == 220 then
@@ -742,7 +795,14 @@ def retainGameSave (handle t : UInt64) : UInt64 :=
   else err
 
 def command (op len t : UInt64) : UInt64 :=
-  if op < 20 then commandControl op len t
+  -- Native graph inspection verifies an actual executable/signature. The GUI
+  -- request already carries pollGUI's frame; the unrelated commandIO locals
+  -- would exceed the16KiB stack guard during Ed25519/SHA512 verification.
+  if op == 180 then if len == 8 then stageProject (Guest.load64 buf t) t else err
+  -- Native GUI requests already carry pollGUI's bounded frame. Keep publisher
+  -- hashing/verification off the unrelated large I/O command stack.
+  else if (op >= 186 && op <= 191) || op == 226 || op == 228 || op == 229 then Guest.ProjectPublisher.dispatch op len t
+  else if op < 20 then commandControl op len t
   else if op < 25 then commandStage op len t
   else if op < 34 then commandProcess op len t
   else commandIO op len t
@@ -754,7 +814,7 @@ def pollGUI (t : UInt64) : UInt64 :=
     let op := Guest.load64 0x410820 n
     let length := n-40
     let t := copy 0x410828 buf length n
-    let allowed := op == 2 || op == 3 || op == 12 || op == 13 || op == 24 || op == 25 || op == 26 || op == 27 || op == 28 || op == 29 || op == 14 || op == 16 || op == 202 || op == 211 || op == 213 || op == 212 || op == 221 || op == 180 || op == 241 || op == 246
+    let allowed := op == 186 || op == 187 || op == 190 || op == 191 || op == 196 || op == 194 || op == 2 || op == 3 || op == 12 || op == 13 || op == 24 || op == 25 || op == 26 || op == 27 || op == 28 || op == 29 || op == 14 || op == 16 || op == 202 || op == 211 || op == 213 || op == 212 || op == 221 || op == 180 || op == 241 || op == 246 || op == 228 || op == 229
     let response := if (op == 200 && length == 104) || (op == 217 && length == 72) then
         let payload := length-8
         let gesture := Guest.load64 (buf+payload) t
@@ -766,6 +826,13 @@ def pollGUI (t : UInt64) : UInt64 :=
         let gesture := Guest.load64 (buf+payload) t
         let checked := Guest.syscall 98 gesture 0 0 0 t
         if checked == err then err else command op payload checked
+      else if op == 197 && length == 16 then
+        let checked := Guest.syscall 98 (Guest.load64 (buf+8) t) 0 0 0 t
+        if checked == err then err else command op 8 checked
+      else if (op == 227 || op == 195) && length == 40 then
+        let checked := Guest.syscall 98 (Guest.load64 (buf+32) t) 0 0 0 t
+        if checked == err then err else
+          if op == 227 then Guest.ProjectPublisher.dispatch op 32 checked else Guest.IntentConsent.dispatch op 32 checked
       else if (op == 23 || op == 220) && length == 48 then
         let gesture := Guest.load64 (buf+40) t
         let checked := Guest.syscall 98 gesture 0 0 0 t
@@ -872,6 +939,7 @@ partial def loop (t : UInt64) : UInt64 :=
 
 def main (initial : UInt64) : UInt64 :=
   let t := zero control 128 initial
+  let t := zero (project 0) 256 t
   let t := zero 0x632000 512 t
   let t := respond 0 0 buf 0 t
   loop t

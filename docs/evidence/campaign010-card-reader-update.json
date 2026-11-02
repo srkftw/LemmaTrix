@@ -1,0 +1,340 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "scope": "Same real Feed-card reader fetches original, approves successor and rolls back.\n\nOriginal bytes are the ordinary export from the surviving fetched seed. The\nprovider restores its own selected successor store. Both federation choices are\npublic, native-verified descriptors; no publisher/operator signature is created.\n",
+  "actual_card_record": "docs/evidence/campaign010-feed-discovery-complete.json",
+  "provider_image_sha256": "fc991e1237ac5453331e87e6ed370293bbc60dd032d389c5b1a17151e8b7cd96",
+  "reader_image_sha256": "98e18e47f16e478b9da5037460d303545c46bc27deb3fd2060d800ca4c812fdc",
+  "checks": [
+    {
+      "check": "same genuine card reader establishes exact bulk peer preserving routed Feed scope and owner",
+      "result": "pass",
+      "before": {
+        "route": [
+          0,
+          1,
+          3,
+          0,
+          4,
+          0,
+          0,
+          1
+        ],
+        "route_body_hex": "",
+        "profiles_header": [
+          0,
+          1,
+          0,
+          4,
+          128,
+          1,
+          0,
+          1
+        ],
+        "profiles_body_hex": "010000000000000008010000aab7ec39030000000000000065000000000000000300000000000000000000000000000040ef7f0000000000ccff000000000000abb57e1d0ba712e823a587cb9a9fde21e03223399ed51a1135424d3cc42509430000000000000000340000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000000",
+        "feed_ui": [
+          0,
+          0,
+          8,
+          0,
+          47,
+          0,
+          0,
+          1
+        ],
+        "ordinary": [
+          [
+            4173912895437930759,
+            4,
+            0,
+            0
+          ],
+          [
+            4173912895437930760,
+            4,
+            1024,
+            0
+          ],
+          [
+            4173912895437930761,
+            4,
+            799,
+            0
+          ],
+          [
+            4173912895437930762,
+            4,
+            2175,
+            0
+          ],
+          [
+            4173912895437930763,
+            1,
+            1919,
+            0
+          ]
+        ]
+      },
+      "after": {
+        "route": [
+          0,
+          1,
+          3,
+          0,
+          4,
+          0,
+          0,
+          1
+        ],
+        "route_body_hex": "",
+        "profiles_header": [
+          0,
+          1,
+          0,
+          4,
+          128,
+          1,
+          0,
+          1
+        ],
+        "profiles_body_hex": "010000000000000008010000aab7ec39030000000000000065000000000000000300000000000000000000000000000040ef7f0000000000ccff000000000000abb57e1d0ba712e823a587cb9a9fde21e03223399ed51a1135424d3cc42509430000000000000000340000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000000",
+        "feed_ui": [
+          0,
+          0,
+          8,
+          0,
+          47,
+          0,
+          0,
+          1
+        ],
+        "ordinary": [
+          [
+            4173912895437930759,
+            4,
+            0,
+            0
+          ],
+          [
+            4173912895437930760,
+            4,
+            1024,
+            0
+          ],
+          [
+            4173912895437930761,
+            4,
+            799,
+            0
+          ],
+          [
+            4173912895437930762,
+            4,
+            2175,
+            0
+          ],
+          [
+            4173912895437930763,
+            1,
+            1919,
+            0
+          ]
+        ]
+      }
+    },
+    {
+      "check": "same card reader independently retrieves and approves original release from actual surviving bytes",
+      "result": "pass",
+      "transfer": {
+        "head": "3ae8ad12addef09160d55b01d7d527bbac6c5eded3b327df3511331f3230a747",
+        "records": 24,
+        "payload_bytes": 212881,
+        "decision": {
+          "required": true,
+          "local_phase": 0,
+          "local_slot": 0,
+          "local_sequence": 0,
+          "send_phase": 0,
+          "local_classification": 0,
+          "local_reason": 0,
+          "remote_phase": 2,
+          "classification": 2,
+          "reason": 0,
+          "remote_sequence": 1,
+          "metadata_epoch": 1,
+          "error": 0,
+          "descriptor": {
+            "format": 2,
+            "classification": 2,
+            "reason": 0,
+            "policy": 3,
+            "rights": 895,
+            "sequence": 1,
+            "runtime_profile": 2,
+            "logical_project_id": "811de18db4868dcc7e4a56e3dbb2bfb9705192eb7c93fa64bab7cda34149af34",
+            "publication_id": "19474c4c7d84e36473fece33e5b59d6e35dfb9d790e22980087e879c71f3bbb7",
+            "release_id": "5f5079d707eafd7fc51b3413b9aa3e8b05340dcec6b36a4b8cdbe9e68db170a9",
+            "source_commitment": "3ad0a8e0d5cb20cfcf6e889bd74b4083e445349aebb089b14e9bba4acf0e2cbd",
+            "artifact_commitment": "c5d6050bd043624b87089633dd84193754b7e740c39e3be2236a76a295bd5ca7",
+            "evidence_commitment": "586799309bcd7ca24fdd3b0cd354e033554dff764f0f1a6ed8686bf21f92f3fc",
+            "policy_commitment": "5e09a8c8a5f53e01ad34cadbbef085c8ecea109f752f6abd98b662a03861566c",
+            "federation_id": "45c685db79fb1cf45780281b2c72a16bb2c3c14cec05f5603171cd02346c5469",
+            "root": "3ae8ad12addef09160d55b01d7d527bbac6c5eded3b327df3511331f3230a747",
+            "publisher_key_id": "3be87c52b8d89ab5d467caa3815f117a5948d6760519f24cd85edaef014f512a",
+            "signature_present": true
+          }
+        },
+        "completed": {
+          "configured": true,
+          "metadata_grant": 16695651598931591169,
+          "root_grant": 16695651598931591170,
+          "selected_root": 4173912899732898048,
+          "frozen_root": 0,
+          "offered_nodes": 0,
+          "offered_bytes": 0,
+          "send_phase": 0,
+          "send_ordinal": 0,
+          "send_offset": 0,
+          "pending_job": 16695651601079074843,
+          "import_transaction": 0,
+          "received_nodes": 24,
+          "status": 11,
+          "metadata_nodes": 24,
+          "metadata_bytes": 212881,
+          "role": 0,
+          "policy": 1,
+          "server_store_grant": 0,
+          "queued_fetch": false,
+          "last_native_key": 63
+        }
+      },
+      "installation": {
+        "release": "5f5079d707eafd7fc51b3413b9aa3e8b05340dcec6b36a4b8cdbe9e68db170a9",
+        "new_instances": [
+          [
+            4173912895437930764,
+            4,
+            895,
+            0
+          ]
+        ],
+        "frame": "1bc17e9a7e3d3daac51b9fd652434b39957dcaf843fa861175fef7f5306eadd5"
+      },
+      "card_does_not_grant_execution": true
+    },
+    {
+      "check": "same second user explicitly selects new federation, fetches32 objects, approves proper successor and uses changed native app",
+      "result": "pass",
+      "transfer": {
+        "head": "5e65e399196041a5048161c893984eccb2238807a010a757c2cc465a5c8cf2ef",
+        "records": 32,
+        "payload_bytes": 280261,
+        "decision": {
+          "required": true,
+          "local_phase": 0,
+          "local_slot": 0,
+          "local_sequence": 0,
+          "send_phase": 0,
+          "local_classification": 0,
+          "local_reason": 0,
+          "remote_phase": 2,
+          "classification": 2,
+          "reason": 0,
+          "remote_sequence": 2,
+          "metadata_epoch": 2,
+          "error": 0,
+          "descriptor": {
+            "format": 2,
+            "classification": 2,
+            "reason": 0,
+            "policy": 3,
+            "rights": 895,
+            "sequence": 2,
+            "runtime_profile": 2,
+            "logical_project_id": "811de18db4868dcc7e4a56e3dbb2bfb9705192eb7c93fa64bab7cda34149af34",
+            "publication_id": "19474c4c7d84e36473fece33e5b59d6e35dfb9d790e22980087e879c71f3bbb7",
+            "release_id": "ce2fa5fae0b27cfaacd476c493917ac5de9053706fbdfd49a9356065e5897112",
+            "source_commitment": "4d0b09400229d6365a8a8bc6df38ba0eb3f07e8aef8d215d08eaa6e1f0d50b43",
+            "artifact_commitment": "0e950cc85f883dce8c2ec912b606539b96936838ed79159f09e72d97700742dd",
+            "evidence_commitment": "81c26cfb217e7bb01f2013fe1b1ae56d79dc9c7172f7c545139b21be32ed89d6",
+            "policy_commitment": "5e09a8c8a5f53e01ad34cadbbef085c8ecea109f752f6abd98b662a03861566c",
+            "federation_id": "1467ce15228e217491c329ffe7d6382a175fe1cb63f2c4ecd602f12828121189",
+            "root": "5e65e399196041a5048161c893984eccb2238807a010a757c2cc465a5c8cf2ef",
+            "publisher_key_id": "3be87c52b8d89ab5d467caa3815f117a5948d6760519f24cd85edaef014f512a",
+            "signature_present": true
+          }
+        },
+        "completed": {
+          "configured": true,
+          "metadata_grant": 16695651598931591171,
+          "root_grant": 16695651598931591172,
+          "selected_root": 4173912899732898052,
+          "frozen_root": 0,
+          "offered_nodes": 0,
+          "offered_bytes": 0,
+          "send_phase": 0,
+          "send_ordinal": 0,
+          "send_offset": 0,
+          "pending_job": 16695651601079074878,
+          "import_transaction": 0,
+          "received_nodes": 32,
+          "status": 11,
+          "metadata_nodes": 32,
+          "metadata_bytes": 280261,
+          "role": 0,
+          "policy": 1,
+          "server_store_grant": 0,
+          "queued_fetch": false,
+          "last_native_key": 63
+        }
+      },
+      "installation": {
+        "release": "ce2fa5fae0b27cfaacd476c493917ac5de9053706fbdfd49a9356065e5897112",
+        "new_instances": [
+          [
+            4173912895437930765,
+            4,
+            895,
+            0
+          ]
+        ],
+        "frame": "b905362e75bc960729f2c9ddaafe5cf22fe9ef7ea92d0688e8e09d1ceb36d06e"
+      },
+      "from_release": "5f5079d707eafd7fc51b3413b9aa3e8b05340dcec6b36a4b8cdbe9e68db170a9",
+      "to_release": "ce2fa5fae0b27cfaacd476c493917ac5de9053706fbdfd49a9356065e5897112",
+      "capability_delta": 0,
+      "body": "The selected federation supplied the complete successor.",
+      "frame": "ce23be6fb7917eb19da95ee92b1fad604feb66493d90dc47f9fef450bd43a984"
+    },
+    {
+      "check": "same second user explicitly rolls back eligible retained original release",
+      "result": "pass",
+      "from_release": "ce2fa5fae0b27cfaacd476c493917ac5de9053706fbdfd49a9356065e5897112",
+      "to_release": "5f5079d707eafd7fc51b3413b9aa3e8b05340dcec6b36a4b8cdbe9e68db170a9"
+    }
+  ],
+  "last_continuation_seconds": 186.903,
+  "timing_note": "Continuation timer starts after preserved setup/lifecycle failures; it is not total cold setup latency.",
+  "limitations": [
+    "One Linux x86-64 host; QEMU guest execution.",
+    "Reader98e executes older finite-lease Forge client; providerfc991 executes strict owned17 refresh.",
+    "Fresh federation public-pin selection and native exactdescriptor verification are separate from native install/update/rollback approval.",
+    "Private notes are ephemeral unless selected for retention; this reader requested none."
+  ],
+  "reader_cleanup": {
+    "pid": 798069,
+    "socket": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign010-feed-discovery-complete/personal/portal.sock",
+    "normal_command": 70,
+    "frame_sha256": "ce23be6fb7917eb19da95ee92b1fad604feb66493d90dc47f9fef450bd43a984",
+    "active_after_explicit_rollback": "5f5079d707eafd7fc51b3413b9aa3e8b05340dcec6b36a4b8cdbe9e68db170a9",
+    "private_note_retention": "not selected; ephemeral as declared",
+    "historical009_touched": false
+  },
+  "initial_failures": [
+    "Native Registry same-version reinstall denied24/status1; corrected to restart existing admitted slot.",
+    "Catalog inspection is zero-based and execution slots are one-based; a wrong service restart was rejected before configuration."
+  ],
+  "commands": [
+    "python3 tests/campaign010_card_reader_update.py --help"
+  ]
+}

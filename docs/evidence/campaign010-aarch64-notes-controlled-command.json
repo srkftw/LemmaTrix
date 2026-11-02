@@ -1,0 +1,30 @@
+{
+  "command": [
+    "taskset",
+    "-c",
+    "13",
+    "/run/current-system/sw/bin/python3",
+    "tests/campaign010_native_release_arm.py",
+    "--backend",
+    "aarch64",
+    "--application",
+    "notes",
+    "--image",
+    "build/campaign010-peer-complete/guest.bin",
+    "--release",
+    "build/campaign010-notes-continuation-1/project-notes-1.1.0.ltrel",
+    "--output",
+    "build/c010-notes-arm-controlled",
+    "--request-timeout",
+    "300"
+  ],
+  "exit_code": 1,
+  "seconds": 1010.4351518500043,
+  "cpu_affinity": [
+    13
+  ],
+  "request_timeout_seconds": 300,
+  "timeout_increased": false,
+  "native_arm_hardware": false,
+  "scope": "Controlled follow-up after completed Campaign010 guests stopped; affinity is not exclusive host CPU reservation"
+}

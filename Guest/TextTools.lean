@@ -1,10 +1,10 @@
-import Guest.Keyboard
-import Guest.Raster
+import Lemma.UI
 import Guest.LiveSDK
 import Guest.Structured
 import Guest.LiveApps
 namespace Guest.TextTools
-open Guest.LiveSDK Guest.Raster
+open Guest.LiveSDK
+open Lemma.UI (fill char text hex)
 open Guest.Structured
 
 def st : UInt64 := 0x6e0000
@@ -135,7 +135,7 @@ def draw (surface t : UInt64) : UInt64 :=
       let t := drawStatistics (statistics (bytes input n 4096) t) t
       let t := renderInput (load64 (st+96) t) n (load64 (st+8) t) 0 0 t
       label 5 8 326 t
-  upload surface 0 901120 0 t
+  Lemma.UI.upload surface 0 901120 t
 
 partial def visibleRow (offset target col row t : UInt64) : UInt64 :=
   if offset >= target || row >= 26 then row else
@@ -157,8 +157,8 @@ def redrawInput (surface t : UInt64) : UInt64 :=
     let t := drawStatistics (statistics (bytes input n 4096) t) t
     let t := fill 0 68 640 (rows*9) bg t
     let t := renderInput (load64 (st+96) t) n (load64 (st+8) t) 0 0 t
-    let t := upload surface (42*2560) (18*2560) 0 t
-    let t := upload surface (68*2560) (rows*9*2560) 0 t
+    let t := Lemma.UI.upload surface (42*2560) (18*2560) t
+    let t := Lemma.UI.upload surface (68*2560) (rows*9*2560) t
     store64 (st+104) 0 t
 
 partial def moveRight (p n t : UInt64) : UInt64 :=
@@ -193,7 +193,7 @@ def key (code down t : UInt64) : UInt64 :=
   else if down == 0 then t else
     let shift := load64 (st+16) t
     let ctrl := load64 (st+24) t
-    let c := Guest.Keyboard.scanCode code shift
+    let c := Lemma.UI.scanCode code shift
     if code == 1 then store64 (st+40) 0 t
     else if ctrl == 1 && code == 22 then uppercase input (load64 st t) (store64 (st+40) 0 t)
     else if ctrl == 1 && code == 38 then store64 (st+96) 0 (store64 (st+8) 0 (store64 st 0 (store64 (st+40) 0 t)))
@@ -253,7 +253,7 @@ partial def loop (endpoint surface t : UInt64) : UInt64 :=
     loop endpoint surface t
 
 def main (initial : UInt64) : UInt64 :=
-  let surface := Guest.syscall 80 0 0 0 0 initial
+  let surface := Lemma.UI.createSurface initial
   if surface == error then Guest.syscall 10 1 0 0 0 initial else
     let t := zero st 64 surface
     let t := draw surface t

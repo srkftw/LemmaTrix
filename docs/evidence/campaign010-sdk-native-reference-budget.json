@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "command": "python3 tests/sdk_native_dependency_budget.py",
+  "checks": [
+    {
+      "check": "sixteen flat references remain supported"
+    },
+    {
+      "check": "reject 16 unique releases requiring 17 repeated references",
+      "diagnostic": "native release verification needs 17 dependency references including repeated child pins; the supported limit is16. Select a smaller source dependency closure before building or signing."
+    },
+    {
+      "check": "reject 6 unique releases requiring 21 repeated references",
+      "diagnostic": "native release verification needs 21 dependency references including repeated child pins; the supported limit is16. Select a smaller source dependency closure before building or signing."
+    },
+    {
+      "check": "shared diamond child counts once per traversal, total10 rather than four unique releases"
+    },
+    {
+      "check": "normal Project Notes preflight authenticates actual signed helper and reports one reference",
+      "sdk": {
+        "content_id": "3312ddcd277f401c377142b006bac6cf9aeefd8fa89f4d4c78f1fd5469caf533",
+        "version": "0.1.0"
+      },
+      "dependency_lock_id": "fa0fa0bc14985b973f64869197445390919ae618c6fe79499cdc5d6af56fb550"
+    }
+  ],
+  "limitations": [
+    "Synthetic DAG declarations exercise the shipped accounting helper only. No synthetic release is signed, trusted or admitted.",
+    "The normal Notes check uses its existing genuine signed source dependency. No compilation or native network execution is claimed."
+  ]
+}

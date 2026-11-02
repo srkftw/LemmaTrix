@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "image_sha256": "e20e59aada640e1889c73e720cc2fce07bbd2c5503a88ffe9ddae49ff036a08d",
+  "checks": [
+    {
+      "backend": "qemu",
+      "seconds": 0.2450749550043838,
+      "result": "pass"
+    },
+    {
+      "backend": "aarch64",
+      "seconds": 0.3121686330123339,
+      "result": "pass"
+    }
+  ],
+  "boundaries": [
+    "MUX reserves bulk12..15 before router setup",
+    "frozen SDK terminal v1 keeps caller ownership checks",
+    "legacy raw connection cannot migrate into MUX",
+    "ordinary v1 bulk is rejected under MUX",
+    "peer bank3 selects channel15",
+    "known logical identity cannot switch publisher without fork",
+    "current parent and newer version required",
+    "installed project16 remains discoverable and protects its retained release",
+    "full16-project metadata table refuses further allocation",
+    "ordinary source import admits64nodes within1MiB",
+    "node65 and ordinarybyte/root/length escalation rejected",
+    "privileged bootstrap keeps existing4MiB/sixroot bounds"
+  ],
+  "limits": "Execute shipped transport framing and known publisher lineage predicates.\n\nThe clock is supplied by a test trap. Public state fixtures test refusal and\nslot isolation; this is not network delivery or publisher signing evidence.\n"
+}

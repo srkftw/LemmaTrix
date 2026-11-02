@@ -24,7 +24,7 @@ def main():
   body=raw[offset:offset+length]
   if a.artifacts:assert body==(a.artifacts/(names[slot-1]+'.bin')).read_bytes()
   services.append(dict(slot=slot,image_offset=offset,length=length,limit=limit,descriptor=version,sha256=hashlib.sha256(body).hexdigest()))
- # Network's explicitly widened built-in profile now occupies340000..3a7fff.
+ # Network's explicit built-in profile now occupies300000..367fff.
  # Check all gaps between the declared service regions, including its vacated
  # old440000 slot, rather than assuming the former gap is still empty.
  regions=sorted(live_build.service_image_bounds(slot)for slot in range(1,7))
@@ -48,6 +48,8 @@ def main():
  result=dict(image=hashlib.sha256(raw).hexdigest(),result='passed',image_bytes=len(raw),services=services,
   audio_profile=audio_profile,network_profile=network_profile,
   supervisor_dma_regions=[dict(start=start,end_exclusive=stop,purpose=name) for start,stop,name in dma],
+  launcher_physical=dict(code=[0x81080000,0x810e0000],data=[0x810e0000,0x810f0000],stack=[0x810f0000,0x810f4000],next_service_code=0x81100000),
+  compositor_physical=dict(code=[0x81200000,0x81240000],data=[0x81240000,0x81250000],stack=[0x81250000,0x81254000],next_service_code=0x81280000),
   objects_physical=dict(code=[0x81100000,0x81160000],data=[0x81160000,0x81170000],stack=[0x81170000,0x81174000],next_service_code=0x81180000),
   vault_physical=dict(code=[0x81180000,0x811e8000],data=[0x811e8000,0x811f8000],stack=[0x811f8000,0x811fc000],next_service_code=0x81200000),
   network_physical=dict(code=[0x81300000,0x81368000],data=[0x81368000,0x81378000],stack=[0x81378000,0x8137c000],next_service_code=0x81380000),

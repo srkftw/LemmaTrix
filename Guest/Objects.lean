@@ -1,4 +1,5 @@
 import Guest.LiveSDK
+import Guest.SourceImportPolicy
 import Guest.ServiceHash
 import Guest.Policy
 import Guest.ProjectGraph
@@ -593,8 +594,7 @@ def beginImport (caller rights length t : UInt64) : UInt64 :=
   let nodes := load64 (command+24) t
   let bytes := load64 (command+32) t
   if !has rights 6 then respond 1 0 0 0 t else
-  if count == 0 || count > 6 || nodes == 0 || nodes > 64 || bytes > 4194304 || length != 64+count*128 ||
-    (!importPrivileged rights && (count > 4 || nodes > 24 || bytes > 1048576)) ||
+  if !Guest.SourceImportPolicy.accepts (importPrivileged rights) count nodes bytes length ||
     !importRootQuota caller rights count t then respond 4 0 0 0 t else
   if !importNames caller 0 count t then respond 2 0 0 0 t else
     let slot := freeImport 0 t
@@ -898,6 +898,8 @@ partial def checkpointFiles (caller old fresh scope index count bytes t : UInt64
     if load64 e t == 15 then
       if load64 (checkpointTxn+48) t != 1 then checkpointFiles caller old fresh scope (index+1) count bytes t else
         checkpointFiles caller old fresh scope (index+1) (count+1) bytes (copy e (fresh+288+count*128) 128 t)
+    else if Guest.ReleaseFormat.dependencyEdge e t then
+      checkpointFiles caller old fresh scope (index+1) (count+1) bytes (copy e (fresh+288+count*128) 128 t)
     else if load64 e t != 10 then checkpointFiles caller old fresh scope (index+1) count bytes t else
       let found := ProjectGraph.findNode (e+16) 10 0 t
       if found == error then error else
@@ -998,15 +1000,19 @@ partial def sortForkEntries (r count i j t : UInt64) : UInt64 :=
 partial def selectedForkRelease (manifest index found t : UInt64) : UInt64 :=
   if index == load64 (manifest+272) t then Guest.Effects.effectValue found t else
     let e := manifest+288+index*128
-    if load64 e t != 13 then selectedForkRelease manifest (index+1) found t else
+    if load64 e t != 13 || Guest.ReleaseFormat.dependencyEdge e t then selectedForkRelease manifest (index+1) found t else
     if found != error then error else
       let node := ProjectGraph.findNode (e+16) 13 0 t
       if node == error then error else
         let r := recordAt node
-        if load64 (r+224) t != 1 || ProjectGraph.nodeSchema r t != 1 ||
-          load64 (r+32) t < 1376 || load64 (r+272) t != 4 || load64 (r+280) t < 832 ||
-          load64 (r+800) t != 0x31544e43524c544c || load64 (r+808) t != 1 ||
-          load64 (r+816) t != 768 || load64 (r+864) t != 0x3253454c544c || load64 (r+872) t != 2 then error else
+        let count := load64 (r+272) t
+        let d := ProjectGraph.releaseDetails r t
+        let h := d+64
+        let prefixBytes := Guest.ReleaseFormat.prefix h t
+        if load64 (r+224) t != 1 || ProjectGraph.nodeSchema r t != 1 || (count != 1 && count != 4) ||
+          prefixBytes == 0 || load64 (r+280) t < 64+prefixBytes ||
+          load64 d t != 0x31544e43524c544c || load64 (d+8) t != 1 || load64 (d+16) t != prefixBytes ||
+          !Guest.ReleaseFormat.validHeader h t then error else
             selectedForkRelease manifest (index+1) r t
 
 def forkRoot (caller rights length t : UInt64) : UInt64 :=
@@ -1029,7 +1035,7 @@ def forkRoot (caller rights length t : UInt64) : UInt64 :=
       let t := copy (ProjectGraph.logicalIdAt (recordAt origin) t) (checkpointOriginal+32) 32 t
       let upstreamRelease := selectedForkRelease old 0 error t
       let t := zero (checkpointOriginal+64) 4 t
-      let t := if upstreamRelease == error then t else copy (upstreamRelease+1024) (checkpointOriginal+64) 32 t
+      let t := if upstreamRelease == error then t else copy (ProjectGraph.releaseDetails upstreamRelease t+64+160) (checkpointOriginal+64) 32 t
       let t := copy (command+96) (checkpointOriginal+96) 32 t
       let entropy := syscall 111 0 (checkpointOriginal+128) 32 0 t
       if entropy != 0 then respond 7 0 0 0 entropy else

@@ -1,0 +1,249 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "image_sha256": "56b6b13683f32301ec76dc50aeeed01b21e9b897051afa07a0ca03a502caec58",
+  "checks": [
+    {
+      "check": "normal expected-head source import stages responsive application implementation",
+      "result": "pass",
+      "source_sha256": "e0e610a52dc7debcb848a1761863af40233e202693d4583a6ff5617a5f733a40",
+      "previous_source": "b3f0c30ac1bbaf48b06ee305b4cc480877a0635d5d31e32f9f3a660b3672a378"
+    },
+    {
+      "check": "native same-publisher successor binds exact parent, monotonic version and changed semantic behavior",
+      "result": "pass",
+      "release": {
+        "project": "project-notes",
+        "version": "1.1.0",
+        "release_id": "ce2fa5fae0b27cfaacd476c493917ac5de9053706fbdfd49a9356065e5897112",
+        "publisher_key_id": "3be87c52b8d89ab5d467caa3815f117a5948d6760519f24cd85edaef014f512a",
+        "project_id": "19474c4c7d84e36473fece33e5b59d6e35dfb9d790e22980087e879c71f3bbb7",
+        "rights": 895,
+        "executable_sha256": "0e950cc85f883dce8c2ec912b606539b96936838ed79159f09e72d97700742dd",
+        "source_root": "a8e4536dee865f98d430215e4d706f641df2bc0d8d89d6dad523cfcb0e36d9a5",
+        "manifest_root": "ab6a8298e7f1b8fb9587a69bce86e4194b7e496a194037046758c79bf3214d18",
+        "parent": "5f5079d707eafd7fc51b3413b9aa3e8b05340dcec6b36a4b8cdbe9e68db170a9",
+        "size": 109700,
+        "signature_verified": true,
+        "manifest_checked": true,
+        "identity_scheme": 4,
+        "logical_project_id": "811de18db4868dcc7e4a56e3dbb2bfb9705192eb7c93fa64bab7cda34149af34",
+        "facet": "NativeApplication",
+        "signature_profile": "Ed25519-pure-LT-PROJECT-RELEASE-V1",
+        "publisher_generation": 1,
+        "prefix_size": 608,
+        "public_key": "d665c040a2dc1fac33dd7be69651853bdf78c6e5b5e0a60abe3b5b0ff07c161b",
+        "release_node": "6150ac85c1694a9f8976cedaf86e8d7e80114658e25db25f0bc2c8c557619507",
+        "release_handle": 9297553831522992726
+      },
+      "parent": "5f5079d707eafd7fc51b3413b9aa3e8b05340dcec6b36a4b8cdbe9e68db170a9",
+      "published": {
+        "root": 9297553831522992403,
+        "head": "5e65e399196041a5048161c893984eccb2238807a010a757c2cc465a5c8cf2ef",
+        "name": "project-notes-1.1.0",
+        "release_id": "ce2fa5fae0b27cfaacd476c493917ac5de9053706fbdfd49a9356065e5897112",
+        "source_root": "4d0b09400229d6365a8a8bc6df38ba0eb3f07e8aef8d215d08eaa6e1f0d50b43",
+        "logical_project_id": "811de18db4868dcc7e4a56e3dbb2bfb9705192eb7c93fa64bab7cda34149af34",
+        "shell_root": 9297553831522992404,
+        "signed": true,
+        "admitted": false,
+        "installed": false,
+        "session_only": true
+      },
+      "archive": {
+        "head": "5e65e399196041a5048161c893984eccb2238807a010a757c2cc465a5c8cf2ef",
+        "project_id": "811de18db4868dcc7e4a56e3dbb2bfb9705192eb7c93fa64bab7cda34149af34",
+        "nodes": 32,
+        "bytes": 280261,
+        "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign010-notes-continuation-1/project-notes-1.1.0-graph.json",
+        "authority": "exported bytes only; import revalidates graph"
+      },
+      "source": "4d0b09400229d6365a8a8bc6df38ba0eb3f07e8aef8d215d08eaa6e1f0d50b43",
+      "artifact": {
+        "path": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign010-notes-continuation-1/builder/app.bin",
+        "sha256": "0e950cc85f883dce8c2ec912b606539b96936838ed79159f09e72d97700742dd",
+        "bytes": 109700
+      }
+    },
+    {
+      "check": "GUI approves exact update and changed app consumes annotation default resource with 70ms input after visible first frame",
+      "result": "pass",
+      "release_id": "ce2fa5fae0b27cfaacd476c493917ac5de9053706fbdfd49a9356065e5897112",
+      "rights": 895,
+      "capability_delta": 0,
+      "rapid_body": "SDK input remains responsive across rapid keystrokes.",
+      "rapid_title": "Successor note",
+      "frame": "6efc64bfd04b6b2e2018faa5262a38cd261ef7093462452508d45412bec230da",
+      "initial_surface_readiness_race_recorded": true
+    },
+    {
+      "check": "explicit native lifecycle rollback selects eligible original release",
+      "result": "pass",
+      "from_release": "ce2fa5fae0b27cfaacd476c493917ac5de9053706fbdfd49a9356065e5897112",
+      "to_release": "5f5079d707eafd7fc51b3413b9aa3e8b05340dcec6b36a4b8cdbe9e68db170a9",
+      "native_action": true
+    },
+    {
+      "check": "known revoked installed release refuses execution; fresh-slot reinstallation policy fix awaits new image",
+      "result": "pass",
+      "revoked": "guest rejected command25, status1",
+      "revoked_release": "ce2fa5fae0b27cfaacd476c493917ac5de9053706fbdfd49a9356065e5897112",
+      "reinstallation_executed": false
+    },
+    {
+      "check": "explicit typed publisher, selected project and one selected note retained through Objects domain3",
+      "result": "pass",
+      "retained": {
+        "authority_root": 9297553831522992661,
+        "head": "6acaf9bc4e7186cd392290b1cac9de98c259cca933a6608222d24e6d26810f5b",
+        "project_id": "811de18db4868dcc7e4a56e3dbb2bfb9705192eb7c93fa64bab7cda34149af34",
+        "public_key": "d665c040a2dc1fac33dd7be69651853bdf78c6e5b5e0a60abe3b5b0ff07c161b",
+        "saved": {
+          "generation": 2,
+          "nodes": 44,
+          "projects": 5,
+          "bytes": 401510,
+          "format": 2
+        },
+        "domain": 3,
+        "secret_boundary": "native Identity typed encrypted seal",
+        "recovery": "inspection only; no stale approval or silent successor authority"
+      },
+      "retained_note_members": [
+        "note-1.ltnote"
+      ],
+      "unselected_notes_restored": false
+    },
+    {
+      "check": "restart recovery issues fresh roots and publisher binding with inspection-only authority",
+      "result": "pass",
+      "recovered": {
+        "generation": 2,
+        "bytes": 401510,
+        "nodes": 44,
+        "native_import": true,
+        "roots": [
+          {
+            "name": "project-notes",
+            "head": "849182b0497061ecc54106675dd8ab36f77f5aef37bfa16238c34c8678c4ee87",
+            "cap": 13503812026882851082
+          },
+          {
+            "name": "notes-source",
+            "head": "4d0b09400229d6365a8a8bc6df38ba0eb3f07e8aef8d215d08eaa6e1f0d50b43",
+            "cap": 13503812026882851083
+          },
+          {
+            "name": "publisher-3be87c52b8d89ab5",
+            "head": "6acaf9bc4e7186cd392290b1cac9de98c259cca933a6608222d24e6d26810f5b",
+            "cap": 13503812026882851084
+          },
+          {
+            "name": "project-notes-1.0.0",
+            "head": "3ae8ad12addef09160d55b01d7d527bbac6c5eded3b327df3511331f3230a747",
+            "cap": 13503812026882851085
+          },
+          {
+            "name": "project-notes-1.1.0",
+            "head": "5e65e399196041a5048161c893984eccb2238807a010a757c2cc465a5c8cf2ef",
+            "cap": 13503812026882851086
+          }
+        ]
+      },
+      "publisher": {
+        "key": 13503812018292916489,
+        "role": 1,
+        "generation": 2,
+        "federation": "76929a33ccf0c891c7e23cfe15ecec1f6658c5e2b417a3f40fdb0b912f484601",
+        "scope": "811de18db4868dcc7e4a56e3dbb2bfb9705192eb7c93fa64bab7cda34149af34",
+        "public_key": "d665c040a2dc1fac33dd7be69651853bdf78c6e5b5e0a60abe3b5b0ff07c161b",
+        "fingerprint": "de661812e747f9470e84b1e488cfeb746dd464197276e7edc60fe4c8da4567a3",
+        "signature": "8e0f5226b0ef6b6db4d801d0d12497fd26d36676535ca6dac4201d28ba784b63947462ce2c3113eed467950c1fd9ddadc8a962212841f215b0096b00bd721804",
+        "retention": "ephemeral",
+        "validity": "explicit revocation; no reboot-relative expiry",
+        "person_identity": "not established by this self-signed descriptor",
+        "session_only": true,
+        "signing_authorized": false,
+        "recovery": "inspection only; establish fresh authorized fork/publisher or reconcile authenticated publication state"
+      },
+      "old_handles_rejected": true,
+      "external_freshness_claim": false
+    },
+    {
+      "check": "ordinary app imports recovered selected note and searches preserved UTF-8",
+      "result": "pass",
+      "frame": "f86f28b74d8466a9ca91d2424bd965ae244182ba667be79a945f8bcc07cec2ab",
+      "title": "Release plan",
+      "query": "caf\u00e9",
+      "unselected_private_state": false
+    },
+    {
+      "check": "fixed current Launcher refuses known revoked release reinstallation after public CLI update and rollback",
+      "result": "pass",
+      "release_id": "ce2fa5fae0b27cfaacd476c493917ac5de9053706fbdfd49a9356065e5897112",
+      "rejected": "guest rejected command24, status1",
+      "active_preserved": "5f5079d707eafd7fc51b3413b9aa3e8b05340dcec6b36a4b8cdbe9e68db170a9",
+      "image_sha256": "fcf5811f7cc41f29d2284599c80afa3656adb8a603d8f602d17354357e28f9bc",
+      "elapsed_seconds": 23.046,
+      "authority": "ordinary explicit developer CLI approval; no signatures generated"
+    }
+  ],
+  "elapsed_seconds": 446.976,
+  "recovery_image_sha256": "fcf5811f7cc41f29d2284599c80afa3656adb8a603d8f602d17354357e28f9bc",
+  "session": {
+    "socket": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign010-notes-native-4/personal/portal.sock",
+    "graphics": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign010-notes-native-4/personal/display.qmp",
+    "pid": 749197,
+    "publisher": {
+      "key": 13503812018292916489,
+      "role": 1,
+      "generation": 2,
+      "federation": "76929a33ccf0c891c7e23cfe15ecec1f6658c5e2b417a3f40fdb0b912f484601",
+      "scope": "811de18db4868dcc7e4a56e3dbb2bfb9705192eb7c93fa64bab7cda34149af34",
+      "public_key": "d665c040a2dc1fac33dd7be69651853bdf78c6e5b5e0a60abe3b5b0ff07c161b",
+      "fingerprint": "de661812e747f9470e84b1e488cfeb746dd464197276e7edc60fe4c8da4567a3",
+      "signature": "8e0f5226b0ef6b6db4d801d0d12497fd26d36676535ca6dac4201d28ba784b63947462ce2c3113eed467950c1fd9ddadc8a962212841f215b0096b00bd721804",
+      "retention": "ephemeral",
+      "validity": "explicit revocation; no reboot-relative expiry",
+      "person_identity": "not established by this self-signed descriptor",
+      "session_only": true,
+      "signing_authorized": false,
+      "recovery": "inspection only; establish fresh authorized fork/publisher or reconcile authenticated publication state"
+    },
+    "recovered": {
+      "generation": 2,
+      "bytes": 401510,
+      "nodes": 44,
+      "native_import": true,
+      "roots": [
+        {
+          "name": "project-notes",
+          "head": "849182b0497061ecc54106675dd8ab36f77f5aef37bfa16238c34c8678c4ee87",
+          "cap": 13503812026882851082
+        },
+        {
+          "name": "notes-source",
+          "head": "4d0b09400229d6365a8a8bc6df38ba0eb3f07e8aef8d215d08eaa6e1f0d50b43",
+          "cap": 13503812026882851083
+        },
+        {
+          "name": "publisher-3be87c52b8d89ab5",
+          "head": "6acaf9bc4e7186cd392290b1cac9de98c259cca933a6608222d24e6d26810f5b",
+          "cap": 13503812026882851084
+        },
+        {
+          "name": "project-notes-1.0.0",
+          "head": "3ae8ad12addef09160d55b01d7d527bbac6c5eded3b327df3511331f3230a747",
+          "cap": 13503812026882851085
+        },
+        {
+          "name": "project-notes-1.1.0",
+          "head": "5e65e399196041a5048161c893984eccb2238807a010a757c2cc465a5c8cf2ef",
+          "cap": 13503812026882851086
+        }
+      ]
+    },
+    "image": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign010-vault-recovery-current/guest.bin",
+    "backend": "qemu"
+  }
+}

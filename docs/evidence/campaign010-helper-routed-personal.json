@@ -1,0 +1,253 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "scope": "Fetch the real source-only helper beside an existing routed Feed owner.",
+  "provider_image_sha256": "fc991e1237ac5453331e87e6ed370293bbc60dd032d389c5b1a17151e8b7cd96",
+  "personal_image_sha256": "b743de7abac5c508660a662041ef97ef3da7677bd7c33d9903123e9d8e5459ad",
+  "elapsed_seconds": 31.269,
+  "checks": [
+    {
+      "check": "actual separately published6-node source-only helper fetched while exact routedFeedowner/profile/outbox remain unchanged",
+      "result": "pass",
+      "before": {
+        "route": [
+          0,
+          1,
+          3,
+          0,
+          4,
+          0,
+          0,
+          1
+        ],
+        "route_body_hex": "",
+        "profiles_header": [
+          0,
+          1,
+          0,
+          4,
+          128,
+          1,
+          0,
+          1
+        ],
+        "profiles_body_hex": "01000000000000000901000096abbaa903000000000000005b000000000000000300000000000000000000000000000048f37f0000000000f4ff000000000000abb57e1d0ba712e823a587cb9a9fde21e03223399ed51a1135424d3cc425094300000000000000000c0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000000",
+        "feed_ui": [
+          0,
+          1,
+          0,
+          1688,
+          15,
+          6,
+          0,
+          1
+        ],
+        "ordinary": [
+          [
+            12230276398811447559,
+            4,
+            0,
+            0
+          ],
+          [
+            12230276398811447560,
+            4,
+            895,
+            0
+          ],
+          [
+            12230276398811447561,
+            4,
+            1024,
+            0
+          ],
+          [
+            12230276398811447562,
+            4,
+            799,
+            0
+          ],
+          [
+            12230276398811447563,
+            4,
+            2175,
+            0
+          ],
+          [
+            12230276398811447564,
+            1,
+            1919,
+            0
+          ]
+        ]
+      },
+      "after": {
+        "route": [
+          0,
+          1,
+          3,
+          0,
+          4,
+          0,
+          0,
+          1
+        ],
+        "route_body_hex": "",
+        "profiles_header": [
+          0,
+          1,
+          0,
+          4,
+          128,
+          1,
+          0,
+          1
+        ],
+        "profiles_body_hex": "01000000000000000901000096abbaa903000000000000005b000000000000000300000000000000000000000000000048f37f0000000000f4ff000000000000abb57e1d0ba712e823a587cb9a9fde21e03223399ed51a1135424d3cc425094300000000000000000c0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000000",
+        "feed_ui": [
+          0,
+          1,
+          0,
+          1688,
+          15,
+          6,
+          0,
+          1
+        ],
+        "ordinary": [
+          [
+            12230276398811447559,
+            4,
+            0,
+            0
+          ],
+          [
+            12230276398811447560,
+            4,
+            895,
+            0
+          ],
+          [
+            12230276398811447561,
+            4,
+            1024,
+            0
+          ],
+          [
+            12230276398811447562,
+            4,
+            799,
+            0
+          ],
+          [
+            12230276398811447819,
+            4,
+            2175,
+            0
+          ],
+          [
+            12230276398811447820,
+            1,
+            1919,
+            0
+          ]
+        ]
+      },
+      "transfer": {
+        "head": "11ef977f7e39766f819f334a5449f3703c16df3de8108ca324133e700328b5e1",
+        "records": 6,
+        "payload_bytes": 7292,
+        "decision": {
+          "required": true,
+          "local_phase": 0,
+          "local_slot": 0,
+          "local_sequence": 0,
+          "send_phase": 0,
+          "local_classification": 0,
+          "local_reason": 0,
+          "remote_phase": 2,
+          "classification": 1,
+          "reason": 0,
+          "remote_sequence": 1,
+          "metadata_epoch": 1,
+          "error": 0,
+          "descriptor": {
+            "format": 2,
+            "classification": 1,
+            "reason": 0,
+            "policy": 3,
+            "rights": 0,
+            "sequence": 1,
+            "runtime_profile": 0,
+            "logical_project_id": "db432a166587df4e984b4e7877d2fab61049dfa3cf190b31637a2fc9c64bc97f",
+            "publication_id": "b6508a836dc006d4eaac784fd999bde4eee5d47b8d909e436205a0e265221f29",
+            "release_id": "a4e39b5b087822dd3054501afc425bcbcfa6dcbc8faa98293e626f6256fb55c2",
+            "source_commitment": "db432a166587df4e984b4e7877d2fab61049dfa3cf190b31637a2fc9c64bc97f",
+            "artifact_commitment": "0000000000000000000000000000000000000000000000000000000000000000",
+            "evidence_commitment": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "policy_commitment": "5e09a8c8a5f53e01ad34cadbbef085c8ecea109f752f6abd98b662a03861566c",
+            "federation_id": "1467ce15228e217491c329ffe7d6382a175fe1cb63f2c4ecd602f12828121189",
+            "root": "11ef977f7e39766f819f334a5449f3703c16df3de8108ca324133e700328b5e1",
+            "publisher_key_id": "36aa1fd2be2a8c3753ef57a5169e696580862af0f546eb0e0541646e6657a2f7",
+            "signature_present": true
+          }
+        },
+        "completed": {
+          "configured": true,
+          "metadata_grant": 12027617465006555138,
+          "root_grant": 12027617465006555139,
+          "selected_root": 12230276403106414855,
+          "frozen_root": 0,
+          "offered_nodes": 0,
+          "offered_bytes": 0,
+          "send_phase": 0,
+          "send_ordinal": 0,
+          "send_offset": 0,
+          "pending_job": 12027617467154038793,
+          "import_transaction": 0,
+          "received_nodes": 6,
+          "status": 11,
+          "metadata_nodes": 6,
+          "metadata_bytes": 7292,
+          "role": 0,
+          "policy": 1,
+          "server_store_grant": 0,
+          "queued_fetch": false,
+          "last_native_key": 63
+        }
+      },
+      "execution_authority": false
+    },
+    {
+      "check": "source-only DevelopmentArtifact fetch grants no native application installation/execution",
+      "result": "pass",
+      "physical_action": "F6",
+      "native_forge_status": 2,
+      "active_application_missing": true,
+      "initial_status_read": "5-second management read timed out while native review completed; later bounded read observed actual refusal"
+    }
+  ],
+  "cleanup": [
+    {
+      "pid": 820385,
+      "start_ticks": "11997841",
+      "normal_command": 70,
+      "frame_sha256": "b1bc974972260ccf37d421eb73b0be6c7dd29173258a431d909c506e04c8bc08",
+      "accepted_store_and_operator_seal": "preserved; no private key export",
+      "personal_state": "public provider records and typed operator seal preserved"
+    },
+    {
+      "pid": 777678,
+      "start_ticks": "11451082",
+      "normal_command": 70,
+      "frame_sha256": "94a656448754c3fb70d95935b85cc22b5424d01e9e077120688d9ef76a37aa0a",
+      "accepted_store_and_operator_seal": "preserved; no private key export",
+      "personal_state": "selected note/project backing preserved; fresh Feed author/outbox intentionally unretained"
+    }
+  ],
+  "limitations": [
+    "Same QEMU Linux host; no independent administration claim.",
+    "Existing accepted Feed publication retains original Alpha1 signed descriptor; helper selection deliberately chooses Alpha2 public policy.",
+    "Source-only development acceptance grants no native application execution."
+  ]
+}

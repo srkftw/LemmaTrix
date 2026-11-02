@@ -1,0 +1,72 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "source_image_sha256": "fcf5811f7cc41f29d2284599c80afa3656adb8a603d8f602d17354357e28f9bc",
+  "image_sha256": "b900ff02dbb6312c2c2d11baeab1073161d94212e971f5dd1551dbce50362f50",
+  "services": {
+    "launcher": "598e42f4f5aad02753891fc1ceea0ee6cb93a409d6fc2de27ff51d3e9e9cf637",
+    "compositor": "2eee31099a0700cd4fd3545e78e7f882fe70a50798ce7c8ecef8782e1ffd7567",
+    "network": "5014d47a190eb143355ee1c0c6d776689960b12a3fe1ec5d4f77861c9a0fe2aa"
+  },
+  "backend_roles": [
+    "qemu",
+    "qemu",
+    "qemu",
+    "qemu",
+    "qemu",
+    "qemu"
+  ],
+  "operators": [
+    {
+      "node": 1,
+      "role": "relay",
+      "pin": "fcb52d80a010cfe79dc6a24f8e5543d508ec65dc2696b2c7cbec737b1099c90b",
+      "certificate_sha256": "fcb52d80a010cfe79dc6a24f8e5543d508ec65dc2696b2c7cbec737b1099c90b",
+      "credential_seconds": 11.564963224998792
+    },
+    {
+      "node": 2,
+      "role": "relay",
+      "pin": "798f53e6418a5bbfb4d19eb40b28bd0061455009aa4a92b5b5b93f40d7fb9906",
+      "certificate_sha256": "798f53e6418a5bbfb4d19eb40b28bd0061455009aa4a92b5b5b93f40d7fb9906",
+      "credential_seconds": 8.884807928989176
+    },
+    {
+      "node": 3,
+      "role": "relay",
+      "pin": "778eb294d0f215b0d70bf1f178a4af9fee8662e645bd0c40e59501b4eebf808a",
+      "certificate_sha256": "778eb294d0f215b0d70bf1f178a4af9fee8662e645bd0c40e59501b4eebf808a",
+      "credential_seconds": 9.263886586995795
+    },
+    {
+      "node": 4,
+      "role": "mailbox",
+      "pin": "72716b6f48a40e4873083114b0d0ccb828f1a9758014f0ece7585a6c52c6a6fd",
+      "certificate_sha256": "72716b6f48a40e4873083114b0d0ccb828f1a9758014f0ece7585a6c52c6a6fd",
+      "credential_seconds": 9.958479105989682
+    },
+    {
+      "node": 5,
+      "role": "mailbox",
+      "pin": "c4d97df104d3558a5b33ea39d25596ffe4f171c82d828de7a701a8b64fd06a84",
+      "certificate_sha256": "c4d97df104d3558a5b33ea39d25596ffe4f171c82d828de7a701a8b64fd06a84",
+      "credential_seconds": 11.396295135011314
+    }
+  ],
+  "timings": {
+    "four_actor_cold_setup_seconds": 117.66233091900358,
+    "three_hop_circuit_seconds": 24.958777040010318,
+    "first_terminal_seconds": 9.205695869997726,
+    "native_reselection_seconds": 11.004080935003003,
+    "queued_rebind_and_rpc_seconds": 9.56335168700025
+  },
+  "total_seconds": 289.9607978849963,
+  "checks": [
+    "actual three-hop circuit across independently keyed native relays",
+    "two separately approved native peer pins configured for distinct exact owner incarnations",
+    "physical Alt+N native review queues existing selected profile with exact peer pin and finite totals",
+    "first owner collects its actual mailbox reply while another terminal is active; remaining totals unchanged",
+    "queued owner rebinds a fresh never-reused stream and sends actual RPC; attempts/bytes charged once; duplicate configuration cannot renew totals"
+  ],
+  "limits": "Native component selection and real mailbox RPC evidence. This does not establish Project Notes Feed/Messenger UI sharing or durable operation recovery."
+}

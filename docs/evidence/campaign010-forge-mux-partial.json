@@ -1,0 +1,508 @@
+{
+  "schema": 1,
+  "result": "partial",
+  "sdk_changed": false,
+  "package": {
+    "client_sha256": "95f855bb84684c027a351ba0fe9af9218005d5279f7fb00c161d6494005391c0",
+    "client_native_bytes": 260352,
+    "source_commit": "fd0d60f"
+  },
+  "actual_passes": [
+    {
+      "check": "fresh explicit v2 bulk relationship authenticates with independently selected signed endpoint",
+      "result": "pass",
+      "endpoints": [
+        {
+          "protocol_version": 2,
+          "connection_slot": 0,
+          "profile": "Noise_NNpsk0_25519_ChaChaPoly_SHA256",
+          "session_phase": 3,
+          "endpoint_authenticated": true,
+          "configured_role": "server",
+          "device_status": 8589934595,
+          "broker_ticks": 25867,
+          "last_error": 10,
+          "inbox_records": 0,
+          "public_service_description_verified": true,
+          "traffic_privacy": "direct endpoints visible; no anonymity",
+          "modes_available": [
+            "encrypted_bulk"
+          ]
+        },
+        {
+          "protocol_version": 2,
+          "connection_slot": 0,
+          "profile": "Noise_NNpsk0_25519_ChaChaPoly_SHA256",
+          "session_phase": 3,
+          "endpoint_authenticated": true,
+          "configured_role": "client",
+          "device_status": 8589934595,
+          "broker_ticks": 25960,
+          "last_error": 10,
+          "inbox_records": 0,
+          "public_service_description_verified": true,
+          "traffic_privacy": "direct endpoints visible; no anonymity",
+          "modes_available": [
+            "encrypted_bulk"
+          ]
+        }
+      ],
+      "peer_slots": [
+        0,
+        0
+      ],
+      "stream": 1
+    },
+    {
+      "check": "separately published source-only helper",
+      "result": "pass",
+      "release": "a4e39b5b087822dd3054501afc425bcbcfa6dcbc8faa98293e626f6256fb55c2",
+      "transfer": {
+        "head": "11ef977f7e39766f819f334a5449f3703c16df3de8108ca324133e700328b5e1",
+        "records": 6,
+        "payload_bytes": 7292
+      },
+      "decision": {
+        "required": true,
+        "local_phase": 0,
+        "local_slot": 0,
+        "local_sequence": 0,
+        "send_phase": 0,
+        "local_classification": 0,
+        "local_reason": 0,
+        "remote_phase": 2,
+        "classification": 1,
+        "reason": 0,
+        "remote_sequence": 1,
+        "metadata_epoch": 1,
+        "error": 0,
+        "descriptor": {
+          "format": 2,
+          "classification": 1,
+          "reason": 0,
+          "policy": 3,
+          "rights": 0,
+          "sequence": 1,
+          "runtime_profile": 0,
+          "logical_project_id": "db432a166587df4e984b4e7877d2fab61049dfa3cf190b31637a2fc9c64bc97f",
+          "publication_id": "b6508a836dc006d4eaac784fd999bde4eee5d47b8d909e436205a0e265221f29",
+          "release_id": "a4e39b5b087822dd3054501afc425bcbcfa6dcbc8faa98293e626f6256fb55c2",
+          "source_commitment": "db432a166587df4e984b4e7877d2fab61049dfa3cf190b31637a2fc9c64bc97f",
+          "artifact_commitment": "0000000000000000000000000000000000000000000000000000000000000000",
+          "evidence_commitment": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "policy_commitment": "5e09a8c8a5f53e01ad34cadbbef085c8ecea109f752f6abd98b662a03861566c",
+          "federation_id": "1467ce15228e217491c329ffe7d6382a175fe1cb63f2c4ecd602f12828121189",
+          "root": "11ef977f7e39766f819f334a5449f3703c16df3de8108ca324133e700328b5e1",
+          "publisher_key_id": "36aa1fd2be2a8c3753ef57a5169e696580862af0f546eb0e0541646e6657a2f7",
+          "signature_present": true
+        }
+      },
+      "retention": {
+        "phase": 8,
+        "done": 8252,
+        "total": 8252,
+        "code": 0,
+        "root": 0,
+        "head": "11ef977f7e39766f819f334a5449f3703c16df3de8108ca324133e700328b5e1",
+        "name": "notes-schema-1.0.0-11ef977f7e39766f"
+      }
+    },
+    {
+      "check": "ordinary Forge install and explicit bulk peer authentication preserve existing native3hop route, terminalprofile finite totals and accepted Feed card",
+      "result": "pass",
+      "before": {
+        "route": [
+          0,
+          1,
+          3,
+          0,
+          4,
+          0,
+          0,
+          1
+        ],
+        "route_body_hex": "",
+        "profiles_header": [
+          0,
+          1,
+          0,
+          4,
+          128,
+          1,
+          0,
+          1
+        ],
+        "profiles_body_hex": "01000000000000000901000096abbaa903000000000000005b0000000000000003000000000000000000000000000000e8f37f0000000000f6ff000000000000abb57e1d0ba712e823a587cb9a9fde21e03223399ed51a1135424d3cc425094300000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000000",
+        "feed_ui": [
+          0,
+          1,
+          0,
+          1688,
+          5,
+          6,
+          0,
+          1
+        ],
+        "ordinary": [
+          [
+            12230276398811447559,
+            4,
+            0,
+            0
+          ],
+          [
+            12230276398811447560,
+            4,
+            895,
+            0
+          ],
+          [
+            12230276398811447561,
+            4,
+            1024,
+            0
+          ],
+          [
+            12230276398811447562,
+            4,
+            799,
+            0
+          ],
+          [
+            12230276398811447563,
+            4,
+            2175,
+            0
+          ],
+          [
+            12230276398811447564,
+            1,
+            1919,
+            0
+          ]
+        ]
+      },
+      "after": {
+        "route": [
+          0,
+          1,
+          3,
+          0,
+          4,
+          0,
+          0,
+          1
+        ],
+        "route_body_hex": "",
+        "profiles_header": [
+          0,
+          1,
+          0,
+          4,
+          128,
+          1,
+          0,
+          1
+        ],
+        "profiles_body_hex": "01000000000000000901000096abbaa903000000000000005b0000000000000003000000000000000000000000000000e8f37f0000000000f6ff000000000000abb57e1d0ba712e823a587cb9a9fde21e03223399ed51a1135424d3cc425094300000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000000",
+        "feed_ui": [
+          0,
+          1,
+          0,
+          1688,
+          5,
+          6,
+          0,
+          1
+        ],
+        "ordinary": [
+          [
+            12230276398811447559,
+            4,
+            0,
+            0
+          ],
+          [
+            12230276398811447560,
+            4,
+            895,
+            0
+          ],
+          [
+            12230276398811447561,
+            4,
+            1024,
+            0
+          ],
+          [
+            12230276398811447562,
+            4,
+            799,
+            0
+          ],
+          [
+            12230276398811447563,
+            4,
+            2175,
+            0
+          ],
+          [
+            12230276398811447564,
+            1,
+            1919,
+            0
+          ]
+        ]
+      },
+      "bulk_peer": {
+        "provider": {
+          "pid": 779763,
+          "socket": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign010-forge-mux-1/provider/portal.sock",
+          "graphics": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign010-forge-mux-1/provider/display.qmp",
+          "forge": 13827521616038330887,
+          "registry": 13827521616038330633,
+          "image": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign010-coexistence/guest.bin"
+        },
+        "provider_slot": 2,
+        "client_slot": 0,
+        "client_credentials": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign010-forge-coexistence/selected-bulk-peer/client.credential",
+        "server_credentials": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign010-forge-coexistence/selected-bulk-peer/server.credential",
+        "description": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign010-forge-coexistence/selected-bulk-peer/service.public",
+        "stream": 1,
+        "states": [
+          {
+            "protocol_version": 2,
+            "connection_slot": 2,
+            "profile": "Noise_NNpsk0_25519_ChaChaPoly_SHA256",
+            "session_phase": 3,
+            "endpoint_authenticated": true,
+            "configured_role": "server",
+            "device_status": 8589934595,
+            "broker_ticks": 102899,
+            "last_error": 10,
+            "inbox_records": 0,
+            "public_service_description_verified": true,
+            "traffic_privacy": "direct endpoints visible; no anonymity",
+            "modes_available": [
+              "encrypted_bulk"
+            ]
+          },
+          {
+            "protocol_version": 2,
+            "connection_slot": 0,
+            "profile": "Noise_NNpsk0_25519_ChaChaPoly_SHA256",
+            "session_phase": 3,
+            "endpoint_authenticated": true,
+            "configured_role": "client",
+            "device_status": 8589934595,
+            "broker_ticks": 132307,
+            "last_error": 10,
+            "inbox_records": 0,
+            "public_service_description_verified": true,
+            "traffic_privacy": "direct endpoints visible; no anonymity",
+            "modes_available": [
+              "encrypted_bulk"
+            ]
+          }
+        ],
+        "elapsed_seconds": 5.226
+      }
+    },
+    {
+      "check": "real routed Feed event fetched after Forge bulk activation without replacing route or account scope",
+      "result": "pass",
+      "execution": {
+        "result": "pass",
+        "before": {
+          "route": [
+            0,
+            1,
+            3,
+            0,
+            4,
+            0,
+            0,
+            1
+          ],
+          "route_body_hex": "",
+          "profiles_header": [
+            0,
+            1,
+            0,
+            4,
+            128,
+            1,
+            0,
+            1
+          ],
+          "profiles_body_hex": "01000000000000000901000096abbaa903000000000000005b0000000000000003000000000000000000000000000000e8f37f0000000000f6ff000000000000abb57e1d0ba712e823a587cb9a9fde21e03223399ed51a1135424d3cc425094300000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000000",
+          "feed_ui": [
+            0,
+            1,
+            0,
+            1688,
+            5,
+            6,
+            0,
+            1
+          ],
+          "ordinary": [
+            [
+              12230276398811447559,
+              4,
+              0,
+              0
+            ],
+            [
+              12230276398811447560,
+              4,
+              895,
+              0
+            ],
+            [
+              12230276398811447561,
+              4,
+              1024,
+              0
+            ],
+            [
+              12230276398811447562,
+              4,
+              799,
+              0
+            ],
+            [
+              12230276398811447563,
+              4,
+              2175,
+              0
+            ],
+            [
+              12230276398811447564,
+              1,
+              1919,
+              0
+            ]
+          ]
+        },
+        "after": {
+          "route": [
+            0,
+            1,
+            3,
+            0,
+            4,
+            0,
+            0,
+            1
+          ],
+          "route_body_hex": "",
+          "profiles_header": [
+            0,
+            1,
+            0,
+            4,
+            128,
+            1,
+            0,
+            1
+          ],
+          "profiles_body_hex": "01000000000000000901000096abbaa903000000000000005b000000000000000300000000000000000000000000000048f37f0000000000f4ff000000000000abb57e1d0ba712e823a587cb9a9fde21e03223399ed51a1135424d3cc4250943d1a20400000000000c0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000000",
+          "feed_ui": [
+            0,
+            1,
+            0,
+            1688,
+            6,
+            6,
+            6,
+            1
+          ],
+          "ordinary": [
+            [
+              12230276398811447559,
+              4,
+              0,
+              0
+            ],
+            [
+              12230276398811447560,
+              4,
+              895,
+              0
+            ],
+            [
+              12230276398811447561,
+              4,
+              1024,
+              0
+            ],
+            [
+              12230276398811447562,
+              4,
+              799,
+              0
+            ],
+            [
+              12230276398811447563,
+              4,
+              2175,
+              0
+            ],
+            [
+              12230276398811447564,
+              1,
+              1919,
+              0
+            ]
+          ]
+        },
+        "bulk_before": {
+          "protocol_version": 2,
+          "connection_slot": 0,
+          "profile": "Noise_NNpsk0_25519_ChaChaPoly_SHA256",
+          "session_phase": 3,
+          "endpoint_authenticated": true,
+          "configured_role": "client",
+          "device_status": 8589934595,
+          "broker_ticks": 203064,
+          "last_error": 10,
+          "inbox_records": 0,
+          "public_service_description_verified": true,
+          "traffic_privacy": "direct endpoints visible; no anonymity",
+          "modes_available": [
+            "encrypted_bulk"
+          ]
+        },
+        "bulk_after": {
+          "protocol_version": 2,
+          "connection_slot": 0,
+          "profile": "Noise_NNpsk0_25519_ChaChaPoly_SHA256",
+          "session_phase": 3,
+          "endpoint_authenticated": true,
+          "configured_role": "client",
+          "device_status": 8589934595,
+          "broker_ticks": 203872,
+          "last_error": 10,
+          "inbox_records": 0,
+          "public_service_description_verified": true,
+          "traffic_privacy": "direct endpoints visible; no anonymity",
+          "modes_available": [
+            "encrypted_bulk"
+          ]
+        },
+        "event_id": "3f7ccee79369e00ca2f6007ef272d47fc163d71a7b4059bdbeec340d7a1a301e",
+        "query_seconds": 8.463,
+        "content_sha256": "3f7ccee79369e00ca2f6007ef272d47fc163d71a7b4059bdbeec340d7a1a301e"
+      }
+    }
+  ],
+  "observed_failure": {
+    "error": "TimeoutError('native exact MUX publication decision')",
+    "cause": "Objects.beginImport ordinary graph node bound24 rejects actual32-node successor before transaction; retained operator/helper state awaits normal restart on corrected image"
+  },
+  "limitations": [
+    "No RemoteBuild MUX compiler/verifier worker execution claimed.",
+    "Same-host QEMU state separation; legacy RSA endpoint/service bootstrap, native Ed25519 publisher/operator authority."
+  ]
+}

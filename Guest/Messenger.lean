@@ -158,7 +158,7 @@ def attachmentLabel (id x y color t : UInt64) : UInt64 :=
     text labelBuffer 18 x y color bg t
   else
   t
-def label0 (id x y color t : UInt64) : UInt64 :=
+def labels0 (id x y color t : UInt64) : UInt64 :=
   if id == 0 then
     let t := store64 (labelBuffer+0) 7306930302439613773 t
     let t := store64 (labelBuffer+8) 114 t
@@ -206,6 +206,9 @@ def label0 (id x y color t : UInt64) : UInt64 :=
     let t := store64 (labelBuffer+16) 13382 t
     text labelBuffer 18 x y color bg t
   else
+  t
+
+def labels1 (id x y color t : UInt64) : UInt64 :=
   if id == 7 then
     let t := store64 (labelBuffer+0) 2334402202894889025 t
     let t := store64 (labelBuffer+8) 13638 t
@@ -238,6 +241,9 @@ def label0 (id x y color t : UInt64) : UInt64 :=
     let t := store64 (labelBuffer+8) 12337 t
     text labelBuffer 10 x y color bg t
   else
+  t
+
+def labels2 (id x y color t : UInt64) : UInt64 :=
   if id == 14 then
     let t := store64 (labelBuffer+0) 2338603376728502083 t
     let t := store64 (labelBuffer+8) 8246216697567930726 t
@@ -291,6 +297,9 @@ def label0 (id x y color t : UInt64) : UInt64 :=
     let t := store64 (labelBuffer+16) 110386908002674 t
     text labelBuffer 22 x y color bg t
   else
+  t
+
+def labels3 (id x y color t : UInt64) : UInt64 :=
   if id == 21 then
     let t := store64 (labelBuffer+0) 7959303536564858706 t
     let t := store64 (labelBuffer+8) 7809911822066218593 t
@@ -342,6 +351,9 @@ def label0 (id x y color t : UInt64) : UInt64 :=
     let t := store64 (labelBuffer+16) 110386908198241 t
     text labelBuffer 22 x y color bg t
   else
+  t
+
+def labels4 (id x y color t : UInt64) : UInt64 :=
   if id == 28 then
     let t := store64 (labelBuffer+0) 2334956330868174679 t
     let t := store64 (labelBuffer+8) 8030609103219007533 t
@@ -394,7 +406,8 @@ def label0 (id x y color t : UInt64) : UInt64 :=
     text labelBuffer 30 x y color bg t
   else
   t
-def label1 (id x y color t : UInt64) : UInt64 :=
+
+def labels5 (id x y color t : UInt64) : UInt64 :=
   if id == 35 then
     let t := store64 (labelBuffer+0) 7308612546338255937 t
     let t := store64 (labelBuffer+8) 7599104626777945198 t
@@ -446,6 +459,9 @@ def label1 (id x y color t : UInt64) : UInt64 :=
     let t := store64 (labelBuffer+16) 31076 t
     text labelBuffer 18 x y color bg t
   else
+  t
+
+def labels6 (id x y color t : UInt64) : UInt64 :=
   if id == 42 then
     let t := store64 (labelBuffer+0) 7598805623894339145 t
     let t := store64 (labelBuffer+8) 8245933057956146799 t
@@ -502,6 +518,9 @@ def label1 (id x y color t : UInt64) : UInt64 :=
     let t := store64 (labelBuffer+16) 111516181425257 t
     text labelBuffer 22 x y color bg t
   else
+  t
+
+def labels7 (id x y color t : UInt64) : UInt64 :=
   if id == 49 then
     let t := store64 (labelBuffer+0) 7234318597473988673 t
     let t := store64 (labelBuffer+8) 28538277256848416 t
@@ -533,6 +552,9 @@ def label1 (id x y color t : UInt64) : UInt64 :=
     let t := store64 (labelBuffer+56) 1702131055 t
     text labelBuffer 60 x y color bg t
   else
+  t
+
+def labels8 (id x y color t : UInt64) : UInt64 :=
   if id == 56 then
     let t := store64 (labelBuffer+0) 7306930302439613773 t
     let t := store64 (labelBuffer+8) 2338613357914234994 t
@@ -593,6 +615,9 @@ def label1 (id x y color t : UInt64) : UInt64 :=
     let t := store64 (labelBuffer+24) 8029390621081757043 t
     text labelBuffer 32 x y color bg t
   else
+  t
+
+def labels9 (id x y color t : UInt64) : UInt64 :=
   if id == 63 then
     let t := store64 (labelBuffer+0) 7020105101879435587 t
     let t := store64 (labelBuffer+8) 7020677651269380468 t
@@ -633,9 +658,19 @@ def label1 (id x y color t : UInt64) : UInt64 :=
     text labelBuffer 19 x y color bg t
   else
   t
+
 def label (id x y color t : UInt64) : UInt64 :=
-  if id < 35 then label0 id x y color t else
-  if id < 69 then label1 id x y color t else attachmentLabel id x y color t
+  if id < 7 then labels0 id x y color t else
+  if id < 14 then labels1 id x y color t else
+  if id < 21 then labels2 id x y color t else
+  if id < 28 then labels3 id x y color t else
+  if id < 35 then labels4 id x y color t else
+  if id < 42 then labels5 id x y color t else
+  if id < 49 then labels6 id x y color t else
+  if id < 56 then labels7 id x y color t else
+  if id < 63 then labels8 id x y color t else
+  if id < 69 then labels9 id x y color t else
+  attachmentLabel id x y color t
 
 def failed (r t : UInt64) : UInt64 :=
   if r == error then notice 31 t else
@@ -741,6 +776,10 @@ def draw (surface t : UInt64) : UInt64 :=
       let t := label (if load64 (st+184) t == 1 then 61 else 62) 14 174 accent t
       let t := hex (load64 (st+56) t) 2 588 174 accent bg t
       masked (load64 (st+56) t) 16 200 t
+    else if mode == 8 then
+      let t := label 45 14 112 accent t
+      let t := hexBytes (contact (load64 (st+24) t)+8) 32 14 130 t
+      wrapped composeBuffer (load64 (st+40) t) 14 156 t
     else if mode == 7 then reconciliationPrompt t
     else if mode == 6 then
       let t := label 78 14 104 accent t
@@ -1022,8 +1061,7 @@ def completedPlain (operation length t : UInt64) : UInt64 :=
   else if operation == 426 && length == 64 then
     let chosen := load64 (st+264) t
     let t := store64 (st+248) chosen (store64 (contact chosen+48) (result t) (store64 (st+64) (result t) t))
-    let t := store64 (st+104) 1 t
-    let t := store64 (st+232) 1 t
+    let t := store64 (st+104) 1 (store64 (st+232) 1 t)
     notice 18 (store64 (st+40) 0 (zero composeBuffer 64 t))
   else if (operation == 427 || operation == 435) && length >= 64 then
     let n := load64 (wire+16) t
@@ -1068,9 +1106,37 @@ def completedPlain (operation length t : UInt64) : UInt64 :=
     let t := if source == load64 (st+24) t then copy (wire+64) displayText n (store64 (st+96) n t) else t
     notice 20 t
   else notice 45 t
+-- A tagged intent reply cannot be mistaken for an invitation merely because
+-- its frozen payload happens to produce the same byte length.
+@[noinline] def restoreIntentDraft (t : UInt64) : UInt64 :=
+  let t := copy 0x736000 composeBuffer (load64 (st+280) t) t
+  let t := copy 0x736200 fingerprint 32 t
+  store64 (st+40) (load64 (st+280) t) (store64 (st+24) (load64 (st+288) t)
+    (store64 (st+48) (load64 (st+296) t) (store64 (st+32) 0 t)))
+@[noinline] def completedIntent (action length t : UInt64) : UInt64 :=
+  if status t != 0 then failed length t else
+  if action == 28 then
+    let n := load64 (wire+16) t
+    let destination := load64 (wire+24) t
+    if n == 0 || n > 512 || length != 96+n || destination == 0 || destination > 4 then notice 24 t else
+    let t := copy composeBuffer 0x736000 (load64 (st+40) t)
+      (store64 (st+280) (load64 (st+40) t) (store64 (st+288) (load64 (st+24) t)
+        (store64 (st+296) (load64 (st+48) t) t)))
+    let t := copy fingerprint 0x736200 32 t
+    let t := store64 (st+272) (result t) (store64 (st+40) n (store64 (st+24) destination t))
+    let t := copy (wire+96) composeBuffer n (copy (wire+64) fingerprint 32 t)
+    notice 45 (store64 (st+32) 8 t)
+  else if action == 30 && length == 64 then notice 44 (restoreIntentDraft t)
+  else if action == 29 && length == 64 then
+    let chosen := load64 (st+24) t
+    let t := store64 (st+248) chosen (store64 (contact chosen+48) (result t) (store64 (st+64) (result t) t))
+    let t := store64 (st+104) 1 (store64 (st+232) 1 t)
+    notice 18 (restoreIntentDraft t)
+  else notice 24 t
 def completed (operation action length t : UInt64) : UInt64 :=
   if operation == 434 && load64 (st+200) t == 672 && (status t == 3 || status t == 7) && action == 0 && load64 (st+208) t == 0 then
     submit 434 64 (header 434 0 12 0 0 0 0 (store64 (st+200) 320 t)) else
+  if action >= 28 && action <= 30 then completedIntent action length t else
   if action != 0 then attachmentCompleted action length t else
   completedPlain operation length t
 def collect (t : UInt64) : UInt64 :=
@@ -1129,7 +1195,14 @@ def confirmReconciliation (t : UInt64) : UInt64 :=
 def key (code t : UInt64) : UInt64 :=
   let mode := load64 (st+32) t
   if code == 66 then lock t else
-  if mode == 5 then unlockKey code t else
+  if mode == 8 then
+    if code == 1 then submitTagged 434 30 64 (header 434 (load64 (st+272) t) 30 0 0 0 0 t) else
+    if code == 28 then
+      let n := load64 (st+40) t
+      submitTagged 434 29 (64+n) (copy composeBuffer (wire+64) n
+        (header 434 (load64 (st+272) t) 29 (load64 (st+24) t) 0 0 0 t))
+    else t
+  else if mode == 5 then unlockKey code t else
   if mode == 7 then
     if code == 1 then notice 26 (store64 (st+32) 0 t) else
     if code == 28 then confirmReconciliation t else t
@@ -1140,7 +1213,8 @@ def key (code t : UInt64) : UInt64 :=
     if load64 transfer t >= 20 then notice 44 (store64 transfer 9 (Guest.MessengerProject.fail 10 (cancelPending t))) else
     if load64 transfer t > 0 && load64 transfer t < 8 then
       submit 462 64 (header 462 (load64 (transfer+8) t) 0 0 0 0 0 (store64 transfer 9 (cancelPending t))) else cancel t else
-  if code == 87 then chooseProject t else
+  if code == 87 then
+    if load64 (st+112) t == 1 then submitTagged 434 28 64 (header 434 0 28 0 0 0 0 t) else chooseProject t else
   if code == 110 then importProject (store64 (transfer+72) 0 t) else
   if code == 60 then createIdentity t else
   if code == 61 then showInvitation t else
@@ -1343,7 +1417,7 @@ partial def loop (surface t : UInt64) : UInt64 :=
   loop surface (Guest.WaitSDK.deadline (Guest.WaitSDK.now t+1) t)
 def main (t : UInt64) : UInt64 :=
   let t := Guest.MessengerProject.clear (zero transfer 32 t)
-  let t := zero st 32 (zero 0x70c000 640 (zero 0x70b000 40 (zero composeBuffer 64 (zero inviteBuffer 168 (zero fingerprint 4 (zero displayText 64 t))))))
+  let t := zero st 40 (zero 0x70c000 640 (zero 0x70b000 40 (zero composeBuffer 64 (zero inviteBuffer 168 (zero fingerprint 4 (zero displayText 64 t))))))
   let t := store64 (st+120) 320 (store64 (st+128) 200 t)
   let t := notice 46 t
   let surface := syscall 80 0 0 0 0 t

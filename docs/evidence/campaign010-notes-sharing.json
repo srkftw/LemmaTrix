@@ -1,0 +1,93 @@
+{
+  "schema": 1,
+  "result": "pass-real-feed-and-mailbox-acceptance-after-native-fix",
+  "image_sha256": "fcf5811f7cc41f29d2284599c80afa3656adb8a603d8f602d17354357e28f9bc",
+  "release_id": "5f5079d707eafd7fc51b3413b9aa3e8b05340dcec6b36a4b8cdbe9e68db170a9",
+  "selected_text": "Ready for review",
+  "checks": [
+    {
+      "check": "recovered Notes personal uses independently initialized current native relays and existing approved provider pins",
+      "result": "pass",
+      "route": [
+        0,
+        1,
+        3,
+        0,
+        4,
+        0,
+        0,
+        1
+      ],
+      "pins": [
+        "fcb52d80a010cfe79dc6a24f8e5543d508ec65dc2696b2c7cbec737b1099c90b",
+        "798f53e6418a5bbfb4d19eb40b28bd0061455009aa4a92b5b5b93f40d7fb9906",
+        "778eb294d0f215b0d70bf1f178a4af9fee8662e645bd0c40e59501b4eebf808a",
+        "abb57e1d0ba712e823a587cb9a9fde21e03223399ed51a1135424d3cc4250943",
+        "a456dd562224c6b13301a1eef29864ce5753c04a69518083b1dea531770ea529"
+      ]
+    },
+    {
+      "check": "physical native Feed approval publishes exact Notes excerpt through real selected federation; app observes scoped acceptance",
+      "result": "pass",
+      "native_ui": [
+        0,
+        1,
+        3,
+        0,
+        10,
+        6,
+        0,
+        1
+      ],
+      "app_status": "04"
+    },
+    {
+      "check": "physical native update replaces only Delivery; protected Session and its accepted outbox stay live",
+      "result": "pass",
+      "old_delivery": 4011373272619811086,
+      "new_delivery": 4011373272619811342,
+      "release": "b30b8cd834e6098d888e13c2b7a1a4df9cf96e6447f825eee3a9b9eb8a7bcc87",
+      "parent": "10b089c8f38bd8766e12a5814f2f4354c490e495095d291f5133fadda0f1159c",
+      "rights": 1024,
+      "owner": 4011373272619811084,
+      "outbox_serial": 1
+    },
+    {
+      "check": "actual native retry preserves originating ciphertext operation and reports only app-owned mailbox acceptance",
+      "result": "pass",
+      "app_status": "04",
+      "outboxes": 1,
+      "request_identity_sha256": "d6b1ec4a3f89732b13109880100618c1330d321a97ea1072d5b907d66229b535",
+      "remaining_budget_carried": [
+        8330368,
+        65089
+      ]
+    }
+  ],
+  "actual_feed": [
+    {
+      "event": "d24a6cff680b437558a2a271c53643dcd18a38a1cf5d8557beb42fd42c2ae77c",
+      "author": "eb29991db9ade806bfe84aa779c5cc5edd34da22ad7a216274717320125b2fcf",
+      "kind": 1,
+      "home": "d17d966d66359ea218b908b2d0c1f40452dc74a5d462f9138846c52048647185",
+      "audience": "d17d966d66359ea218b908b2d0c1f40452dc74a5d462f9138846c52048647185",
+      "record_sha256": "64a63e5d35a64c01eff8ee96cb72903f52d97b7f87b7dbb0d3306f04b5a072bf",
+      "signed_record": "d24a6cff680b437558a2a271c53643dcd18a38a1cf5d8557beb42fd42c2ae77c4c5453494731000001000000000000000500000000000000040000000000000001000000000000000001000000000000d17d966d66359ea218b908b2d0c1f40452dc74a5d462f9138846c5204864718578fecb5463a03d83bc7a34143fac9abbbd76da03c3f41f86d9a915120f94e133eb29991db9ade806bfe84aa779c5cc5edd34da22ad7a216274717320125b2fcf000000000000000000000000000000004c54464556443100010000000000000001000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000075c2a5c81da1cad84b817d7d23d32a3b88a6721eef5158985fed059f1009af2610000000000000000000000000000000d17d966d66359ea218b908b2d0c1f40452dc74a5d462f9138846c520486471850000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000056c26f37e9bd49a320553db9d0be39b7b4dc814d4c2e87aa04ac9735b6e5bb063f4ae9d8d9dd1603ac0e944e1e5f2d0b16c7d4831dcefae3069e7e96f49da509"
+    }
+  ],
+  "timings": {
+    "three_hop_seconds": 26.420213061006507,
+    "feed_terminal_seconds": 12.38727155100787,
+    "feed_acceptance_seconds": 29.821350229991367,
+    "native_delivery_update_and_reconciliation_seconds": 52.29732103800052
+  },
+  "historical_provider_image_sha256": "2e5147c4198cf7ec39ab053f2ea8895cfdceb1c9b9dcf79e1b7bb7627314bcdf",
+  "relay_image_sha256": "b900ff02dbb6312c2c2d11baeab1073161d94212e971f5dd1551dbce50362f50",
+  "preserved_initial_failure": {
+    "error": "TimeoutError('actual Messenger mailbox accepts exact approved excerpt')",
+    "source": "build/campaign010-notes-sharing-1/social-route.json",
+    "source_sha256": "3a8cc91dc42aa70e01b67cb708e98c7aea6bbe6427f68f3811651d983019a337",
+    "correction": "Actual mailbox acceptance was already present; exact Session status read was refused. Delivery0.8.3 GUI update plus exact retry reports the same accepted ciphertext operation."
+  },
+  "limits": "Actual native frozen content/recipient/audience review, Feed acceptance and mailbox acceptance. Recipient decryption/confirmation is not claimed. Session/outbox stayed live; newest atomic retained-cache implementation is separately checked by native fixture, not a completed retained-social restart."
+}

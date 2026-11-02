@@ -1,0 +1,213 @@
+import Guest.Primitives
+namespace Guest.PublicTemplate
+-- Generated from the ordinary public SDK starter and exact lock; no owner API.
+def writeName (index target t : UInt64) : UInt64 :=
+  if index == 0 then
+    let t := Guest.store64 (target+0) 7018134541003481421 t
+    let t := Guest.store64 (target+8) 110 t
+    t
+  else if index == 1 then
+    let t := Guest.store64 (target+0) 8246141913697969516 t
+    let t := Guest.store64 (target+8) 8316510739311716975 t
+    let t := Guest.store64 (target+16) 28271 t
+    t
+  else if index == 2 then
+    let t := Guest.store64 (target+0) 8028843231677343084 t
+    let t := Guest.store64 (target+8) 31084788931521379 t
+    t
+  else t
+def write (index target t : UInt64) : UInt64 :=
+  if index == 0 then
+    let t := Guest.store64 (target+0) 5485512380981996905 t
+    let t := Guest.store64 (target+8) 741217271370575205 t
+    let t := Guest.store64 (target+16) 5485512380981996905 t
+    let t := Guest.store64 (target+24) 7665776576359656805 t
+    let t := Guest.store64 (target+32) 7881701814040814437 t
+    let t := Guest.store64 (target+40) 5557553417686119269 t
+    let t := Guest.store64 (target+48) 5773664393760762209 t
+    let t := Guest.store64 (target+56) 6998705371459512690 t
+    let t := Guest.store64 (target+64) 8245929725128634480 t
+    let t := Guest.store64 (target+72) 8245845058459345017 t
+    let t := Guest.store64 (target+80) 7142842541177465188 t
+    let t := Guest.store64 (target+88) 8463143800459258977 t
+    let t := Guest.store64 (target+96) 7935407850071877234 t
+    let t := Guest.store64 (target+104) 7310595043397738607 t
+    let t := Guest.store64 (target+112) 8534165646137696356 t
+    let t := Guest.store64 (target+120) 7018422918071741537 t
+    let t := Guest.store64 (target+128) 8390876189579699555 t
+    let t := Guest.store64 (target+136) 2334664937553289577 t
+    let t := Guest.store64 (target+144) 8463152244549709676 t
+    let t := Guest.store64 (target+152) 2338529726343243378 t
+    let t := Guest.store64 (target+160) 3762322555740168250 t
+    let t := Guest.store64 (target+168) 8389723785799540777 t
+    let t := Guest.store64 (target+176) 2314861466552906806 t
+    let t := Guest.store64 (target+184) 4411874403671106924 t
+    let t := Guest.store64 (target+192) 6137950464767249440 t
+    let t := Guest.store64 (target+200) 2338615488569224777 t
+    let t := Guest.store64 (target+208) 7286936798782032500 t
+    let t := Guest.store64 (target+216) 7526676272609312032 t
+    let t := Guest.store64 (target+224) 7020387675976789605 t
+    let t := Guest.store64 (target+232) 8388368156917847342 t
+    let t := Guest.store64 (target+240) 7286859426103832608 t
+    let t := Guest.store64 (target+248) 8101816764853482348 t
+    let t := Guest.store64 (target+256) 7305790113159934752 t
+    let t := Guest.store64 (target+264) 3342072715103971360 t
+    let t := Guest.store64 (target+272) 2338609973844396373 t
+    let t := Guest.store64 (target+280) 6137950464767249448 t
+    let t := Guest.store64 (target+288) 3126941213621366345 t
+    let t := Guest.store64 (target+296) 7305975668408330545 t
+    let t := Guest.store64 (target+304) 2891432359657021542 t
+    let t := Guest.store64 (target+312) 2336349412250971753 t
+    let t := Guest.store64 (target+320) 3762322555740168250 t
+    let t := Guest.store64 (target+328) 8389723785799540777 t
+    let t := Guest.store64 (target+336) 2314861466552906806 t
+    let t := Guest.store64 (target+344) 7382091876539852140 t
+    let t := Guest.store64 (target+352) 5485451665998177121 t
+    let t := Guest.store64 (target+360) 3335290656735980901 t
+    let t := Guest.store64 (target+368) 8454212476029203043 t
+    let t := Guest.store64 (target+376) 7955925836557805170 t
+    let t := Guest.store64 (target+384) 2314861669075481705 t
+    let t := Guest.store64 (target+392) 7018422918071740009 t
+    let t := Guest.store64 (target+400) 7299244543451358563 t
+    let t := Guest.store64 (target+408) 7290845476958596461 t
+    let t := Guest.store64 (target+416) 7307218078116311666 t
+    let t := Guest.store64 (target+424) 7161117524278583406 t
+    let t := Guest.store64 (target+432) 2308769305395011685 t
+    let t := Guest.store64 (target+440) 4188475336195140640 t
+    let t := Guest.store64 (target+448) 3342072715103969341 t
+    let t := Guest.store64 (target+456) 2336361506640120149 t
+    let t := Guest.store64 (target+464) 2319411215168708656 t
+    let t := Guest.store64 (target+472) 3832976905962927411 t
+    let t := Guest.store64 (target+480) 8247624874717296178 t
+    let t := Guest.store64 (target+488) 7791262584373731686 t
+    let t := Guest.store64 (target+496) 2323076893854692453 t
+    let t := Guest.store64 (target+504) 5284180733771736396 t
+    let t := Guest.store64 (target+512) 3564652021080746030 t
+    let t := Guest.store64 (target+520) 3756060502413227877 t
+    let t := Guest.store64 (target+528) 7311646909841809456 t
+    let t := Guest.store64 (target+536) 8660457505746674997 t
+    let t := Guest.store64 (target+544) 8367743303188362545 t
+    let t := Guest.store64 (target+552) 8367816086608945162 t
+    let t := Guest.store64 (target+560) 7885069900228409888 t
+    let t := Guest.store64 (target+568) 7813874195147075169 t
+    let t := Guest.store64 (target+576) 7382091876538802543 t
+    let t := Guest.store64 (target+584) 3474843978567082849 t
+    let t := Guest.store64 (target+592) 2308785440577171761 t
+    let t := Guest.store64 (target+600) 8463143792037293088 t
+    let t := Guest.store64 (target+608) 5487671765782062706 t
+    let t := Guest.store64 (target+616) 3335290656735980901 t
+    let t := Guest.store64 (target+624) 2338615488518910576 t
+    let t := Guest.store64 (target+632) 2334381251843224947 t
+    let t := Guest.store64 (target+640) 5557552365479537012 t
+    let t := Guest.store64 (target+648) 175008097 t
+    t
+  else if index == 1 then
+    let t := Guest.store64 (target+0) 7021803907741459067 t
+    let t := Guest.store64 (target+8) 7503660234395968366 t
+    let t := Guest.store64 (target+16) 8390047098274607983 t
+    let t := Guest.store64 (target+24) 7299244763104048243 t
+    let t := Guest.store64 (target+32) 4273166507140148833 t
+    let t := Guest.store64 (target+40) 3271130047602193184 t
+    let t := Guest.store64 (target+48) 8241990191962484596 t
+    let t := Guest.store64 (target+56) 7598247080661164153 t
+    let t := Guest.store64 (target+64) 2462445498559457638 t
+    let t := Guest.store64 (target+72) 8458438990456121700 t
+    let t := Guest.store64 (target+80) 8391720543177369972 t
+    let t := Guest.store64 (target+88) 4189044144300257128 t
+    let t := Guest.store64 (target+96) 6998712986469624866 t
+    let t := Guest.store64 (target+104) 7306000171369264245 t
+    let t := Guest.store64 (target+112) 8028075772644256867 t
+    let t := Guest.store64 (target+120) 7307502048463829870 t
+    let t := Guest.store64 (target+128) 7310027630754013303 t
+    let t := Guest.store64 (target+136) 7091324932749616160 t
+    let t := Guest.store64 (target+144) 2462380953975747701 t
+    let t := Guest.store64 (target+152) 2466321650945388133 t
+    let t := Guest.store64 (target+160) 7593470492911690061 t
+    let t := Guest.store64 (target+168) 7305790111812952686 t
+    let t := Guest.store64 (target+176) 7598805459490447988 t
+    let t := Guest.store64 (target+184) 7163375912484955510 t
+    let t := Guest.store64 (target+192) 2462380953975747681 t
+    let t := Guest.store64 (target+200) 2478514087921936748 t
+    let t := Guest.store64 (target+208) 4995427951652512314 t
+    let t := Guest.store64 (target+216) 2462380815997817938 t
+    let t := Guest.store64 (target+224) 2478508568939290989 t
+    let t := Guest.store64 (target+232) 8531300030601765434 t
+    let t := Guest.store64 (target+240) 8029111283619100205 t
+    let t := Guest.store64 (target+248) 5558068809533519204 t
+    let t := Guest.store64 (target+256) 7020586442068748641 t
+    let t := Guest.store64 (target+264) 8386105074423850349 t
+    let t := Guest.store64 (target+272) 7813586423279613545 t
+    let t := Guest.store64 (target+280) 8032016439426821154 t
+    let t := Guest.store64 (target+288) 7020677658981854066 t
+    let t := Guest.store64 (target+296) 7308324465885667702 t
+    let t := Guest.store64 (target+304) 7598542776302709794 t
+    let t := Guest.store64 (target+312) 4189022081136292979 t
+    let t := Guest.store64 (target+320) 8243114975282881826 t
+    let t := Guest.store64 (target+328) 8030604377626668129 t
+    let t := Guest.store64 (target+336) 3184671805909264742 t
+    let t := Guest.store64 (target+344) 2482455811371659810 t
+    let t := Guest.store64 (target+352) 7166109005393573690 t
+    let t := Guest.store64 (target+360) 9021055447937672552 t
+    let t := Guest.store64 (target+368) 10 t
+    t
+  else if index == 2 then
+    let t := Guest.store64 (target+0) 7954892334483841659 t
+    let t := Guest.store64 (target+8) 6999220690275098484 t
+    let t := Guest.store64 (target+16) 3991372766144454960 t
+    let t := Guest.store64 (target+24) 7219660766385092962 t
+    let t := Guest.store64 (target+32) 7075781058484056632 t
+    let t := Guest.store64 (target+40) 7306074671686967909 t
+    let t := Guest.store64 (target+48) 7221863066784641892 t
+    let t := Guest.store64 (target+56) 7293635918113944115 t
+    let t := Guest.store64 (target+64) 3473795079988131894 t
+    let t := Guest.store64 (target+72) 2478163111009857588 t
+    let t := Guest.store64 (target+80) 7236833184642769452 t
+    let t := Guest.store64 (target+88) 4189037482804997733 t
+    let t := Guest.store64 (target+96) 8247338198266305883 t
+    let t := Guest.store64 (target+104) 7955997200641303161 t
+    let t := Guest.store64 (target+112) 2462380953874558254 t
+    let t := Guest.store64 (target+120) 2466321629251330406 t
+    let t := Guest.store64 (target+128) 8088857964983902542 t
+    let t := Guest.store64 (target+136) 8028075772393122928 t
+    let t := Guest.store64 (target+144) 7521962923991507566 t
+    let t := Guest.store64 (target+152) 6074267630496476777 t
+    let t := Guest.store64 (target+160) 2464161883757036589 t
+    let t := Guest.store64 (target+168) 7308345369542074924 t
+    let t := Guest.store64 (target+176) 2481036311354554914 t
+    let t := Guest.store64 (target+184) 7811887657498190380 t
+    let t := Guest.store64 (target+192) 7309942718392312421 t
+    let t := Guest.store64 (target+200) 7791854224709544291 t
+    let t := Guest.store64 (target+208) 8676592001282305381 t
+    let t := Guest.store64 (target+216) 8534934195924200493 t
+    let t := Guest.store64 (target+224) 7166760226504127542 t
+    let t := Guest.store64 (target+232) 2464081855347062132 t
+    let t := Guest.store64 (target+240) 7020378893159965228 t
+    let t := Guest.store64 (target+248) 7738436650336860706 t
+    let t := Guest.store64 (target+256) 8389765627408759330 t
+    let t := Guest.store64 (target+264) 4189021007143792229 t
+    let t := Guest.store64 (target+272) 7161959474162512674 t
+    let t := Guest.store64 (target+280) 3544390520358253156 t
+    let t := Guest.store64 (target+288) 7075775350536876899 t
+    let t := Guest.store64 (target+296) 7149010728407937072 t
+    let t := Guest.store64 (target+304) 4063485349473630566 t
+    let t := Guest.store64 (target+312) 3775200001294623078 t
+    let t := Guest.store64 (target+320) 3847312344035637091 t
+    let t := Guest.store64 (target+328) 3689968038162544180 t
+    let t := Guest.store64 (target+336) 8318823019760591411 t
+    let t := Guest.store64 (target+344) 3328197757707906921 t
+    let t := Guest.store64 (target+352) 8368299973563919921 t
+    let t := Guest.store64 (target+360) 7955997317699235695 t
+    let t := Guest.store64 (target+368) 2479621239174019618 t
+    let t := Guest.store64 (target+376) 3180161695296004666 t
+    let t := Guest.store64 (target+384) 8224199788870199586 t
+    let t := Guest.store64 (target+392) 2462380949576627830 t
+    let t := Guest.store64 (target+400) 3756628958735590764 t
+    let t := Guest.store64 (target+408) 2462380690888733486 t
+    let t := Guest.store64 (target+416) 3612513770644335724 t
+    let t := Guest.store64 (target+424) 9042421251518311984 t
+    let t := Guest.store64 (target+432) 10 t
+    t
+  else t
+def length (index : UInt64) : UInt64 := if index == 0 then 652 else if index == 1 then 369 else if index == 2 then 433 else 0
+def nameLength (index : UInt64) : UInt64 := if index == 0 then 9 else if index == 1 then 18 else if index == 2 then 15 else 0
+end Guest.PublicTemplate

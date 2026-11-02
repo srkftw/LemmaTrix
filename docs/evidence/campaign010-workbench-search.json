@@ -1,0 +1,113 @@
+{
+  "schema": 1,
+  "result": "pass-real-native-workbench-search",
+  "checks": [
+    {
+      "check": "physical Ctrl+G finds real Notes source and navigates its visible caret/selection",
+      "result": "pass",
+      "query": "foldSearch",
+      "source": "3ae8ad12addef09160d55b01d7d527bbac6c5eded3b327df3511331f3230a747",
+      "visible_rows": [
+        "-- version line and default category0..2. The native editor can change its byt",
+        "elab \"notes_resources\" : command => do                                        ",
+        "  let raw ? IO.FS.readFile \"/input/templates.txt\"                             ",
+        "  let parts := raw.trimAscii.toString.splitOn \"\\n\"                            ",
+        "  if parts.length != 2 || parts[0]! != \"1\" then throwError \"templates.txt: sch",
+        "  let some category := parts[1]!.toNat? | throwError \"templates.txt: category ",
+        "  if category > 2 then throwError \"templates.txt: category must be0..2\"       ",
+        "  Lean.Elab.Command.elabCommand (? `(def $(Lean.mkIdent `defaultCategory) : UI",
+        "notes_resources                                                               ",
+        "-- A fork may change this ?seful behavior independently of the semantic resour",
+        "def foldSearch : UInt64 := 1                                                  ",
+        "def st : UInt64 := 0x700000                                                   ",
+        "def note (i : UInt64) : UInt64 := 0x710000+i*4096                             ",
+        "def row (i : UInt64) : UInt64 := 0x701000+i*256                               ",
+        "def query : UInt64 := 0x702000                                                ",
+        "def manifest : UInt64 := 0x703000                                             ",
+        "def selected (t : UInt64) : UInt64 := note (load64 (st+8) t)                  ",
+        "def selectedRow (t : UInt64) : UInt64 := row (load64 (st+8) t)                ",
+        "def err : UInt64 := Lemma.Objects.error                                       ",
+        "def bg : UInt64 := 0x14232c                                                   ",
+        "def fg : UInt64 := 0xdce9ec                                                   ",
+        "def accent : UInt64 := 0xa6d7b1                                               ",
+        "def notice (n t : UInt64) : UInt64 := store64 (st+48) n (store64 st 1 t)      ",
+        "def label (id x y t : UInt64) : UInt64 :=                                     ",
+        "  ?? ?? == 0 then                                                             "
+      ],
+      "files": 5
+    },
+    {
+      "check": "literal search crosses loaded source members to actual permission declaration",
+      "result": "pass",
+      "query": "reviewed-intents",
+      "expected_file": "lemma.project.json",
+      "visible_rows": [
+        "  \"name\": \"project-notes\",                                                    ",
+        "  \"facet\": \"NativeApplication\",                                               ",
+        "  \"module\": \"Main\", ????????????????????????????                              ",
+        "  \"entry\": \"Main.main\",                                                       ",
+        "  \"machine\": \"LT-Dev-v2\",                                                     ",
+        "  \"profile\": 2,                                                               ",
+        "  \"rights\": 895,                                                              ",
+        "  \"license\": \"MIT\",                                                           ",
+        "  \"distribution_authority\": \"Project contributors authorize distribution of th",
+        "  \"persistence\": \"explicit-selected-objects\",                                 ",
+        "  \"network\": \"reviewed-intents\"                                               ",
+        "}                                                                             ",
+        "_                                                                             ",
+        "                                                                              ",
+        "                                                                              ",
+        "                                                                              ",
+        "                                                                              ",
+        "                                                                              ",
+        "                                                                              ",
+        "                                                                              ",
+        "                                                                              ",
+        "                                                                              ",
+        "                                                                              ",
+        "                                                                              ",
+        "                                                                              "
+      ]
+    },
+    {
+      "check": "physical Ctrl+Shift+G advances to a distinct next matching source position",
+      "result": "pass",
+      "first_frame": "327295ab404497c7a452af7501a4627a748d403eb3329d1c6a14eb1233f88339",
+      "next_frame": "2d434f5023f4a3eba941a58362eb5c8eb68c4de91d0746e6812564cda6bde864"
+    },
+    {
+      "check": "bounded whole-project wrap reports not found and preserves exact source bytes",
+      "result": "pass",
+      "source": "3ae8ad12addef09160d55b01d7d527bbac6c5eded3b327df3511331f3230a747",
+      "files_sha256": {
+        "Main.lean": "fec149b0094e5f8cdc9d600e5a34c549a98c5b19b23f7aeed45ed87fef3744a4",
+        "deps/a4e39b5b087822dd3054501afc425bcbcfa6dcbc8faa98293e626f6256fb55c2.json": "ed35d33eefe6897fdfcef26c1855e130b8d1fccd55d1ceb823c296505ed149ac",
+        "lemma.lock.json": "0a599bb9cf1a46fcb9330995c0a1f31ee2b4794e952d18ad71c79787d4a9090e",
+        "lemma.project.json": "af1caa4b9e2a45f86f163bee24a0a219d840d4d54bdd6c7aba949a9c33365cbd",
+        "templates.txt": "ad0fadf63cc7cd779ce475e345bf4063565b63a3c2efef1eebc89790aaa6acba"
+      },
+      "candidate_bound": 786456,
+      "per_loop_budget": 512
+    }
+  ],
+  "image_sha256": "b743de7abac5c508660a662041ef97ef3da7677bd7c33d9903123e9d8e5459ad",
+  "editor": {
+    "project": "native-editor",
+    "version": "0.10.0",
+    "release_id": "ccfcdfca969d7b829c9b2c1b71178453d7f8d7a003f6bb5fd6910a0002050753",
+    "publisher_key_id": "6d20cd4935fc2907c3be78b6d4dacbb284ac5390848c40217a03f3bafacf9fbc",
+    "project_id": "ac43f6466ad1658e6d435f0e243f70c7db84374058ec5f55d6d49eeb036383c0",
+    "rights": 895,
+    "executable_sha256": "c1d581cdb962e486a8835680fd0f700d65be1b96e67f1fb9119a715c70f39768",
+    "source_root": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "manifest_root": "c035371ddda1dbc4a5031ee3d0ae3bff8d49cac2bf1937b2c8b87a508d93f8dc",
+    "parent": "0000000000000000000000000000000000000000000000000000000000000000",
+    "size": 235164,
+    "signature_verified": false,
+    "manifest_checked": false,
+    "identity_scheme": 0,
+    "logical_project_id": null
+  },
+  "elapsed_seconds": 120.87,
+  "limits": "Actual native keyboard and presented pixels on RV64 QEMU, normal graph import/admission and trusted picker. Literal ASCII query limit63bytes; no fuzzy/semantic/regular-expression search or new authority claimed."
+}

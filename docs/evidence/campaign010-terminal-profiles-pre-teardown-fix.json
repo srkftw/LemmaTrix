@@ -1,0 +1,44 @@
+{
+  "schema": 1,
+  "result": "failure",
+  "error": "TimeoutError('bounded native circuit condition did not complete')",
+  "services": {
+    "launcher": "ae1ed9041c2a85b789a68ed9f3f0ace346da5394c094b90a0ad1a35a5d72ea0d",
+    "compositor": "936a411aa92edb9ce4fd442fa22a5593c63ca8f4903221957629c558456b9f2f",
+    "network": "ba328d6a6f7327bc02b901fdc3734b6be0951c5ac0e147cc0257403b292d149e"
+  },
+  "checks": [],
+  "timings": {},
+  "operators": [
+    {
+      "node": 1,
+      "role": "relay",
+      "pin": "59bf044be12b257b59e5b26e05eedc1bb02e4b090fd5025f0ff4a309c9b86746",
+      "certificate_sha256": "59bf044be12b257b59e5b26e05eedc1bb02e4b090fd5025f0ff4a309c9b86746"
+    },
+    {
+      "node": 2,
+      "role": "relay",
+      "pin": "5e80d04e5fca8ebe0209b6040514fac3537de59f9a958f7668556ddffcdf1842",
+      "certificate_sha256": "5e80d04e5fca8ebe0209b6040514fac3537de59f9a958f7668556ddffcdf1842"
+    },
+    {
+      "node": 3,
+      "role": "relay",
+      "pin": "e4353e68ea7d3dff5188ed76bfceeff1ef5207349f2d4369102bcc81cb9d4f64",
+      "certificate_sha256": "e4353e68ea7d3dff5188ed76bfceeff1ef5207349f2d4369102bcc81cb9d4f64"
+    },
+    {
+      "node": 4,
+      "role": "mailbox",
+      "pin": "ce385ed02372b282bfb3139b795ab535b3c030aa448971ac3bac565a89645e9b",
+      "certificate_sha256": "ce385ed02372b282bfb3139b795ab535b3c030aa448971ac3bac565a89645e9b"
+    },
+    {
+      "node": 5,
+      "role": "mailbox",
+      "pin": "b49c8513db51ce7010ccfd7d2f6ac164d61db23f3c3667ae2722e1d1b223ecb9",
+      "certificate_sha256": "b49c8513db51ce7010ccfd7d2f6ac164d61db23f3c3667ae2722e1d1b223ecb9"
+    }
+  ]
+}

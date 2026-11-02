@@ -1,5 +1,5 @@
 """Byte transport and CLI for a long-lived guest; all platform state is guest-owned."""
-import argparse,fcntl,hashlib,json,os,select,socket,struct,subprocess,sys,time
+import argparse,fcntl,hashlib,json,os,platform,select,socket,struct,subprocess,sys,time
 from pathlib import Path
 import driver,releases,capsule
 import stat,threading,ipaddress
@@ -30,7 +30,8 @@ def args_for(backend,image,vault=None,readonly=False,graphics=None,display="none
    args+=['-chardev',f'socket,id=lt-stream,fd={network_fd}','-device','virtio-serial-device,id=lt-streamdev'+(',max_ports=2' if reliable else ''),'-device','virtserialport,chardev=lt-stream,bus=lt-streamdev.0,nr=1,name=lt-net1' if reliable else 'virtconsole,chardev=lt-stream,bus=lt-streamdev.0']
   return args
  args=[str(driver.BUILD/('lt-'+backend)),str(image),'--interactive']
- if backend=='aarch64':args.insert(0,driver.tool('qemu-aarch64'))
+ native={'x86_64':'x86_64','aarch64':'aarch64','arm64':'aarch64'}.get(platform.machine())
+ if backend!=native:args.insert(0,driver.tool('qemu-'+('aarch64' if backend=='aarch64' else 'x86_64')))
  if graphics:args+=['--display-out',str(graphics)+'.bgrx','--input-events',str(graphics)+'.evdev']
  if vault:args+=['--vault',str(vault)]
  if server_store:args+=['--server-store',str(server_store)]
@@ -324,7 +325,7 @@ def main(argv=None):
  v=sub.add_parser('vault-init');v.add_argument('path',type=Path);v.add_argument('--sectors',type=int,default=512);v.add_argument('--key-out',type=Path)
  c=sub.add_parser('ctl');c.add_argument('--socket',required=True,type=Path);cs=c.add_subparsers(dest='command',required=True)
  for name in ['ping','processes','cancel','gc','objects-gc','list','stats','shutdown']:cs.add_parser(name)
- trust=cs.add_parser('trust');scope=trust.add_mutually_exclusive_group(required=True);scope.add_argument('--project');scope.add_argument('--project-id',help='canonical graph Project identity for publication scheme3');trust.add_argument('--public',required=True,type=Path)
+ trust=cs.add_parser('trust');scope=trust.add_mutually_exclusive_group(required=True);scope.add_argument('--project');scope.add_argument('--project-id',help='canonical logical graph Project identity for versioned publication');scope.add_argument('--publication-id',help='exact inspected signed publication namespace');trust.add_argument('--public',required=True,type=Path)
  untrust=cs.add_parser('untrust');untrust.add_argument('key_id')
  for name in ['inspect','install']:
   a=cs.add_parser(name);a.add_argument('release',type=Path)
@@ -389,9 +390,11 @@ def main(argv=None):
    if cmd=='processes':print(json.dumps([dict(zip(['instance','state','rights','exit_cause'],struct.unpack_from('<4Q',raw,i))) for i in range(0,len(raw),32)],indent=2))
    else:print(raw.hex())
   elif cmd=='trust':
-   # Public key path is used only to export modulus; private material never enters transport.
-   modulus=releases.public_modulus(args.public)
-   project_id=releases.project(args.project) if args.project else hashlib.sha256(b'LT-PUBLICATION-3\0'+bytes.fromhex(args.project_id)+hashlib.sha256(modulus).digest()).digest()
+   # Only the public modulus/key crosses transport. Namespace selection does
+   # not approve installation, execution, or a change of project maintainer.
+   modulus=releases.public_key(args.public)
+   project_id=bytes.fromhex(args.publication_id) if args.publication_id else releases.project(args.project) if args.project else hashlib.sha256(b'LT-PUBLICATION-3\0'+bytes.fromhex(args.project_id)+hashlib.sha256(modulus).digest()).digest()
+   if len(project_id)!=32:raise ValueError('publication namespace must contain32bytes')
    if args.project_id and len(bytes.fromhex(args.project_id))!=32:raise ValueError('Project identity must be32bytes')
    print(client.request(10,project_id+modulus).hex())
   elif cmd=='untrust':print(client.request(11,bytes.fromhex(args.key_id)).hex())

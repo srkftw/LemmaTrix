@@ -7,6 +7,7 @@ import Guest.NodeEnrollment
 import Guest.TorRouter
 import Guest.OnionTerminal
 import Guest.NodeStore
+import Guest.NetworkGrantLease
 namespace Guest.Network
 open Guest.LiveSDK
 -- Service6 owns this memory. No compiler/publisher key or graph root lives here.
@@ -28,7 +29,7 @@ def activeSlot (t : UInt64) : UInt64 := load64 control t
 def bank (i : UInt64) : UInt64 := contexts+i*65536
 -- Explicit mode3 relationships retain four distinct adapter slots while the
 -- mode1 router owns0..11. Mode contracts and grants never change on coexistence.
-def transportSlot (i t : UInt64) : UInt64 := if load64 (control+128) t == 1 then 12+i else i
+def transportSlot (i t : UInt64) : UInt64 := if Guest.Transport.enabled t then 12+i else i
 def saveCrypto (t : UInt64) : UInt64 := copy Guest.Noise.state (bank (activeSlot t)) 416 t
 def restoreCrypto (t : UInt64) : UInt64 :=
   Guest.Transport.choose (transportSlot (activeSlot t) t) (copy (bank (activeSlot t)) Guest.Noise.state 416 t)
@@ -95,6 +96,15 @@ partial def findGrant (id owner i t : UInt64) : UInt64 :=
   if i == 4 then error else
     let g := grantAt i
     if load64 g t == 1 && load64 (g+8) t == id && load64 (g+16) t == owner && now t < load64 (g+56) t then i else findGrant id owner (i+1) t
+-- Expiration leaves a bounded, reusable tombstone. Revocation/reset clears the
+-- entire record; reuse overwrites its unique incarnation-bound handle. Only
+-- the still-live original caller can refresh a surviving exact contract.
+partial def findLease (id owner i t : UInt64) : UInt64 :=
+  if i == 4 then error else
+    let g := grantAt i
+    if id != 0 && load64 (g+8) t == id && load64 (g+16) t == owner &&
+      (load64 g t == 1 || (load64 g t == 0 && load64 (g+56) t != 0 && now t >= load64 (g+56) t)) then i
+    else findLease id owner (i+1) t
 partial def findJob (id owner i t : UInt64) : UInt64 :=
   if i == 8 then error else
     let j := jobAt i
@@ -128,7 +138,7 @@ def nativePeerCurrent (t : UInt64) : Bool :=
   if selected == 0 then true else
   let own := Guest.NodeEnrollment.localNode
   let peer := Guest.NodeEnrollment.peer (selected-1)
-  selected <= 4 && load64 own t == 1 && Guest.TorRouter.peerValid peer t &&
+  selected <= 8 && load64 own t == 1 && Guest.TorRouter.peerValid peer t &&
     Guest.NodeEnrollment.eq (own+512) (stamp+32) 32 t &&
     Guest.NodeEnrollment.eq (peer+512) (stamp+64) 32 t
 def nativeFeedRelationship (t : UInt64) : Bool :=
@@ -328,7 +338,8 @@ partial def expireGrants (i t : UInt64) : UInt64 :=
     let g := grantAt i
     let caller := load64 (g+16) t
     let alive := if load64 g t == 1 then syscall 34 caller 0 0 0 t else 0
-    let t := if load64 g alive == 1 && (now alive >= load64 (g+56) alive || alive == error) then store64 g 0 alive else alive
+    let t := if load64 g alive == 1 && alive == error then zero g 32 alive
+      else if load64 g alive == 1 && now alive >= load64 (g+56) alive then store64 g 0 alive else alive
     expireGrants (i+1) t
 
 -- Only the explicitly selected native Feed bulk relationship may reconnect.
@@ -419,7 +430,7 @@ def configureFeedPeer (role slot length t : UInt64) : UInt64 :=
   let peer := Guest.NodeEnrollment.peer slot
   let endpointLength := if length == 64 then 0 else load64 (command+24) t
   if (Guest.TorRouter.enabled t && endpointLength == 0) || (length != 64 && (endpointLength == 0 || endpointLength > 64 || length != 64+endpointLength ||
-      !Guest.Identity.ipv4 (command+64) endpointLength 0 0 t)) || slot >= 4 || (role != 1 && role != 2) || !Guest.TorRouter.peerValid peer t ||
+      !Guest.Identity.ipv4 (command+64) endpointLength 0 0 t)) || slot >= 8 || (role != 1 && role != 2) || !Guest.TorRouter.peerValid peer t ||
     load64 own t != 1 || load64 (own+208) t != 16 || load64 (peer+208) t != 16 ||
     Guest.NodeEnrollment.eq (own+144) (peer+144) 32 t then failure 1 t else
   let client := if role == 1 then own else peer
@@ -577,46 +588,36 @@ def receiveMessage (caller handle t : UInt64) : UInt64 :=
         let t := copy (p+32) (wire+64) n t
         64+n+zero p 128 t
 
-def dispatchSelected (caller rights length t : UInt64) : UInt64 :=
-  let op := load64 command t
-  let handle := load64 (command+8) t
-  let admin := (rights &&& 0x100000000) != 0
-  let t := store64 (control+96) (load64 (control+96) t+1) t
-  if length < 64 || load64 (command+56) t != 1 then failure 2 t else
-  if op == 43 && admin && (length == 96 || length == 288) then
-    Guest.NodeStore.retain (command+64) (if length == 288 then command+96 else 0) t else
-  if op == 44 && admin && length == 96 then Guest.NodeStore.recover (command+64) t else
-  if op == 45 && admin && length == 64 then
-    let t := Guest.TorRouter.stop 0 (Guest.OnionTerminal.clearAll t)
-    let t := zero Guest.NodeEnrollment.keys 32 (zero Guest.NodeEnrollment.localNode 68 t)
-    let t := syscall 145 0 0 0 2 (Guest.NodeStore.clear t)
-    failure 0 t
-  else if (op >= 38 && op <= 42) || op == 46 || op == 47 then Guest.OnionTerminal.dispatch caller (if admin then 1 else 0) op length t else
-  if (op == 30 || op == 31) && admin && !Guest.TorRouter.enabled t &&
-    (load64 (st+8) t != 0 || load64 (bank 0+520) t != 0 || load64 (bank 1+520) t != 0 || load64 (bank 2+520) t != 0 || load64 (bank 3+520) t != 0) then failure 8 t else
-  if op >= 30 && op <= 37 && admin then
-    let t := if op == 31 || op == 35 then Guest.OnionTerminal.clearAll t else t
-    let t := if op == 30 || op == 31 then store64 (control+128) 1 t else t
-    Guest.TorRouter.dispatch op handle length t else
-  if op >= 20 && op <= 25 && admin then Guest.NodeEnrollment.dispatch op handle length t else
-  if op == 48 && admin && length >= 64 && length <= 128 then configureFeedPeer (load64 (command+16) t) handle length t else
-  if op == 13 && (admin || (rights &&& 1024) != 0) && length == 64 then
-    connectSelected admin t
-  else if op == 14 && (admin || caller == syscall 119 0 0 0 0 t) && length == 64 then
-    let r := networkReset t
-    failure 0 (store64 (st+8) 0 (disconnect 16 r))
-  else if op == 11 && admin then
-    let t := store64 (st+8) 0 (disconnect 16 (networkReset t))
-    Guest.PeerDescription.stage length t
-  else
-  if op == 12 && admin then Guest.PeerDescription.confirm length t else
-  if op == 16 && admin && length == 64 then
-    let t := zero wire 8 t
-    160+copy (control+32) (wire+64) 96 t
-  else
-  if op == 1 && admin then configure (load64 (command+16) t) length t else
-  if op == 9 && admin then failure 0 (disconnect 0 (networkReset t)) else
-  if (rights &&& 1024) == 0 && !admin then failure 1 t else
+-- Private broker operation17 renews the *same* caller/context contract. There
+-- is no new byte/work allowance, peer, service, root, operation or stream.
+-- Lifetime0 is an owner-only inspection; an unavailable tombstone is a denial,
+-- never an instruction to mint replacement authority. Pending sends keep their
+-- original expiry and must reconcile/cancel before a lease can change.
+@[noinline] def refreshLease (caller handle lifetime t : UInt64) : UInt64 :=
+  let selected := findLease handle caller 0 t
+  if selected == error then failure 3 selected else
+    let g := grantAt selected
+    let alive := syscall 34 caller 0 0 0 selected
+    let peer := pins+(if load64 (st+8) alive == 1 then 32 else 0)
+    let ceiling := if Guest.PeerDescription.verified alive then load64 (Guest.PeerDescription.description+48) alive else 16777216
+    let current := alive != error && nativePeerCurrent alive && load64 (st+8) alive != 0 &&
+      equal (g+96) peer 32 alive && equal (g+128) (pins+64) 32 alive &&
+      Guest.PeerDescription.permits (load64 (g+80) alive) alive &&
+      (!protocol2 alive || load64 (g+88) alive != 0) && load64 (g+32) alive <= ceiling &&
+      load64 (g+40) alive <= load64 (g+32) alive
+    if !current then failure 3 alive else
+    if lifetime != 0 && !Guest.NetworkGrantLease.accepts true current (!activeForGrant handle 0 alive)
+        (load64 (g+32) alive) (load64 (g+40) alive) lifetime (now alive) then failure 4 alive else
+      let t := if lifetime == 0 then alive else store64 g 1 (store64 (g+56) (now alive+lifetime) alive)
+      let t := zero wire 8 t
+      let t := store64 (wire+8) handle t
+      let t := store64 (wire+16) (load64 (g+32) t-load64 (g+40) t) t
+      let t := store64 (wire+24) (load64 (g+40) t) t
+      let t := store64 (wire+32) (load64 (g+56) t) t
+      let t := store64 (wire+40) (now t) t
+      64+store64 (wire+48) (load64 g t) t
+
+@[noinline] def dispatchOrdinary (caller op handle length t : UInt64) : UInt64 :=
   if op == 15 && length == 64 then
     if !Guest.PeerDescription.verified t then failure 3 t else
       let t := zero wire 8 t
@@ -640,23 +641,78 @@ def dispatchSelected (caller rights length t : UInt64) : UInt64 :=
     let t := store64 (wire+48) (inboxCount 0 0 t) t
     64+store64 (wire+40) (load64 (st+80) t) t
   else if op == 8 && length == 64 then
-    let selected := findGrant handle caller 0 t
+    let selected := findLease handle caller 0 t
     if selected == error then failure 3 selected else
-      failure 0 (store64 (grantAt selected) 0 selected)
+      failure 0 (zero (grantAt selected) 32 selected)
+  else if op == 17 && length == 64 then refreshLease caller handle (load64 (command+16) t) t
   else if (op == 4 || op == 5) && length == 64 then
     let selected := findJob handle caller 0 t
     if selected == error then failure 3 selected else
       if op == 4 then jobResponse (jobAt selected) selected else cancelJob (jobAt selected) selected
   else failure 2 t
 
+@[noinline] def dispatchManagement (caller rights length t : UInt64) : UInt64 :=
+  let op := load64 command t
+  let handle := load64 (command+8) t
+  let admin := (rights &&& 0x100000000) != 0
+  if op == 13 && (admin || (rights &&& 1024) != 0) && length == 64 then
+    connectSelected admin t
+  else if op == 14 && (admin || caller == syscall 119 0 0 0 0 t) && length == 64 then
+    let r := networkReset t
+    failure 0 (store64 (st+8) 0 (disconnect 16 r))
+  else if op == 11 && admin then
+    let t := store64 (st+8) 0 (disconnect 16 (networkReset t))
+    Guest.PeerDescription.stage length t
+  else
+  if op == 12 && admin then Guest.PeerDescription.confirm length t else
+  if op == 16 && admin && length == 64 then
+    let t := zero wire 8 t
+    160+copy (control+32) (wire+64) 96 t
+  else
+  if op == 1 && admin then configure (load64 (command+16) t) length t else
+  if op == 9 && admin then failure 0 (disconnect 0 (networkReset t)) else
+  if (rights &&& 1024) == 0 && !admin then failure 1 t else
+  dispatchOrdinary caller op handle length t
+
+def dispatchSelected (caller rights length t : UInt64) : UInt64 :=
+  let op := load64 command t
+  let handle := load64 (command+8) t
+  let admin := (rights &&& 0x100000000) != 0
+  let t := store64 (control+96) (load64 (control+96) t+1) t
+  if length < 64 || load64 (command+56) t != 1 then failure 2 t else
+  if op == 43 && admin && (length == 96 || length == 288) then
+    Guest.NodeStore.retain (command+64) (if length == 288 then command+96 else 0) t else
+  if op == 44 && admin && length == 96 then Guest.NodeStore.recover (command+64) t else
+  if op == 45 && admin && length == 64 then
+    let t := Guest.TorRouter.stop 0 (Guest.OnionTerminal.clearAll t)
+    let t := zero Guest.NodeEnrollment.keys 32 (zero Guest.NodeEnrollment.localNode 68 t)
+    let t := syscall 145 0 0 0 2 (Guest.NodeStore.clear t)
+    failure 0 t
+  else if (op >= 38 && op <= 42) || op == 46 || op == 47 || op == 49 || op == 50 then Guest.OnionTerminal.dispatch caller (if admin then 1 else 0) op length t else
+  if op >= 30 && op <= 37 && admin then
+    let t := if op == 30 || ((op == 31 || op == 35) && load64 (Guest.TorRouter.state+8) t == 2) then Guest.OnionTerminal.clearAll t
+      else if op == 31 || op == 35 then Guest.OnionTerminal.pauseClientProfiles t else t
+    let t := if op == 30 || op == 31 then store64 (control+128) 1 t else t
+    Guest.TorRouter.dispatch op handle length t else
+  if op >= 20 && op <= 26 && admin then Guest.NodeEnrollment.dispatch op handle length t else
+  if op == 48 && admin && length >= 64 && length <= 128 then configureFeedPeer (load64 (command+16) t) handle length t else
+  dispatchManagement caller rights length t
+
 -- V2 selects a context in the high byte of version (2 | slot<<8). The
 -- request operation/handles remain unchanged; legacy version1 selects slot0.
 def dispatch (caller rights length t : UInt64) : UInt64 :=
   let version := load64 (command+56) t
+  let op := load64 command t
   let slot : UInt64 := if version == 1 then 0 else version >>> 8
   if length < 64 || (version != 1 && ((version &&& 255) != 2 || slot >= 4)) then failure 2 t else
-  if version == 1 && Guest.Transport.enabled t then failure 2 t else
-  let t := if version != 1 then store64 Guest.Transport.st 1 t else t
+  -- The frozen public SDK's caller-owned terminal requests use version1.
+  -- They select no bulk relationship and retain all terminal owner checks.
+  if version == 1 && Guest.Transport.enabled t && op != 39 && op != 40 then failure 2 t else
+  -- A raw legacy connection cannot be migrated into a multiplexed slot. MUX
+  -- reserves12..15 from its first RPC, so later router setup never moves peers.
+  if version != 1 && !Guest.Transport.enabled t && load64 (st+8) t != 0 then failure 8 t else
+  let t := if version != 1 && !Guest.Transport.enabled t then
+    Guest.Transport.choose (12+activeSlot t) (store64 Guest.Transport.st 1 t) else t
   let t := selectContext slot t
   -- Maintenance may skip an idle peer, but an RPC never spends authority
   -- against a cached clock or extends a lease by the maintenance interval.
@@ -664,7 +720,7 @@ def dispatch (caller rights length t : UInt64) : UInt64 :=
   let t := store64 st clock clock
   let t := store64 (command+56) 1 t
   let t := if load64 command t == 1 then store64 (st+128) (if version == 1 then 1 else 2) t else t
-  let onionOperation := load64 command t >= 20 && load64 command t <= 47
+  let onionOperation := (load64 command t >= 20 && load64 command t <= 47) || load64 command t == 49 || load64 command t == 50
   let t := if onionOperation then saveCrypto t else t
   let result := dispatchSelected caller rights length t
   if onionOperation then Guest.Effects.effectValue result (restoreCrypto result) else result

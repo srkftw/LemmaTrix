@@ -11,18 +11,18 @@ ROLES=('registry','seed','builder','verifier')
 
 def approved_package(package,public,release_id,rights):
  package=package.resolve();public=public.resolve()
- info=releases.inspect(package.read_bytes());releases.public_modulus(public)
+ info=releases.inspect(package.read_bytes());releases.public_key(public)
  if info['release_id']!=release_id or info['rights']!=rights:raise ValueError('operator approval must match exact release and rights')
  return dict(package=str(package),publisher_public=str(public),release_id=release_id,rights=rights)
 
 def validate_package(config):
  raw=Path(config['package']).read_bytes();info=releases.inspect(raw)
  if info['release_id']!=config['release_id'] or info['rights']!=config['rights']:raise ValueError('configured signed code or approved rights changed')
- releases.public_modulus(Path(config['publisher_public']))
+ releases.public_key(Path(config['publisher_public']))
  return raw
 
 def start_package(client,config,raw):
- client.request(10,raw[128:160]+releases.public_modulus(Path(config['publisher_public'])))
+ client.request(10,raw[128:160]+releases.public_key(Path(config['publisher_public'])))
  inspected=client.stage(Path(config['package']))
  if inspected['release_id']!=config['release_id']:raise ValueError('guest inspected a different role package')
  # init records explicit operator approval of this exact signed release and

@@ -1,0 +1,105 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "scope": "Native Ctrl+P creates a publisher and reviews/signs/publishes actual Notes.\n\nThe key-free compiler supplies inert candidate bytes. Device input approves the\nsignature and creates the immutable publication root; no host publisher key or\nauthoritative publication graph is supplied by this driver.\n",
+  "image_sha256": "b900ff02dbb6312c2c2d11baeab1073161d94212e971f5dd1551dbce50362f50",
+  "checks": [
+    {
+      "check": "native workbench builds actual public Notes through key-free compiler",
+      "result": "pass",
+      "result_path": "build/c010-creatorui5/worker/session-10176792675634643205/job-1/job.result.json",
+      "artifact": {
+        "path": "/home/sreekumaar/Desktop/LemmaTrix/build/c010-creatorui5/worker/session-10176792675634643205/job-1/app.bin",
+        "sha256": "93caedd92d1d329b582becf8b1e5e1ee799dd91a728821c0f123f79f6673b3ec",
+        "bytes": 109692
+      },
+      "signer": {
+        "service": 10176792675634643208,
+        "release": "960c347fa97ea3c98f7ae051fa86efe41cb33f42d5de5415747fea2552e7009a",
+        "rights": 0,
+        "bindings": {
+          "400": 1,
+          "401": 2,
+          "402": 3,
+          "403": 4,
+          "404": 5,
+          "405": 6,
+          "406": 7,
+          "407": 8,
+          "408": 9,
+          "409": 10,
+          "410": 11,
+          "411": 12
+        },
+        "retention": "ephemeral"
+      }
+    },
+    {
+      "check": "Ctrl+P creates guest-owned publisher and prepares bounded exact manifest review",
+      "result": "pass",
+      "request": [
+        0,
+        3,
+        10176792671339675913,
+        1,
+        1,
+        10176792679929610504,
+        10176792675634643207,
+        0
+      ],
+      "publisher": {
+        "role": 1,
+        "generation": 1,
+        "federation": "8ca126e7a8ea9e880c63f244056251be8b9d4a5b883204b6ad6a669c19b7011d",
+        "scope": "f3dcf676838be239a1e9717659fc30b211cd9f67a9923a561d7086585f4b91f8",
+        "public_key": "29942b44a8e9278047e4b5b7f9a5c376d2c4f79e7bcc0cfe571f164be498348a",
+        "fingerprint": "cfe9f80452332d7aa90a83d6c6232479f09f45a28a9308f990783099e6a832a4",
+        "signature": "02e0cbbfe8f34727dda0d41f6cf2fb374d6ed2510f87e1fcf4e777e3fbb04f08ead84e3e58cd8e36210d228e85848b31c4336825fdeee32d38575bb49795f30f",
+        "retention": "ephemeral",
+        "validity": "explicit revocation; no reboot-relative expiry",
+        "person_identity": "not established by this self-signed descriptor"
+      },
+      "release_id": "f2c8c2613bb27a7f540e4ed75c6daabd12285659b147831ec1cc3e4c82453d7d",
+      "manifest_bytes": 3183,
+      "manifest_sha256": "9b4b6dd08b9dd5c88477e789e2415700dacbb6d5da5d740d81fa9d4b8a93f231"
+    },
+    {
+      "check": "physical P publishes a real native immutable graph for Forge without replacing source",
+      "result": "pass",
+      "publication": {
+        "cap": 10176792679929610505,
+        "name": "published-f2c8c2613bb27a7f",
+        "head": "56036fcc305841ac6aae4286c050811ddb38cdfa25660b77283713810c9b9351"
+      },
+      "archive": {
+        "head": "56036fcc305841ac6aae4286c050811ddb38cdfa25660b77283713810c9b9351",
+        "project_id": "f3dcf676838be239a1e9717659fc30b211cd9f67a9923a561d7086585f4b91f8",
+        "nodes": 19,
+        "bytes": 164912,
+        "path": "build/c010-creatorui5/native-notes-graph.json",
+        "authority": "exported bytes only; import revalidates graph"
+      },
+      "source_parent": "e63b16019b0c2785ed37a8c9539dd70e06a40ec7f23d23c0f4b40fe1ca4b6365",
+      "release": {
+        "schema": 1,
+        "key": 10176792671339675913,
+        "job": 1,
+        "phase": 3,
+        "release_handle": 10176792679929610780,
+        "failure": 0,
+        "release_id": "f2c8c2613bb27a7f540e4ed75c6daabd12285659b147831ec1cc3e4c82453d7d",
+        "source_root": "e63b16019b0c2785ed37a8c9539dd70e06a40ec7f23d23c0f4b40fe1ca4b6365",
+        "project_id": "f3dcf676838be239a1e9717659fc30b211cd9f67a9923a561d7086585f4b91f8",
+        "header": "4c544c4553320000040000000000000000020000000000007cac01000000000000002000000000000200000000000000020000000000000002000000000000007f03000000000000000000000000000001000000000000000000000000000000199326122876c2d7ad1004d7d21e08eac093b7e005a9f7ac11b857c58561e09901a7d163b1df7c2c04589fdc96639e9423228644eb1bfaf0e863136caae0306bf2c8c2613bb27a7f540e4ed75c6daabd12285659b147831ec1cc3e4c82453d7d93caedd92d1d329b582becf8b1e5e1ee799dd91a728821c0f123f79f6673b3ecc3a23452eae0462a94567cd0451b424cf2c6dda238f9aa4d979d071004a7129c9b4b6dd08b9dd5c88477e789e2415700dacbb6d5da5d740d81fa9d4b8a93f2310000000000000000000000000000000000000000000000000000000000000000c33ec7fa3d4190c0586faaa429d064e8185752eca50bf4a19bc0cd6e2f826d07d4dd532af308096cc2bc9c81669b0836e2d7fa0dfa27709a0e29d932cf8b0d53010000000000000001000000000000000200000000000000000021000000000000400000000000000d0000000000000070726f6a6563742d6e6f74657300000000000000000000000000000000000000000000000000000000000000000000000100000000000000040000000000000000000000000000000000000000000000",
+        "session_only": true
+      }
+    },
+    {
+      "check": "exact known revoked release cannot acquire a fresh installation slot",
+      "result": "pass",
+      "release_id": "f2c8c2613bb27a7f540e4ed75c6daabd12285659b147831ec1cc3e4c82453d7d",
+      "error": "guest rejected command24, status1"
+    }
+  ],
+  "elapsed_seconds": 206.32539375100168
+}

@@ -1,0 +1,62 @@
+{
+  "image": "b743de7abac5c508660a662041ef97ef3da7677bd7c33d9903123e9d8e5459ad",
+  "result": "passed",
+  "image_bytes": 6291456,
+  "services": [
+    {
+      "slot": 1,
+      "image_offset": 5767168,
+      "length": 371072,
+      "limit": 393216,
+      "descriptor": 2,
+      "sha256": "b71a127d244999cd487d740c0fe11f263533a7211ecaf3770dd5e6b766ac7460"
+    },
+    {
+      "slot": 2,
+      "image_offset": 4718592,
+      "length": 362840,
+      "limit": 393216,
+      "descriptor": 2,
+      "sha256": "a3b2a6cd3bf2a46ce9ed21d7d5498185883766b4007ad45c5ae8e7bdf5c57dea"
+    },
+    {
+      "slot": 3,
+      "image_offset": 5242880,
+      "length": 405260,
+      "limit": 425984,
+      "descriptor": 2,
+      "sha256": "50d0d7b74bd63accca950a6055e3d6842fafd4b0c81a85dba6988a0984c61905"
+    },
+    {
+      "slot": 4,
+      "image_offset": 3670016,
+      "length": 258292,
+      "limit": 262144,
+      "descriptor": 2,
+      "sha256": "2eee31099a0700cd4fd3545e78e7f882fe70a50798ce7c8ecef8782e1ffd7567"
+    },
+    {
+      "slot": 5,
+      "image_offset": 4194304,
+      "length": 230856,
+      "limit": 262144,
+      "descriptor": 2,
+      "sha256": "712472d3b0b3f4df80469147a82c9ccd224560b87394b3e2b821d2adad6547e1"
+    },
+    {
+      "slot": 6,
+      "image_offset": 3145728,
+      "length": 412516,
+      "limit": 425984,
+      "descriptor": 2,
+      "sha256": "2450c19cc8a6a3df2910b3cc26ddf35e2d849a9a32e86b6f0e847e0070805342"
+    }
+  ],
+  "ordinary_code_limit": 262144,
+  "ordinary_arena_bytes": 2097152,
+  "ordinary_stack_bytes": 16384,
+  "ordinary_process_slots": 8,
+  "service_roles": 6,
+  "exact_operation_grants": 96,
+  "installed_project_metadata": 16
+}

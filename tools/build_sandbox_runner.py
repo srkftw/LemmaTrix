@@ -35,7 +35,7 @@ def main(config_path):
  mount(None,'/',flags=MS_REC|MS_PRIVATE)
  mount('tmpfs',root,'tmpfs',MS_NOSUID|MS_NODEV,'size=16m,mode=755')
  for path in cfg['closure']:bind(path,root/path.lstrip('/'))
- bind(cfg['input'],root/'input');bind(cfg['sdk'],root/'sdk')
+ bind(cfg['input'],root/'input');bind(cfg['sdk'],root/'sdk');bind(cfg['dependencies'],root/'dependencies')
  for name in ['work','tmp','proc','dev','home']: (root/name).mkdir(exist_ok=True)
  mount('tmpfs',root/'work','tmpfs',MS_NOSUID|MS_NODEV,'size=128m,nr_inodes=16384,mode=700')
  mount('tmpfs',root/'tmp','tmpfs',MS_NOSUID|MS_NODEV,'size=16m,nr_inodes=1024,mode=700')
@@ -43,9 +43,9 @@ def main(config_path):
  mount('proc',root/'proc','proc',MS_RDONLY|MS_NOSUID|MS_NODEV|MS_NOEXEC)
  mount(None,root,flags=MS_REMOUNT|MS_RDONLY|MS_NOSUID|MS_NODEV)
  os.chroot(root);os.chdir('/input')
- os.environ.clear();os.environ.update({'HOME':'/home','TMPDIR':'/tmp','PATH':str(Path(cfg['tools']['lean']).parent),'LANG':'C.UTF-8','LEAN_PATH':'/work/sdk:/work/project','LEAN_NUM_THREADS':'2'})
+ os.environ.clear();os.environ.update({'HOME':'/home','TMPDIR':'/tmp','PATH':str(Path(cfg['tools']['lean']).parent),'LANG':'C.UTF-8','LEAN_PATH':'/work/sdk:/work/dependencies:/work/project','LEAN_NUM_THREADS':'2'})
  lower_authority(cfg['uid_process_limit'])
- (Path('/work')/'sdk/Guest').mkdir(parents=True);(Path('/work')/'project').mkdir()
+ (Path('/work')/'sdk/Guest').mkdir(parents=True);(Path('/work')/'project').mkdir();(Path('/work')/'dependencies').mkdir()
  log=Path('/work/diagnostics.txt')
  tools=cfg['tools'];steps=[]
  def run(args,artifact_limit=None):
@@ -59,11 +59,15 @@ def main(config_path):
   for name in cfg['sdk_modules']:
    dest=Path('/work/sdk')/(name.replace('.','/')+'.olean');dest.parent.mkdir(parents=True,exist_ok=True)
    lean(['-R','/sdk','-o',dest,Path('/sdk')/(name.replace('.','/')+'.lean')])
+  for name in cfg['dependency_modules']:
+   dest=Path('/work/dependencies')/(name.replace('.','/')+'.olean');dest.parent.mkdir(parents=True,exist_ok=True)
+   lean(['-R','/dependencies','-o',dest,Path('/dependencies')/(name.replace('.','/')+'.lean')])
   # The compiler runs from its own immutable source, with every project module
   # elaborated inside this same sandbox and no ambient import directories.
   for name in cfg['modules']:
    dest=Path('/work/project')/(name.replace('.','/')+'.olean');dest.parent.mkdir(parents=True,exist_ok=True)
    lean(['-o',dest,Path('/input')/(name.replace('.','/')+'.lean')])
+  if cfg.get('source_only'):raise StopIteration
   lean(['-R','/sdk','--run','/sdk/Compiler/Main.lean',cfg['module'],'/work/app.S',cfg['entry']])
   startup='.option norvc\n.section .text.boot\n.globl _start\n_start:\n li a0,0\n call lt_'+cfg['entry'].replace('.','_')+'\n mv a1,a0\n li a0,10\n call lt_syscall\n1: j 1b\n'
   Path('/work/start.S').write_text(startup)
@@ -75,11 +79,13 @@ def main(config_path):
   binary=Path('/work/app.bin').read_bytes()
   if not 0<len(binary)<=cfg['output_limit']:raise RuntimeError('native code exceeds profile code limit')
   artifact=base64.b64encode(binary).decode()
+ except StopIteration:
+  pass
  except (OSError,RuntimeError) as error:
   status='error'
   with log.open('ab') as out:out.write(('\nbuild: '+str(error)+'\n').encode())
  diagnostics=log.read_bytes()[:65536].decode('utf-8','replace') if log.exists() else ''
- print(json.dumps({'sandbox_protocol':1,'sandbox_ready':True,'status':status,'diagnostics':diagnostics,'steps':steps,'binary_base64':artifact},separators=(',',':')),flush=True)
+ print(json.dumps({'sandbox_protocol':1,'sandbox_ready':True,'status':status,'diagnostics':diagnostics,'steps':steps,'binary_base64':artifact,'source_only':cfg.get('source_only',False)},separators=(',',':')),flush=True)
 
 if __name__=='__main__':
  try:main(sys.argv[1])

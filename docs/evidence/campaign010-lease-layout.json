@@ -1,0 +1,208 @@
+{
+  "image": "fc991e1237ac5453331e87e6ed370293bbc60dd032d389c5b1a17151e8b7cd96",
+  "result": "passed",
+  "image_bytes": 6291456,
+  "services": [
+    {
+      "slot": 1,
+      "image_offset": 5767168,
+      "length": 371072,
+      "limit": 393216,
+      "descriptor": 2,
+      "sha256": "b71a127d244999cd487d740c0fe11f263533a7211ecaf3770dd5e6b766ac7460"
+    },
+    {
+      "slot": 2,
+      "image_offset": 4718592,
+      "length": 362780,
+      "limit": 393216,
+      "descriptor": 2,
+      "sha256": "7dbf6d50b649e9742db47461d8521d70be980fb0cbfad863cbe008da91347de2"
+    },
+    {
+      "slot": 3,
+      "image_offset": 5242880,
+      "length": 405260,
+      "limit": 425984,
+      "descriptor": 2,
+      "sha256": "50d0d7b74bd63accca950a6055e3d6842fafd4b0c81a85dba6988a0984c61905"
+    },
+    {
+      "slot": 4,
+      "image_offset": 3670016,
+      "length": 258292,
+      "limit": 262144,
+      "descriptor": 2,
+      "sha256": "2eee31099a0700cd4fd3545e78e7f882fe70a50798ce7c8ecef8782e1ffd7567"
+    },
+    {
+      "slot": 5,
+      "image_offset": 4194304,
+      "length": 230856,
+      "limit": 262144,
+      "descriptor": 2,
+      "sha256": "712472d3b0b3f4df80469147a82c9ccd224560b87394b3e2b821d2adad6547e1"
+    },
+    {
+      "slot": 6,
+      "image_offset": 3145728,
+      "length": 417556,
+      "limit": 425984,
+      "descriptor": 2,
+      "sha256": "a31d43b3df762b78cdcf60e978cf6087d046b13ae66585144f37315aa2906f0c"
+    }
+  ],
+  "audio_profile": 2,
+  "network_profile": 2,
+  "supervisor_dma_regions": [
+    {
+      "start": 2162294784,
+      "end_exclusive": 2162311168,
+      "purpose": "network data rings"
+    },
+    {
+      "start": 2162311168,
+      "end_exclusive": 2162313216,
+      "purpose": "network data buffers"
+    },
+    {
+      "start": 2162319360,
+      "end_exclusive": 2162319616,
+      "purpose": "audio owner/control state"
+    },
+    {
+      "start": 2162327552,
+      "end_exclusive": 2162335744,
+      "purpose": "audio output ring"
+    },
+    {
+      "start": 2162335744,
+      "end_exclusive": 2162336768,
+      "purpose": "audio samples"
+    },
+    {
+      "start": 2162343936,
+      "end_exclusive": 2162360320,
+      "purpose": "audio control rings"
+    },
+    {
+      "start": 2162360320,
+      "end_exclusive": 2162361352,
+      "purpose": "audio control buffers"
+    },
+    {
+      "start": 2162364416,
+      "end_exclusive": 2162364496,
+      "purpose": "network control state"
+    },
+    {
+      "start": 2162368512,
+      "end_exclusive": 2162384896,
+      "purpose": "network control rings"
+    },
+    {
+      "start": 2162384896,
+      "end_exclusive": 2162385928,
+      "purpose": "network control buffers"
+    }
+  ],
+  "launcher_physical": {
+    "code": [
+      2164785152,
+      2165178368
+    ],
+    "data": [
+      2165178368,
+      2165243904
+    ],
+    "stack": [
+      2165243904,
+      2165260288
+    ],
+    "next_service_code": 2165309440
+  },
+  "compositor_physical": {
+    "code": [
+      2166358016,
+      2166620160
+    ],
+    "data": [
+      2166620160,
+      2166685696
+    ],
+    "stack": [
+      2166685696,
+      2166702080
+    ],
+    "next_service_code": 2166882304
+  },
+  "objects_physical": {
+    "code": [
+      2165309440,
+      2165702656
+    ],
+    "data": [
+      2165702656,
+      2165768192
+    ],
+    "stack": [
+      2165768192,
+      2165784576
+    ],
+    "next_service_code": 2165833728
+  },
+  "vault_physical": {
+    "code": [
+      2165833728,
+      2166259712
+    ],
+    "data": [
+      2166259712,
+      2166325248
+    ],
+    "stack": [
+      2166325248,
+      2166341632
+    ],
+    "next_service_code": 2166358016
+  },
+  "network_physical": {
+    "code": [
+      2167406592,
+      2167832576
+    ],
+    "data": [
+      2167832576,
+      2167898112
+    ],
+    "stack": [
+      2167898112,
+      2167914496
+    ],
+    "next_service_code": 2167930880
+  },
+  "ordinary_signed_application_code_limit": 262144,
+  "process_slots": 15,
+  "ordinary_slots": 8,
+  "service_roles": 6,
+  "exact_operation_grants": 96,
+  "extra_ordinary_arenas": [
+    {
+      "slot": 12,
+      "start": 2306867200,
+      "end_exclusive": 2308964352
+    },
+    {
+      "slot": 13,
+      "start": 2308964352,
+      "end_exclusive": 2311061504
+    },
+    {
+      "slot": 14,
+      "start": 2311061504,
+      "end_exclusive": 2313158656
+    }
+  ],
+  "ram_bytes": 167772160,
+  "assumptions": "static ranges correspond to the documented kernel functions; actual boot/IPC/restart tested separately"
+}

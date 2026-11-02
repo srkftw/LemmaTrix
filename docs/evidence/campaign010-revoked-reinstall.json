@@ -1,0 +1,40 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "image_sha256": "6db8006f7543ad09299c881720a1d6424a5a97eb9e64e4da4390f8f4e6753b71",
+  "release": {
+    "project": "external-sdk-checkpoint",
+    "version": "1.0.0",
+    "release_id": "c79186ddcc53fa3184028ac6b7f98adb515dc166f0c121ca21311c113c8f2040",
+    "publisher_key_id": "1f932d89f5cdd4d66e6566cae4c7e534a1e02d5b15ce616b707e9f31c61cabf2",
+    "project_id": "a22125d0209fb41cb3d1c3cb83ce9cd553e4d902e0cedbc70c9ceadaafc6defc",
+    "rights": 768,
+    "executable_sha256": "7e7bc1bf06637c79dd1f4e61b1f364f37d3913d3b3164a288f516accda2484b3",
+    "source_root": "c14d4ac1c27fa4a09f92ebe807aa1a4b8c4cb3aaeb320753664e0124f3c31127",
+    "manifest_root": "35be1ec0ccf794176ce6ef8fe8b84a157cf99fc3d76b9e2b37ab6b998657a322",
+    "parent": "0000000000000000000000000000000000000000000000000000000000000000",
+    "size": 15196,
+    "signature_verified": true,
+    "manifest_checked": false,
+    "identity_scheme": 4,
+    "logical_project_id": null,
+    "facet": "NativeApplication",
+    "signature_profile": "Ed25519-pure-LT-PROJECT-RELEASE-V1",
+    "publisher_generation": 1,
+    "prefix_size": 608,
+    "public_key": "e7cca40bc93aea628fec11895bd9f57dcf38fa4824c3763c3036aec2f61d15ce"
+  },
+  "checks": [
+    {
+      "check": "revoked installed release cannot start",
+      "result": "pass",
+      "error": "guest rejected command25, status1"
+    },
+    {
+      "check": "same exact revoked release remains inspectable but cannot reinstall through a fresh slot",
+      "result": "pass",
+      "error": "guest rejected command24, status1"
+    }
+  ],
+  "elapsed_seconds": 23.675234804002685
+}

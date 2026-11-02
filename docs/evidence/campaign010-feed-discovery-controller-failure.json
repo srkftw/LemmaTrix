@@ -1,0 +1,105 @@
+{
+  "schema": 1,
+  "result": "failure-preserved-reader",
+  "checks": [
+    {
+      "check": "fresh second personal session has no graph, installed Notes or social signing identity; only public verifier is configured",
+      "result": "pass",
+      "configuration": {
+        "instance": 10055940752715809034,
+        "policy": "consumer",
+        "federation_id": "45c685db79fb1cf45780281b2c72a16bb2c3c14cec05f5603171cd02346c5469",
+        "signing_authority": false,
+        "execution_authority": false
+      },
+      "registry": 10055940752715809034,
+      "registry_release": "5512cd0cd6d33611174564ffb2747b39a07b4efa13f5652fd2d0a09c4d0e4833",
+      "feed": {
+        "identity": 10055940752715809031,
+        "owner": 10055940752715809032,
+        "ui": 10055940752715809033,
+        "rights": [
+          1024,
+          799
+        ],
+        "federation": "d17d966d66359ea218b908b2d0c1f40452dc74a5d462f9138846c52048647185",
+        "selected_peer": "b2a1a86b8b958a613c578692e4c9c9b0e96e87fa676d18326fec1363183b00c3",
+        "default_retention": "ephemeral",
+        "controls": "native Feed window: create identity, compose, select audience, publish, timeline and reply",
+        "transport": "selected native mode1 circuit and Feed terminal required; no direct fallback"
+      }
+    },
+    {
+      "check": "second personal session independently approves provider pin and establishes selected Feed relationship",
+      "result": "pass",
+      "route": [
+        0,
+        1,
+        3,
+        0,
+        4,
+        0,
+        0,
+        1
+      ],
+      "profile": [
+        1,
+        10055940752715809032,
+        3,
+        101,
+        3,
+        0,
+        8388608,
+        65536
+      ],
+      "provider_pin": "abb57e1d0ba712e823a587cb9a9fde21e03223399ed51a1135424d3cc4250943",
+      "setup_seconds": 43.78226033700048
+    },
+    {
+      "check": "physical chronological navigation retrieves exact native-verified signed card and complete committed body",
+      "result": "pass",
+      "event": "3db8fd6b4175c9cef1f31ffd74305de02004253c58e9576b068dc5b578748753",
+      "author": "8d7eecf69ebbb6fc00cb2051e8604596a6ee83fa571a0744dbb53c6865618d1a",
+      "selected_public_record_sha256": "a543ddf126d9717407966e7c17c868f2f2ba474ab48f3d816c16459bd4bd0cf4",
+      "rows_traversed": 23,
+      "root": "3ae8ad12addef09160d55b01d7d527bbac6c5eded3b327df3511331f3230a747"
+    }
+  ],
+  "image_sha256": "b743de7abac5c508660a662041ef97ef3da7677bd7c33d9903123e9d8e5459ad",
+  "card_record_sha256": "47e9591344e7bce22bd6a3a43a6666eda7a363f3f2b2042bf19fd356406ef9d0",
+  "session": {
+    "socket": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign010-feed-discovery/personal/portal.sock",
+    "graphics": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign010-feed-discovery/personal/display.qmp",
+    "pid": 792496,
+    "backend": "qemu",
+    "image": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign010-fork-scope/guest.bin"
+  },
+  "elapsed_seconds": 411.56,
+  "timeline_rows": [
+    "0000000000000000000000000000000000000000000000000000000000000000",
+    "3f7ccee79369e00ca2f6007ef272d47fc163d71a7b4059bdbeec340d7a1a301e",
+    "1ed503591deb1fd6b2f953b9aabe138fd9444bc720ee42dbd085a22acff7a489",
+    "c301623010b29b84e772914f6ee76a8095db20ab0727a1be6955e3c5c9b04e06",
+    "2a715568ea7f486d77e40778801772875a88e87dbd01b35e1b5ed0b8953e8f96",
+    "df3d727f235f25d97ead6e5e79a385902151e1666d021f0600c24d83938c2416",
+    "c0a8f93eed9cf3ed8ecf1852ac982d525a745c3cca346c285ff45c109ab9e3c5",
+    "7bb1ab1c70f4cdc11f5dce72dbd05c72bf126f9a6c3c76cb55c06257a2e31b54",
+    "20c13784f3af81f6f373b1b8bd234592af69b9bda91c6e5bbc4876df5459821d",
+    "0c60bc4389999e13daa0b1e52f39edb23ecc23dd28e0e6d150ca3703e3f077a1",
+    "1eea62a373a286fac91d303b0711f77a8fccca31171358796bcd062d4056e220",
+    "fe85b24774fce690dd0075c11aaeb85b37536cd27230eeac494118092c7a3187",
+    "cbb3c2267d984d53f210c6ae7fcea9ab715a6a402e83d670ed75ac9eef7d6a5b",
+    "8caccbed6cdd0973d1f2151cae1132735be4e6563785e41b82f840dd4b25047c",
+    "5c18685ef764a81dc8f0d25648524478bafd01ed091fcb313e2918ea1380011b",
+    "251bb30e958761645ebdfefc27a17e48c472833b1a17cf9f39d4182bee5eab13",
+    "ced3d6d8ec2c5229e369775bd50ab091d24a41562efd2a22642d7e04839589fc",
+    "57e2d736f55063c16386d24ba3917da2e4b4ff28392a34c16c5d57cd867b868e",
+    "ec5a50b55824e0347e60d1802e2e046e31df2c028f7b714ca7dff46ac9c20f47",
+    "a60b5c0c76b60da64f77c83a116bdf3ddda424c1f23b4cfdd8ec0223b576605c",
+    "df34ef47cbbd8279a2299c0b623df743ad192aa722c8f0f0e93f7f6ac8e18292",
+    "d24a6cff680b437558a2a271c53643dcd18a38a1cf5d8557beb42fd42c2ae77c",
+    "3db8fd6b4175c9cef1f31ffd74305de02004253c58e9576b068dc5b578748753"
+  ],
+  "error": "AssertionError('native selected descriptor differs')",
+  "traceback": "Traceback (most recent call last):\n  File \"/home/sreekumaar/Desktop/LemmaTrix/tests/campaign010_feed_discovery.py\", line 69, in main\n    classified,descriptor=federation.call(c,registry,6);require(classified[1]==2 and descriptor[128:160].hex()==selected['release'],'native selected descriptor differs')\n                                                        ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/sreekumaar/Desktop/LemmaTrix/tests/creator_journey.py\", line 14, in require\n    if not value:raise AssertionError(message)\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: native selected descriptor differs\n"
+}

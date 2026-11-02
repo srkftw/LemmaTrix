@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "commands": [
+    "./lt sdk init TEMP/social-starter --name social-starter --template social",
+    "./lt sdk check TEMP/social-starter"
+  ],
+  "rights": 831,
+  "raw_network_capability": false,
+  "network": "reviewed-intents",
+  "sdk": {
+    "version": "0.1.0",
+    "content_id": "3312ddcd277f401c377142b006bac6cf9aeefd8fa89f4d4c78f1fd5469caf533"
+  },
+  "source_sha256": "92970b237629e08c7855476edd4cfcf1a9df0d8ca7b9dff135ed27d9e777dc8b",
+  "scope": "Normal starter generation and structural public SDK preflight; no compilation or sharing execution claimed."
+}

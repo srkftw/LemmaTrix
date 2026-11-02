@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "name": "notes-schema",
+  "facet": "DevelopmentArtifact",
+  "exports": ["Notes.Schema"],
+  "license": "MIT",
+  "provenance": {"origin": "srkftw/LemmaTrix examples/notes-schema"},
+  "distribution_authority": "Project contributors authorize distribution of their own MIT licensed source."
+}

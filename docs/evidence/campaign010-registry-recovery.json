@@ -1,0 +1,64 @@
+{
+  "schema": 1,
+  "scope": "Restart a real Registry catalog and its independently sealed guest identity.",
+  "image_sha256": "ae15d33236b9e0b0ecf15ed632c63be0c047cd85f9b75144c84576cb7d8aab22",
+  "checks": [
+    {
+      "check": "native decision and typed sealed operator authority committed to separate approved server namespaces",
+      "result": "pass",
+      "configuration": {
+        "instance": 2447598963163922696,
+        "policy": "portable",
+        "federation_id": "848a5f58ec7942d2b5296091a3fb94bc9b341f18f1cac8d9c947543182e64388",
+        "public_key": "698194812c4e27267587c2889ed61c77bb40e2a71dea75026078d9b8818b19e3",
+        "key": 2447598967458889990,
+        "generation": 1,
+        "policy_id": "611e8d51dbed7cb0ab8697f25a26b76608536c619540ac1b55833d440636367e",
+        "store_grant": 2447598967458889985,
+        "decision_budget": 16,
+        "signing": "native scoped Ed25519 admission-v2",
+        "session_only": true,
+        "execution_authority": false
+      },
+      "retention": {
+        "namespace": "4e1d0339eafcdfac20d3c0f712f5d973a5960010cc4882a77a1863ad262728df",
+        "public_key": "698194812c4e27267587c2889ed61c77bb40e2a71dea75026078d9b8818b19e3",
+        "generation": 1,
+        "policy": "portable",
+        "retained": "native Identity sealed role7 authority; approved purpose2 store",
+        "private_key_exported": false,
+        "freshness": "latest committed local server store; no whole-store rollback detection",
+        "continuation": "recover catalog and authority together before admitting further releases"
+      },
+      "decision_sha256": "c1fa707742433c0c4926f7916107efee64cff14f31100504b7f098d93af80d35"
+    },
+    {
+      "check": "server restart restores exact authenticated catalog and same sealed identity with fresh live bindings",
+      "result": "pass",
+      "recovery": {
+        "instance": 2696472324894359816,
+        "key": 2696472320599392518,
+        "policy": "portable",
+        "public_key": "698194812c4e27267587c2889ed61c77bb40e2a71dea75026078d9b8818b19e3",
+        "generation": 2,
+        "federation_id": "848a5f58ec7942d2b5296091a3fb94bc9b341f18f1cac8d9c947543182e64388",
+        "recovered_catalog_records": 1,
+        "old_live_bindings_restored": false,
+        "namespace": "4e1d0339eafcdfac20d3c0f712f5d973a5960010cc4882a77a1863ad262728df",
+        "freshness": "local committed store only; an older whole-store backup needs explicit operator reconciliation"
+      },
+      "old_instance": 2447598963163922696,
+      "new_instance": 2696472324894359816,
+      "old_grant": 2447598967458889985,
+      "new_grant": 2696472329189327105
+    },
+    {
+      "check": "recovered current native operator signs and durably commits a new exact revocation",
+      "result": "pass",
+      "sequence": 2,
+      "generation": 2
+    }
+  ],
+  "result": "pass",
+  "elapsed_seconds": 274.5638093259913
+}

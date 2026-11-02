@@ -1,0 +1,249 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "scope": "Reject source namespace substitution before invoking the isolated compiler.",
+  "sdk": {
+    "version": "0.1.0",
+    "content_id": "3312ddcd277f401c377142b006bac6cf9aeefd8fa89f4d4c78f1fd5469caf533"
+  },
+  "sdk_manifest_sha256": "2e31a152a9c217d9749f1d5e34340178e185aacbe9fc3f278a400a3bbf38591f",
+  "compiler_id": "86e5d0c9ff4428a3fb9e7e59a37e31a9582b2c0b2014da4b613308d50b1f0411",
+  "checks": [
+    {
+      "check": "canonical app modules and semantic resource names remain supported",
+      "result": "pass"
+    },
+    {
+      "check": "project/dependency refuses Guest.lean",
+      "result": "pass",
+      "diagnostic": "project shadows reserved SDK/toolchain namespace"
+    },
+    {
+      "check": "direct frozen snapshot refuses Guest.lean",
+      "result": "pass",
+      "diagnostic": "project shadows reserved SDK/toolchain namespace"
+    },
+    {
+      "check": "project/dependency refuses Guest/Shadow.lean",
+      "result": "pass",
+      "diagnostic": "project shadows reserved SDK/toolchain namespace"
+    },
+    {
+      "check": "direct frozen snapshot refuses Guest/Shadow.lean",
+      "result": "pass",
+      "diagnostic": "project shadows reserved SDK/toolchain namespace"
+    },
+    {
+      "check": "project/dependency refuses Guest.Shadow.lean",
+      "result": "pass",
+      "diagnostic": "Lean source must use a canonical module path: Guest.Shadow.lean"
+    },
+    {
+      "check": "direct frozen snapshot refuses Guest.Shadow.lean",
+      "result": "pass",
+      "diagnostic": "Lean source must use a canonical module path: Guest.Shadow.lean"
+    },
+    {
+      "check": "project/dependency refuses Lemma.lean",
+      "result": "pass",
+      "diagnostic": "project shadows reserved SDK/toolchain namespace"
+    },
+    {
+      "check": "direct frozen snapshot refuses Lemma.lean",
+      "result": "pass",
+      "diagnostic": "project shadows reserved SDK/toolchain namespace"
+    },
+    {
+      "check": "project/dependency refuses Lemma/Shadow.lean",
+      "result": "pass",
+      "diagnostic": "project shadows reserved SDK/toolchain namespace"
+    },
+    {
+      "check": "direct frozen snapshot refuses Lemma/Shadow.lean",
+      "result": "pass",
+      "diagnostic": "project shadows reserved SDK/toolchain namespace"
+    },
+    {
+      "check": "project/dependency refuses Lemma.Shadow.lean",
+      "result": "pass",
+      "diagnostic": "Lean source must use a canonical module path: Lemma.Shadow.lean"
+    },
+    {
+      "check": "direct frozen snapshot refuses Lemma.Shadow.lean",
+      "result": "pass",
+      "diagnostic": "Lean source must use a canonical module path: Lemma.Shadow.lean"
+    },
+    {
+      "check": "project/dependency refuses Compiler.lean",
+      "result": "pass",
+      "diagnostic": "project shadows reserved SDK/toolchain namespace"
+    },
+    {
+      "check": "direct frozen snapshot refuses Compiler.lean",
+      "result": "pass",
+      "diagnostic": "project shadows reserved SDK/toolchain namespace"
+    },
+    {
+      "check": "project/dependency refuses Compiler/Shadow.lean",
+      "result": "pass",
+      "diagnostic": "project shadows reserved SDK/toolchain namespace"
+    },
+    {
+      "check": "direct frozen snapshot refuses Compiler/Shadow.lean",
+      "result": "pass",
+      "diagnostic": "project shadows reserved SDK/toolchain namespace"
+    },
+    {
+      "check": "project/dependency refuses Compiler.Shadow.lean",
+      "result": "pass",
+      "diagnostic": "Lean source must use a canonical module path: Compiler.Shadow.lean"
+    },
+    {
+      "check": "direct frozen snapshot refuses Compiler.Shadow.lean",
+      "result": "pass",
+      "diagnostic": "Lean source must use a canonical module path: Compiler.Shadow.lean"
+    },
+    {
+      "check": "project/dependency refuses Init.lean",
+      "result": "pass",
+      "diagnostic": "project shadows reserved SDK/toolchain namespace"
+    },
+    {
+      "check": "direct frozen snapshot refuses Init.lean",
+      "result": "pass",
+      "diagnostic": "project shadows reserved SDK/toolchain namespace"
+    },
+    {
+      "check": "project/dependency refuses Init/Shadow.lean",
+      "result": "pass",
+      "diagnostic": "project shadows reserved SDK/toolchain namespace"
+    },
+    {
+      "check": "direct frozen snapshot refuses Init/Shadow.lean",
+      "result": "pass",
+      "diagnostic": "project shadows reserved SDK/toolchain namespace"
+    },
+    {
+      "check": "project/dependency refuses Init.Shadow.lean",
+      "result": "pass",
+      "diagnostic": "Lean source must use a canonical module path: Init.Shadow.lean"
+    },
+    {
+      "check": "direct frozen snapshot refuses Init.Shadow.lean",
+      "result": "pass",
+      "diagnostic": "Lean source must use a canonical module path: Init.Shadow.lean"
+    },
+    {
+      "check": "project/dependency refuses Lean.lean",
+      "result": "pass",
+      "diagnostic": "project shadows reserved SDK/toolchain namespace"
+    },
+    {
+      "check": "direct frozen snapshot refuses Lean.lean",
+      "result": "pass",
+      "diagnostic": "project shadows reserved SDK/toolchain namespace"
+    },
+    {
+      "check": "project/dependency refuses Lean/Shadow.lean",
+      "result": "pass",
+      "diagnostic": "project shadows reserved SDK/toolchain namespace"
+    },
+    {
+      "check": "direct frozen snapshot refuses Lean/Shadow.lean",
+      "result": "pass",
+      "diagnostic": "project shadows reserved SDK/toolchain namespace"
+    },
+    {
+      "check": "project/dependency refuses Lean.Shadow.lean",
+      "result": "pass",
+      "diagnostic": "Lean source must use a canonical module path: Lean.Shadow.lean"
+    },
+    {
+      "check": "direct frozen snapshot refuses Lean.Shadow.lean",
+      "result": "pass",
+      "diagnostic": "Lean source must use a canonical module path: Lean.Shadow.lean"
+    },
+    {
+      "check": "project/dependency refuses Std.lean",
+      "result": "pass",
+      "diagnostic": "project shadows reserved SDK/toolchain namespace"
+    },
+    {
+      "check": "direct frozen snapshot refuses Std.lean",
+      "result": "pass",
+      "diagnostic": "project shadows reserved SDK/toolchain namespace"
+    },
+    {
+      "check": "project/dependency refuses Std/Shadow.lean",
+      "result": "pass",
+      "diagnostic": "project shadows reserved SDK/toolchain namespace"
+    },
+    {
+      "check": "direct frozen snapshot refuses Std/Shadow.lean",
+      "result": "pass",
+      "diagnostic": "project shadows reserved SDK/toolchain namespace"
+    },
+    {
+      "check": "project/dependency refuses Std.Shadow.lean",
+      "result": "pass",
+      "diagnostic": "Lean source must use a canonical module path: Std.Shadow.lean"
+    },
+    {
+      "check": "direct frozen snapshot refuses Std.Shadow.lean",
+      "result": "pass",
+      "diagnostic": "Lean source must use a canonical module path: Std.Shadow.lean"
+    },
+    {
+      "check": "noncanonical module alias refuses App.Other.lean",
+      "result": "pass",
+      "diagnostic": "Lean source must use a canonical module path: App.Other.lean"
+    },
+    {
+      "check": "noncanonical module alias refuses App/Sub.Other.lean",
+      "result": "pass",
+      "diagnostic": "Lean source must use a canonical module path: App/Sub.Other.lean"
+    },
+    {
+      "check": "noncanonical module alias refuses App//Other.lean",
+      "result": "pass",
+      "diagnostic": "noncanonical project-relative path"
+    },
+    {
+      "check": "noncanonical module alias refuses App/../Other.lean",
+      "result": "pass",
+      "diagnostic": "noncanonical project-relative path"
+    },
+    {
+      "check": "noncanonical module alias refuses app-name.lean",
+      "result": "pass",
+      "diagnostic": "Lean source must use a canonical module path: app-name.lean"
+    },
+    {
+      "check": "pinned toolchain imports remain available without project-defined stdlib modules",
+      "result": "pass"
+    },
+    {
+      "check": "public closure refuses toolchain or SDK shadow Lean/Environment.lean",
+      "result": "pass",
+      "diagnostic": "project shadows reserved SDK/toolchain namespace"
+    },
+    {
+      "check": "public closure refuses toolchain or SDK shadow Std.lean",
+      "result": "pass",
+      "diagnostic": "project shadows reserved SDK/toolchain namespace"
+    },
+    {
+      "check": "public closure refuses toolchain or SDK shadow Lemma.UI.lean",
+      "result": "pass",
+      "diagnostic": "Lean source must use a canonical module path: Lemma.UI.lean"
+    },
+    {
+      "check": "SDK cache, manifest, and 0.1.0 content identity remain byte-exact",
+      "result": "pass"
+    }
+  ],
+  "seconds": 0.395,
+  "limitations": [
+    "resolver boundary checks; existing native build/application evidence retains its original compiler identity"
+  ]
+}

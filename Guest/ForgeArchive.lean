@@ -1,3 +1,4 @@
+import Guest.ForgeBounds
 import Guest.ProjectSDK
 import Guest.ProjectGraph
 import Guest.ServerSDK
@@ -10,12 +11,12 @@ open Guest.ProjectSDK
 -- Small index + one512-byte page are resident; payloads remain in Objects/disk.
 def st : UInt64 := 0x720000
 def rows : UInt64 := 0x721000
-def bundleIndex : UInt64 := 0x722000
-def buffer : UInt64 := 0x724000
-def running : UInt64 := 0x725000
-def scratch : UInt64 := 0x726000
-def digest : UInt64 := 0x727000
-def selected : UInt64 := 0x728000
+def bundleIndex : UInt64 := 0x723000
+def buffer : UInt64 := 0x726000
+def running : UInt64 := 0x727000
+def scratch : UInt64 := 0x728000
+def digest : UInt64 := 0x729000
+def selected : UInt64 := 0x72a000
 def magic : UInt64 := 0x324c444e42544c
 def row (i : UInt64) : UInt64 := rows+i*128
 def phase (t : UInt64) : UInt64 := load64 st t
@@ -32,13 +33,13 @@ def fail (code t : UInt64) : UInt64 :=
   store64 st 9 (store64 (st+88) code t)
 def active (t : UInt64) : Bool := phase t > 0 && phase t != 4 && phase t < 8
 partial def enumerate (root cursor i bytes t : UInt64) : UInt64 :=
-  if i > 24 || bytes > 1048576 then error else
+  if i > Guest.ForgeBounds.maxNodes || bytes > 1048576 then error else
     let r := closure root cursor t
     if r < 64 || status r != 0 then error else
     if result r == 0 then
       let t := store64 (st+24) i r
       store64 (st+32) bytes t
-    else if i == 24 || r != 128 || load64 (wire+24) r <= cursor || load64 (wire+16) r > 1048576-bytes then error else
+    else if i == Guest.ForgeBounds.maxNodes || r != 128 || load64 (wire+24) r <= cursor || load64 (wire+16) r > 1048576-bytes then error else
       let p := row i
       let handle := result r
       let next := load64 (wire+24) r
@@ -152,7 +153,7 @@ def inspect (grant t : UInt64) : UInt64 :=
           let count := load64 (bundleIndex+16) t
           let payload := load64 (bundleIndex+24) t
           let indexBytes := 192+count*128
-          if load64 bundleIndex t != magic || load64 (bundleIndex+8) t != 2 || count == 0 || count > 24 ||
+          if load64 bundleIndex t != magic || load64 (bundleIndex+8) t != 2 || count == 0 || count > Guest.ForgeBounds.maxNodes ||
               payload > 1048576 || indexBytes+payload != bytes || !Guest.ProjectGraph.validName (bundleIndex+72) (load64 (bundleIndex+64) t) 63 t ||
               !Guest.ProjectGraph.allZero (bundleIndex+136) 56 t then fail 8 t else
             let t := store64 (st+24) count t

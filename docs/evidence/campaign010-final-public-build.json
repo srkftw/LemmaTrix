@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "command": [
+    "./lt",
+    "sdk",
+    "build",
+    "examples/project-notes",
+    "--output",
+    "build/project-notes-final-measured"
+  ],
+  "seconds": 29.611192354001105,
+  "exit_code": 0,
+  "result": "pass",
+  "sdk_content_id": "3312ddcd277f401c377142b006bac6cf9aeefd8fa89f4d4c78f1fd5469caf533",
+  "dependency_lock_id": "fa0fa0bc14985b973f64869197445390919ae618c6fe79499cdc5d6af56fb550",
+  "compiler_id": "86e5d0c9ff4428a3fb9e7e59a37e31a9582b2c0b2014da4b613308d50b1f0411",
+  "artifact": {
+    "bytes": 109692,
+    "path": "build/project-notes-final-measured/app.bin",
+    "sha256": "93caedd92d1d329b582becf8b1e5e1ee799dd91a728821c0f123f79f6673b3ec"
+  },
+  "snapshot_digest": "f2ef3ecbea63da71ded69267e6b4649eb03f0957ca54f03d7df8099034514012",
+  "matches_prior_hardened_artifact": true
+}

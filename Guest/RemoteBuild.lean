@@ -1,6 +1,7 @@
 import Guest.ProjectSDK
 import Guest.ProjectGraph
 import Guest.NetworkSDK
+import Guest.ForgeTransport
 import Guest.ContentSDK
 import Guest.ContentFormat
 import Guest.ServiceSDK
@@ -45,7 +46,7 @@ theorem cancelled_packets_do_not_revive : acceptsQuote 5 = false ∧ acceptsResu
 def configure (role identity toolchain peerService t : UInt64) : UInt64 :=
   if role < 1 || role > 3 || state t == 2 || state t == 7 || Guest.ProjectGraph.allZero identity 32 t || Guest.ProjectGraph.allZero toolchain 32 t then error else
     let old := load64 (st+8) t
-    let t := if old == 0 then t else Guest.NetworkSDK.revoke old t
+    let t := if old == 0 then t else Guest.ForgeTransport.revoke old t
     let t := zero st 128 t
     let t := copy identity provider 32 t
     let t := copy toolchain compiler 32 t
@@ -62,8 +63,8 @@ def select (root t : UInt64) : UInt64 :=
         let t := copy (wire+160) project 32 r
         let t := copy source (pins+64) 32 t
         let old := load64 (st+8) t
-        let t := if old == 0 then t else Guest.NetworkSDK.revoke old t
-        let r := Guest.NetworkSDK.grant pins 3 3 4194304 65536 100000 2 t
+        let t := if old == 0 then t else Guest.ForgeTransport.revoke old t
+        let r := Guest.ForgeTransport.grant pins 3 3 4194304 65536 100000 2 t
         if r != 64 || status r != 0 then error else
           let grant := result r
           let t := zero (st+24) 37 r
@@ -90,7 +91,7 @@ def sendPacket (kind n t : UInt64) : UInt64 :=
       else t
     let t := if kind == 5 && load64 (st+312) t == 2 then store64 (output+400) 2 t else t
     let n := if kind == 5 && load64 (st+312) t == 2 then 408 else n
-    let r := Guest.NetworkSDK.send (load64 (st+8) t) 2 output n t
+    let r := Guest.ForgeTransport.send (load64 (st+8) t) 2 output n t
     if r != 64 || status r != 0 then statusCode 7 r else store64 (st+24) (result r) r
 
 -- Called by the requester after a physical choice of provider/source/budget.
@@ -178,45 +179,49 @@ def artifactPacket (p n clock t : UInt64) : UInt64 :=
   let t := copy p (wire+64) n t
   artifactResponse (syscall 30 5 wire (64+n) 1024 t)
 
+@[noinline] def acceptRequest (p clock t : UInt64) : UInt64 :=
+  let same := equal (p+32) (requestBytes+32) 192 t
+  if state t >= 3 && same then
+    if state t == 3 || state t == 4 then sendPacket 5 400 t else sendPacket 4 256 t
+  else
+  if state t > 0 && state t < 3 && !same then statusCode 3 t else
+    let t := if state t >= 3 then zero (st+128) 24 (zero (st+32) 12 t) else t
+    let t := copy p requestBytes 256 t
+    let t := if state t == 0 then store64 (st+40) (clock+load64 (p+208) t) t else t
+    let t := if state t == 0 then store64 (st+32) 1 t else t
+    sendPacket 2 256 t
+
+@[noinline] def acceptResult (p n t : UInt64) : UInt64 :=
+  if !acceptsResult (state t) then t else
+  if state t == 3 then
+    if load64 (p+384) t == 3 && equal (p+256) (st+128) 128 t && load64 (p+392) t == load64 (st+88) t then t else statusCode 2 t
+  else
+    let t := copy (p+256) (st+128) 128 t
+    let t := store64 (st+88) (load64 (p+392) t) t
+    let t := if n == 408 then store64 (st+312) 2 (store64 (st+304) 1 t) else t
+    let t := store64 (st+32) (load64 (p+384) t) t
+    if n == 408 then
+      let r := setupArtifact t
+      if r != 64 || status r != 0 then statusCode 4 r else r
+    else t
+
 def accept (p n clock t : UInt64) : UInt64 :=
   if !validPacket p n t then statusCode 2 t else
   let kind := load64 (p+16) t
   let role := load64 st t
-  if kind == 1 && role >= 2 && load64 (p+24) t == role then
-    let same := equal (p+32) (requestBytes+32) 192 t
-    if state t >= 3 && same then
-      if state t == 3 || state t == 4 then sendPacket 5 400 t else sendPacket 4 256 t
-    else
-    if state t > 0 && state t < 3 && !same then statusCode 3 t else
-      let t := if state t >= 3 then zero (st+128) 24 (zero (st+32) 12 t) else t
-      let t := copy p requestBytes 256 t
-      let t := if state t == 0 then store64 (st+40) (clock+load64 (p+208) t) t else t
-      let t := if state t == 0 then store64 (st+32) 1 t else t
-      sendPacket 2 256 t
+  if kind == 1 && role >= 2 && load64 (p+24) t == role then acceptRequest p clock t
   else if !equal (p+32) (requestBytes+32) 192 t then statusCode 3 t else
   if kind >= 6 then artifactPacket p n clock t else
   if kind == 2 && role == 1 then
     if acceptsQuote (state t) then store64 (st+32) 1 t else t
-  else
-  if kind == 3 && role >= 2 && clock < load64 (st+40) t then
+  else if kind == 3 && role >= 2 && clock < load64 (st+40) t then
     if state t == 1 then enqueue t else t
   else if kind == 4 then
     let localJob := load64 (st+48) t
     let t := if role == 1 || localJob == 0 then t else syscall 30 5 wire 64 1024 (header 5 localJob 0 0 0 0 0 t)
     store64 (st+32) 5 t
   else if kind == 5 && role == 1 && (n == 400 || (n == 408 && load64 (p+400) t == 2)) && (load64 (p+384) t == 3 || load64 (p+384) t == 4) then
-    if !acceptsResult (state t) then t else
-    if state t == 3 then
-      if load64 (p+384) t == 3 && equal (p+256) (st+128) 128 t && load64 (p+392) t == load64 (st+88) t then t else statusCode 2 t
-    else
-      let t := copy (p+256) (st+128) 128 t
-      let t := store64 (st+88) (load64 (p+392) t) t
-      let t := if n == 408 then store64 (st+312) 2 (store64 (st+304) 1 t) else t
-      let t := store64 (st+32) (load64 (p+384) t) t
-      if n == 408 then
-        let r := setupArtifact t
-        if r != 64 || status r != 0 then statusCode 4 r else r
-      else t
+    acceptResult p n t
   else statusCode 2 t
 
 def cancel (t : UInt64) : UInt64 :=
@@ -241,7 +246,7 @@ def resultRoot (t : UInt64) : UInt64 := load64 (st+96) t
 def pollSend (t : UInt64) : UInt64 :=
   let j := load64 (st+24) t
   if j == 0 then t else
-    let r := Guest.NetworkSDK.poll j t
+    let r := Guest.ForgeTransport.poll j t
     if r != 64 || status r != 0 || load64 (wire+16) r >= 4 then statusCode 7 (store64 (st+24) 0 r) else
     if load64 (wire+16) r == 3 then store64 (st+24) 0 r else r
 
@@ -256,7 +261,7 @@ def entry (p kind id name length t : UInt64) : UInt64 :=
   let t := store64 (p+8) length t
   let t := copy id (p+16) 32 t
   copy name (p+48) length t
-def publishArtifact (t : UInt64) : UInt64 :=
+@[noinline] def assembleArtifactManifest (t : UInt64) : UInt64 :=
   let t := zero artifactData 128 t
   let t := store64 artifactData 0x31464e4d544c t
   let t := store64 (artifactData+8) 1 t
@@ -278,6 +283,10 @@ def publishArtifact (t : UInt64) : UInt64 :=
   let t := store64 (artifactData+576) (load64 st t) t
   let t := store64 (artifactData+584) 2 t
   let t := store64 (artifactData+600) 1 t
+  t
+
+def publishArtifact (t : UInt64) : UInt64 :=
+  let t := assembleArtifactManifest t
   let r := stage 608 11 0 t
   if r != 64 || status r != 0 then error else
     let h := result r
@@ -304,6 +313,21 @@ def genericMetadata (t : UInt64) : UInt64 :=
     if r != 64 || status r != 0 then error else
       syscall 30 5 wire 64 1024 (header 25 0 0 0 0 0 0 r)
 
+@[noinline] def finishArtifact (t : UInt64) : UInt64 :=
+  let r := if load64 (st+312) t == 2 then genericMetadata t else nodeMetadata (load64 (st+80) t) t
+  if r != 128 || status r != 0 then statusCode 3 r else
+    let t := copy (wire+64) (st+160) 32 r
+    let r := nodeMetadata (load64 (st+64) t) t
+    if r != 128 || status r != 0 then statusCode 3 r else
+      let t := copy (wire+64) (st+192) 32 r
+      let r := nodeMetadata (load64 (st+72) t) t
+      if r != 128 || status r != 0 then statusCode 3 r else
+        let t := copy (wire+64) (st+224) 32 r
+        let r := publishArtifact t
+        if r == error then sendPacket 5 400 (store64 (st+32) 4 (statusCode 3 r)) else
+          let t := store64 (st+32) 3 r
+          sendPacket 5 400 t
+
 def pollResult (t : UInt64) : UInt64 :=
   if load64 st t < 2 || state t != 2 || load64 (st+48) t == 0 then t else
     let t := header 4 (load64 (st+48) t) 0 0 0 0 0 t
@@ -327,26 +351,14 @@ def pollResult (t : UInt64) : UInt64 :=
         let t := store64 (st+80) (result r) r
         let t := store64 (st+88) (load64 (wire+16) t) t
         let t := store64 (st+312) (load64 (wire+24) t) t
-        let r := if load64 (st+312) t == 2 then genericMetadata t else nodeMetadata (load64 (st+80) t) t
-        if r != 128 || status r != 0 then statusCode 3 r else
-          let t := copy (wire+64) (st+160) 32 r
-          let r := nodeMetadata (load64 (st+64) t) t
-          if r != 128 || status r != 0 then statusCode 3 r else
-            let t := copy (wire+64) (st+192) 32 r
-            let r := nodeMetadata (load64 (st+72) t) t
-            if r != 128 || status r != 0 then statusCode 3 r else
-              let t := copy (wire+64) (st+224) 32 r
-              let r := publishArtifact t
-              if r == error then sendPacket 5 400 (store64 (st+32) 4 (statusCode 3 r)) else
-                let t := store64 (st+32) 3 r
-                sendPacket 5 400 t
+        finishArtifact t
 
 def artifactTick (clock t : UInt64) : UInt64 :=
   let t := if load64 st t != 1 || state t != 3 || load64 (st+312) t != 2 then t else
     artifactResponse (syscall 30 5 wire 64 1024 (header 22 0 clock 0 0 0 0 t))
   if load64 (st+344) t == 0 || load64 (st+24) t != 0 then t else
     let n := load64 (st+344) t
-    let r := Guest.NetworkSDK.send (load64 (st+8) t) 2 0x747000 n t
+    let r := Guest.ForgeTransport.send (load64 (st+8) t) 2 0x747000 n t
     if r != 64 || status r != 0 then statusCode 7 r else
       store64 (st+344) 0 (store64 (st+24) (result r) r)
 
@@ -366,7 +378,7 @@ def bindArtifactService (slot t : UInt64) : UInt64 :=
 def tick (clock t : UInt64) : UInt64 :=
   if load64 st t == 0 || load64 (st+8) t == 0 then t else
     let t := pollSend t
-    let r := Guest.NetworkSDK.receive (load64 (st+8) t) t
+    let r := Guest.ForgeTransport.receive (load64 (st+8) t) t
     let lost := r == 64 && status r == 3
     let t := if lost && (state r == 1 || state r == 2 || state r == 7) then
       store64 (st+32) 6 (statusCode 3 (cancel r))

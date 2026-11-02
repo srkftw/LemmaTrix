@@ -4,7 +4,7 @@ from pathlib import Path
 import live, identity, network
 
 def call(client,op,h=0,data=b'',a=0,b=0,c=0,d=0,e=0):
-    if 20 <= op <= 48:
+    if 20 <= op <= 50:
         import messenger,time
         target=next(row[0] for row in identity.instances(client) if row[0]&255==6)
         prior_mask=signal.pthread_sigmask(signal.SIG_BLOCK,{signal.SIGINT})
@@ -36,19 +36,21 @@ def main(argv=None):
     q=sub.add_parser('create');q.add_argument('--kind',choices=['relay','mailbox','feed'],required=True)
     for f in ['federation','scope','family']:q.add_argument('--'+f,required=True)
     q.add_argument('--endpoint',required=True);q.add_argument('--bytes',type=int,default=1048576);q.add_argument('--work',type=int,default=65536);q.add_argument('--generation',type=int,default=1);q.add_argument('--output',required=True,type=Path)
-    q=sub.add_parser('stage');q.add_argument('certificate',type=Path);q.add_argument('--peer',type=int,choices=range(4),required=True)
-    q=sub.add_parser('approve');q.add_argument('--peer',type=int,choices=range(4),required=True);q.add_argument('--fingerprint',required=True)
-    q=sub.add_parser('revoke');q.add_argument('--peer',type=int,choices=range(4),required=True)
+    q=sub.add_parser('stage');q.add_argument('certificate',type=Path);q.add_argument('--peer',type=int,choices=range(8),required=True)
+    q=sub.add_parser('approve');q.add_argument('--peer',type=int,choices=range(8),required=True);q.add_argument('--fingerprint',required=True)
+    q=sub.add_parser('revoke');q.add_argument('--peer',type=int,choices=range(8),required=True)
     q=sub.add_parser('listen');q.add_argument('--channel',type=int,choices=range(12),default=0)
-    q=sub.add_parser('bulk');q.add_argument('--peer',type=int,choices=range(4),required=True);q.add_argument('--role',choices=['client','server'],required=True);q.add_argument('--slot',type=int,choices=range(4),default=0);q.add_argument('--endpoint',help='separately approved numeric bulk server endpoint, identical on both operators')
+    q=sub.add_parser('bulk');q.add_argument('--peer',type=int,choices=range(8),required=True);q.add_argument('--role',choices=['client','server'],required=True);q.add_argument('--slot',type=int,choices=range(4),default=0);q.add_argument('--endpoint',help='separately approved numeric bulk server endpoint, identical on both operators')
     sub.add_parser('route');sub.add_parser('status');sub.add_parser('stop');sub.add_parser('lock')
     for name in ('retain','recover'):
         q=sub.add_parser(name);q.add_argument('--key',required=True,type=Path)
         if name=='retain':
             q.add_argument('--node-key',type=int);q.add_argument('--receipt-key',type=int)
-    q=sub.add_parser('terminal');q.add_argument('--peer',type=int,choices=range(4),default=3);q.add_argument('--owner',required=True,type=int);q.add_argument('--bytes',type=int,default=1048576);q.add_argument('--attempts',type=int,default=4096);q.add_argument('--stream',type=int,default=1)
+    q=sub.add_parser('terminal');q.add_argument('--peer',type=int,choices=range(8),default=3);q.add_argument('--owner',required=True,type=int);q.add_argument('--bytes',type=int,default=1048576);q.add_argument('--attempts',type=int,default=4096);q.add_argument('--stream',type=int,default=1)
+    sub.add_parser('profiles')
+    q=sub.add_parser('select');q.add_argument('--profile',type=int,choices=range(4),required=True)
     q=sub.add_parser('registry-terminal');q.add_argument('--registry',type=int,required=True);q.add_argument('--federation',required=True)
-    q=sub.add_parser('export');q.add_argument('--peer',type=int,choices=range(5),default=4);q.add_argument('--output',required=True,type=Path)
+    q=sub.add_parser('export');q.add_argument('--peer',type=int,choices=range(9),default=8);q.add_argument('--output',required=True,type=Path)
     a=p.parse_args(argv);c=live.Client(a.socket,timeout=600)
     try:
         if a.command=='create':
@@ -99,6 +101,16 @@ def main(argv=None):
             result=dict(approved_native_peer=a.peer,slot=a.slot,role=a.role,mode=3,status=list(f),private_keys_exported=False,authentication='native Ed25519 enrollment and X25519 pair possession')
         elif a.command=='terminal':
             f,_=call(c,38,h=a.peer,a=a.stream,b=a.owner,c=a.bytes,d=a.attempts);result=dict(queued=True,owner=a.owner,status=list(f))
+        elif a.command=='profiles':
+            f,body=call(c,49)
+            if len(body)!=512:raise ValueError('native terminal profile list must contain four128-byte rows')
+            rows=[]
+            for i in range(4):
+                row=struct.unpack_from('<8Q',body,i*128)
+                rows.append(dict(profile=i,configured=bool(row[0]),owner=row[1],peer=row[2],stream=row[3],phase=row[4],reason=row[5],remaining_bytes=row[6],remaining_attempts=row[7],peer_pin=body[i*128+64:i*128+96].hex()))
+            result=dict(active_profile=f[1]-1 if f[1] else None,queued_profile=f[2]-1 if f[2] else None,profiles=rows)
+        elif a.command=='select':
+            f,_=call(c,50,h=a.profile);result=dict(selection_queued=True,profile=a.profile,status=list(f),new_authority=False)
         elif a.command=='registry-terminal':
             f,_=call(c,46,h=a.registry,data=identity.digest(a.federation));result=dict(read_only_registry=a.registry,federation=a.federation,status=list(f))
         elif a.command=='status':
@@ -113,7 +125,7 @@ def main(argv=None):
         elif a.command=='revoke':
             call(c,24,a.peer);result=dict(peer=a.peer,revoked=True)
         else:
-            f,body=call(c,25,a.peer);a.output.write_bytes(body[:480]);result=dict(peer=a.peer,state=f[2],fingerprint=body[480:].hex(),output=str(a.output))
+            f,body=call(c,26,a.peer);a.output.write_bytes(body[:480]);result=dict(peer=a.peer,state=f[2],fingerprint=body[480:].hex(),output=str(a.output))
         print(json.dumps(result,indent=2));return 0
     finally:c.close()
 if __name__=='__main__':raise SystemExit(main())

@@ -27,7 +27,7 @@ def main():
  if a.network:
   assert struct.unpack_from('<Q',data,0x200000+6*32+24)[0]==425984,'Network splice requires current416KiB kernel image'
   part=a.network.read_bytes();assert len(part)<=425984
-  data[0x340000:0x3a8000]=bytes(425984);data[0x340000:0x340000+len(part)]=part
+  data[0x300000:0x368000]=bytes(425984);data[0x300000:0x300000+len(part)]=part
   struct.pack_into('<Q',data,0x200000+6*32,len(part))
  image.write_bytes(data)
  wait(lambda:a.ready.exists(),1800,'current native signed product packages')

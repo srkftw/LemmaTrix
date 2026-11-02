@@ -1,0 +1,262 @@
+{
+  "schema": 1,
+  "result": "pass-real-native-project-card",
+  "checks": [
+    {
+      "check": "completed disposable sharing guest shuts down after preserving actual accepted operation evidence",
+      "result": "pass",
+      "prior": "46f0f33bf7d382ef0a6ad7d8d6c82b336af651042e16ffd7fa18656f83421f48",
+      "ordinary_before": [
+        [
+          4011373272619811080,
+          4,
+          0,
+          0
+        ],
+        [
+          4011373272619811081,
+          4,
+          895,
+          0
+        ],
+        [
+          4011373272619811082,
+          4,
+          1024,
+          0
+        ],
+        [
+          4011373272619811083,
+          4,
+          799,
+          0
+        ],
+        [
+          4011373272619811084,
+          3,
+          0,
+          0
+        ],
+        [
+          4011373272619811085,
+          4,
+          799,
+          0
+        ],
+        [
+          4011373272619811342,
+          4,
+          1024,
+          0
+        ]
+      ]
+    },
+    {
+      "check": "only selected note/project recover with fresh handles; unretained Feed and Messenger authority do not return",
+      "result": "pass",
+      "recovered": {
+        "generation": 2,
+        "bytes": 401510,
+        "nodes": 44,
+        "native_import": true,
+        "roots": [
+          {
+            "name": "project-notes",
+            "head": "849182b0497061ecc54106675dd8ab36f77f5aef37bfa16238c34c8678c4ee87",
+            "cap": 12230276403106414852
+          },
+          {
+            "name": "project-notes-1.0.0",
+            "head": "3ae8ad12addef09160d55b01d7d527bbac6c5eded3b327df3511331f3230a747",
+            "cap": 12230276403106414853
+          }
+        ]
+      },
+      "app": 12230276398811447560,
+      "feed_identity_present": 0,
+      "publisher_recovered": false,
+      "messenger_recovered": false
+    },
+    {
+      "check": "fresh native ephemeral Feed author is created after explicit local action",
+      "result": "pass",
+      "author": "8d7eecf69ebbb6fc00cb2051e8604596a6ee83fa571a0744dbb53c6865618d1a",
+      "configuration": {
+        "identity": 12230276398811447559,
+        "owner": 12230276398811447561,
+        "ui": 12230276398811447562,
+        "rights": [
+          1024,
+          799
+        ],
+        "federation": "d17d966d66359ea218b908b2d0c1f40452dc74a5d462f9138846c52048647185",
+        "selected_peer": "b2a1a86b8b958a613c578692e4c9c9b0e96e87fa676d18326fec1363183b00c3",
+        "default_retention": "ephemeral",
+        "controls": "native Feed window: create identity, compose, select audience, publish, timeline and reply",
+        "transport": "selected native mode1 circuit and Feed terminal required; no direct fallback"
+      },
+      "identity": {
+        "service": 12230276398811447559,
+        "release": "22d8816e441680a48c3dcb468217144816994c669aed709398aab20dedc64f32",
+        "rights": 0,
+        "bindings": {
+          "400": 1,
+          "401": 2,
+          "402": 3,
+          "403": 4,
+          "404": 5,
+          "405": 6,
+          "406": 7,
+          "407": 8,
+          "408": 9,
+          "409": 10,
+          "410": 11,
+          "411": 12
+        },
+        "retention": "ephemeral"
+      }
+    },
+    {
+      "check": "public-only Registry verifies actual signed Alpha admission beside Notes and Feed within five ordinary slots",
+      "result": "pass",
+      "registry": 12230276398811447563,
+      "release": "5512cd0cd6d33611174564ffb2747b39a07b4efa13f5652fd2d0a09c4d0e4833",
+      "ordinary": [
+        [
+          12230276398811447559,
+          4,
+          0,
+          0
+        ],
+        [
+          12230276398811447560,
+          4,
+          895,
+          0
+        ],
+        [
+          12230276398811447561,
+          4,
+          1024,
+          0
+        ],
+        [
+          12230276398811447562,
+          4,
+          799,
+          0
+        ],
+        [
+          12230276398811447563,
+          4,
+          2175,
+          0
+        ]
+      ],
+      "configuration": {
+        "instance": 12230276398811447563,
+        "policy": "consumer",
+        "federation_id": "45c685db79fb1cf45780281b2c72a16bb2c3c14cec05f5603171cd02346c5469",
+        "signing_authority": false,
+        "execution_authority": false
+      },
+      "descriptor_sha256": "5c94d95cc7ef7c94c95cb1b35ccb674ad3627ac52d7ed00df25e5da95b9f8fe6",
+      "operator_signing_authority": false
+    },
+    {
+      "check": "fresh selected Feed relationship authenticates through three current native relay guests",
+      "result": "pass",
+      "route": [
+        0,
+        1,
+        3,
+        0,
+        4,
+        0,
+        0,
+        1
+      ],
+      "profile": [
+        1,
+        12230276398811447561,
+        3,
+        91,
+        3,
+        0,
+        8388608,
+        65536
+      ],
+      "setup_seconds": 34.39561935799429,
+      "provider_pin": "abb57e1d0ba712e823a587cb9a9fde21e03223399ed51a1135424d3cc4250943"
+    },
+    {
+      "check": "physical preview and Feed publish author genuine immutable Notes project card",
+      "result": "pass",
+      "native_ui": [
+        0,
+        1,
+        0,
+        1688,
+        10,
+        6,
+        0,
+        1
+      ],
+      "event": "3db8fd6b4175c9cef1f31ffd74305de02004253c58e9576b068dc5b578748753",
+      "author": "8d7eecf69ebbb6fc00cb2051e8604596a6ee83fa571a0744dbb53c6865618d1a",
+      "sequence": 1,
+      "release": "5f5079d707eafd7fc51b3413b9aa3e8b05340dcec6b36a4b8cdbe9e68db170a9",
+      "root": "3ae8ad12addef09160d55b01d7d527bbac6c5eded3b327df3511331f3230a747",
+      "admission_federation": "45c685db79fb1cf45780281b2c72a16bb2c3c14cec05f5603171cd02346c5469",
+      "social_federation": "d17d966d66359ea218b908b2d0c1f40452dc74a5d462f9138846c52048647185",
+      "caption": "Project Notes 1.0: project documentation, release drafts and reviewed sharing. Inspect this release and its signed helper before installation.",
+      "installation_approved": false,
+      "execution_approved": false
+    }
+  ],
+  "image_sha256": "b743de7abac5c508660a662041ef97ef3da7677bd7c33d9903123e9d8e5459ad",
+  "source_sharing": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign010-notes-sharing-1",
+  "elapsed_seconds": 226.702,
+  "session": {
+    "socket": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign010-card-session/personal/portal.sock",
+    "graphics": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign010-card-session/personal/display.qmp",
+    "pid": 777678,
+    "backend": "qemu",
+    "image": "/home/sreekumaar/Desktop/LemmaTrix/build/campaign010-fork-scope/guest.bin",
+    "app": 12230276398811447560,
+    "feed": {
+      "identity": 12230276398811447559,
+      "owner": 12230276398811447561,
+      "ui": 12230276398811447562,
+      "rights": [
+        1024,
+        799
+      ],
+      "federation": "d17d966d66359ea218b908b2d0c1f40452dc74a5d462f9138846c52048647185",
+      "selected_peer": "b2a1a86b8b958a613c578692e4c9c9b0e96e87fa676d18326fec1363183b00c3",
+      "default_retention": "ephemeral",
+      "controls": "native Feed window: create identity, compose, select audience, publish, timeline and reply",
+      "transport": "selected native mode1 circuit and Feed terminal required; no direct fallback"
+    },
+    "registry": 12230276398811447563,
+    "recovered": {
+      "generation": 2,
+      "bytes": 401510,
+      "nodes": 44,
+      "native_import": true,
+      "roots": [
+        {
+          "name": "project-notes",
+          "head": "849182b0497061ecc54106675dd8ab36f77f5aef37bfa16238c34c8678c4ee87",
+          "cap": 12230276403106414852
+        },
+        {
+          "name": "project-notes-1.0.0",
+          "head": "3ae8ad12addef09160d55b01d7d527bbac6c5eded3b327df3511331f3230a747",
+          "cap": 12230276403106414853
+        }
+      ]
+    }
+  },
+  "limits": "Selected note/project recovery and fresh ephemeral social authority, actual public native Registry verification and routed Feed acceptance. Recipient discovery/inspection is separate. No publisher/operator/private social keys exported."
+}

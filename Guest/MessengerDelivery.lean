@@ -33,6 +33,11 @@ def claimCaps : UInt64 := preflight+800
 def foreground : UInt64 := 0x675000
 def forgePending (t : UInt64) : Bool := load64 foreground t == 1
 def requestCallerAllowed (owner caller : UInt64) : Bool := owner != 0 && owner == caller
+-- The exact configured session owner may observe its own ciphertext's result.
+-- Kernel461 grants remain distinct from queue/cancel grants and are revoked
+-- on either incarnation's death. Ordinary applications never acquire461.
+def messageStatusCallerAllowed (session requester caller : UInt64) : Bool :=
+  requestCallerAllowed requester caller || requestCallerAllowed session caller
 theorem zero_request_owner_denied (caller : UInt64) : requestCallerAllowed 0 caller = false := by rfl
 theorem different_request_caller_denied (owner caller : UInt64) (different : (owner == caller) = false) :
     requestCallerAllowed owner caller = false := by
@@ -713,7 +718,7 @@ def dispatch (caller rights token length t : UInt64) : UInt64 :=
     if h == load64 (attachment+8) t && caller == load64 (attachment+16) t && load64 attachment t != 0 then
       response (if load64 attachment t == 7 then 14 else 0) h
         (if load64 attachment t == 4 then 2 else if load64 attachment t == 2 then 5 else 1) (load64 (attachment+64) t) t else
-    if h != load64 (st+32) t || caller != load64 (st+40) t then response 3 h 0 0 t else
+    if h != load64 (st+32) t || !messageStatusCallerAllowed (load64 st t) (load64 (st+40) t) caller then response 3 h 0 0 t else
     let phase := load64 (st+24) t
     response (if phase == 7 then 14 else 0) h (if phase == 11 then 2 else if phase == 8 then 4 else 1) (load64 (st+112) t) t
   else if op == 462 && length == 64 then
