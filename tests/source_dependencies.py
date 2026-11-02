@@ -2,7 +2,7 @@
 import argparse,base64,copy,hashlib,json,sys,tempfile
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'tools'))
-import driver,public_sdk,sdk
+import driver,projects,public_sdk,sdk
 
 def denied(fn,label):
  try:fn()
@@ -13,6 +13,12 @@ def main():
  files=sdk.read_project(a.project);lock=json.loads(files['lemma.lock.json']);pin=lock['dependencies'][0];carrier_path='deps/'+pin['release_id']+'.json';document=json.loads(files[carrier_path])
  actual,source,_=public_sdk.verify_dependency(document,publisher=pin['publisher_key_id'],release_id=pin['release_id']);assert actual['facet']=='DevelopmentArtifact'and actual['size']==0
  checks=[dict(check='actual guest-native Ed25519 source-only helper signature/source/exports verified',release_id=actual['release_id'])]
+ _,release_node,graph_head,records=sdk.dependency_archive(document)
+ source_record=next(r for r in records if r['kind']==11 and not r.get('parent'))
+ assert source_record['id']==document['manifest']['provenance']['source_root']
+ assert any(r['kind']==13 and r['id']==release_node for r in records)
+ assert all(projects.canonical_node(r['kind'],r['payload'],parent=r.get('parent','00'*32))==r['id'] for r in records)
+ checks.append(dict(check='source dependency produces canonical untrusted graph records with exact signed source provenance',release_node=release_node,graph_head=graph_head))
  saved=public_sdk.DEPENDENCIES
  try:
   with tempfile.TemporaryDirectory(prefix='lt-empty-dependency-cache-')as cache:

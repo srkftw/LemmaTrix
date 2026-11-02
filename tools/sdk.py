@@ -55,6 +55,51 @@ def write_lock(directory,module=None,entry=None,profile=None,dependencies=None):
 
 TEMPLATE=b'''import Lemma.UI\nimport Lemma.Objects\nnamespace Main\n-- Private app memory and ordinary caller surface; no trusted approval surface.\npartial def loop (surface t : UInt64) : UInt64 :=\n  let e := Lemma.UI.event t\n  if e == 1 then Lemma.UI.exit 0 e\n  else loop surface (Lemma.UI.wait (Lemma.UI.now e+1) e)\ndef main (initial : UInt64) : UInt64 :=\n  let surface := Lemma.UI.createSurface initial\n  if surface == Lemma.UI.error then surface else\n  let t := Lemma.UI.fill 0 0 640 352 0x152632 surface\n  let t := Lemma.UI.hex 0x1e77a 5 40 40 0xe5eef7 0x152632 t\n  let t := Lemma.UI.upload surface 0 901120 t\n  loop surface (Lemma.UI.present surface t)\nend Main\n'''
 
+def dependency_archive(document):
+ """Prepare inert graph records from a real signed source dependency.
+ Every record still enters the normal native ImportJobs admission path.
+ """
+ import projects,releases,struct
+ info,files,_=sdk.verify_dependency(document)
+ records=[];entries=[]
+ for name,data in sorted(files.items()):
+  ident=projects.canonical_node(10,data);records.append(dict(kind=10,id=ident,payload=data));entries.append((name,10,ident))
+ source=projects.manifest(entries);source_id=projects.canonical_node(11,source)
+ manifest=document['manifest']
+ sdk.require(manifest.get('provenance',{}).get('source_root')==source_id,'dependency needs its original publisher-provided graph archive for source ancestry')
+ records.append(dict(kind=11,id=source_id,payload=source))
+ parts=[releases.pkg.canonical(manifest),releases.pkg.canonical(manifest['sources']),releases.pkg.canonical(manifest['evidence']),releases.pkg.canonical(dict(license=manifest['license'],distribution_authority='explicit local author declaration'))]
+ envelope=__import__('base64').b64decode(document['release'],validate=True)
+ detail=struct.pack('<8Q',0x31544e43524c544c,1,608,*map(len,parts),0)+envelope+b''.join(parts)
+ payload=projects.manifest([('source',11,source_id)],detail);release_node=projects.canonical_node(13,payload)
+ records.append(dict(kind=13,id=release_node,payload=payload))
+ top=projects.manifest([*entries,('release.ltrel',13,release_node)])
+ head=projects.canonical_node(11,top,parent=source_id);records.append(dict(kind=11,id=head,payload=top,parent=source_id))
+ return info,release_node,head,records
+
+def attach_dependency(client,root,document):
+ import projects
+ info,release_node,head,records=dependency_archive(document)
+ selected=next((r for r in projects.roots(client)if r['cap']==root),None)
+ sdk.require(selected is not None,'selected application root is not authorized')
+ _,files=projects.snapshot(client,root,selected['head']);lock=sdk.validate_lock(json.loads(files['lemma.lock.json']))
+ pin=next((p for p in lock['dependencies']if p['release_id']==info['release_id']),None)
+ sdk.require(pin is not None and pin['publisher_key_id']==info['publisher_key_id']and pin['content_id']==sdk.sha(sdk.canonical(document)),'selected lock does not authorize this exact dependency carrier')
+ alias='dep-'+info['release_id'][:24];existing=next((r for r in projects.roots(client)if r['name']==alias),None)
+ if existing:
+  sdk.require(existing['head']==head,'dependency graph name already refers to another immutable root');dependency=existing['cap']
+ else:dependency=projects.import_records(client,[dict(name=alias,head=head)],records)[0]['cap']
+ # Resolve only after native ImportJobs has validated the actual signed graph.
+ handle=projects.resolve(client,dependency,release_node);fields,ids=client.objects(21,handle)
+ sdk.require(fields[4]==13 and ids[:32].hex()==release_node,'native dependency release node differs from verified import')
+ source_handle=projects.resolve(client,root,selected['head']);original=client.read_object(source_handle);entries=projects.decode_manifest(original);detail=original[32+len(entries)*128:]
+ name='deps/'+info['release_id']+'.rel';prior=next((e for e in entries if e[0]==name),None)
+ if prior:sdk.require(prior==(name,13,release_node),'dependency attachment name conflicts with another graph node')
+ else:entries.append((name,13,release_node))
+ new_handle,new_head=projects.node(client,projects.manifest(entries,detail),11,source_handle)
+ encoded=selected['name'].encode('ascii');fields,_=client.objects(22,new_handle,root,len(encoded),data=bytes.fromhex(selected['head'])+encoded.ljust(64,b'\0'))
+ return dict(schema=1,root=fields[1],head=new_head,previous_head=selected['head'],release_id=info['release_id'],release_node=release_node,dependency_root=dependency,source_attachment=name,native_import_validated=True,installed=False,execution_authority=False,session_only=True)
+
 def main(argv=None):
  p=argparse.ArgumentParser(description='Versioned public Lemma SDK, offline exact dependencies and key-free isolated native builds')
  sub=p.add_subparsers(dest='cmd',required=True)
@@ -66,9 +111,16 @@ def main(argv=None):
   if name=='build':item.add_argument('--output',type=Path,required=True)
  imp=sub.add_parser('import-dependency');imp.add_argument('carrier',type=Path);imp.add_argument('--release',required=True);imp.add_argument('--publisher',required=True);imp.add_argument('--project',type=Path)
  pack=sub.add_parser('pack-dependency');pack.add_argument('--release',type=Path,required=True);pack.add_argument('--manifest',type=Path,required=True);pack.add_argument('--public',type=Path,required=True);pack.add_argument('--source',type=Path,required=True);pack.add_argument('--output',type=Path,required=True)
+ attach=sub.add_parser('attach-dependency');attach.add_argument('carrier',type=Path);attach.add_argument('--socket',type=Path,required=True);attach.add_argument('--root',type=int,required=True)
  exp=sub.add_parser('export-sdk');exp.add_argument('directory',type=Path)
  ins=sub.add_parser('import-sdk');ins.add_argument('directory',type=Path)
  args=p.parse_args(argv)
+ if args.cmd=='attach-dependency':
+  import live
+  client=live.Client(args.socket,timeout=300)
+  try:report=attach_dependency(client,args.root,json.loads(args.carrier.read_bytes()))
+  finally:client.close()
+  print(json.dumps(report,indent=2));return 0
  if args.cmd=='identity':print(json.dumps(sdk.cache_sdk(),indent=2));return 0
  if args.cmd=='init':
   sdk.require(not args.directory.exists(),'project directory already exists; refusing to overwrite')
