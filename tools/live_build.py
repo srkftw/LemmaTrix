@@ -1,5 +1,5 @@
 """Incremental freestanding live-image build; no application release is embedded."""
-import hashlib,json,os,re
+import functools,hashlib,json,os,re
 from pathlib import Path
 import driver
 ROOT=driver.ROOT
@@ -7,15 +7,15 @@ B=ROOT/'build/live'
 MODULES=['Primitives','Policy','DevicePrimitives','Devices','GraphicsDevice','Effects','Structured','LiveMemory','ServiceSHA256','ServiceHash','ServiceSignature','LiveSDK','VaultCrypto','VaultPolicy','Vault','Objects','LiveApps','LiveKernel','Launcher','Raster','Labels','Compositor','BuildJobs','Desktop','TextTools','Network']
 def service_image_bounds(pid):
  if pid not in range(1,7):raise ValueError('unknown built-in service')
- return (0x480000,393216) if pid==2 else (0x500000,425984) if pid==3 else (0x340000,425984) if pid==6 else (0x300000+(pid-1)*262144,262144)
+ return (0x580000,393216) if pid==1 else (0x480000,393216) if pid==2 else (0x500000,425984) if pid==3 else (0x300000,425984) if pid==6 else (0x380000,262144) if pid==4 else (0x300000+(pid-1)*262144,262144)
 def check_service_layout():
  ranges=sorted((*service_image_bounds(pid),pid) for pid in range(1,7))
  for i,(start,size,pid) in enumerate(ranges):
   if start<0x300000 or start+size>0x600000 or (i and ranges[i-1][0]+ranges[i-1][1]>start):
    raise ValueError('built-in image regions overlap or exceed the common image')
-  code_bytes=425984 if pid in (3,6) else 393216 if pid==2 else 262144
-  data_offset=425984 if pid in (3,6) else 393216 if pid==2 else 262144
-  stack_offset=491520 if pid in (3,6) else 458752 if pid==2 else 327680
+  code_bytes=425984 if pid in (3,6) else 393216 if pid in (1,2) else 262144
+  data_offset=425984 if pid in (3,6) else 393216 if pid in (1,2) else 262144
+  stack_offset=491520 if pid in (3,6) else 458752 if pid in (1,2) else 327680
   if code_bytes>data_offset or data_offset+65536>stack_offset or stack_offset+16384>524288:
    raise ValueError('built-in private code/data/stack exceed or overlap their512KiB physical slot')
 def content(paths):
@@ -49,6 +49,12 @@ def imports(source):
  return [name for m in re.finditer(r'^\s*(?:public\s+)?import\s+([^\n]+)',text,re.M) for name in m[1].split() if re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*',name)]
 def build_identity():
  return content([ROOT/'tools/driver.py',ROOT/'tools/live_build.py',ROOT/'toolchain.lock.json',ROOT/'lean-toolchain'])+repr([driver.tool(n) for n in ['lean','clang','ld.lld','llvm-objcopy']])
+@functools.lru_cache(maxsize=1)
+def lean_module_identity():
+ # Layout, LLVM, CLI and host adapters do not change Lean elaboration. Keep
+ # their identities in artifact recipes while reusing unaffected .olean files.
+ executable=Path(driver.tool('lean')).resolve()
+ return hashlib.sha256(executable.read_bytes()).hexdigest()+str(executable)+driver.LOCK['lean']+'compiler.extract_closed=false'
 def module_inputs(module_name,seen=None):
  seen=set() if seen is None else seen
  if module_name in seen:return []
@@ -66,12 +72,12 @@ def compile_module(module_name):
   source=p.with_suffix('.lean')
   if source.exists():compile_module(imported)
   if p.exists():deps.append(p)
- stamp=B/(module_name+'.module.sha256');key=content([path,*deps,ROOT/'lean-toolchain'])+build_identity()
+ stamp=B/(module_name+'.module.sha256');key=content([path,*deps,ROOT/'lean-toolchain'])+lean_module_identity()
  if not output.exists() or not stamp.exists() or stamp.read_text()!=key:
   driver.lean(['-o',str(output),str(path)]);stamp.write_text(key)
 def artifact(module_name,entry,prefix,kernel=False,wide=False,objects_profile=False):
- if objects_profile and (kernel or not wide or (module_name,entry) not in [('Guest.Objects','Guest.Objects.main'),('Guest.Vault','Guest.Vault.appMain'),('Guest.Network','Guest.Network.main')]):
-  raise ValueError('extended built-in profile is restricted to the built-in Objects/Vault/Network services')
+ if objects_profile and (kernel or not wide or (module_name,entry) not in [('Guest.Launcher','Guest.Launcher.main'),('Guest.Objects','Guest.Objects.main'),('Guest.Vault','Guest.Vault.appMain'),('Guest.Network','Guest.Network.main')]):
+  raise ValueError('extended built-in profile is restricted to the built-in Launcher/Objects/Vault/Network services')
  assembly=B/(prefix+'.S');elf=B/(prefix+'.elf');binary=B/(prefix+'.bin')
  linker=ROOT/('runtime/kernel.ld' if kernel else 'runtime/service4.ld' if objects_profile and module_name in ('Guest.Vault','Guest.Network') else 'runtime/service3.ld' if objects_profile else 'runtime/app2.ld' if wide else 'runtime/app.ld')
  files=[*module_inputs(module_name),ROOT/'Compiler/Main.lean',ROOT/'runtime/primitives.S',ROOT/'runtime/live_boot.S' if kernel else ROOT/'runtime/app.S',linker]
@@ -96,7 +102,7 @@ def build(clean=False):
   for path in (ROOT/'Guest').glob('*.olean'):path.unlink()
  for name in MODULES:compile_module('Guest.'+name)
  kernel=artifact('Guest.LiveKernel','Guest.Live.kernelMain','kernel',True)
- services=[artifact('Guest.Launcher','Guest.Launcher.main','launcher',wide=True),artifact('Guest.Objects','Guest.Objects.main','objects',wide=True,objects_profile=True),artifact('Guest.Vault','Guest.Vault.appMain','vault',wide=True,objects_profile=True),artifact('Guest.Compositor','Guest.Compositor.main','compositor',wide=True),artifact('Guest.BuildJobs','Guest.BuildJobs.main','build-jobs',wide=True),artifact('Guest.Network','Guest.Network.main','network',wide=True,objects_profile=True)]
+ services=[artifact('Guest.Launcher','Guest.Launcher.main','launcher',wide=True,objects_profile=True),artifact('Guest.Objects','Guest.Objects.main','objects',wide=True,objects_profile=True),artifact('Guest.Vault','Guest.Vault.appMain','vault',wide=True,objects_profile=True),artifact('Guest.Compositor','Guest.Compositor.main','compositor',wide=True),artifact('Guest.BuildJobs','Guest.BuildJobs.main','build-jobs',wide=True),artifact('Guest.Network','Guest.Network.main','network',wide=True,objects_profile=True)]
  for name in ['workbench','inspector','worker']:artifact('Guest.LiveApps','Guest.LiveApps.'+name+'Main',name)
  data=bytearray(0x600000)
  part=kernel.read_bytes();data[:len(part)]=part

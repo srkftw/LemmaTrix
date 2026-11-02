@@ -112,7 +112,10 @@ def typeEdge (c t : UInt64) : UInt64 :=
   if !Guest.ProjectGraph.edgeAllowed (load64 (r+40) t) kind || !Guest.ProjectGraph.validName (e+48) n 80 t || !Guest.ProjectGraph.allZero (e+48+n) (80-n) t ||
     (i > 0 && !Guest.ProjectGraph.lessName (e-80) (load64 (e-120) t) (e+48) n 0 t) then fail c 2 t else
   if Guest.ProjectGraph.findVisibleNode (load64 (c+16) t) (e+16) kind 0 t == error then nextRecord c t else
-  let required := (load64 (r+40) t == 11 && kind == 10) || (load64 (r+40) t == 12 && kind == 11) || (load64 (r+40) t == 13 && kind == 12)
+  -- A source-only DevelopmentArtifact has one Source edge and deliberately
+  -- has no Build or executable. Its full facet-specific validation follows.
+  let required := (load64 (r+40) t == 11 && kind == 10) || (load64 (r+40) t == 12 && kind == 11) ||
+    (load64 (r+40) t == 13 && (kind == 12 || (load64 (r+272) t == 1 && kind == 11)))
   store64 (c+56) (i+1) (store64 (c+136) (load64 (c+136) t+(if required then 1 else 0)) t)
 def sealRecord (c t : UInt64) : UInt64 :=
   let r := rec c (load64 (c+48) t) t
@@ -128,10 +131,10 @@ def releaseStart (c t : UInt64) : UInt64 :=
   let n := load64 (r+280) t
   if load64 (r+272) t != 4 || !Guest.ProjectGraph.releaseEdge r 0 12 0x646c697562 5 t || !Guest.ProjectGraph.releaseEdge r 1 11 0x65646f63 4 t ||
     !Guest.ProjectGraph.releaseEdge r 2 14 0x65636e6564697665 8 t || !Guest.ProjectGraph.releaseEdge r 3 11 0x656372756f73 6 t ||
-    n < 832 || load64 d t != 0x31544e43524c544c || load64 (d+8) t != 1 || load64 (d+16) t != 768 || load64 (d+56) t != 0 ||
+    n < 672 || load64 d t != 0x31544e43524c544c || load64 (d+8) t != 1 || load64 (d+16) t != Guest.ReleaseFormat.prefix h t || load64 (d+56) t != 0 ||
     load64 (d+24) t > 65536 || load64 (d+32) t > 65536 || load64 (d+40) t > 65536 || load64 (d+48) t > 65536 ||
-    n != 832+load64 (d+24) t+load64 (d+32) t+load64 (d+40) t+load64 (d+48) t ||
-    load64 h t != 0x3253454c544c || load64 (h+8) t != 2 || load64 (h+16) t != 512 then fail c 2 t else
+    n != 64+Guest.ReleaseFormat.prefix h t+load64 (d+24) t+load64 (d+32) t+load64 (d+40) t+load64 (d+48) t ||
+    !Guest.ReleaseFormat.validHeader h t || !Guest.ReleaseFormat.executable h t then fail c 2 t else
   step c 9 (store64 (c+152) h (store64 (c+144) 0 t))
 def releaseHash (c t : UInt64) : UInt64 :=
   let h := load64 (c+152) t
@@ -144,7 +147,7 @@ def releaseHash (c t : UInt64) : UInt64 :=
     let offset := if i == 1 then 0 else load64 (d+24) t+(if i == 2 then 0 else load64 (d+32) t+(if i == 3 then 0 else load64 (d+40) t))
     let size := load64 (d+16+i*8) t
     let expected := h+(if i == 1 then 256 else if i == 2 then 224 else if i == 3 then 352 else 320)
-    setupHash c (h+768+offset) size expected 10 t
+    setupHash c (h+Guest.ReleaseFormat.prefix h t+offset) size expected 10 t
 partial def binaryParts (c binary i used t : UInt64) : UInt64 :=
   if i == load64 (binary+272) t then Guest.Effects.effectValue used t else
   let e := binary+288+i*128
@@ -203,7 +206,7 @@ def compareJSON (c n t : UInt64) : UInt64 :=
   let h := load64 (c+152) t
   let size := load64 (h-32) t
   let offset := load64 (c+200) t
-  if n == error || offset > size || n > size-offset || !Guest.ProjectGraph.equal Guest.ProjectGraph.jsonBuffer (h+768+load64 (h-40) t+offset) n t then fail c 2 t else
+  if n == error || offset > size || n > size-offset || !Guest.ProjectGraph.equal Guest.ProjectGraph.jsonBuffer (h+Guest.ReleaseFormat.prefix h t+load64 (h-40) t+offset) n t then fail c 2 t else
   store64 (c+200) (offset+n) t
 def sourceStep (c t : UInt64) : UInt64 :=
   let r := rec c (load64 (c+48) t) t
@@ -305,7 +308,13 @@ def work (c t : UInt64) : UInt64 :=
   if p == 5 then typeStart c t else
   if p == 6 then typeEdge c t else
   if p == 7 then
-    if load64 (rec c (load64 (c+48) t) t+40) t == 13 then releaseStart c t else sealRecord c t
+    if load64 (rec c (load64 (c+48) t) t+40) t == 13 then
+      let r := rec c (load64 (c+48) t) t
+      if load64 (r+272) t == 1 then
+        let checked := Guest.ProjectGraph.checkDevelopmentRelease r t
+        if checked == error then fail c 2 checked else sealRecord c checked
+      else releaseStart c t
+    else sealRecord c t
   else if p == 9 then releaseHash c t else
   if p == 10 then
     let next := load64 (c+144) t+1
@@ -326,7 +335,11 @@ def work (c t : UInt64) : UInt64 :=
     if build == error then fail c 2 t else
     let n := Guest.ProjectGraph.canonicalEvidence (Guest.ProjectGraph.recordAt build+544) t
     let h := load64 (c+152) n
-    if n == error || n != load64 (h-24) n || !Guest.ProjectGraph.equal Guest.ProjectGraph.jsonBuffer (h+768+load64 (h-40) n+load64 (h-32) n) n n then fail c 2 n else sealRecord c n
+    if n == error || n != load64 (h-24) n || !Guest.ProjectGraph.equal Guest.ProjectGraph.jsonBuffer (h+Guest.ReleaseFormat.prefix h t+load64 (h-40) n+load64 (h-32) n) n n then fail c 2 n else
+    let source := Guest.ProjectGraph.findNode (r+688) 11 0 n
+    if source == error then fail c 2 n else
+    let checked := Guest.ProjectGraph.releaseClaims source h (load64 (h-40) n) (load64 (h-32) n) (load64 (h-24) n) (load64 (h-16) n) n
+    if checked == error then fail c 2 checked else sealRecord c checked
   else if p >= 20 && p <= 23 then closureStep c t else t
 partial def runnable (i fuel t : UInt64) : UInt64 :=
   if fuel == 0 then error else

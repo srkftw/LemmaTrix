@@ -1,5 +1,5 @@
 """Explicit guest graph import/export and host bootstrap job boundary."""
-import argparse,hashlib,json,struct,sys,time
+import argparse,base64,hashlib,json,struct,sys,time
 from pathlib import Path,PurePosixPath
 import live
 MAGIC=0x31464e4d544c
@@ -104,6 +104,29 @@ def snapshot(client,root,head=None):
   handle=resolve(client,root,member)
   files[name]=client.read_object(handle,True)
  return identity,files
+
+def archive(client,root,path):
+ """Export one explicitly authorized, immutable graph through normal scopes."""
+ path=Path(path)
+ if path.exists():raise ValueError('archive output exists; refusing overwrite')
+ fields,metadata=client.objects(29,root);head=metadata[:32].hex()
+ frozen=client.objects(32,root,data=metadata[:32])[0][1]
+ try:
+  records=[];cursor=0;total=0
+  while cursor<64:
+   f,ids=client.objects(26,frozen,cursor)
+   if not f[1]:break
+   if f[3]<=cursor or f[3]>64:raise ValueError('invalid native closure cursor')
+   export_handle=resolve(client,root,ids[:32].hex())
+   payload=client.read_object(export_handle,True);total+=len(payload)
+   if total>4194304:raise ValueError('archive exceeds finite 4MiB graph budget')
+   records.append(dict(kind=f[4],schema=f[5],id=ids[:32].hex(),parent=ids[32:64].hex(),payload=base64.b64encode(payload).decode('ascii')))
+   cursor=f[3]
+  document=dict(schema=1,selected=[dict(name=metadata[32:32+fields[2]].decode('ascii'),head=head)],
+   project_id=project_identity(client,frozen),nodes=records)
+  with path.open('x')as output:json.dump(document,output,sort_keys=True,separators=(',',':'));output.write('\n')
+  return dict(head=head,project_id=document['project_id'],nodes=len(records),bytes=total,path=str(path),authority='exported bytes only; import revalidates graph')
+ finally:client.objects(28,frozen)
 
 def queued_build(client):
  raw=client.request(160,struct.pack('<8Q',2,0,0,0,0,0,0,1))
@@ -294,10 +317,10 @@ def current_release(client,name,publication_id=None):
 def serve(socket,project,sign_key,output,version='0.1.0',poll_interval=.5,*,root,requester=None):
  import releases
  releases.project(project)
- if not sign_key.is_file():raise ValueError('explicit publisher signing key does not exist')
+ if sign_key is not None and not sign_key.is_file():raise ValueError('explicit publisher signing key does not exist')
  # Key parsing stays in the publisher process, before any untrusted elaboration.
  import capsule
- publisher_id=hashlib.sha256(capsule.modulus(sign_key)).hexdigest()
+ publisher_id=hashlib.sha256(capsule.modulus(sign_key)).hexdigest() if sign_key is not None else None
  approved_client=live.Client(socket,timeout=30)
  try:
   selected=next((item for item in roots(approved_client,include_identity=True) if item['cap']==root),None)
@@ -306,11 +329,11 @@ def serve(socket,project,sign_key,output,version='0.1.0',poll_interval=.5,*,root
   if not requester:raise ValueError('explicit authorized requester is required')
  finally:approved_client.close()
  authority=dict(root=root,project_id=selected['project_id'],live_root_binding=binding,requester=requester,publisher_id=publisher_id,recipe=1,rights=768)
- publication_id=releases.publication(selected['project_id'],publisher_id).hex()
+ publication_id=releases.publication(selected['project_id'],publisher_id).hex() if publisher_id else None
  counter=version_tuple(version);output=Path(output).resolve();output.mkdir(parents=True,exist_ok=True)
  delay=max(.1,min(float(poll_interval),5.0));backoff=delay
  def report(event,**fields):print(json.dumps(dict(event=event,project=project,**fields),sort_keys=True),flush=True)
- report('ready',authority=authority,publication_id=publication_id,recipe='Main.main/profile2',rights=768,signing='explicit host key, outside compilation sandbox',approval='F12 review required')
+ report('ready',authority=authority,publication_id=publication_id,recipe='Main.main/profile2',rights=768,signing='legacy explicit host key' if sign_key else 'native publisher review is separate; compiler has no signing key',approval='F12 review required')
  try:
   while True:
    client=None;job=None
@@ -334,6 +357,10 @@ def serve(socket,project,sign_key,output,version='0.1.0',poll_interval=.5,*,root
     complete_build(client,result);save_build(result,directory)
     if result['status']!='ok':
      report('diagnostic',job=job['job_id'],source_root=job['source_root'],status=result['status'],diagnostics=result.get('diagnostics',[]),message=result.get('diagnostic_text','')[:2048]);continue
+    if sign_key is None:
+     report('built',job=job['job_id'],source_root=job['source_root'],artifact=result['artifact'],publication_approved=False)
+     backoff=delay
+     continue
     # The selected live capability must remain valid through the signing instant.
     if client.objects(29,root)[0][7]!=binding or project_identity(client,root)!=authority['project_id']:raise ValueError('selected live root authority was revoked or replaced')
     active=current_release(client,project,publication_id)
@@ -368,12 +395,14 @@ def main(argv=None):
  p=argparse.ArgumentParser(description='Canonical guest Project roots; explicit byte import/export')
  p.add_argument('--socket',type=Path,required=True);s=p.add_subparsers(dest='cmd',required=True)
  s.add_parser('list')
- a=s.add_parser('serve',help='explicit persistent sandbox build and scoped publisher worker; never auto-approves');a.add_argument('--project',required=True);a.add_argument('--sign-key',type=Path,required=True);a.add_argument('--output',type=Path,required=True);a.add_argument('--version',default='0.1.0');a.add_argument('--poll-interval',type=float,default=.5);a.add_argument('--root',type=int,required=True);a.add_argument('--requester',type=int,required=True)
+ a=s.add_parser('serve',help='key-free exact-snapshot compiler worker; optional legacy publisher bootstrap');a.add_argument('--project',required=True);a.add_argument('--sign-key',type=Path,help='optional legacy RSA bootstrap; omitted for native publication');a.add_argument('--output',type=Path,required=True);a.add_argument('--version',default='0.1.0');a.add_argument('--poll-interval',type=float,default=.5);a.add_argument('--root',type=int,required=True);a.add_argument('--requester',type=int,required=True)
  a=s.add_parser('build');a.add_argument('--output',type=Path,required=True);a.add_argument('--module',default='Main');a.add_argument('--entry',default='Main.main');a.add_argument('--defer-result',action='store_true')
  a=s.add_parser('complete');a.add_argument('result',type=Path)
  a=s.add_parser('publish');a.add_argument('result',type=Path);a.add_argument('--sign-key',type=Path,required=True);a.add_argument('--name',required=True);a.add_argument('--version',required=True);a.add_argument('--parent');a.add_argument('--rights',type=lambda x:int(x,0),default=768);a.add_argument('--attach-root',type=int);a.add_argument('--root',type=int,required=True);a.add_argument('--output',type=Path,required=True)
  a=s.add_parser('import');a.add_argument('directory',type=Path);a.add_argument('--name',required=True);a.add_argument('--root',type=int,default=0);a.add_argument('--expected')
  a=s.add_parser('export');a.add_argument('--root',type=int,required=True);a.add_argument('--head');a.add_argument('--output',type=Path,required=True)
+ a=s.add_parser('archive');a.add_argument('--root',type=int,required=True);a.add_argument('--output',type=Path,required=True)
+ a=s.add_parser('import-archive');a.add_argument('path',type=Path)
  a=s.add_parser('share');a.add_argument('--root',type=int,required=True);a.add_argument('--to',type=int,required=True);a.add_argument('--rights',type=int,default=127)
  args=p.parse_args(argv)
  if args.cmd=='serve':return serve(args.socket,args.project,args.sign_key,args.output,args.version,args.poll_interval,root=args.root,requester=args.requester)
@@ -384,6 +413,13 @@ def main(argv=None):
    result=json.loads(args.result.read_text());complete_build(client,result);args.result.write_text(json.dumps(result,indent=2)+'\n');print(result['source_root'])
   elif args.cmd=='publish':print(json.dumps(publish_result(args.result,args.sign_key,args.name,args.version,args.output,args.parent,client=client,rights=args.rights,attach_root=args.attach_root,authority_root=args.root),indent=2))
   elif args.cmd=='list':print(json.dumps(roots(client,include_identity=True),indent=2))
+  elif args.cmd=='archive':print(json.dumps(archive(client,args.root,args.output),indent=2))
+  elif args.cmd=='import-archive':
+   if args.path.stat().st_size>8*1024*1024:raise ValueError('graph carrier exceeds8MiB')
+   doc=json.loads(args.path.read_bytes())
+   if doc.get('schema')!=1 or not 1<=len(doc.get('nodes',[]))<=64:raise ValueError('unsupported bounded graph carrier')
+   records=[dict(n,payload=base64.b64decode(n['payload'],validate=True)) for n in doc['nodes']]
+   print(json.dumps(import_records(client,doc['selected'],records),indent=2))
   elif args.cmd=='share':print(client.objects(27,args.root,args.to,args.rights)[0][1])
   elif args.cmd=='import':
    directory=args.directory.resolve();entries=[];total=0;records=[]

@@ -22,7 +22,7 @@ def mayFetch (t : UInt64) : Bool := !enabled t || (remotePhase t == 2 && Guest.R
 def mayInstall (root t : UInt64) : Bool :=
   !enabled t || (remotePhase t == 2 && Guest.RegistrySDK.admitted (load64 (st+64) t) && equal (remote+320) root 32 t)
 def expected (p root t : UInt64) : Bool :=
-  load64 p t == 0x314d4441544c && load64 (p+8) t == 1 && load64 (p+48) t > 0 &&
+  load64 p t == 0x314d4441544c && (load64 (p+8) t == 1 || load64 (p+8) t == 2) && load64 (p+48) t > 0 &&
   load64 (p+32) t == load64 (st+136) t && equal (p+288) (st+160) 32 t && equal (p+320) root 32 t
 -- An explicitly offered seed root may carry the original verified federation
 -- descriptor unchanged. This grants the seed no admission/signing authority.
@@ -35,7 +35,7 @@ def reuseRemote (head t : UInt64) : UInt64 :=
     let t := store64 (st+40) (load64 (remote+16) t) t
     store64 (st+48) (load64 (remote+24) t) t
 def configure (required policy identity t : UInt64) : UInt64 :=
-  if required > 1 || (required == 1 && (policy < 1 || policy > 2 || Guest.ProjectGraph.allZero identity 32 t)) || localPhase t == 1 then error else
+  if required > 1 || (required == 1 && (policy < 1 || policy > 3 || Guest.ProjectGraph.allZero identity 32 t)) || localPhase t == 1 then error else
     let t := zero st 32 t
     let t := zero localDescriptor 96 t
     let t := zero remote 96 t

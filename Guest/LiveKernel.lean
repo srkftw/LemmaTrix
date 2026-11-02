@@ -17,12 +17,12 @@ def rx : UInt64 := 0x80d00000
 def code (p : UInt64) : UInt64 := 0x81000000+p*524288
 -- Extra ordinary arenas avoid Launcher's existing wide0x83000000 mapping.
 def arena (p : UInt64) : UInt64 := if p >= 12 then 0x89800000+(p-12)*0x200000 else 0x81800000+p*0x200000
--- Built-in Objects384KiB and Vault/Network416KiB stay in their512KiB physical
+-- Built-in Launcher/Objects384KiB and Vault/Network416KiB stay in their512KiB physical
 -- slots. Signed application profile2 retains its256KiB ceiling and mapping.
-def codeLimit (p service : UInt64) : UInt64 := if (p == 3 && service == 3) || (p == 6 && service == 6) then 425984 else if p == 2 && service == 2 then 393216 else 262144
-def dataOffset (p : UInt64) : UInt64 := if p == 3 || p == 6 then 425984 else if p == 2 then 393216 else 262144
-def stackOffset (p : UInt64) : UInt64 := if p == 3 || p == 6 then 491520 else if p == 2 then 458752 else 327680
-def serviceSource (p : UInt64) : UInt64 := if p == 2 then 0x80480000 else if p == 3 then 0x80500000 else if p == 6 then 0x80340000 else 0x80300000+(p-1)*262144
+def codeLimit (p service : UInt64) : UInt64 := if (p == 3 && service == 3) || (p == 6 && service == 6) then 425984 else if (p == 1 && service == 1) || (p == 2 && service == 2) then 393216 else 262144
+def dataOffset (p : UInt64) : UInt64 := if p == 3 || p == 6 then 425984 else if p == 1 || p == 2 then 393216 else 262144
+def stackOffset (p : UInt64) : UInt64 := if p == 3 || p == 6 then 491520 else if p == 1 || p == 2 then 458752 else 327680
+def serviceSource (p : UInt64) : UInt64 := if p == 1 then 0x80580000 else if p == 2 then 0x80480000 else if p == 3 then 0x80500000 else if p == 4 then 0x80380000 else if p == 6 then 0x80300000 else 0x80300000+(p-1)*262144
 theorem ordinary_application_code_limit (p : UInt64) : codeLimit p 0 = 262144 := by
   simp [codeLimit]
 def physical (p v : UInt64) : UInt64 :=
@@ -300,7 +300,7 @@ def teardown (p why t : UInt64) : UInt64 :=
   let t := clearPrivate p t
   let t := zero (asyncAt p) 256 t
   let t := if p >= 6 then zero (0x87200000+(p-5)*0x100000) 112640 t else t
-  let t := if p == 2 || p == 3 || p == 6 then zero (code p+stackOffset p) 2048 (zero (code p+dataOffset p) 8192 t)
+  let t := if p == 1 || p == 2 || p == 3 || p == 6 then zero (code p+stackOffset p) 2048 (zero (code p+dataOffset p) 8192 t)
     else zero (code p+262144) 18432 t
   let t := zero (proc p+232) 6 t
   let t := zero (0x80d10000+p*1024) 128 t
@@ -309,7 +309,7 @@ def teardown (p why t : UInt64) : UInt64 :=
 def start (p source len rights entry service t : UInt64) : UInt64 :=
   let generation := Guest.load64 (proc p+8) t
   if generation >= 0x00ffffffffffffff || (generation &&& 0xffffff) == 0xffffff ||
-    ((p == 2 || p == 3 || p == 6) && service != p) || len == 0 || len > codeLimit p service ||
+    ((p == 1 || p == 2 || p == 3 || p == 6) && service != p) || len == 0 || len > codeLimit p service ||
     (entry != 0x200000 && entry != 0x400000) || (entry == 0x400000 && len > 65536) then err else
     let t := zero (proc p) 64 t
     let t := zero (queue p) 2048 t
@@ -416,7 +416,7 @@ def rpcBudget (caller target endpoint ptr len t : UInt64) : UInt64 :=
   else if Guest.load64 (bindingRole 1) t == endpoint && endpoint == identity target t &&
       Guest.load64 (proc target+272) t == 1 &&
       ((operation == 410 && (len == 128 || len == 320)) || (operation == 400 && len == 128) || (operation == 401 && len == 64) ||
-       (operation == 402 && (len == 192 || len == 320))) &&
+       (operation == 402 && (len == 192 || len == 320 || len == 576)) || (operation == 411 && len == 576)) &&
       Guest.load64 (physical caller ptr+56) t == 1 &&
       authorizedGrant (identity caller t) endpoint operation (Guest.load64 (proc caller+232) t) t then 30000
   else if feedRpcAllowed caller target endpoint ptr len t then 30000
@@ -904,13 +904,65 @@ def dispatch (p op h ptr n v t : UInt64) : UInt64 :=
   else if op == 131 then
     if Guest.load64 (proc p+272) t == 0 || h == 0 ||
         !activeServiceRequest (identity p t) h 1 t then err else t
+  else if op == 160 then
+    -- Supervisor-only public scope descriptor for trusted narrow intent consent.
+    -- No grant exists until127 consumes the exact reviewed release snapshot.
+    let role := ptr
+    let service := if role == 2 || role == 5 then Guest.load64 (bindingRole role) t else 0
+    let target := service &&& 255
+    let app := h &&& 255
+    let operation := if role == 5 then 482 else 436
+    if p != 1 || v != 128 || !valid n 128 128 || !live h t || app < 7 || app >= 15 ||
+      service == 0 || !live service t || target < 7 || Guest.load64 (proc target+272) t != role then err else
+    let appSlot := Guest.load64 (proc app+112) t
+    let serviceSlot := Guest.load64 (proc target+112) t
+    if appSlot == 0 || appSlot > 16 || serviceSlot == 0 || serviceSlot > 16 then err else
+    let grant := findGrant h service operation 0 t
+    let prior := if grant != 0 && grantLive grant t then Guest.load64 (grant+40) t else 0
+    let out := physical p n
+    let t := zero out 16 t
+    let t := Guest.store64 out h t
+    let t := Guest.store64 (out+8) service t
+    let t := Guest.store64 (out+16) role t
+    let t := Guest.store64 (out+24) operation t
+    let t := Guest.store64 (out+32) prior t
+    let t := Guest.store64 (out+40) (Guest.load64 (proc app+16) t) t
+    let t := Guest.store64 (out+56) 1 t
+    let t := copy (release (serviceSlot-1)+64) (out+64) 32 t
+    128+copy (release (appSlot-1)+64) (out+96) 32 t
+  else if op == 158 then
+    -- Narrow intent owners capture public authorization, never a reusable IPC
+    -- token. The kernel supplies exact incarnation, release and grant generation.
+    let role := Guest.load64 (proc p+272) t
+    let source := h &&& 255
+    let grant := findGrant h (identity p t) n 0 t
+    if !((role == 5 && n == 482) || (role == 2 && n == 436)) ||
+        source == 0 || source >= 15 || grant == 0 || !grantLive grant t ||
+        !requestCurrent source (identity p t) v t || !validFor p ptr 96 96 t then err else
+    let out := physical p ptr
+    let t := Guest.store64 out h t
+    let t := Guest.store64 (out+8) (identity p t) t
+    let t := Guest.store64 (out+16) n t
+    let t := Guest.store64 (out+24) (Guest.load64 (grant+40) t) t
+    let t := copy (grant+96) (out+32) 32 t
+    96+copy (grant+64) (out+64) 32 t
+  else if op == 159 then
+    let role := Guest.load64 (proc p+272) t
+    if (role != 2 && role != 5) || h != 0 || n != 96 || v != 0 || !validFor p ptr 96 96 t then err else
+    let snapshot := physical p ptr
+    let caller := Guest.load64 snapshot t
+    let service := Guest.load64 (snapshot+8) t
+    let operation := Guest.load64 (snapshot+16) t
+    if service != identity p t || !((role == 5 && operation == 482) || (role == 2 && operation == 436)) ||
+        !authorizedGrant caller service operation (Guest.load64 (snapshot+24) t) t ||
+        !packageMatches (caller &&& 255) (snapshot+32) t || !packageMatches p (snapshot+64) t then err else t
   else if op == 132 then
     -- A scoped signer permit follows its exact IPC operation generation.
     -- Revoking and rebinding the same live recipient cannot revive old consent.
     if Guest.load64 (bindingRole 1) t != identity p t || Guest.load64 (proc p+272) t != 1 ||
-        Guest.load64 (proc p+16) t != 0 || (ptr != 402 && ptr != 409) || v != 0 || !live h t then err else
+        Guest.load64 (proc p+16) t != 0 || (ptr != 402 && ptr != 409 && ptr != 411) || v != 0 || !live h t then err else
     let recipient := h &&& 255
-    if (ptr == 402 && n != 0) || (ptr == 409 && (n != 3 || Guest.load64 (bindingRole 3) t != h ||
+    if ((ptr == 402 || ptr == 411) && n != 0) || (ptr == 411 && h != Guest.load64 (state+200) t) || (ptr == 409 && (n != 3 || Guest.load64 (bindingRole 3) t != h ||
       !Guest.ServiceBindingPolicy.receiptConsumer (Guest.load64 (proc recipient+272) t) (Guest.load64 (proc recipient+16) t))) then err else
     let grant := findGrant h (identity p t) ptr 0 t
     if grant != 0 && grantLive grant t then Guest.load64 (grant+40) t else err
@@ -992,7 +1044,8 @@ def dispatch (p op h ptr n v t : UInt64) : UInt64 :=
       Guest.store64 (state+200) h t
   else if op == 113 then
     let registry := Guest.load64 (state+200) t
-    if (p == 1 || (p == 6 && Guest.load64 (proc p+24) t == 6) || (Guest.load64 (proc p+16) t &&& 1024) != 0) && registry != 0 && live registry t then registry else err
+    if (p == 1 || (p == 6 && Guest.load64 (proc p+24) t == 6) || (Guest.load64 (proc p+16) t &&& 1024) != 0 ||
+      (Guest.load64 (proc p+272) t == 1 && Guest.load64 (proc p+16) t == 0 && Guest.load64 (bindingRole 1) t == identity p t)) && registry != 0 && live registry t then registry else err
   else if op == 114 then
     if p != 1 || (h != 0 && (!live h t || (h &&& 255) < 7)) then err else
       let old := Guest.load64 (state+208) t

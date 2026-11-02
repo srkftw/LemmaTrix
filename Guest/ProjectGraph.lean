@@ -1,5 +1,7 @@
 import Guest.LiveSDK
 import Guest.ServiceHash
+import Guest.ReleaseFormat
+import Guest.ReleaseClaims
 namespace Guest.ProjectGraph
 open Guest.LiveSDK
 -- Objects owns this private arena. Stable IDs never encode slots or capabilities.
@@ -112,7 +114,7 @@ partial def validateEntries (caller r i count required t : UInt64) : Bool :=
        !allZero (e+48+n) (80-n) t || found == error then false else
     if i > 0 && !lessName (e-128+48) (load64 (e-128+8) t) (e+48) n 0 t then false else
     let required := if (load64 (r+40) t == 11 && kind == 10) ||
-      (load64 (r+40) t == 12 && kind == 11) || (load64 (r+40) t == 13 && kind == 12) then required+1 else required
+      (load64 (r+40) t == 12 && kind == 11) || (load64 (r+40) t == 13 && (kind == 12 || kind == 11)) then required+1 else required
     validateEntries caller r (i+1) count required t
 
 def validPayload (caller r t : UInt64) : Bool :=
@@ -320,7 +322,7 @@ def publicationMatches (source h t : UInt64) : UInt64 :=
   if load64 (h+488) t == 0 then
     if hasFork (recordAt origin) 0 t then error else t
   else
-  if load64 (h+488) t != 3 || load64 (h+496) t != 0 || load64 (h+504) t != 0 then error else
+  if (load64 (h+488) t != 3 && load64 (h+488) t != 4) || load64 (h+496) t != 0 || load64 (h+504) t != 0 then error else
     if !forkPublisherMatches (recordAt origin) h 0 t then error else
       let t := store64 scratch 5281669397183550540 t
       let t := store64 (scratch+8) 3687689772325945667 t
@@ -348,32 +350,89 @@ def releaseRelations (r t : UInt64) : UInt64 :=
   let source := findNode (r+688) 11 0 t
   if source == error then error else publicationMatches source h t
 
-def checkRelease (r t : UInt64) : UInt64 :=
+-- Header and metadata offsets are derived from the declared, supported profile.
+-- DevelopmentArtifact source facets grant no executable admission or entry point.
+def releaseDetails (r t : UInt64) : UInt64 := r+288+load64 (r+272) t*128
+partial def releaseLock (source i t : UInt64) : UInt64 :=
+  if i == load64 (source+272) t then error else
+  let e := source+288+i*128
+  if load64 e t == 10 && load64 (e+8) t == 15 && load64 (e+48) t == 8028843231677343084 && load64 (e+56) t == 31084788931521379 then
+    findNode (e+16) 10 0 t else releaseLock source (i+1) t
+-- V4 semantics are checked against actual authorized lock bytes. Legacy
+-- manifests retain their original encoding and historical acceptance rules.
+def releaseClaims (source h mn sn en ln t : UInt64) : UInt64 :=
+  if load64 (h+8) t != 4 then t else
+  let origin := projectOrigin source 64 t
+  let lockIndex := releaseLock (recordAt source) 0 t
+  if origin == error || lockIndex == error then error else
+  let lockRecord := recordAt lockIndex
+  let m := h+Guest.ReleaseFormat.prefix h t
+  let l := m+mn+sn+en
+  if !Guest.ReleaseClaims.check h m mn (lockRecord+256) (load64 (lockRecord+32) t) (logicalIdAt (recordAt origin) t) t ||
+    Guest.ReleaseClaims.valueEnd l (l+ln) 32 t != l+ln ||
+    !Guest.ReleaseClaims.valueEquals (Guest.ReleaseClaims.field m (m+mn) 24 t) (m+mn)
+      (Guest.ReleaseClaims.field l (l+ln) 24 t) (l+ln) t then error else t
+
+def checkDevelopmentRelease (r t : UInt64) : UInt64 :=
+  let d := releaseDetails r t
+  let h := d+64
+  let n := load64 (r+280) t
+  let prefixBytes := Guest.ReleaseFormat.prefix h t
+  let mn := load64 (d+24) t
+  let sn := load64 (d+32) t
+  let en := load64 (d+40) t
+  let ln := load64 (d+48) t
+  if load64 (r+272) t != 1 || !releaseEdge r 0 11 0x656372756f73 6 t ||
+    n < 672 || load64 d t != 0x31544e43524c544c || load64 (d+8) t != 1 ||
+    prefixBytes != 608 || load64 (d+16) t != prefixBytes || load64 (d+56) t != 0 ||
+    !Guest.ReleaseFormat.validHeader h t || Guest.ReleaseFormat.executable h t ||
+    mn > 65536 || sn > 65536 || en != 2 || ln == 0 || ln > 512 || n != 64+prefixBytes+mn+sn+en+ln then error else
+  let t := zero (scratch+160) 4 (copy h scratch 512 t)
+  let t := hashMatches scratch 512 (h+160) t
+  if t == error then error else
+  let t := hashMatches (h+prefixBytes) mn (h+256) t
+  if t == error then error else
+  let t := hashMatches (h+prefixBytes+mn) sn (h+224) t
+  if t == error then error else
+  let t := hashMatches (h+prefixBytes+mn+sn) en (h+352) t
+  if t == error || load8 (h+prefixBytes+mn+sn) t != 91 || load8 (h+prefixBytes+mn+sn+1) t != 93 then error else
+  let t := hashMatches (h+prefixBytes+mn+sn+en) ln (h+320) t
+  if t == error then error else
+  let source := findNode (r+304) 11 0 t
+  if source == error then error else
+  let t := publicationMatches source h t
+  if t == error then error else
+  let generated := canonicalSources (recordAt source) t
+  if generated == error || generated != sn || !equal jsonBuffer (h+prefixBytes+mn) sn generated then error else
+  let checked := releaseClaims source h mn sn en ln generated
+  if checked == error then error else zero jsonBuffer 1024 checked
+
+def checkNativeRelease (r t : UInt64) : UInt64 :=
   if load64 (r+272) t != 4 ||
     !releaseEdge r 0 12 0x646c697562 5 t || !releaseEdge r 1 11 0x65646f63 4 t ||
     !releaseEdge r 2 14 0x65636e6564697665 8 t || !releaseEdge r 3 11 0x656372756f73 6 t then error else
     let details := r+800
     let n := load64 (r+280) t
-    if n < 832 || load64 details t != 0x31544e43524c544c || load64 (details+8) t != 1 ||
-      load64 (details+16) t != 768 || load64 (details+56) t != 0 then error else
+    if n < 672 || load64 details t != 0x31544e43524c544c || load64 (details+8) t != 1 ||
+      load64 (details+16) t != Guest.ReleaseFormat.prefix (details+64) t || load64 (details+56) t != 0 then error else
       let mn := load64 (details+24) t
       let sn := load64 (details+32) t
       let en := load64 (details+40) t
       let ln := load64 (details+48) t
-      if mn > 65536 || sn > 65536 || en > 65536 || ln > 65536 || n != 832+mn+sn+en+ln then error else
+      if mn > 65536 || sn > 65536 || en > 65536 || ln > 65536 || n != 64+Guest.ReleaseFormat.prefix (details+64) t+mn+sn+en+ln then error else
         let h := details+64
-        if load64 h t != 0x3253454c544c || load64 (h+8) t != 2 || load64 (h+16) t != 512 then error else
+        if !Guest.ReleaseFormat.validHeader h t || !Guest.ReleaseFormat.executable h t then error else
           let t := copy h scratch 512 t
           let t := zero (scratch+160) 4 t
           let checked := hashMatches scratch 512 (h+160) t
           if checked == error then error else
-            let checked := hashMatches (h+768) mn (h+256) checked
+            let checked := hashMatches (h+Guest.ReleaseFormat.prefix h t) mn (h+256) checked
             if checked == error then error else
-              let checked := hashMatches (h+768+mn) sn (h+224) checked
+              let checked := hashMatches (h+Guest.ReleaseFormat.prefix h t+mn) sn (h+224) checked
               if checked == error then error else
-                let checked := hashMatches (h+768+mn+sn) en (h+352) checked
+                let checked := hashMatches (h+Guest.ReleaseFormat.prefix h t+mn+sn) en (h+352) checked
                 if checked == error then error else
-                  let checked := hashMatches (h+768+mn+sn+en) ln (h+320) checked
+                  let checked := hashMatches (h+Guest.ReleaseFormat.prefix h t+mn+sn+en) ln (h+320) checked
                   if checked == error then error else
                     let bi := findNode (r+432) 11 0 checked
                     let build := findNode (r+304) 12 0 checked
@@ -404,10 +463,14 @@ def checkRelease (r t : UInt64) : UInt64 :=
                                     let checked := publicationMatches source h checked
                                     if checked == error then error else
                                     let generated := canonicalSources (recordAt source) checked
-                                    if generated == error || generated != sn || !equal jsonBuffer (h+768+mn) sn generated then error else
+                                    if generated == error || generated != sn || !equal jsonBuffer (h+Guest.ReleaseFormat.prefix h t+mn) sn generated then error else
                                       let generated := canonicalEvidence bd generated
-                                      if generated == error || generated != en || !equal jsonBuffer (h+768+mn+sn) en generated then error else
-                                        zero jsonBuffer 1024 (zero binaryBuffer 32768 generated)
+                                      if generated == error || generated != en || !equal jsonBuffer (h+Guest.ReleaseFormat.prefix h t+mn+sn) en generated then error else
+                                        let checked := releaseClaims source h mn sn en ln generated
+                                        if checked == error then error else zero jsonBuffer 1024 (zero binaryBuffer 32768 checked)
+
+def checkRelease (r t : UInt64) : UInt64 :=
+  if load64 (r+272) t == 1 then checkDevelopmentRelease r t else checkNativeRelease r t
 
 -- Schema2 checkpoints preserve the origin's canonical commitment and archived
 -- head. Their predecessor is explicitly archival, never a required payload edge.

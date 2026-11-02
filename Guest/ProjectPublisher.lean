@@ -1,6 +1,7 @@
 import Guest.ProjectSDK
 import Guest.IdentitySDK
 import Guest.ReleaseFormat
+import Guest.SourceDependencyPolicy
 namespace Guest.ProjectPublisher
 open Guest.LiveSDK
 open Guest.ProjectSDK
@@ -122,6 +123,8 @@ def prepare (length t : UInt64) : UInt64 :=
   let t := store64 (st+32) bytes r
   if load64 candidate t != 0x31544e43524c544c || load64 (candidate+8) t != 1 || load64 (candidate+16) t != 608 ||
     load64 (candidate+56) t != 0 || load64 (h+8) t != 4 || !Guest.ReleaseFormat.validHeader h t ||
+    load64 (candidate+24) t > 49152 || load64 (candidate+32) t > 49152 ||
+    load64 (candidate+40) t > 49152 || load64 (candidate+48) t > 512 ||
     bytes != 672+load64 (candidate+24) t+load64 (candidate+32) t+load64 (candidate+40) t+load64 (candidate+48) t then response 2 t else
   let r := describeRoot root t
   if r != 160 || status r != 0 then response 1 r else
@@ -166,6 +169,8 @@ def prepare (length t : UInt64) : UInt64 :=
     if r != 128 || status r != 0 || load64 (wire+32) r != 11 then error else copy (wire+64) (st+320) 32 r
     else t
   if t == error then response 1 t else
+  let t := Guest.SourceDependencyPolicy.check (load64 (st+16) t) (st+160) (h+608) (load64 (candidate+24) t) t
+  if t == error then response 6 t else
   -- Objects hashes the actual code closure and reconstructs source/evidence
   -- metadata before this unsigned, inert candidate can reach native review.
   let unsigned := assemble t

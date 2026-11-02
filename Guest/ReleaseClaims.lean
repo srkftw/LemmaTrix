@@ -149,6 +149,10 @@ partial def wordBytes (p n word t : UInt64) : Bool :=
   if keyMatch p n 7 30243645579093358 0 0 t then 25 else
   if keyMatch p n 11 7310594991874794864 6644590 0 t then 26 else
   if keyMatch p n 7 28548172593721968 0 0 t then 27 else
+  if keyMatch p n 10 7953759798970774128 25955 0 t then 28 else
+  if keyMatch p n 10 6874027268401554802 25705 0 t then 29 else
+  if keyMatch p n 10 6878243912925736803 25705 0 t then 30 else
+  if keyMatch p n 12 7596562542729650531 1936025972 0 t then 31 else
   0
 partial def findField (p end_ tag t : UInt64) : UInt64 :=
   if p >= end_ || byte p t != 34 then 0 else

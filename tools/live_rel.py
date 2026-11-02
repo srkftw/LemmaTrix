@@ -422,7 +422,7 @@ def export(project, destination, socket, release=None, public_key=None):
             pkg.require(public_key is not None, 'release export requires an explicit trusted public key')
             envelope = pkg.bounded_file(release, 66304, 'selected native release')
             manifest = pkg.parse_json(pkg.bounded_file(Path(str(release) + '.manifest.json'), 65536, 'release manifest'))
-            modulus = releases.public_modulus(public_key)
+            modulus = releases.public_key(public_key)
             info = releases.inspect(envelope, modulus, manifest)
             pkg.require(any(item.get('sha256') == digest(generated) for item in manifest['sources']),
                         'selected release does not commit this generated semantic consumer')

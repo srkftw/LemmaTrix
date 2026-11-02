@@ -1,4 +1,4 @@
-/* Built-in Objects, Vault and Network services only; not an application release profile. */
+/* Built-in Launcher/Objects, Vault and Network services only; not an application release profile. */
 OUTPUT_ARCH(riscv)
 ENTRY(_start)
 SECTIONS {

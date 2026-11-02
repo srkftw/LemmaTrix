@@ -1,5 +1,5 @@
 """Byte transport and CLI for a long-lived guest; all platform state is guest-owned."""
-import argparse,fcntl,hashlib,json,os,select,socket,struct,subprocess,sys,time
+import argparse,fcntl,hashlib,json,os,platform,select,socket,struct,subprocess,sys,time
 from pathlib import Path
 import driver,releases,capsule
 import stat,threading,ipaddress
@@ -30,7 +30,8 @@ def args_for(backend,image,vault=None,readonly=False,graphics=None,display="none
    args+=['-chardev',f'socket,id=lt-stream,fd={network_fd}','-device','virtio-serial-device,id=lt-streamdev'+(',max_ports=2' if reliable else ''),'-device','virtserialport,chardev=lt-stream,bus=lt-streamdev.0,nr=1,name=lt-net1' if reliable else 'virtconsole,chardev=lt-stream,bus=lt-streamdev.0']
   return args
  args=[str(driver.BUILD/('lt-'+backend)),str(image),'--interactive']
- if backend=='aarch64':args.insert(0,driver.tool('qemu-aarch64'))
+ native={'x86_64':'x86_64','aarch64':'aarch64','arm64':'aarch64'}.get(platform.machine())
+ if backend!=native:args.insert(0,driver.tool('qemu-'+('aarch64' if backend=='aarch64' else 'x86_64')))
  if graphics:args+=['--display-out',str(graphics)+'.bgrx','--input-events',str(graphics)+'.evdev']
  if vault:args+=['--vault',str(vault)]
  if server_store:args+=['--server-store',str(server_store)]
@@ -390,7 +391,7 @@ def main(argv=None):
    else:print(raw.hex())
   elif cmd=='trust':
    # Public key path is used only to export modulus; private material never enters transport.
-   modulus=releases.public_modulus(args.public)
+   modulus=releases.public_key(args.public)
    project_id=releases.project(args.project) if args.project else hashlib.sha256(b'LT-PUBLICATION-3\0'+bytes.fromhex(args.project_id)+hashlib.sha256(modulus).digest()).digest()
    if args.project_id and len(bytes.fromhex(args.project_id))!=32:raise ValueError('Project identity must be32bytes')
    print(client.request(10,project_id+modulus).hex())

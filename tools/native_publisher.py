@@ -21,6 +21,52 @@ def inspect(client):
                 header=raw[64:576].hex(), session_only=True)
 
 
+def retain(client, root, publisher, credential, vault_key=None, include_roots=()):
+    import project_vault
+    if len(credential) != 32:
+        raise ValueError('selected sealing credential must contain exactly 32 bytes')
+    _, public = identity.invoke(client, 401, h=publisher)
+    info = identity.decode_public(public)
+    logical = projects.project_identity(client, root)
+    if info['role'] != 1 or info['scope'] != logical:
+        raise ValueError('select this project publisher and its authorized project')
+    _, sealed = identity.invoke(client, 408, h=2, a=publisher, data=credential)
+    if len(sealed) != 192:
+        raise ValueError('native typed publisher seal is incomplete')
+    # No process, key handle, IPC approval or plaintext seed is serialized.
+    payload = struct.pack('<4Q', 0x3153504250544c, 1, 3, info['generation'])
+    payload += bytes.fromhex(info['public_key'])+bytes.fromhex(logical)+sealed
+    _, member = projects.node(client, payload, 10)
+    detail = releases.pkg.canonical(dict(schema=1, kind='sealed-project-publisher',
+        project_id=logical, publisher_key_id=hashlib.sha256(bytes.fromhex(info['public_key'])).hexdigest(),
+        recovery='fresh bindings; inspection only until authenticated publication reconciliation'))
+    node, head = projects.node(client, projects.manifest([('authority.bin', 10, member)], detail), 11)
+    name = ('publisher-'+hashlib.sha256(bytes.fromhex(info['public_key'])).hexdigest()[:16]).encode('ascii')
+    q, _ = client.objects(22, node, 0, len(name), data=bytes(32)+name.ljust(64, b'\0'))
+    authority_root = q[1]
+    if vault_key is not None:
+        project_vault.unlock(client, vault_key)
+    saved = project_vault.retain(client, [root, authority_root, *include_roots])
+    return dict(authority_root=authority_root, head=head, project_id=logical, public_key=info['public_key'],
+        saved=saved, domain=3, secret_boundary='native Identity typed encrypted seal',
+        recovery='inspection only; no stale approval or silent successor authority')
+
+
+def recover(client, root, credential):
+    if len(credential) != 32:
+        raise ValueError('selected sealing credential must contain exactly 32 bytes')
+    _, files = projects.snapshot(client, root)
+    payload = files.get('authority.bin', b'')
+    if len(payload) != 288 or struct.unpack_from('<3Q', payload) != (0x3153504250544c, 1, 3):
+        raise ValueError('select a typed, recovered Objects-domain3 publisher root')
+    q, public = identity.invoke(client, 408, h=3, data=credential+payload[32:64]+payload[96:288])
+    info = identity.decode_public(public)
+    if info['role'] != 1 or info['scope'] != payload[64:96].hex():
+        raise ValueError('recovered publisher scope differs from selected authenticated root')
+    return dict(key=q[1], **info, session_only=True, signing_authorized=False,
+        recovery='inspection only; establish fresh authorized fork/publisher or reconcile authenticated publication state')
+
+
 def prepare(client, *, root, publisher, name, version, output, result_path=None,
             license='NOASSERTION', parent=None, exports=()):
     output = Path(output)
@@ -174,6 +220,12 @@ def main(argv=None):
     prep.add_argument('--output', type=Path, required=True)
     sub.add_parser('inspect'); sub.add_parser('cancel')
     publish = sub.add_parser('publish'); publish.add_argument('directory', type=Path)
+    keep = sub.add_parser('retain'); keep.add_argument('--root', type=int, required=True)
+    keep.add_argument('--publisher', type=int, required=True); keep.add_argument('--credential', type=Path, required=True)
+    keep.add_argument('--vault-key', type=Path); keep.add_argument('--include-root', type=int, action='append', default=[])
+    restore = sub.add_parser('recover'); restore.add_argument('--root', type=int, required=True)
+    restore.add_argument('--credential', type=Path, required=True)
+    lock = sub.add_parser('lock'); lock.add_argument('--publisher', type=int, required=True)
     exp = sub.add_parser('export'); exp.add_argument('directory', type=Path); exp.add_argument('--output', type=Path, required=True)
     args = parser.parse_args(argv)
     client = live.Client(args.socket, timeout=300)
@@ -190,6 +242,14 @@ def main(argv=None):
                 exports=args.export_module, output=args.output)
         elif args.command == 'export': result = export(client, args.directory, args.output)
         elif args.command == 'publish': result = publish_snapshot(client, args.directory)
+        elif args.command == 'retain': result = retain(client, args.root, args.publisher, args.credential.read_bytes(),
+            args.vault_key.read_bytes() if args.vault_key else None, args.include_root)
+        elif args.command == 'recover': result = recover(client, args.root, args.credential.read_bytes())
+        elif args.command == 'lock':
+            _, public = identity.invoke(client, 401, h=args.publisher)
+            if identity.decode_public(public)['role'] != 1: raise ValueError('select a project publisher')
+            identity.invoke(client, 403, h=args.publisher)
+            result = dict(locked=True, key=args.publisher, other_authorities_changed=False)
         elif args.command == 'cancel': result = {'reply': client.request(229).hex()}
         else: result = inspect(client)
     finally: client.close()

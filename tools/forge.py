@@ -55,7 +55,7 @@ def main(argv=None):
  p.add_argument('--socket',required=True,type=Path);p.add_argument('--instance',required=True,type=int)
  sub=p.add_subparsers(dest='command',required=True)
  q=sub.add_parser('configure');q.add_argument('--credentials',required=True,type=Path);q.add_argument('--role',choices=('client','registry','seed','builder','verifier'),default='client');q.add_argument('--policy',choices=('portable','source-only'),default='portable');q.add_argument('--store-grant',type=int,default=0);q.add_argument('--recover-and-seed',action='store_true')
- q=sub.add_parser('federation');q.add_argument('--identity',default='');q.add_argument('--policy',choices=('portable','native-restricted'),default='portable');q.add_argument('--disable',action='store_true')
+ q=sub.add_parser('federation');q.add_argument('--identity',default='');q.add_argument('--policy',choices=('portable','native-restricted','consumer'),default='portable');q.add_argument('--disable',action='store_true')
  q=sub.add_parser('admission');q.add_argument('--local',action='store_true')
  sub.add_parser('subscription')
  sub.add_parser('cache')
@@ -63,7 +63,7 @@ def main(argv=None):
  a=p.parse_args(argv);c=live.Client(a.socket)
  try:
   if a.command=='configure':result=configure(c,a.instance,a.credentials,a.role,a.policy,a.store_grant,a.recover_and_seed)
-  elif a.command=='federation':result=federation_configure(c,a.instance,a.identity,1 if a.policy=='portable' else 2,not a.disable)
+  elif a.command=='federation':result=federation_configure(c,a.instance,a.identity,{'portable':1,'native-restricted':2,'consumer':3}[a.policy],not a.disable)
   elif a.command=='admission':result=federation_inspect(c,a.instance,a.local)
   elif a.command=='subscription':result=subscription_inspect(c,a.instance)
   elif a.command=='cache':result=cache_inspect(c,a.instance)
