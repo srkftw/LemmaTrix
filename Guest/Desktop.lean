@@ -127,7 +127,10 @@ partial def fileList (i t : UInt64) : UInt64 :=
     fileList (i+1) t
 
 def checkpointDraw (t : UInt64) : UInt64 :=
-  if load64 (st+352) t == 0 then editorLabel 96 8 309 0xaac9aa bg t else
+  if load64 (st+352) t == 0 then
+    if load64 (st+56) t == 40 then t else
+      editorLabel 96 8 309 0xaac9aa bg t
+  else
     let t := fill 0 180 640 137 0x203447 t
     let t := editorLabel (if load64 (st+352) t == 1 then 97 else 99) 8 185 fg 0x203447 t
     let t := editorLabel (if load64 (st+352) t == 1 then 98 else 100) 8 201 fg 0x203447 t
