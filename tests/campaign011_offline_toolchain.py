@@ -1,5 +1,5 @@
 """Focused offline descriptor validation and frozen worker identity."""
-import argparse,contextlib,copy,dataclasses,hashlib,json,os,resource,sys,time
+import argparse,contextlib,copy,dataclasses,hashlib,io,json,os,resource,sys,time
 from pathlib import Path
 from unittest.mock import patch
 ROOT=Path(__file__).resolve().parents[1];sys.path[:0]=[str(ROOT/'tools')]
@@ -62,8 +62,47 @@ def pure(fixture,out):
  report=dict(status='PURE CHECKS PASS',checks=checks,metadata_commands=calls,real_sandbox_executions=0,worker_identity=worker,descriptor_commitment=tc.commitment,manifest_sha256=tc.manifest_sha256,descriptor=json.loads(tc.descriptor))
  write(out/'checks.json',report);return report
 
+def selectors(fixture,out):
+ """Exercise CLI selection and real resolution, stopping before compilation."""
+ out.mkdir();project=out/'project';project.mkdir();source=ROOT/'docs/evidence/sdk-offline-workflow-20261116'
+ for name in ['lemma.project.json','lemma.lock.json']:(project/name).write_bytes((source/name).read_bytes())
+ (project/'Main.lean').write_bytes((source/'Main.corrected.lean').read_bytes())
+ sdk.sdk.cache_sdk()
+ malformed=out/'malformed.json';malformed.write_text('{"schema":')
+ mismatch=out/'mismatch.json';value=json.loads(fixture.read_text());value['lock_sha256']='00'*32;write(mismatch,value)
+ cases=[('flag overrides invalid environment',fixture,out/'missing-env.json',True),
+        ('environment selected without flag',None,fixture,True),
+        ('missing explicit flag refuses despite valid environment',out/'missing.json',fixture,False),
+        ('malformed explicit flag refuses despite valid environment',malformed,fixture,False),
+        ('mismatched explicit flag refuses despite valid environment',mismatch,fixture,False)]
+ checks=[];calls=[];original_run=build_jobs.subprocess.run;original_resolve=build_jobs.resolve_toolchain
+ def metadata_only(argv,*a,**kw):
+  if len(argv)!=2 or argv[1]!='--version':raise AssertionError('unexpected compiler/query invocation: '+repr(argv))
+  calls.append(list(map(str,argv)));return original_run(argv,*a,**kw)
+ for index,(label,flag,environment,accept)in enumerate(cases):
+  observed={}
+  def resolve(*a,**kw):
+   observed['manifest_argument']=str(kw['manifest'])if kw.get('manifest')is not None else None
+   selected=original_resolve(*a,**kw)
+   observed.update(manifest_sha256=selected.manifest_sha256,descriptor=selected.commitment)
+   raise RuntimeError('selector-only probe stopped after resolution, before compilation')
+  argv=['build',str(project),'--output',str(out/('probe-'+str(index)))]
+  if flag is not None:argv+=['--toolchain-manifest',str(flag)]
+  stream=io.StringIO()
+  with patch.dict(os.environ,{'LT_TOOLCHAIN_MANIFEST':str(environment)}),patch.object(build_jobs.subprocess,'run',metadata_only),patch.object(build_jobs,'resolve_toolchain',resolve),contextlib.redirect_stdout(stream):
+   code=sdk.main(argv)
+  result=json.loads(stream.getvalue());assert code==1 and result['status']=='unavailable'and not result.get('artifact')
+  assert observed['manifest_argument']==(str(flag)if flag is not None else None)
+  assert ('descriptor'in observed)==accept
+  if accept:assert observed['manifest_sha256']==digest(fixture)and result['diagnostic_text']=='selector-only probe stopped after resolution, before compilation'
+  checks.append(dict(check=label,result='pass',resolved=accept,observation=observed,diagnostic=result['diagnostic_text']))
+ report=dict(status='SELECTOR CHECKS PASS',checks=checks,metadata_commands=calls,real_sandbox_executions=0,scope='Real CLI and descriptor resolution; intentional stop before compilation, no simulated successful artifact')
+ write(out/'checks.json',report);return report
+
 def main():
- p=argparse.ArgumentParser();p.add_argument('--fixture',type=Path,required=True);p.add_argument('--output',type=Path,required=True);a=p.parse_args()
+ p=argparse.ArgumentParser();p.add_argument('--fixture',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--selectors-only',action='store_true');a=p.parse_args()
+ if a.selectors_only:
+  r=selectors(a.fixture,a.output);print(json.dumps(dict(status=r['status'],checks=len(r['checks']),real_sandbox_executions=0)));return
  r=pure(a.fixture,a.output)
  print(json.dumps(dict(status=r['status'],checks=len(r['checks']),worker=r['worker_identity'],descriptor=r['descriptor_commitment'])))
 if __name__=='__main__':main()

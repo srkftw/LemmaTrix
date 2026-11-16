@@ -1,0 +1,98 @@
+{
+  "status": "SELECTOR CHECKS PASS",
+  "checks": [
+    {
+      "check": "flag overrides invalid environment",
+      "result": "pass",
+      "resolved": true,
+      "observation": {
+        "manifest_argument": "docs/evidence/campaign011-offline-toolchain-descriptor-v1.json",
+        "manifest_sha256": "d6cfcbeda83f5793985f247790ec2540fbfffc7714e79581081d0d49f01e5034",
+        "descriptor": "3c641e76195f884262cd965c6072afc78566e12c937c34ce691bc2a756bc10e0"
+      },
+      "diagnostic": "selector-only probe stopped after resolution, before compilation"
+    },
+    {
+      "check": "environment selected without flag",
+      "result": "pass",
+      "resolved": true,
+      "observation": {
+        "manifest_argument": null,
+        "manifest_sha256": "d6cfcbeda83f5793985f247790ec2540fbfffc7714e79581081d0d49f01e5034",
+        "descriptor": "3c641e76195f884262cd965c6072afc78566e12c937c34ce691bc2a756bc10e0"
+      },
+      "diagnostic": "selector-only probe stopped after resolution, before compilation"
+    },
+    {
+      "check": "missing explicit flag refuses despite valid environment",
+      "result": "pass",
+      "resolved": false,
+      "observation": {
+        "manifest_argument": "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-offline-publication-20261116/selector-checks/missing.json"
+      },
+      "diagnostic": "[Errno 2] No such file or directory: '/home/sreekumaar/Desktop/LemmaTrix/build/sdk-offline-publication-20261116/selector-checks/missing.json'"
+    },
+    {
+      "check": "malformed explicit flag refuses despite valid environment",
+      "result": "pass",
+      "resolved": false,
+      "observation": {
+        "manifest_argument": "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-offline-publication-20261116/selector-checks/malformed.json"
+      },
+      "diagnostic": "Expecting value: line 1 column 11 (char 10)"
+    },
+    {
+      "check": "mismatched explicit flag refuses despite valid environment",
+      "result": "pass",
+      "resolved": false,
+      "observation": {
+        "manifest_argument": "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-offline-publication-20261116/selector-checks/mismatch.json"
+      },
+      "diagnostic": "offline toolchain lock digest differs"
+    }
+  ],
+  "metadata_commands": [
+    [
+      "/nix/store/ysdqz5kaw8paig5v5q8d94yg6lkk0pkf-lean4-4.34.1/bin/lean",
+      "--version"
+    ],
+    [
+      "/nix/store/c0jm2ghmasw8rljbixrhq3vw4hx2rgk8-clang-20.1.8/bin/clang-20",
+      "--version"
+    ],
+    [
+      "/nix/store/kavf1x7bf1j36jlnybs5am32lca7gw8a-lld-20.1.8/bin/ld.lld",
+      "--version"
+    ],
+    [
+      "/nix/store/2rqn5n8cihb3nkhbk5vwbygbpipz0xaq-llvm-20.1.8/bin/llvm-objcopy",
+      "--version"
+    ],
+    [
+      "/nix/store/lb41b0anx1f98y9y5s9mdv97gjgsq740-python3-3.14.7/bin/python3.14",
+      "--version"
+    ],
+    [
+      "/nix/store/ysdqz5kaw8paig5v5q8d94yg6lkk0pkf-lean4-4.34.1/bin/lean",
+      "--version"
+    ],
+    [
+      "/nix/store/c0jm2ghmasw8rljbixrhq3vw4hx2rgk8-clang-20.1.8/bin/clang-20",
+      "--version"
+    ],
+    [
+      "/nix/store/kavf1x7bf1j36jlnybs5am32lca7gw8a-lld-20.1.8/bin/ld.lld",
+      "--version"
+    ],
+    [
+      "/nix/store/2rqn5n8cihb3nkhbk5vwbygbpipz0xaq-llvm-20.1.8/bin/llvm-objcopy",
+      "--version"
+    ],
+    [
+      "/nix/store/lb41b0anx1f98y9y5s9mdv97gjgsq740-python3-3.14.7/bin/python3.14",
+      "--version"
+    ]
+  ],
+  "real_sandbox_executions": 0,
+  "scope": "Real CLI and descriptor resolution; intentional stop before compilation, no simulated successful artifact"
+}
