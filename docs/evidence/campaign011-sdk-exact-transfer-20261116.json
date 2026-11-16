@@ -1,0 +1,378 @@
+{
+  "schema": 1,
+  "recorded_utc": "2026-11-16T21:38:14.280541+00:00",
+  "status": "PASS: exact SDK export/import and tracked Project Notes unsigned build reproduced in fresh empty-cache checkout",
+  "allocation": {
+    "receipt_utc": "2026-11-16T21:20:47.125585+00:00",
+    "receipt_monotonic": 72355.170119171,
+    "work_end_utc": "2026-11-16T22:35:47.125585+00:00",
+    "work_end_monotonic": 76855.170119171,
+    "final_end_utc": "2026-11-16T22:50:47.125585+00:00",
+    "final_end_monotonic": 77755.170119171,
+    "source_checkpoint_utc": "2026-11-16T21:35:47.125585+00:00",
+    "workflow_checkpoint_utc": "2026-11-16T22:05:47.125585+00:00",
+    "scope": "Exact SDK export/import closure repair; real tracked Project Notes and unchanged signed Notes.Schema carrier, origin and fresh empty-cache checkout unsigned builds. At most three real builds, normal 120s wall/60s CPU/profile limits. Local result only; no remote mutation, signing, installation, admission, application/guest execution or unrelated blocked operation."
+  },
+  "base_main": "de8da061e7ce9771f9c3fe26ed8780130adb149d",
+  "implementation_commit": "25ecbd142c3dbe86f1c1aeace39f34b9406d17ec",
+  "branch": "codex/sdk-exact-transfer-20261116",
+  "worktree": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix",
+  "defect": "Import discarded validated bytes before copytree; import/export copied undeclared tree entries and could follow extra symlinks. Existing cache manifest could be ignored or overwritten.",
+  "change": "Shared anchored bounded capture of actual manifest and declared members; publish captured map and canonical manifest through an owned validated stage and no-replace rename; validate actual existing cache or refuse, preserving unknown targets.",
+  "transfer": {
+    "sdk_content_id": "3312ddcd277f401c377142b006bac6cf9aeefd8fa89f4d4c78f1fd5469caf533",
+    "sdk_version": "0.1.0",
+    "declared_members": 28,
+    "declared_bytes": 70279,
+    "published_files_including_manifest": 29,
+    "published_total_bytes": 74936,
+    "export_and_imported_member_maps_identical": true,
+    "empty_cache_checkout": {
+      "recorded_utc": "2026-11-16T21:36:00.129534+00:00",
+      "checkout": "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-exact-transfer-20261116/fresh-checkout",
+      "commit": "25ecbd142c3dbe86f1c1aeace39f34b9406d17ec",
+      "initial_status": "",
+      "absent_before_import": {
+        "build": true,
+        ".lake": true,
+        "build/sdk-cache": true,
+        "build/dependency-cache": true,
+        "build/toolchain-host.json": true
+      },
+      "creation": "git worktree add --detach from local implementation commit; tracked Git files only; no ignored source checkout caches or configuration copied"
+    },
+    "dependency_cache_absent_after_check_and_build": true,
+    "fresh_tracked_status": "",
+    "initial_state_qualification": "Initial empty-cache and clean-checkout state is the saved implementation owner observation; the reviewer did not independently witness initial state."
+  },
+  "project": {
+    "tracked_directory": "examples/project-notes",
+    "base_main_bytes_unchanged": true,
+    "source_snapshot": "f2ef3ecbea63da71ded69267e6b4649eb03f0957ca54f03d7df8099034514012",
+    "dependency_lock_id": "fa0fa0bc14985b973f64869197445390919ae618c6fe79499cdc5d6af56fb550",
+    "lock_file": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/examples/project-notes/lemma.lock.json",
+      "bytes": 948,
+      "sha256": "0a599bb9cf1a46fcb9330995c0a1f31ee2b4794e952d18ad71c79787d4a9090e"
+    },
+    "helper_release": "a4e39b5b087822dd3054501afc425bcbcfa6dcbc8faa98293e626f6256fb55c2",
+    "helper_carrier_sha256": "ed35d33eefe6897fdfcef26c1855e130b8d1fccd55d1ceb823c296505ed149ac",
+    "helper_publisher": "36aa1fd2be2a8c3753ef57a5169e696580862af0f546eb0e0541646e6657a2f7",
+    "signature_verified_before_build": true,
+    "dependency_sources": [
+      {
+        "path": "Notes/Schema.lean",
+        "bytes": 2474,
+        "sha256": "7f8a5b3d7336b85a24b6e49ca58f70805052446c3463e4c522f7c23f5c58bde2"
+      },
+      {
+        "path": "dependency-metadata/a4e39b5b087822dd3054501afc425bcbcfa6dcbc8faa98293e626f6256fb55c2/lemma.lock.json",
+        "bytes": 426,
+        "sha256": "b3cce28305a36351ebc1522d8fdd83d844d56b2a479f4691f0a2f6d5b8c670d6"
+      },
+      {
+        "path": "dependency-metadata/a4e39b5b087822dd3054501afc425bcbcfa6dcbc8faa98293e626f6256fb55c2/lemma.project.json",
+        "bytes": 308,
+        "sha256": "a4c51adcd272d76695a70f511666f5431599a0512af6ac8d4ea6bbe200df75b4"
+      }
+    ]
+  },
+  "builds": {
+    "real_builds": 2,
+    "maximum": 3,
+    "attempts": [
+      {
+        "number": 1,
+        "step": "origin tracked Project Notes unsigned build",
+        "started_utc": "2026-11-16T21:35:18.303059+00:00",
+        "started_monotonic": 73226.347598123,
+        "exit_code": 0,
+        "completed_utc": "2026-11-16T21:35:29.746388+00:00",
+        "seconds": 11.443
+      },
+      {
+        "number": 2,
+        "step": "fresh empty-cache checkout tracked Project Notes unsigned build",
+        "started_utc": "2026-11-16T21:36:22.262745+00:00",
+        "started_monotonic": 73290.307284326,
+        "exit_code": 0,
+        "completed_utc": "2026-11-16T21:36:32.954548+00:00",
+        "seconds": 10.692
+      }
+    ],
+    "origin_exit": 0,
+    "fresh_exit": 0,
+    "artifacts_byte_identical": true,
+    "artifact": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-exact-transfer-20261116/project-notes-unsigned.bin",
+      "bytes": 109692,
+      "sha256": "93caedd92d1d329b582becf8b1e5e1ee799dd91a728821c0f123f79f6673b3ec"
+    },
+    "worker_id": "74a7c8082d246983521ac537045d150e5b27d24c582a0ee21efdcc89a327579d",
+    "prior_pr8_worker_id": "fac267e886b9c31804e4ffad11a2eaf0aa25e2eeaefc1860dc011dbe64d19248",
+    "worker_change": "tools/public_sdk.py changed; compiler_identity binds its actual hash. SDK, locked recipe members, toolchain descriptor and app/helper/lock bytes are unchanged.",
+    "request_digest": "bb36b24057ef028d9a9ab64feeedff253f1408b071b8553fecc9424aee568bb6",
+    "normalized_toolchain_descriptor": "3c641e76195f884262cd965c6072afc78566e12c937c34ce691bc2a756bc10e0",
+    "selected_toolchain_descriptor_file": "d6cfcbeda83f5793985f247790ec2540fbfffc7714e79581081d0d49f01e5034",
+    "store_root_count": 53,
+    "toolchain_selection": "Explicit existing PR8 offline descriptor; no Nix query, evaluation, installation or fetch",
+    "pipeline": {
+      "lean_steps": 26,
+      "all_steps_exit_zero": true
+    },
+    "sandbox_origin": {
+      "ready": true,
+      "user_namespace": true,
+      "mount_namespace": true,
+      "network_namespace": true,
+      "pid_namespace": true,
+      "readonly_input": true,
+      "work_bytes": 134217728,
+      "temp_bytes": 16777216,
+      "address_space_bytes": 17179869184,
+      "cpu_seconds": 60,
+      "artifact_output_bytes": 262144,
+      "artifact_file_limit_enforced": true,
+      "uid_process_limit": 1528,
+      "additional_uid_tasks": 64,
+      "signer_present": false
+    },
+    "sandbox_fresh": {
+      "ready": true,
+      "user_namespace": true,
+      "mount_namespace": true,
+      "network_namespace": true,
+      "pid_namespace": true,
+      "readonly_input": true,
+      "work_bytes": 134217728,
+      "temp_bytes": 16777216,
+      "address_space_bytes": 17179869184,
+      "cpu_seconds": 60,
+      "artifact_output_bytes": 262144,
+      "artifact_file_limit_enforced": true,
+      "uid_process_limit": 1530,
+      "additional_uid_tasks": 64,
+      "signer_present": false
+    },
+    "wall_limit_seconds": 120,
+    "scope": "Same host, separate tracked checkout and processes, installed toolchain prerequisites. Intermediate reproduction only; no independent administration, native release/admission, signing, installation or app/guest execution."
+  },
+  "focused_validation": {
+    "checks": 48,
+    "status": "pass",
+    "real_builds": 0,
+    "old_counterexample": "Owned old import follows extra directory symlink, copies undeclared entries and changed bytes after validation.",
+    "source_review": "PASS from SAME on exact source/test hashes; no reviewer rerun.",
+    "build_evidence_review": "PASS: SAME independently hashed exact transfer maps and actual artifacts, recomputed both source/request/evidence and worker digests, and checked saved disk results and tracked project members. No reviewer builds or crypto rerun."
+  },
+  "reliability_reflection": [
+    "Validating a source tree before a second mutable copy did not bind the transferred bytes. Keeping the captured map through publication makes the byte commitment effective.",
+    "Existing cache validation must inspect the actual manifest and members; a matching directory name is not evidence and partial cache repair can hide corruption.",
+    "Anchored stage identity and no-replace publication preserve preexisting targets. Cleanup must retain primary failures and must not claim rollback after publication.",
+    "The real empty-cache Project Notes workflow uses its existing signed helper and unchanged lock, connecting the transfer test to the actual SDK consumer. Same-host reproduction does not close native release or independent-worker requirements."
+  ],
+  "evidence_files": {
+    "build-attempts.json": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-exact-transfer-20261116/build-attempts.json",
+      "bytes": 669,
+      "sha256": "8d3a185c8f1cc2ae913898024d461ed9d493cc6325367ba3bbbbe7b09b1c1b01"
+    },
+    "cli-environment.json": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-exact-transfer-20261116/cli-environment.json",
+      "bytes": 266,
+      "sha256": "4af75614ed4648bd61c98eb1e372adfd7ca63fcdcee9a41b328b404f8aa5872b"
+    },
+    "export.stdout.txt": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-exact-transfer-20261116/export.stdout.txt",
+      "bytes": 65,
+      "sha256": "c5b42166180ede308fae25d8b1e8ed72d0b11da48dea9e46717af1767b9335ca"
+    },
+    "exported-members.json": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-exact-transfer-20261116/exported-members.json",
+      "bytes": 3791,
+      "sha256": "f770cc25c745db4f50638fe9263dee1637aeb8d243c41369bb36bdbdfeedb853"
+    },
+    "fresh-build.stdout.json": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-exact-transfer-20261116/fresh-build.stdout.json",
+      "bytes": 10933,
+      "sha256": "fba8631e4c1d4674ac919377d9feee799f6a7f600f47d447add2ec1f60284303"
+    },
+    "fresh-check.json": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-exact-transfer-20261116/fresh-check.json",
+      "bytes": 2789,
+      "sha256": "c4583f13c7b786bc4f3ce27d1a0ab27441734139245e9036b42a34e030c2fb7d"
+    },
+    "fresh-import.stdout.txt": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-exact-transfer-20261116/fresh-import.stdout.txt",
+      "bytes": 65,
+      "sha256": "c5b42166180ede308fae25d8b1e8ed72d0b11da48dea9e46717af1767b9335ca"
+    },
+    "fresh-imported-members.json": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-exact-transfer-20261116/fresh-imported-members.json",
+      "bytes": 3791,
+      "sha256": "f770cc25c745db4f50638fe9263dee1637aeb8d243c41369bb36bdbdfeedb853"
+    },
+    "fresh-initial-state.json": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-exact-transfer-20261116/fresh-initial-state.json",
+      "bytes": 571,
+      "sha256": "7e4b7a9a9d05de87f4689ed27e5b2a7cc22d53fdca38041a073954b25071ca32"
+    },
+    "origin-build.stdout.json": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-exact-transfer-20261116/origin-build.stdout.json",
+      "bytes": 10934,
+      "sha256": "73c4ec2f1f69dade03ef398a29b9fa07597bcd07df15ae9a42d0d50c0dfcc31c"
+    },
+    "origin-check.json": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-exact-transfer-20261116/origin-check.json",
+      "bytes": 2789,
+      "sha256": "c4583f13c7b786bc4f3ce27d1a0ab27441734139245e9036b42a34e030c2fb7d"
+    },
+    "project-notes-unsigned.bin": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-exact-transfer-20261116/project-notes-unsigned.bin",
+      "bytes": 109692,
+      "sha256": "93caedd92d1d329b582becf8b1e5e1ee799dd91a728821c0f123f79f6673b3ec"
+    },
+    "protected-state.json": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-exact-transfer-20261116/protected-state.json",
+      "bytes": 1349,
+      "sha256": "cd7e73b11e657465c83384c8a55b0bc6304d30b519439026b89a1617ac178c32"
+    },
+    "same-review.json": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-exact-transfer-20261116/same-review.json",
+      "bytes": 2879,
+      "sha256": "8c89d5c0ac5bcd656a6b649435af9594f32e6f714d18ae4a5095c2998ab86004"
+    },
+    "source-ready.json": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-exact-transfer-20261116/source-ready.json",
+      "bytes": 4210,
+      "sha256": "09fe4d4fd565b8a73d03e9b3f64c8d1946650dea816032c270b717b60e0a7225"
+    },
+    "transfer-checks.json": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-exact-transfer-20261116/transfer-checks.json",
+      "bytes": 8672,
+      "sha256": "dc5f30c2c1a62ca321ad52b872017632b75747b2c6ea5320d2519885930c5701"
+    }
+  },
+  "integration": "Local implementation commit and reviewable evidence; no remote mutation.",
+  "cleanup": {
+    "both_cli_sessions_terminal": true,
+    "timeouts": false,
+    "interrupts": false,
+    "cleanup_signals": false,
+    "fresh_checkout_retained_for_review": true,
+    "scope": "Normal CLI/namespace waits completed; unchanged launcher does not export a separate PID/start receipt."
+  },
+  "protected_state": {
+    "primary_head": "d2430aab3059081485663a5938a54d8813b18bec",
+    "primary_status": [
+      " M emulator/aarch64.S",
+      " M emulator/x86_64.S"
+    ],
+    "prototype_files": [
+      {
+        "path": "/home/sreekumaar/Desktop/LemmaTrix/emulator/aarch64.S",
+        "bytes": 42459,
+        "sha256": "3347779c4efa3b96412738a5b69c0c6250e92962634091e0989acd0999c3851d"
+      },
+      {
+        "path": "/home/sreekumaar/Desktop/LemmaTrix/emulator/x86_64.S",
+        "bytes": 53599,
+        "sha256": "d27ce744e57dfa78dc88b34cbfe21913058129120b4f07e84fa1c067d5a27e00"
+      }
+    ],
+    "preserved_refs": {
+      "codex/sdk-offline-workflow-20261116": "0d2f17245c435087ab5e852aa713dffec5a932f5",
+      "codex/main-diagnostic-hint-backport-20261116": "5f3eb798daa8ee91713c896b1ee75d19400e4914",
+      "codex/desktop-diagnostic-product-20261116": "afa6069b8a06652439b7ad182d20df2145b4eeb8",
+      "codex/creator-transition-integration-20261116": "7e02d095c82bd43c200622efc427917aa492dd6b",
+      "codex/coin-reconciliation-record-20261116": "abf9008f6318878cd503efd299660f70f9afa90e",
+      "codex/coin-reference-evidence-20261116": "c1f15471cb76dbd0784b2637453c63e4bcca43ac",
+      "codex/coin-spend-evidence-20261116": "6483d4de4773a07590f06031f78175ec0df85922",
+      "codex/integrated-creator-preview": "f093e05e815d74d424833f3a2c720513c9834990"
+    },
+    "prior_sdk_implementation_ancestor": true
+  },
+  "workflow_cli": [
+    {
+      "step": "origin export",
+      "workdir": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix",
+      "arguments": [
+        "./lt",
+        "sdk",
+        "export-sdk",
+        "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-exact-transfer-20261116/exported-sdk"
+      ],
+      "exit_code": 0,
+      "stdout": "sdk-exact-transfer-20261116/export.stdout.txt"
+    },
+    {
+      "step": "origin check",
+      "workdir": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix",
+      "arguments": [
+        "./lt",
+        "sdk",
+        "check",
+        "examples/project-notes"
+      ],
+      "exit_code": 0,
+      "stdout": "sdk-exact-transfer-20261116/origin-check.json"
+    },
+    {
+      "step": "origin build",
+      "workdir": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix",
+      "arguments": [
+        "./lt",
+        "sdk",
+        "build",
+        "examples/project-notes",
+        "--toolchain-manifest",
+        "docs/evidence/campaign011-offline-toolchain-descriptor-v1.json",
+        "--output",
+        "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-exact-transfer-20261116/origin-build"
+      ],
+      "exit_code": 0,
+      "stdout": "sdk-exact-transfer-20261116/origin-build.stdout.json"
+    },
+    {
+      "step": "fresh import",
+      "workdir": "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-exact-transfer-20261116/fresh-checkout",
+      "arguments": [
+        "./lt",
+        "sdk",
+        "import-sdk",
+        "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-exact-transfer-20261116/exported-sdk"
+      ],
+      "exit_code": 0,
+      "stdout": "sdk-exact-transfer-20261116/fresh-import.stdout.txt"
+    },
+    {
+      "step": "fresh check",
+      "workdir": "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-exact-transfer-20261116/fresh-checkout",
+      "arguments": [
+        "./lt",
+        "sdk",
+        "check",
+        "examples/project-notes"
+      ],
+      "exit_code": 0,
+      "stdout": "sdk-exact-transfer-20261116/fresh-check.json"
+    },
+    {
+      "step": "fresh build",
+      "workdir": "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-exact-transfer-20261116/fresh-checkout",
+      "arguments": [
+        "./lt",
+        "sdk",
+        "build",
+        "examples/project-notes",
+        "--toolchain-manifest",
+        "docs/evidence/campaign011-offline-toolchain-descriptor-v1.json",
+        "--output",
+        "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-exact-transfer-20261116/fresh-build"
+      ],
+      "exit_code": 0,
+      "stdout": "sdk-exact-transfer-20261116/fresh-build.stdout.json"
+    }
+  ],
+  "last_updated_utc": "2026-11-16T21:40:13.716630+00:00"
+}

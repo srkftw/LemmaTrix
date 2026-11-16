@@ -1,0 +1,118 @@
+{
+  "Compiler/Main.lean": {
+    "bytes": 21086,
+    "sha256": "7d0834901a9a90ec5e66dd64fe46634dfc1897ce38a8e3de3eec42e049c4e182"
+  },
+  "Guest/AppIntentSDK.lean": {
+    "bytes": 1717,
+    "sha256": "4415068c09f56bb3260e0098a2a60a729a8e929c86ba8d92319fe5a43c5305ce"
+  },
+  "Guest/Effects.lean": {
+    "bytes": 1556,
+    "sha256": "c1277a8d6d495b55e11d0aa6f61bef391632923a289edb8e64378ac669646138"
+  },
+  "Guest/Keyboard.lean": {
+    "bytes": 1948,
+    "sha256": "b6e228babeaba2fd13624b76a91bb6ba057434554b9ee43420caf76d12671f62"
+  },
+  "Guest/LiveSDK.lean": {
+    "bytes": 3478,
+    "sha256": "e6618b4a9bd1a47c8ac19591864c24fc68a7dfd906e25c0de467d2d72bffd89e"
+  },
+  "Guest/NetworkSDK.lean": {
+    "bytes": 4922,
+    "sha256": "e1b7ca59a4bb5221650e43ef2f636bf320c13585a85800b69426fb19087ad4e7"
+  },
+  "Guest/Primitives.lean": {
+    "bytes": 653,
+    "sha256": "c48e32b3236c9096755b54828cfd18c89721cdbe10e3e59afd08d1b073e3b1ad"
+  },
+  "Guest/ProjectSDK.lean": {
+    "bytes": 5772,
+    "sha256": "bed863b6276b20819a62259e956d32731d92eaf64f29694d2adcbe47074a253d"
+  },
+  "Guest/Raster.lean": {
+    "bytes": 5306,
+    "sha256": "c59a1230687d14ef2873dd0ea38198ff313c2047760f0b9626366f8518c8e98b"
+  },
+  "Guest/ServerSDK.lean": {
+    "bytes": 909,
+    "sha256": "889940950d81b06f7cc2312a87f5df4a5ab38de105e889fd28087e7787c58d77"
+  },
+  "Guest/Structured.lean": {
+    "bytes": 6282,
+    "sha256": "ec480b81dc973ea57f52b4906c4c72debd3e4041ae62cc2ed30cdeb8f782ac21"
+  },
+  "Guest/WaitSDK.lean": {
+    "bytes": 353,
+    "sha256": "2e0991e91480e3c43d9c8b78f5d9b8be0fd89153943902d31031c429f93fb408"
+  },
+  "Lemma/Forge.lean": {
+    "bytes": 517,
+    "sha256": "9fccdda691ab2582bbdd832144dc8a702cb275facd04272ab43258b795a5b2ee"
+  },
+  "Lemma/Identity.lean": {
+    "bytes": 379,
+    "sha256": "bee4fa9749d4f307ef99ed09dccc58005b7e4365896f5f85d4a80e40beb44416"
+  },
+  "Lemma/Library.lean": {
+    "bytes": 517,
+    "sha256": "c313556c77ea3c772c1ab3fae7d5acc81c590d783966fe2d0f4fd215f2c456b7"
+  },
+  "Lemma/Messenger.lean": {
+    "bytes": 609,
+    "sha256": "621a2057e7e66e58e1d7d3487c0df04140227d4c9547a57bcb18ae9738b02fc8"
+  },
+  "Lemma/Net.lean": {
+    "bytes": 823,
+    "sha256": "edd063d60a7e33e13391b04241a29529044cad6805849a886968af2e334e1bf0"
+  },
+  "Lemma/Objects.lean": {
+    "bytes": 914,
+    "sha256": "7fd4a66ce228646056b475d73052b8559987233ff0c526fb36cd34af6778ba84"
+  },
+  "Lemma/Proof.lean": {
+    "bytes": 326,
+    "sha256": "07cea1d37e2751191caf2e74a671741d2f74a12ae1ba9d496c4faca347bc6159"
+  },
+  "Lemma/Server.lean": {
+    "bytes": 579,
+    "sha256": "79c1d2f8bc468f0ff73589fac2459d28c190c458626a70447b727289a9dbef2e"
+  },
+  "Lemma/Social.lean": {
+    "bytes": 594,
+    "sha256": "0e0befcf29c10daf255f3984e59a555dedadf8925d5cf46eebce76c2e50bae3b"
+  },
+  "Lemma/Types.lean": {
+    "bytes": 979,
+    "sha256": "0221bd25ccf77b2a9d23d8f3bf286a81d948fd31f71fe0ee49b6e216eea7a97c"
+  },
+  "Lemma/UI.lean": {
+    "bytes": 2345,
+    "sha256": "79c094513901ba1d1652fe400a0e4cc41e8040ed1cf1fbf45e0e2a0a33dce3b7"
+  },
+  "Lemma/Wallet.lean": {
+    "bytes": 263,
+    "sha256": "a80c8d0bba7f45522e50374ca038912cc122cd8afb3a3c97e461304f984a18d1"
+  },
+  "manifest.json": {
+    "bytes": 4657,
+    "sha256": "2e31a152a9c217d9749f1d5e34340178e185aacbe9fc3f278a400a3bbf38591f"
+  },
+  "runtime/app.ld": {
+    "bytes": 291,
+    "sha256": "2e4071181e8396b09c3599082cce90fe8c07a37111bd0064449b4e18b9522753"
+  },
+  "runtime/app2.ld": {
+    "bytes": 296,
+    "sha256": "a858885bf28b02982fd96a7e99747b660c4405825a146009a6085e4c1eee54a8"
+  },
+  "runtime/primitives.S": {
+    "bytes": 608,
+    "sha256": "344ad1d8c8339ca24eee6d1c2c4858a0070531bc5bc3c535f93e7c44949b76d1"
+  },
+  "tools/build_sandbox_runner.py": {
+    "bytes": 6257,
+    "sha256": "3d973b4418ab728d1218ac87dcd0d870d448a695b2248cd04a86f33f1bf02e29"
+  }
+}

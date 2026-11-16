@@ -1,0 +1,113 @@
+{
+  "recorded_utc": "2026-11-16T21:33:44.820918+00:00",
+  "base": "de8da061e7ce9771f9c3fe26ed8780130adb149d",
+  "branch": "codex/sdk-exact-transfer-20261116",
+  "files": {
+    "tools/public_sdk.py": {
+      "bytes": 23836,
+      "sha256": "9804121575b99782a1ab56e43bad2ccb78ca39c1ea7b72114dd798e0c0fa84c0"
+    },
+    "tools/sdk.py": {
+      "bytes": 18195,
+      "sha256": "789deabe6e6d2c0d07e5f895495f55d3495ed11354380976c9d51f51f400ae41"
+    },
+    "tests/sdk_transfer.py": {
+      "bytes": 11982,
+      "sha256": "6e232468f86dc63440644d1239c1d3b7c4f1896c8b6717b139e4432c1bd2b29c"
+    }
+  },
+  "focused_checks": 48,
+  "check_result": "pass",
+  "signed_helper_verification": {
+    "project": "notes-schema",
+    "version": "1.0.0",
+    "release_id": "a4e39b5b087822dd3054501afc425bcbcfa6dcbc8faa98293e626f6256fb55c2",
+    "publisher_key_id": "36aa1fd2be2a8c3753ef57a5169e696580862af0f546eb0e0541646e6657a2f7",
+    "project_id": "b6508a836dc006d4eaac784fd999bde4eee5d47b8d909e436205a0e265221f29",
+    "rights": 0,
+    "executable_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "source_root": "aa148cad65d9fb97c5aee6a96c03b9e521a4ef65344aa71365f75fdf12f1d309",
+    "manifest_root": "e20ffd4e3686bf5b80a0660f5a774bb800e2a54ec539f1601bff580c9bdbdb39",
+    "parent": "0000000000000000000000000000000000000000000000000000000000000000",
+    "size": 0,
+    "signature_verified": true,
+    "manifest_checked": true,
+    "identity_scheme": 4,
+    "logical_project_id": "db432a166587df4e984b4e7877d2fab61049dfa3cf190b31637a2fc9c64bc97f",
+    "facet": "DevelopmentArtifact",
+    "signature_profile": "Ed25519-pure-LT-PROJECT-RELEASE-V1",
+    "publisher_generation": 1,
+    "prefix_size": 608,
+    "public_key": "e8062cb5236b3d5b3c490510e19665294d51218efc5e0c529602786f0be53685"
+  },
+  "project_members": [
+    {
+      "path": "Main.lean",
+      "bytes": 30482,
+      "sha256": "e0e610a52dc7debcb848a1761863af40233e202693d4583a6ff5617a5f733a40"
+    },
+    {
+      "path": "deps/a4e39b5b087822dd3054501afc425bcbcfa6dcbc8faa98293e626f6256fb55c2.json",
+      "bytes": 6964,
+      "sha256": "ed35d33eefe6897fdfcef26c1855e130b8d1fccd55d1ceb823c296505ed149ac"
+    },
+    {
+      "path": "lemma.lock.json",
+      "bytes": 948,
+      "sha256": "0a599bb9cf1a46fcb9330995c0a1f31ee2b4794e952d18ad71c79787d4a9090e"
+    },
+    {
+      "path": "lemma.project.json",
+      "bytes": 437,
+      "sha256": "af1caa4b9e2a45f86f163bee24a0a219d840d4d54bdd6c7aba949a9c33365cbd"
+    },
+    {
+      "path": "templates.txt",
+      "bytes": 4,
+      "sha256": "5d90ef7fc0d040fd56a1e48697cfa99e0dfaf4fd803aefefc3b5053ec1d36aea"
+    }
+  ],
+  "dependency_lock": {
+    "content_id": "fa0fa0bc14985b973f64869197445390919ae618c6fe79499cdc5d6af56fb550",
+    "dependencies": [
+      {
+        "capabilities": 0,
+        "content_id": "ed35d33eefe6897fdfcef26c1855e130b8d1fccd55d1ceb823c296505ed149ac",
+        "dependencies": [],
+        "exports": [
+          "Notes.Schema"
+        ],
+        "license": "MIT",
+        "provenance": {
+          "declaration": "Project contributors authorize distribution of their own MIT licensed source.",
+          "source_root": "db432a166587df4e984b4e7877d2fab61049dfa3cf190b31637a2fc9c64bc97f"
+        },
+        "publisher_key_id": "36aa1fd2be2a8c3753ef57a5169e696580862af0f546eb0e0541646e6657a2f7",
+        "release_id": "a4e39b5b087822dd3054501afc425bcbcfa6dcbc8faa98293e626f6256fb55c2"
+      }
+    ],
+    "entry": "Main.main",
+    "facet": "NativeApplication",
+    "machine": "LT-Dev-v2",
+    "module": "Main",
+    "profile": 2,
+    "recipe": "lemmatrix-lean-rv64-structured-2",
+    "schema": 1,
+    "sdk": {
+      "content_id": "3312ddcd277f401c377142b006bac6cf9aeefd8fa89f4d4c78f1fd5469caf533",
+      "version": "0.1.0"
+    },
+    "toolchain": {
+      "abi": "lp64",
+      "isa": "rv64im",
+      "lean": "4.34.1",
+      "llvm": "20.1.8"
+    }
+  },
+  "actual_builds": 0,
+  "review_fixes": [
+    "Stage reads and writes use the held stage FD; source no-follow validation stays strict.",
+    "Stage name identity is checked before rename and cleanup; replacement is preserved.",
+    "Cleanup retains the primary operational exception and never removes a published target."
+  ]
+}

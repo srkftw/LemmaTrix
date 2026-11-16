@@ -1,0 +1,14 @@
+{
+  "recorded_utc": "2026-11-16T21:36:00.129534+00:00",
+  "checkout": "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-exact-transfer-20261116/fresh-checkout",
+  "commit": "25ecbd142c3dbe86f1c1aeace39f34b9406d17ec",
+  "initial_status": "",
+  "absent_before_import": {
+    "build": true,
+    ".lake": true,
+    "build/sdk-cache": true,
+    "build/dependency-cache": true,
+    "build/toolchain-host.json": true
+  },
+  "creation": "git worktree add --detach from local implementation commit; tracked Git files only; no ignored source checkout caches or configuration copied"
+}

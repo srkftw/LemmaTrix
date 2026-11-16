@@ -1,0 +1,82 @@
+{
+  "schema": 1,
+  "status": "ok",
+  "project": "project-notes",
+  "facet": "NativeApplication",
+  "sdk": {
+    "content_id": "3312ddcd277f401c377142b006bac6cf9aeefd8fa89f4d4c78f1fd5469caf533",
+    "version": "0.1.0"
+  },
+  "dependency_lock_id": "fa0fa0bc14985b973f64869197445390919ae618c6fe79499cdc5d6af56fb550",
+  "dependencies": [
+    "a4e39b5b087822dd3054501afc425bcbcfa6dcbc8faa98293e626f6256fb55c2"
+  ],
+  "native_dependency_references": 1,
+  "source_files": [
+    {
+      "path": "Main.lean",
+      "bytes": 30482,
+      "sha256": "e0e610a52dc7debcb848a1761863af40233e202693d4583a6ff5617a5f733a40"
+    },
+    {
+      "path": "deps/a4e39b5b087822dd3054501afc425bcbcfa6dcbc8faa98293e626f6256fb55c2.json",
+      "bytes": 6964,
+      "sha256": "ed35d33eefe6897fdfcef26c1855e130b8d1fccd55d1ceb823c296505ed149ac"
+    },
+    {
+      "path": "lemma.lock.json",
+      "bytes": 948,
+      "sha256": "0a599bb9cf1a46fcb9330995c0a1f31ee2b4794e952d18ad71c79787d4a9090e"
+    },
+    {
+      "path": "lemma.project.json",
+      "bytes": 437,
+      "sha256": "af1caa4b9e2a45f86f163bee24a0a219d840d4d54bdd6c7aba949a9c33365cbd"
+    },
+    {
+      "path": "templates.txt",
+      "bytes": 4,
+      "sha256": "5d90ef7fc0d040fd56a1e48697cfa99e0dfaf4fd803aefefc3b5053ec1d36aea"
+    }
+  ],
+  "dependency_sources": [
+    {
+      "path": "Notes/Schema.lean",
+      "bytes": 2474,
+      "sha256": "7f8a5b3d7336b85a24b6e49ca58f70805052446c3463e4c522f7c23f5c58bde2"
+    },
+    {
+      "path": "dependency-metadata/a4e39b5b087822dd3054501afc425bcbcfa6dcbc8faa98293e626f6256fb55c2/lemma.lock.json",
+      "bytes": 426,
+      "sha256": "b3cce28305a36351ebc1522d8fdd83d844d56b2a479f4691f0a2f6d5b8c670d6"
+    },
+    {
+      "path": "dependency-metadata/a4e39b5b087822dd3054501afc425bcbcfa6dcbc8faa98293e626f6256fb55c2/lemma.project.json",
+      "bytes": 308,
+      "sha256": "a4c51adcd272d76695a70f511666f5431599a0512af6ac8d4ea6bbe200df75b4"
+    }
+  ],
+  "modules": [
+    "Main"
+  ],
+  "rights": 895,
+  "license": "MIT",
+  "distribution_authority": "Project contributors authorize distribution of their own MIT licensed source; imported notes require their owner's permission.",
+  "checks": [
+    "canonical source/module paths",
+    "reserved namespaces",
+    "finite cycle-free pinned module closure",
+    "exact SDK/dependency cache bytes",
+    "native dependency reference budget",
+    "manifest/recipe/profile agreement",
+    "license/distribution declarations",
+    "forbidden host/private calls"
+  ],
+  "release_prerequisites": [
+    "actual frozen Build/Evidence",
+    "trusted exact native signing review",
+    "current publisher and federation policy",
+    "separate install/execution approval"
+  ],
+  "assurance": "structural preflight; not compiler correctness, legal authorization or full verification"
+}

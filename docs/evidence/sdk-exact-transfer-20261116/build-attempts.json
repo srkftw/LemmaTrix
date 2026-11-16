@@ -1,0 +1,23 @@
+{
+  "maximum_real_builds": 3,
+  "attempts": [
+    {
+      "number": 1,
+      "step": "origin tracked Project Notes unsigned build",
+      "started_utc": "2026-11-16T21:35:18.303059+00:00",
+      "started_monotonic": 73226.347598123,
+      "exit_code": 0,
+      "completed_utc": "2026-11-16T21:35:29.746388+00:00",
+      "seconds": 11.443
+    },
+    {
+      "number": 2,
+      "step": "fresh empty-cache checkout tracked Project Notes unsigned build",
+      "started_utc": "2026-11-16T21:36:22.262745+00:00",
+      "started_monotonic": 73290.307284326,
+      "exit_code": 0,
+      "completed_utc": "2026-11-16T21:36:32.954548+00:00",
+      "seconds": 10.692
+    }
+  ]
+}
