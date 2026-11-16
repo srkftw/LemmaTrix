@@ -1,15 +1,60 @@
 """Public developer commands. Compilation has no publisher private-key input."""
-import argparse,hashlib,json,os,re,sys
+import argparse,hashlib,json,os,re,stat,sys
 from pathlib import Path
 import public_sdk as sdk
 
 def read_project(directory):
- directory=Path(directory).resolve();files={}
+ directory=Path(directory).resolve();files={};total=0
  sdk.require(directory.is_dir(),'project directory does not exist')
- for path in sorted(directory.rglob('*')):
-  if any(x.startswith('.') or x=='build' for x in path.relative_to(directory).parts):continue
-  sdk.require(not path.is_symlink(),'project symlinks are not a source closure')
-  if path.is_file():files[sdk.relative(path.relative_to(directory).as_posix())]=path.read_bytes()
+ directory_flags=os.O_RDONLY|os.O_DIRECTORY|os.O_CLOEXEC|os.O_NOFOLLOW
+ def identity(info):return (info.st_dev,info.st_ino,info.st_mode,info.st_size,info.st_mtime_ns,info.st_ctime_ns)
+ def visit(parent,parts):
+  nonlocal total
+  # Stream entries and prune ignored directories before descending. This is
+  # not a bound on directory count, depth or adversarial filesystem snapshots.
+  with os.scandir(parent)as entries:
+   for entry in entries:
+    if entry.name.startswith('.') or entry.name=='build':continue
+    info=os.stat(entry.name,dir_fd=parent,follow_symlinks=False)
+    sdk.require(not stat.S_ISLNK(info.st_mode),'project symlinks are not a source closure')
+    path=parts+(entry.name,)
+    if stat.S_ISDIR(info.st_mode):
+     child=os.open(entry.name,directory_flags,dir_fd=parent)
+     try:
+      opened=os.fstat(child)
+      sdk.require((opened.st_dev,opened.st_ino)==(info.st_dev,info.st_ino),'project directory changed during traversal')
+      visit(child,path)
+      current=os.stat(entry.name,dir_fd=parent,follow_symlinks=False)
+      sdk.require(stat.S_ISDIR(current.st_mode)and(current.st_dev,current.st_ino)==(opened.st_dev,opened.st_ino),'project directory changed during traversal')
+     finally:os.close(child)
+    elif stat.S_ISREG(info.st_mode):
+     name=sdk.relative('/'.join(path))
+     sdk.require(len(files)<sdk.MAX_FILES,'source closure exceeds 128 files/4MiB')
+     fd=os.open(entry.name,os.O_RDONLY|os.O_CLOEXEC|os.O_NOFOLLOW|os.O_NONBLOCK,dir_fd=parent)
+     try:
+      opened=os.fstat(fd)
+      sdk.require(stat.S_ISREG(opened.st_mode)and identity(opened)==identity(info),'project member changed before read: '+name)
+      sdk.require(opened.st_size<=sdk.MAX_BYTES-total,'source closure exceeds 128 files/4MiB')
+      sdk.require(not name.endswith('.lean')or opened.st_size<=sdk.MAX_SOURCE,'Lean source exceeds 128KiB: '+name)
+      # The extra byte detects growth, including at the exact accepted limit.
+      chunks=[];size=0
+      while size<=opened.st_size:
+       data=os.read(fd,min(65536,opened.st_size+1-size))
+       if not data:break
+       chunks.append(data);size+=len(data)
+      current=os.stat(entry.name,dir_fd=parent,follow_symlinks=False)
+      sdk.require(size==opened.st_size and identity(os.fstat(fd))==identity(opened)and identity(current)==identity(opened),'project member changed during read: '+name)
+      files[name]=b''.join(chunks);total+=size
+     finally:os.close(fd)
+ # Anchor every resolved parent component without following replacement links.
+ # An already opened directory may be renamed; it remains our selected anchor.
+ anchor=os.open(directory.anchor,directory_flags)
+ try:
+  for component in directory.parts[1:]:
+   child=os.open(component,directory_flags,dir_fd=anchor);os.close(anchor);anchor=child
+  visit(anchor,())
+ finally:os.close(anchor)
+ files=dict(sorted(files.items()))
  sdk.records(files)
  return files
 
@@ -140,12 +185,18 @@ def main(argv=None):
   if name=='build':
    item.add_argument('--output',type=Path,required=True)
    item.add_argument('--toolchain-manifest',type=Path,help='explicit offline pinned toolchain descriptor; invalid selections fail without discovery')
+ saved=sub.add_parser('check-build',help='inspect saved build bytes without compilation or toolchain discovery')
+ saved.add_argument('directory',type=Path);saved.add_argument('--project',type=Path,help='also require the saved snapshot to match this current project')
  imp=sub.add_parser('import-dependency');imp.add_argument('carrier',type=Path);imp.add_argument('--release',required=True);imp.add_argument('--publisher',required=True);imp.add_argument('--project',type=Path)
  pack=sub.add_parser('pack-dependency');pack.add_argument('--release',type=Path,required=True);pack.add_argument('--manifest',type=Path,required=True);pack.add_argument('--public',type=Path,required=True);pack.add_argument('--source',type=Path,required=True);pack.add_argument('--output',type=Path,required=True)
  attach=sub.add_parser('attach-dependency');attach.add_argument('carrier',type=Path);attach.add_argument('--socket',type=Path,required=True);attach.add_argument('--root',type=int,required=True)
  exp=sub.add_parser('export-sdk');exp.add_argument('directory',type=Path)
  ins=sub.add_parser('import-sdk');ins.add_argument('directory',type=Path)
  args=p.parse_args(argv)
+ if args.cmd=='check-build':
+  import sdk_builds
+  report=sdk_builds.inspect_saved(args.directory,None if args.project is None else read_project(args.project))
+  print(json.dumps(report,indent=2));return 0
  if args.cmd=='attach-dependency':
   import live
   client=live.Client(args.socket,timeout=300)
@@ -172,9 +223,10 @@ def main(argv=None):
  if args.cmd in ('check','build'):
   files=read_project(args.directory);report=check(files)
   if args.cmd=='check':print(json.dumps(report,indent=2));return 0
-  import build_jobs
-  lock=sdk.validate_lock(json.loads(files['lemma.lock.json']));snapshot,_=build_jobs.source_commitment(files)
-  result=build_jobs.build_source_snapshot(files,module=lock['module'],entry=lock['entry'],profile=lock['profile'],jobid='sdk-'+snapshot[:24],rootid=snapshot,outputdir=args.output,toolchain_manifest=args.toolchain_manifest)
+  import sdk_builds
+  try:result=sdk_builds.build_attempt(files,outputdir=args.output,toolchain_manifest=args.toolchain_manifest)
+  except sdk_builds.PublicationError as error:
+   print(json.dumps(dict(status='publication-error',build_status=error.result['status'],diagnostic_text=str(error),build_result=error.result),indent=2));return 1
   print(json.dumps(result,indent=2));return 0 if result['status']=='ok' else 1
  if args.cmd=='pack-dependency':
   manifest=json.loads(args.manifest.read_bytes());sources=read_project(args.source)

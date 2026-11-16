@@ -194,9 +194,10 @@ def compiler_identity(deadline=None,*,toolchain=None):
  _require(isinstance(resolved,ResolvedToolchain),'frozen toolchain resolution required')
  return sha(canonical({'lock':json.loads(resolved.lock_json),'closure':resolved.closure,'tools':resolved.tools,'toolchain_descriptor_sha256':resolved.commitment,'compiler_digest':compiler_digest,'recipe':RECIPE}))
 
-def build_source_snapshot(files,*,entry,module,profile,jobid,rootid,outputdir,output_limit=None,toolchain_manifest=None):
+def _compile_source_snapshot(files,*,entry,module,profile,jobid,rootid,outputdir,output_limit=None,toolchain_manifest=None):
  """Build only frozen files. The caller must obtain them from an authorized root.
-    Returns a bounded attributable result; publisher signing is a separate API.
+    Capture the result and optional binary without writing host build outputs.
+    Publisher signing is a separate API.
  """
  files=dict(files)
  source_only=profile==0 and module is None and entry is None
@@ -224,64 +225,88 @@ def build_source_snapshot(files,*,entry,module,profile,jobid,rootid,outputdir,ou
  request={'schema':1,'recipe':RECIPE,'job_id':str(jobid),'source_root':rootid,'snapshot_digest':snapshot,'module':module,'entry':entry,'runtime_profile':profile,'sdk_digest':sdk_digest,'output_limit':output_limit}
  if lock:request.update({'sdk_content_id':sdk_manifest['content_id'],'dependency_lock_id':lock['content_id'],'dependency_releases':[p['release_id'] for p in lock['dependencies']],'dependency_sources':public_sdk.records(dependencies) if dependencies else []})
  result={**request,'request_digest':sha(b'LT-BUILD-JOB-1\0'+canonical(request)),'status':'unavailable','diagnostics':[],'diagnostic_text':'','source_files':manifest}
+ outputdir=Path(outputdir);binary=None
+ try:
+  try:resolved=resolve_toolchain(manifest=toolchain_manifest)
+  except (OSError,ValueError,RuntimeError,subprocess.SubprocessError) as error:
+   result['diagnostic_text']=str(error);return result,None
+  result['toolchain_id']=compiler_identity(toolchain=resolved)
+  result['toolchain_descriptor_sha256']=resolved.commitment
+  result['toolchain_manifest_sha256']=resolved.manifest_sha256
+  result['toolchain_descriptor']=json.loads(resolved.descriptor)
+  request['toolchain_id']=result['toolchain_id']
+  result['request_digest']=sha(b'LT-BUILD-JOB-1\0'+canonical(request))
+  tools,closure=resolved.tools,list(resolved.closure)
+  unshare=shutil.which('unshare')
+  if not unshare:result['diagnostic_text']='unshare is unavailable; untrusted builds are disabled';return result,None
+  with tempfile.TemporaryDirectory(prefix='lt-build-') as temporary:
+   stage=Path(temporary);inputs=stage/'input';sdk=stage/'sdk';deps=stage/'dependencies';newroot=stage/'root'
+   inputs.mkdir();sdk.mkdir();deps.mkdir();newroot.mkdir()
+   for name,data in files.items():
+    p=inputs/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(data)
+   for relative,data in sdk_entries.items():
+    p=sdk/relative;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(data)
+   for name,data in dependencies.items():
+    p=deps/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(data)
+   uid_tasks=0
+   for proc in Path('/proc').iterdir():
+    if not proc.name.isdigit():continue
+    try:
+     status=(proc/'status').read_text()
+     uid=re.search(r'^Uid:\s+(\d+)',status,re.M);threads=re.search(r'^Threads:\s+(\d+)',status,re.M)
+     if uid and threads and int(uid[1])==os.getuid():uid_tasks+=int(threads[1])
+    except (OSError,ValueError):pass
+   uid_limit=max(uid_tasks+64,128)
+   cfg={'uid_process_limit':uid_limit,'root':str(newroot),'input':str(inputs),'sdk':str(sdk),'dependencies':str(deps),'dependency_modules':dependency_modules,'source_only':source_only,'closure':closure,'tools':tools,'toolchain_descriptor_sha256':resolved.commitment,'sdk_modules':sdk_modules,'modules':modules,'module':module,'entry':entry,'profile':profile,'output_limit':output_limit}
+   config=stage/'config.json';config.write_bytes(canonical(cfg))
+   command=[unshare,'--user','--map-root-user','--mount','--net','--pid','--fork',tools['python'],str(sdk/'tools/build_sandbox_runner.py'),str(config)]
+   # No inherited environment, stdin, credentials or directory descriptors.
+   with tempfile.TemporaryFile() as transport:
+    process=subprocess.Popen(command,cwd='/',env={'PATH':''},stdin=subprocess.DEVNULL,stdout=transport,stderr=transport,close_fds=True,start_new_session=True)
+    try:exit_code=process.wait(timeout=120)
+    except subprocess.TimeoutExpired:
+     result['status']='error';result['diagnostic_text']='sandbox build exceeded120 seconds'
+     os.killpg(process.pid,signal.SIGKILL);process.wait();return result,None
+    transport.seek(0);wire=transport.read(1024*1024+1)
+   if len(wire)>1024*1024:result['status']='error';result['diagnostic_text']='sandbox result exceeded1MiB';return result,None
+   try:reply=json.loads(wire)
+   except (UnicodeDecodeError,json.JSONDecodeError):
+    result['diagnostic_text']='sandbox setup or transport failed: '+wire[:2048].decode('utf-8','replace');return result,None
+   if not isinstance(reply,dict)or not isinstance(reply.get('steps',[]),list):
+    result['status']='error';result['diagnostic_text']='invalid sandbox result shape';return result,None
+   if exit_code and reply.get('status')=='ok':
+    result['status']='error';result['diagnostic_text']='sandbox exited unsuccessfully despite an ok response';return result,None
+   result['steps']=reply.get('steps',[])[:256]
+   result['status']=reply.get('status','error') if reply.get('status') in ('ok','error','unavailable') else 'error'
+   text=str(reply.get('diagnostics',''))[:65536];result['diagnostic_text']=text;result['diagnostics']=_diagnostics(text,manifest,rootid)
+   result['sandbox']={'ready':reply.get('sandbox_ready',False),'user_namespace':True,'mount_namespace':True,'network_namespace':True,'pid_namespace':True,'readonly_input':True,'work_bytes':128*1024*1024,'temp_bytes':16*1024*1024,'address_space_bytes':16*1024*1024*1024,'cpu_seconds':60,'artifact_output_bytes':output_limit,'artifact_file_limit_enforced':True,'uid_process_limit':uid_limit,'additional_uid_tasks':64,'signer_present':False}
+   if result['status']=='ok' and source_only:
+    if reply.get('source_only') is not True:result['status']='error';result['diagnostic_text']='source-only build returned an incompatible result'
+    else:result['facet']='DevelopmentArtifact';result['source_only']=True
+   if result['status']=='ok' and not source_only:
+    try:binary=base64.b64decode(reply['binary_base64'],validate=True)
+    except (ValueError,KeyError,TypeError):result['status']='error';result['diagnostic_text']='invalid sandbox artifact transport';return result,None
+    if not 0<len(binary)<=output_limit:result['status']='error';result['diagnostic_text']='artifact exceeds resource profile';return result,None
+    path=outputdir/'app.bin'
+    result['artifact']={'path':str(path),'sha256':sha(binary),'bytes':len(binary)}
+ except (OSError,ValueError,RuntimeError,subprocess.SubprocessError)as error:
+  if 'artifact'in result or result.get('source_only')is True:
+   result['host_cleanup_error']=str(error)[:2048];return result,binary
+  if result['diagnostic_text']:
+   result['host_cleanup_error']=str(error)[:2048];return result,None
+  result['status']='error';result['diagnostic_text']='build setup or transport failed: '+str(error)[:2048];return result,None
+ return result,binary
+
+def seal_result(result):
+ result['evidence_digest']=sha(b'LT-BUILD-EVIDENCE-1\0'+canonical({k:v for k,v in result.items()if k not in ('artifact','evidence_digest')}))
+ return result
+
+def build_source_snapshot(files,*,entry,module,profile,jobid,rootid,outputdir,output_limit=None,toolchain_manifest=None):
+ # Keep the native/remote caller interface and legacy output location contract.
+ # The SDK publishes the same producer's captured result through a fresh stage.
+ result,binary=_compile_source_snapshot(files,entry=entry,module=module,profile=profile,jobid=jobid,rootid=rootid,outputdir=outputdir,output_limit=output_limit,toolchain_manifest=toolchain_manifest)
  outputdir=Path(outputdir);outputdir.mkdir(parents=True,exist_ok=True)
- try:resolved=resolve_toolchain(manifest=toolchain_manifest)
- except (OSError,ValueError,RuntimeError,subprocess.SubprocessError) as error:
-  result['diagnostic_text']=str(error);return result
- result['toolchain_id']=compiler_identity(toolchain=resolved)
- result['toolchain_descriptor_sha256']=resolved.commitment
- result['toolchain_manifest_sha256']=resolved.manifest_sha256
- result['toolchain_descriptor']=json.loads(resolved.descriptor)
- request['toolchain_id']=result['toolchain_id']
- result['request_digest']=sha(b'LT-BUILD-JOB-1\0'+canonical(request))
- tools,closure=resolved.tools,list(resolved.closure)
- unshare=shutil.which('unshare')
- if not unshare:result['diagnostic_text']='unshare is unavailable; untrusted builds are disabled';return result
- with tempfile.TemporaryDirectory(prefix='lt-build-') as temporary:
-  stage=Path(temporary);inputs=stage/'input';sdk=stage/'sdk';deps=stage/'dependencies';newroot=stage/'root'
-  inputs.mkdir();sdk.mkdir();deps.mkdir();newroot.mkdir()
-  for name,data in files.items():
-   p=inputs/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(data)
-  for relative,data in sdk_entries.items():
-   p=sdk/relative;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(data)
-  for name,data in dependencies.items():
-   p=deps/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(data)
-  uid_tasks=0
-  for proc in Path('/proc').iterdir():
-   if not proc.name.isdigit():continue
-   try:
-    status=(proc/'status').read_text()
-    uid=re.search(r'^Uid:\s+(\d+)',status,re.M);threads=re.search(r'^Threads:\s+(\d+)',status,re.M)
-    if uid and threads and int(uid[1])==os.getuid():uid_tasks+=int(threads[1])
-   except (OSError,ValueError):pass
-  uid_limit=max(uid_tasks+64,128)
-  cfg={'uid_process_limit':uid_limit,'root':str(newroot),'input':str(inputs),'sdk':str(sdk),'dependencies':str(deps),'dependency_modules':dependency_modules,'source_only':source_only,'closure':closure,'tools':tools,'toolchain_descriptor_sha256':resolved.commitment,'sdk_modules':sdk_modules,'modules':modules,'module':module,'entry':entry,'profile':profile,'output_limit':output_limit}
-  config=stage/'config.json';config.write_bytes(canonical(cfg))
-  command=[unshare,'--user','--map-root-user','--mount','--net','--pid','--fork',tools['python'],str(sdk/'tools/build_sandbox_runner.py'),str(config)]
-  # No inherited environment, stdin, credentials or directory descriptors.
-  with tempfile.TemporaryFile() as transport:
-   process=subprocess.Popen(command,cwd='/',env={'PATH':''},stdin=subprocess.DEVNULL,stdout=transport,stderr=transport,close_fds=True,start_new_session=True)
-   try:process.wait(timeout=120)
-   except subprocess.TimeoutExpired:
-    os.killpg(process.pid,signal.SIGKILL);process.wait();result['status']='error';result['diagnostic_text']='sandbox build exceeded120 seconds';return result
-   transport.seek(0);wire=transport.read(1024*1024+1)
-  if len(wire)>1024*1024:result['status']='error';result['diagnostic_text']='sandbox result exceeded1MiB';return result
-  try:reply=json.loads(wire)
-  except (UnicodeDecodeError,json.JSONDecodeError):
-   result['diagnostic_text']='sandbox setup or transport failed: '+wire[:2048].decode('utf-8','replace');return result
-  result['steps']=reply.get('steps',[])[:256]
-  result['status']=reply.get('status','error') if reply.get('status') in ('ok','error','unavailable') else 'error'
-  text=str(reply.get('diagnostics',''))[:65536];result['diagnostic_text']=text;result['diagnostics']=_diagnostics(text,manifest,rootid)
-  result['sandbox']={'ready':reply.get('sandbox_ready',False),'user_namespace':True,'mount_namespace':True,'network_namespace':True,'pid_namespace':True,'readonly_input':True,'work_bytes':128*1024*1024,'temp_bytes':16*1024*1024,'address_space_bytes':16*1024*1024*1024,'cpu_seconds':60,'artifact_output_bytes':output_limit,'artifact_file_limit_enforced':True,'uid_process_limit':uid_limit,'additional_uid_tasks':64,'signer_present':False}
-  if result['status']=='ok' and source_only:
-   if reply.get('source_only') is not True:result['status']='error';result['diagnostic_text']='source-only build returned an incompatible result'
-   else:result['facet']='DevelopmentArtifact';result['source_only']=True
-  if result['status']=='ok' and not source_only:
-   try:binary=base64.b64decode(reply['binary_base64'],validate=True)
-   except (ValueError,KeyError):result['status']='error';result['diagnostic_text']='invalid sandbox artifact transport';return result
-   if not 0<len(binary)<=output_limit:result['status']='error';result['diagnostic_text']='artifact exceeds resource profile';return result
-   path=outputdir/'app.bin';path.write_bytes(binary)
-   result['artifact']={'path':str(path),'sha256':sha(binary),'bytes':len(binary)}
- result['evidence_digest']=sha(b'LT-BUILD-EVIDENCE-1\0'+canonical({k:v for k,v in result.items() if k!='artifact'}))
+ if binary is not None:(outputdir/'app.bin').write_bytes(binary)
+ seal_result(result)
  (outputdir/'build-result.json').write_bytes(canonical(result)+b'\n')
  return result
