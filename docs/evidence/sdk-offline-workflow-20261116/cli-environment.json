@@ -1,0 +1,13 @@
+{
+  "PATH": "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-offline-workflow-20261116/cli-path",
+  "LANG": "C.UTF-8",
+  "HOME": "/nonexistent",
+  "LT_CLANG": "/nix/store/c0jm2ghmasw8rljbixrhq3vw4hx2rgk8-clang-20.1.8/bin/clang",
+  "LT_PYTHON": "/nix/store/lb41b0anx1f98y9y5s9mdv97gjgsq740-python3-3.14.7/bin/python3.14",
+  "LD_LIBRARY_PATH": "ABSENT",
+  "path_members": [
+    "python3",
+    "unshare"
+  ],
+  "nix_store_available_on_cli_PATH": false
+}

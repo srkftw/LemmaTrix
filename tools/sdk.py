@@ -137,7 +137,9 @@ def main(argv=None):
  lock=sub.add_parser('lock');lock.add_argument('directory',type=Path)
  for name in ('check','build'):
   item=sub.add_parser(name);item.add_argument('directory',type=Path)
-  if name=='build':item.add_argument('--output',type=Path,required=True)
+  if name=='build':
+   item.add_argument('--output',type=Path,required=True)
+   item.add_argument('--toolchain-manifest',type=Path,help='explicit offline pinned toolchain descriptor; invalid selections fail without discovery')
  imp=sub.add_parser('import-dependency');imp.add_argument('carrier',type=Path);imp.add_argument('--release',required=True);imp.add_argument('--publisher',required=True);imp.add_argument('--project',type=Path)
  pack=sub.add_parser('pack-dependency');pack.add_argument('--release',type=Path,required=True);pack.add_argument('--manifest',type=Path,required=True);pack.add_argument('--public',type=Path,required=True);pack.add_argument('--source',type=Path,required=True);pack.add_argument('--output',type=Path,required=True)
  attach=sub.add_parser('attach-dependency');attach.add_argument('carrier',type=Path);attach.add_argument('--socket',type=Path,required=True);attach.add_argument('--root',type=int,required=True)
@@ -172,7 +174,7 @@ def main(argv=None):
   if args.cmd=='check':print(json.dumps(report,indent=2));return 0
   import build_jobs
   lock=sdk.validate_lock(json.loads(files['lemma.lock.json']));snapshot,_=build_jobs.source_commitment(files)
-  result=build_jobs.build_source_snapshot(files,module=lock['module'],entry=lock['entry'],profile=lock['profile'],jobid='sdk-'+snapshot[:24],rootid=snapshot,outputdir=args.output)
+  result=build_jobs.build_source_snapshot(files,module=lock['module'],entry=lock['entry'],profile=lock['profile'],jobid='sdk-'+snapshot[:24],rootid=snapshot,outputdir=args.output,toolchain_manifest=args.toolchain_manifest)
   print(json.dumps(result,indent=2));return 0 if result['status']=='ok' else 1
  if args.cmd=='pack-dependency':
   manifest=json.loads(args.manifest.read_bytes());sources=read_project(args.source)

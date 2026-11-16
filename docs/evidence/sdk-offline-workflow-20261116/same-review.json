@@ -1,0 +1,29 @@
+{
+  "recorded_utc": "2026-11-16T20:52:01.469612+00:00",
+  "reviewer": "SAME",
+  "delivery": "Trusted coordinator bridge 01a19ae9-3ad5-703a-8c82-96a22745700b",
+  "status": "Scoped PASS for source and saved host-workflow evidence; no material finding",
+  "independent_rerun": false,
+  "reported_checks": [
+    "Frozen resolution supplies worker identity, tool paths and mounts",
+    "Explicit manifest validation fails closed; main request shape and all three request/evidence digests independently checked",
+    "Source-derived worker fac267e8 and source-attributable Main.lean:10:40 error checked",
+    "Unchanged SDK, lock and corrected/reopened source commitments checked",
+    "Actual 15196-byte artifact equality and stdout/build-result agreement checked; command exits 1/0/0",
+    "Complete host-command durations 5.341/9.220/7.438 seconds, not compiler-only or CPU measurements"
+  ],
+  "limitations": "No independent runtime reproduction, separate PID/start receipt, compiler-only CPU timing, app/native queue/image, ARM, concurrent-owner or durability acceptance.",
+  "artifact_sha256": "7e7bc1bf06637c79dd1f4e61b1f364f37d3913d3b3164a288f516accda2484b3",
+  "worker_identity": "fac267e886b9c31804e4ffad11a2eaf0aa25e2eeaefc1860dc011dbe64d19248",
+  "owner_reported_final_outcome": {
+    "path": "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-offline-workflow-20261116/final-outcome.json",
+    "bytes": 12000,
+    "sha256": "9d3cd955c78de0d2d33101f2e0210145ab3b28ce163cff12b3eff4940fbaf46b"
+  },
+  "owner_reported_final_manifest": {
+    "path": "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-offline-workflow-20261116/final-artifact-manifest.json",
+    "bytes": 8145,
+    "sha256": "3d97978c53be8114ff731d2a77b289f0a7b0588414423444d20dd3731c6899a6"
+  },
+  "final_packet_read": "Reviewer final read of the final 9d3cd955 outcome, 3d97978c manifest and supplied final file hashes was interrupted and not repeated; those final packet identities remain owner-reported."
+}

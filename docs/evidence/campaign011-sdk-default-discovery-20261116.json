@@ -1,0 +1,152 @@
+{
+  "schema": 1,
+  "recorded_utc": "2026-11-16T21:08:35.179044+00:00",
+  "status": "PASS: default discovery and selector precedence verification before publication",
+  "inspected_commit": "c41e09ba1738497b986c9531f74432d2511cdcaf",
+  "base_main": "4009dd6e14dab2bb1b1c7873242b5aa4dd887310",
+  "scope": "One additional unsigned SDK build; no signing, installation, application execution or production code change",
+  "default_build": {
+    "cli_exit_code": 0,
+    "tool_session_id": 6656,
+    "result": {
+      "path": "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-offline-publication-20261116/default-build.stdout.json",
+      "bytes": 10385,
+      "sha256": "a60df7d7b9cec01ce4eb6435656d6105d7aa6bb0c621bb9a4cc5b27ce4084278"
+    },
+    "artifact": {
+      "path": "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-offline-publication-20261116/default-build/app.bin",
+      "bytes": 15196,
+      "sha256": "7e7bc1bf06637c79dd1f4e61b1f364f37d3913d3b3164a288f516accda2484b3"
+    },
+    "sandbox": {
+      "ready": true,
+      "user_namespace": true,
+      "mount_namespace": true,
+      "network_namespace": true,
+      "pid_namespace": true,
+      "readonly_input": true,
+      "work_bytes": 134217728,
+      "temp_bytes": 16777216,
+      "address_space_bytes": 17179869184,
+      "cpu_seconds": 60,
+      "artifact_output_bytes": 262144,
+      "artifact_file_limit_enforced": true,
+      "uid_process_limit": 1535,
+      "additional_uid_tasks": 64,
+      "signer_present": false
+    },
+    "manifest_selector": "No option and no LT_TOOLCHAIN_MANIFEST in clean environment",
+    "discovery": "Existing resolver performed local nix-store -qR over existing configured roots; no Nix build/evaluation/fetch",
+    "receipt": {
+      "path": "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-offline-publication-20261116/default-build-start.json",
+      "bytes": 1448,
+      "sha256": "84c392d1b03342f4650bb62db248ebf9cc5572c035d2cf94bcc7a24ef74fdb5e"
+    }
+  },
+  "common": {
+    "sdk_content_id": "3312ddcd277f401c377142b006bac6cf9aeefd8fa89f4d4c78f1fd5469caf533",
+    "dependency_lock_id": "a0a54b4d7b9537c1d82a3b92bebad4dded368269d326d938e681e8f50408784d",
+    "snapshot_digest": "6f8654c6ecefc1478e9a31dc41593b4106e6a29961370ade734d3ee7070fb1c5",
+    "source_root": "6f8654c6ecefc1478e9a31dc41593b4106e6a29961370ade734d3ee7070fb1c5",
+    "sdk_digest": "9dee115ed6cf55eb905cae8144818a7ce67e56040746f1244a89add7373ebd7c",
+    "recipe": "lemmatrix-lean-rv64-structured-2",
+    "module": "Main",
+    "entry": "Main.main",
+    "runtime_profile": 2,
+    "output_limit": 262144
+  },
+  "artifact_bytes_equal": true,
+  "artifact_fixture_in_commit": "docs/evidence/sdk-offline-workflow-20261116/corrected-app.bin",
+  "identity_comparison": {
+    "explicit": {
+      "normalized_descriptor": "3c641e76195f884262cd965c6072afc78566e12c937c34ce691bc2a756bc10e0",
+      "worker": "fac267e886b9c31804e4ffad11a2eaf0aa25e2eeaefc1860dc011dbe64d19248",
+      "selected_manifest_sha256": "d6cfcbeda83f5793985f247790ec2540fbfffc7714e79581081d0d49f01e5034",
+      "roots": 53,
+      "python": {
+        "bytes": 15776,
+        "path": "/nix/store/lb41b0anx1f98y9y5s9mdv97gjgsq740-python3-3.14.7/bin/python3.14",
+        "sha256": "29affd28c5f44c2aeab8ac295bc850696f125020054243843ac122219e352d35",
+        "version": "Python 3.14.7"
+      },
+      "provenance_sha256": "cabdc9085440745057dc28a859246479810ebc880e725ea3d895da9a8e128f17"
+    },
+    "default": {
+      "normalized_descriptor": "ebe985b5a430a57f017c0d71108d0e8dafdd1999ec4823236c29d85b3ca5e45b",
+      "worker": "d52d64b261a6ce85d96f203411107f4da132cd1a1cf9a37e95b13ea359cf392b",
+      "selected_manifest_sha256": null,
+      "roots": 62,
+      "python": {
+        "bytes": 15776,
+        "path": "/nix/store/jj6jldlw37r8yy9kc1smrax9dhnjm2x4-python3-3.13.9/bin/python3.13",
+        "sha256": "534772c5b4c9f340bfd2cf06cc766e05277f06ade32a3f9ed2eb966506975540",
+        "version": "Python 3.13.9"
+      },
+      "provenance_sha256": "97e93fb2c0b663c8d1d756adbaf40c2272e370d0c7b503eb09edbe8a2766fbb5"
+    },
+    "explanation": "The unchanged no-manifest policy selects sys.executable when build/toolchain-host.json is absent. This CLI used Python 3.13.9; the explicit descriptor pins Python 3.14.7. Those real tool/closure/provenance differences correctly change normalized descriptor, worker and request identities. The four compilation tool records, SDK, dependency lock, source and output bytes agree; identity equality is not claimed."
+  },
+  "selector_checks": {
+    "path": "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-offline-publication-20261116/selector-checks/checks.json",
+    "bytes": 3503,
+    "sha256": "54563459c45e95e98b37502d0a9afca174cdde20a740e0bed25fcf8fc395535d"
+  },
+  "reused_evidence": "The accepted 22 resolver cases and bad/corrected/fresh-process three-build journey remain valid; not rerun.",
+  "production_source_unchanged": [
+    {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/tools/build_jobs.py",
+      "bytes": 19274,
+      "sha256": "6816b0ad4b67167f6a6acf5923a681ab5c1aa50bdb156fbd111783547e609159"
+    },
+    {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/tools/sdk.py",
+      "bytes": 18633,
+      "sha256": "b478f68d73654e5adb62ff21b96035f19a4e96709b8b4ba495159b0bd5a8d8a7"
+    },
+    {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/tools/build_sandbox_runner.py",
+      "bytes": 6257,
+      "sha256": "3d973b4418ab728d1218ac87dcd0d870d448a695b2248cd04a86f33f1bf02e29"
+    },
+    {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/tools/public_sdk.py",
+      "bytes": 17808,
+      "sha256": "a543e18f951aaffdca9979a7babe12cb7525cb7fd056a971ea65827a5aedd764"
+    },
+    {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/Compiler/Main.lean",
+      "bytes": 21086,
+      "sha256": "7d0834901a9a90ec5e66dd64fe46634dfc1897ce38a8e3de3eec42e049c4e182"
+    },
+    {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/toolchain.lock.json",
+      "bytes": 1034,
+      "sha256": "e4f0ed363521be7aa05b3f1b0ed7c0294961f72ea5b64aab426b51bba9749602"
+    },
+    {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/sdk/manifest.json",
+      "bytes": 4657,
+      "sha256": "2e31a152a9c217d9749f1d5e34340178e185aacbe9fc3f278a400a3bbf38591f"
+    }
+  ],
+  "changed_interface_test": {
+    "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/tests/campaign011_offline_toolchain.py",
+    "bytes": 8205,
+    "sha256": "a0fae696d3ea32dd091be540742282c2149e291c9d7bfd0a713a007e819ea40a"
+  },
+  "cleanup": "The additional CLI and existing namespace runner completed normally. No timeout/interruption or application/service process was started; unchanged launcher exports no separate PID/start receipt.",
+  "publication": "Pending normal push, public PR and checks/rule-compliant merge under specific user approval",
+  "review": {
+    "reviewer": "SAME",
+    "verdict": "Scoped PASS; no blocker",
+    "independent_rerun": false,
+    "checked": [
+      "Five real CLI/resolver selector cases intentionally stop before compilation, with zero sandbox builds",
+      "Default Python selection follows unchanged policy; 62-root closure and changed identities legitimate",
+      "Default request, evidence, descriptor and worker commitments independently recomputed",
+      "Saved stdout agrees with build-result; actual 15196-byte artifact matches prior bytes",
+      "Production build_jobs.py and sdk.py unchanged; SDK, lock and source unchanged"
+    ],
+    "limits": "No another-host, native application or runtime acceptance"
+  }
+}

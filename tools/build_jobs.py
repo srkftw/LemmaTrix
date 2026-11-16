@@ -1,5 +1,6 @@
 """Exact source snapshot compilation in an OS-enforced, key-free build sandbox."""
-import base64,hashlib,json,os,re,shutil,signal,subprocess,sys,tempfile
+import base64,hashlib,json,os,re,shutil,signal,stat,subprocess,sys,tempfile
+from dataclasses import dataclass
 from pathlib import Path
 import driver
 import public_sdk
@@ -32,25 +33,149 @@ def _modules(files):
   if name.startswith('Lemma.') or any(i.startswith('Lemma.') for i in public_sdk.imports(data)):raise ValueError('public SDK imports require lemma.lock.json; run ./lt sdk lock PROJECT')
  return public_sdk.order(files,SDK_MODULES)
 
-def _toolchain():
- names=['lean','clang','ld.lld','llvm-objcopy']
- tools={name:str(Path(driver.tool(name)).resolve()) for name in names}
- for name,path in tools.items():
-  version=subprocess.run([path,'--version'],capture_output=True,text=True,check=True,timeout=10).stdout
-  expected=driver.LOCK['lean' if name=='lean' else 'llvm']
-  if expected not in version:raise RuntimeError(name+' version differs from pinned toolchain '+expected)
- roots=set()
- python=Path(driver.tool('python')).resolve() if (driver.BUILD/'toolchain-host.json').exists() else Path(sys.executable).resolve()
- tools['python']=str(python)
- for executable in [*tools.values()]:
-  parts=Path(executable).parts
-  if len(parts)<4 or parts[1:3]!=('nix','store'):raise RuntimeError('build sandbox requires a declared immutable toolchain closure; this host tool is not in the Nix store: '+executable)
-  roots.add(str(Path(*parts[:4])))
- query=shutil.which('nix-store')
- if not query:raise RuntimeError('nix-store is required to resolve the exact readonly toolchain closure')
- closure=subprocess.run([query,'-qR',*sorted(roots)],capture_output=True,text=True,check=True,timeout=20).stdout.splitlines()
- if not closure or any(not p.startswith('/nix/store/') or not Path(p).is_dir() for p in closure):raise RuntimeError('invalid toolchain closure')
- return tools,sorted(set(closure))
+TOOL_NAMES=('lean','clang','ld.lld','llvm-objcopy','python')
+MANIFEST_LIMIT=256*1024
+STORE_ROOT=re.compile(r'/nix/store/[0-9abcdfghijklmnpqrsvwxyz]{32}-[A-Za-z0-9+._?=-]{1,211}')
+
+def _require(condition,message):
+ if not condition:raise ValueError(message)
+
+def _tick(deadline):
+ if deadline is not None:deadline.remaining()
+
+def _unique_object(pairs):
+ result={}
+ for key,value in pairs:
+  _require(key not in result,'duplicate JSON key: '+key);result[key]=value
+ return result
+
+def _regular_json(path,deadline):
+ # Retain one bounded regular-file read, including if its pathname is replaced.
+ _tick(deadline);fd=os.open(path,os.O_RDONLY|os.O_CLOEXEC|os.O_NOFOLLOW|os.O_NONBLOCK)
+ with os.fdopen(fd,'rb')as stream:
+  info=os.fstat(stream.fileno())
+  _require(stat.S_ISREG(info.st_mode)and info.st_size<=MANIFEST_LIMIT,'toolchain JSON must be a bounded regular file')
+  raw=stream.read(MANIFEST_LIMIT+1);_tick(deadline)
+ _require(len(raw)<=MANIFEST_LIMIT,'toolchain JSON exceeds256KiB')
+ return json.loads(raw,object_pairs_hook=_unique_object),raw
+
+def _roots(values,deadline):
+ _require(isinstance(values,list)and 0<len(values)<=512,'toolchain requires1..512 store roots')
+ _require(all(isinstance(p,str)and STORE_ROOT.fullmatch(p)for p in values),'noncanonical Nix store root')
+ _require(len(set(values))==len(values),'duplicate Nix store root')
+ for path in values:
+  _tick(deadline);p=Path(path)
+  _require(p.is_dir()and p.resolve()==p,'missing or redirected Nix store root: '+path)
+ return tuple(sorted(values))
+
+def _configured_tools(offline):
+ if not offline:
+  tools={name:str(Path(driver.tool(name)).resolve())for name in TOOL_NAMES[:-1]}
+  tools['python']=str(Path(driver.tool('python')).resolve())if(driver.BUILD/'toolchain-host.json').exists()else str(Path(sys.executable).resolve())
+  return tools
+ # Match normal configuration precedence without falling through to ambient PATH.
+ config_path=driver.BUILD/'toolchain-host.json'
+ config=_regular_json(config_path,None)[0]if config_path.exists()else{}
+ _require(isinstance(config,dict),'invalid host tool configuration')
+ configured=config.get('tools',{})
+ _require(isinstance(configured,dict),'invalid configured tool map')
+ result={}
+ for name in TOOL_NAMES:
+  key='LT_'+name.upper().replace('-','_').replace('.','_')
+  selected=os.environ.get(key)or configured.get(name)or driver.LOCK['nix_store'].get(name)
+  if name=='python'and selected is None:selected=sys.executable
+  _require(isinstance(selected,str)and Path(selected).is_absolute(),'offline tool requires an absolute configured path: '+name)
+  result[name]=str(Path(selected).resolve(strict=True))
+ return result
+
+def _tool_root(path):
+ p=Path(path);parts=p.parts
+ _require(p.is_absolute()and len(parts)>=5,'tool must reside inside a declared Nix store root')
+ root=str(Path(*parts[:4]));_require(STORE_ROOT.fullmatch(root)is not None,'tool is outside the Nix store')
+ _require(p.is_file()and p.resolve()==p,'tool path must be an exact resolved regular file: '+path)
+ return root
+
+def _tool_hash(path,deadline):
+ _tick(deadline);size=Path(path).stat().st_size
+ _require(0<size<=512*1024*1024,'tool byte size exceeds bound')
+ h=hashlib.sha256()
+ with Path(path).open('rb')as stream:
+  while True:
+   _tick(deadline);part=stream.read(1024*1024)
+   if not part:break
+   h.update(part)
+ return size,h.hexdigest()
+
+def _version(name,path,deadline):
+ _tick(deadline)
+ reply=subprocess.run([path,'--version'],capture_output=True,text=True,check=True,timeout=deadline.remaining(10)if deadline else 10)
+ version=(reply.stdout+reply.stderr).strip();_tick(deadline)
+ _require(0<len(version)<=4096,'invalid tool version output: '+name)
+ expected=driver.LOCK['lean'if name=='lean'else'llvm']if name!='python'else'Python '
+ _require(expected in version,'tool version differs from pinned toolchain: '+name)
+ return version
+
+@dataclass(frozen=True)
+class ResolvedToolchain:
+ # No nested mutable maps: every consumer decodes fresh views of frozen bytes.
+ descriptor:bytes
+ lock_json:bytes
+ manifest_sha256:str|None=None
+ @property
+ def commitment(self):return sha(self.descriptor)
+ @property
+ def tools(self):return {n:r['path']for n,r in json.loads(self.descriptor)['tools'].items()}
+ @property
+ def closure(self):return tuple(json.loads(self.descriptor)['store_roots'])
+
+def resolve_toolchain(deadline=None,manifest=None):
+ """Resolve once. Explicit offline failures never enter Nix discovery.
+
+ Provenance attributes the caller's declaration; canonical paths do not prove
+ closure completeness. Missing runtime dependencies fail in the real sandbox.
+ """
+ _tick(deadline);lock,lock_raw=_regular_json(ROOT/'toolchain.lock.json',deadline)
+ _require(lock==driver.LOCK,'loaded/configured toolchain lock differs')
+ lock_hash=sha(lock_raw);selected=manifest if manifest is not None else os.environ.get('LT_TOOLCHAIN_MANIFEST')
+ offline=selected is not None;tools=_configured_tools(offline);manifest_hash=None
+ if offline:
+  _require(isinstance(selected,(str,Path))and str(selected)!='','offline toolchain manifest path is empty')
+  data,raw=_regular_json(selected,deadline);manifest_hash=sha(raw)
+  _require(isinstance(data,dict)and set(data)=={'schema','lock_sha256','store_roots','tools','provenance'},'invalid offline toolchain shape')
+  _require(type(data['schema'])is int and data['schema']==1,'unsupported offline toolchain format')
+  _require(data['lock_sha256']==lock_hash,'offline toolchain lock digest differs')
+  closure=_roots(data['store_roots'],deadline);records=data['tools'];provenance=data['provenance']
+  _require(isinstance(records,dict)and set(records)==set(TOOL_NAMES),'offline tool map differs')
+  _require(isinstance(provenance,dict)and set(provenance)=={'kind','sha256','output'},'invalid toolchain provenance shape')
+  _require(provenance['kind']=='nix-store-qR'and isinstance(provenance['output'],str),'unsupported toolchain provenance')
+  output=provenance['output'];_require(len(output)<=128*1024 and output.endswith('\n'),'invalid provenance output')
+  _require(sha(output.encode())==provenance['sha256'],'provenance digest differs')
+  lines=output.splitlines();_require(len(lines)==len(closure)and sorted(lines)==list(closure),'provenance/store root membership differs')
+  # Validate every file/path/hash before running even version-only metadata.
+  for name in TOOL_NAMES:
+   record=records[name]
+   _require(isinstance(record,dict)and set(record)=={'path','bytes','sha256','version'},'invalid tool record: '+name)
+   _require(record['path']==tools[name],'declared tool differs from effective configuration: '+name)
+   _require(_tool_root(record['path'])in closure,'tool root absent from declared closure: '+name)
+   _require(type(record['bytes'])is int and isinstance(record['sha256'],str)and re.fullmatch('[0-9a-f]{64}',record['sha256'])and isinstance(record['version'],str)and 0<len(record['version'])<=4096,'invalid tool metadata: '+name)
+   size,digest=_tool_hash(record['path'],deadline)
+   _require((size,digest)==(record['bytes'],record['sha256']),'tool byte/hash differs: '+name)
+  for name in TOOL_NAMES:_require(_version(name,tools[name],deadline)==records[name]['version'],'declared tool version differs: '+name)
+ else:
+  query_roots=sorted({_tool_root(p)for p in tools.values()});records={}
+  for name,path in tools.items():
+   size,digest=_tool_hash(path,deadline);records[name]=dict(path=path,bytes=size,sha256=digest,version=_version(name,path,deadline))
+  query=shutil.which('nix-store')
+  if not query:raise RuntimeError('nix-store is required unless LT_TOOLCHAIN_MANIFEST is explicitly selected')
+  output=subprocess.run([query,'-qR',*query_roots],capture_output=True,text=True,check=True,timeout=deadline.remaining(20)if deadline else 20).stdout
+  closure=_roots(output.splitlines(),deadline);provenance=dict(kind='nix-store-qR',sha256=sha(output.encode()),output=output)
+ normalized=dict(schema=1,lock_sha256=lock_hash,store_roots=list(closure),tools=records,provenance_sha256=provenance['sha256'])
+ return ResolvedToolchain(canonical(normalized),canonical(lock),manifest_hash)
+
+def _toolchain(deadline=None):
+ # Compatibility for setup/diagnostic callers; builds retain the frozen object.
+ resolved=resolve_toolchain(deadline)
+ return resolved.tools,list(resolved.closure)
 
 def _diagnostics(text,manifest,rootid):
  ids={f['path']:f['sha256'] for f in manifest};records=[]
@@ -60,15 +185,16 @@ def _diagnostics(text,manifest,rootid):
   if len(records)>=32:break
  return records
 
-def compiler_identity():
+def compiler_identity(deadline=None,*,toolchain=None):
  # Worker identity is independent of the SDK selected by an app's frozen lock.
  # The SDK/dependency commitments are separately bound into the build request.
  compiler_files=['Compiler/Main.lean','runtime/primitives.S','runtime/app.ld','runtime/app2.ld','tools/build_sandbox_runner.py','tools/build_jobs.py','tools/public_sdk.py']
  compiler_digest=sha(canonical([{'path':n,'sha256':sha((ROOT/n).read_bytes())} for n in compiler_files]))
- tools,closure=_toolchain()
- return sha(canonical({'lock':driver.LOCK,'closure':closure,'tools':tools,'compiler_digest':compiler_digest,'recipe':RECIPE}))
+ resolved=resolve_toolchain(deadline)if toolchain is None else toolchain
+ _require(isinstance(resolved,ResolvedToolchain),'frozen toolchain resolution required')
+ return sha(canonical({'lock':json.loads(resolved.lock_json),'closure':resolved.closure,'tools':resolved.tools,'toolchain_descriptor_sha256':resolved.commitment,'compiler_digest':compiler_digest,'recipe':RECIPE}))
 
-def build_source_snapshot(files,*,entry,module,profile,jobid,rootid,outputdir,output_limit=None):
+def build_source_snapshot(files,*,entry,module,profile,jobid,rootid,outputdir,output_limit=None,toolchain_manifest=None):
  """Build only frozen files. The caller must obtain them from an authorized root.
     Returns a bounded attributable result; publisher signing is a separate API.
  """
@@ -99,11 +225,16 @@ def build_source_snapshot(files,*,entry,module,profile,jobid,rootid,outputdir,ou
  if lock:request.update({'sdk_content_id':sdk_manifest['content_id'],'dependency_lock_id':lock['content_id'],'dependency_releases':[p['release_id'] for p in lock['dependencies']],'dependency_sources':public_sdk.records(dependencies) if dependencies else []})
  result={**request,'request_digest':sha(b'LT-BUILD-JOB-1\0'+canonical(request)),'status':'unavailable','diagnostics':[],'diagnostic_text':'','source_files':manifest}
  outputdir=Path(outputdir);outputdir.mkdir(parents=True,exist_ok=True)
- try:tools,closure=_toolchain()
- except (OSError,RuntimeError,subprocess.SubprocessError) as error:
+ try:resolved=resolve_toolchain(manifest=toolchain_manifest)
+ except (OSError,ValueError,RuntimeError,subprocess.SubprocessError) as error:
   result['diagnostic_text']=str(error);return result
- result['toolchain_id']=compiler_identity()
- request['toolchain_id']=result['toolchain_id'];result['request_digest']=sha(b'LT-BUILD-JOB-1\0'+canonical(request))
+ result['toolchain_id']=compiler_identity(toolchain=resolved)
+ result['toolchain_descriptor_sha256']=resolved.commitment
+ result['toolchain_manifest_sha256']=resolved.manifest_sha256
+ result['toolchain_descriptor']=json.loads(resolved.descriptor)
+ request['toolchain_id']=result['toolchain_id']
+ result['request_digest']=sha(b'LT-BUILD-JOB-1\0'+canonical(request))
+ tools,closure=resolved.tools,list(resolved.closure)
  unshare=shutil.which('unshare')
  if not unshare:result['diagnostic_text']='unshare is unavailable; untrusted builds are disabled';return result
  with tempfile.TemporaryDirectory(prefix='lt-build-') as temporary:
@@ -124,7 +255,7 @@ def build_source_snapshot(files,*,entry,module,profile,jobid,rootid,outputdir,ou
     if uid and threads and int(uid[1])==os.getuid():uid_tasks+=int(threads[1])
    except (OSError,ValueError):pass
   uid_limit=max(uid_tasks+64,128)
-  cfg={'uid_process_limit':uid_limit,'root':str(newroot),'input':str(inputs),'sdk':str(sdk),'dependencies':str(deps),'dependency_modules':dependency_modules,'source_only':source_only,'closure':closure,'tools':tools,'sdk_modules':sdk_modules,'modules':modules,'module':module,'entry':entry,'profile':profile,'output_limit':output_limit}
+  cfg={'uid_process_limit':uid_limit,'root':str(newroot),'input':str(inputs),'sdk':str(sdk),'dependencies':str(deps),'dependency_modules':dependency_modules,'source_only':source_only,'closure':closure,'tools':tools,'toolchain_descriptor_sha256':resolved.commitment,'sdk_modules':sdk_modules,'modules':modules,'module':module,'entry':entry,'profile':profile,'output_limit':output_limit}
   config=stage/'config.json';config.write_bytes(canonical(cfg))
   command=[unshare,'--user','--map-root-user','--mount','--net','--pid','--fork',tools['python'],str(sdk/'tools/build_sandbox_runner.py'),str(config)]
   # No inherited environment, stdin, credentials or directory descriptors.

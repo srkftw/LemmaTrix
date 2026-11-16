@@ -1,0 +1,272 @@
+{
+  "schema": 1,
+  "recorded_utc": "2026-11-16T20:46:03.479774+00:00",
+  "status": "PASS: integrated local unsigned offline SDK creator workflow from published main",
+  "allocation": {
+    "receipt_utc": "2026-11-16T20:29:00.894681+00:00",
+    "receipt_monotonic": 69248.939215168,
+    "work_end_utc": "2026-11-16T21:29:00.894681+00:00",
+    "work_end_monotonic": 72848.939215168,
+    "final_end_utc": "2026-11-16T21:44:00.894681+00:00",
+    "final_end_monotonic": 73748.939215168,
+    "source_checkpoint_utc": "2026-11-16T20:44:00.894681+00:00",
+    "workflow_checkpoint_utc": "2026-11-16T20:59:00.894681+00:00",
+    "scope": "Independent non-Coin unsigned SDK offline developer workflow from current main; no signing, packaging, install, application execution, guest/service, Nix query, remote write or use of blocked-operation inputs. At most three journey builds under existing sandbox limits, plus focused resolver checks; SAME review and local integration-ready commit."
+  },
+  "base_main": "4009dd6e14dab2bb1b1c7873242b5aa4dd887310",
+  "branch": "codex/sdk-offline-workflow-20261116",
+  "worktree": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix",
+  "capability": "An explicitly selected descriptor validates pinned lock, configured tool paths, bytes, versions and store roots without Nix discovery. One immutable resolution supplies sandbox mounts, tool paths and worker identity. SDK build exposes --toolchain-manifest; LT_TOOLCHAIN_MANIFEST remains supported.",
+  "compatibility": "Existing schema-1 build-request shape/domain and CLI failure status preserved. Descriptor commitment is in worker identity and result/config metadata. No compiler, sandbox resource contract, SDK recipe/version or authority change.",
+  "source": [
+    {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/tools/build_jobs.py",
+      "bytes": 19274,
+      "sha256": "6816b0ad4b67167f6a6acf5923a681ab5c1aa50bdb156fbd111783547e609159"
+    },
+    {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/tools/sdk.py",
+      "bytes": 18633,
+      "sha256": "b478f68d73654e5adb62ff21b96035f19a4e96709b8b4ba495159b0bd5a8d8a7"
+    },
+    {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/tests/campaign011_offline_toolchain.py",
+      "bytes": 4998,
+      "sha256": "9f151a8de2642f8166dc2cc11da8afdb87f34425abb546deea54d4014c6fb24c"
+    },
+    {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/public-sdk.html",
+      "bytes": 15722,
+      "sha256": "980cede624b66f87420583e40e86c28099cac44498906f447e8efef66344b6a5"
+    },
+    {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/campaign011-offline-toolchain-descriptor-v1.json",
+      "bytes": 8465,
+      "sha256": "d6cfcbeda83f5793985f247790ec2540fbfffc7714e79581081d0d49f01e5034"
+    }
+  ],
+  "unchanged_recipe_inputs": [
+    {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/Compiler/Main.lean",
+      "bytes": 21086,
+      "sha256": "7d0834901a9a90ec5e66dd64fe46634dfc1897ce38a8e3de3eec42e049c4e182"
+    },
+    {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/runtime/primitives.S",
+      "bytes": 608,
+      "sha256": "344ad1d8c8339ca24eee6d1c2c4858a0070531bc5bc3c535f93e7c44949b76d1"
+    },
+    {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/runtime/app.ld",
+      "bytes": 291,
+      "sha256": "2e4071181e8396b09c3599082cce90fe8c07a37111bd0064449b4e18b9522753"
+    },
+    {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/runtime/app2.ld",
+      "bytes": 296,
+      "sha256": "a858885bf28b02982fd96a7e99747b660c4405825a146009a6085e4c1eee54a8"
+    },
+    {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/tools/build_sandbox_runner.py",
+      "bytes": 6257,
+      "sha256": "3d973b4418ab728d1218ac87dcd0d870d448a695b2248cd04a86f33f1bf02e29"
+    },
+    {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/tools/public_sdk.py",
+      "bytes": 17808,
+      "sha256": "a543e18f951aaffdca9979a7babe12cb7525cb7fd056a971ea65827a5aedd764"
+    },
+    {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/sdk/manifest.json",
+      "bytes": 4657,
+      "sha256": "2e31a152a9c217d9749f1d5e34340178e185aacbe9fc3f278a400a3bbf38591f"
+    },
+    {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/toolchain.lock.json",
+      "bytes": 1034,
+      "sha256": "e4f0ed363521be7aa05b3f1b0ed7c0294961f72ea5b64aab426b51bba9749602"
+    }
+  ],
+  "identities": {
+    "worker": "fac267e886b9c31804e4ffad11a2eaf0aa25e2eeaefc1860dc011dbe64d19248",
+    "normalized_descriptor": "3c641e76195f884262cd965c6072afc78566e12c937c34ce691bc2a756bc10e0",
+    "selected_descriptor_file": "d6cfcbeda83f5793985f247790ec2540fbfffc7714e79581081d0d49f01e5034",
+    "sdk": "3312ddcd277f401c377142b006bac6cf9aeefd8fa89f4d4c78f1fd5469caf533",
+    "sdk_version": "0.1.0",
+    "dependency_lock": "a0a54b4d7b9537c1d82a3b92bebad4dded368269d326d938e681e8f50408784d",
+    "lock_file": {
+      "path": "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-offline-workflow-20261116/project/lemma.lock.json",
+      "bytes": 433,
+      "sha256": "4d2cbf7540c1f78498a76bb3b3be1a228a4987eb6821dd87fbfe292c6b8e0893"
+    },
+    "project_manifest": {
+      "path": "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-offline-workflow-20261116/project/lemma.project.json",
+      "bytes": 395,
+      "sha256": "2e5bd5f767fd24677a179ecfa724f13e3cfbad18e472ed06d7c2e406b7ffdacc"
+    },
+    "bad_source": {
+      "path": "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-offline-workflow-20261116/Main.bad.lean",
+      "bytes": 663,
+      "sha256": "096b446115fb8e0b428062b28fbde2fcfd3539f8b75819a1fc536189a556154a"
+    },
+    "bad_snapshot": "99bad151d8325fb797c1e02766c654ee0a8dbc60748b92c0040bfb3b19f2b890",
+    "corrected_source": {
+      "path": "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-offline-workflow-20261116/Main.corrected.lean",
+      "bytes": 652,
+      "sha256": "9f7ee8466a67836efb831b2303ce0d812fa6ab5245a4bf07904487fad8280023"
+    },
+    "corrected_snapshot": "6f8654c6ecefc1478e9a31dc41593b4106e6a29961370ade734d3ee7070fb1c5",
+    "corrected_and_reopened_request": "79474ce690da6a96b0669dda2b004a08698865da2c08af535ecc17c91ec196c4"
+  },
+  "workflow": {
+    "real_sandbox_builds": 3,
+    "cli_exit_codes": [
+      1,
+      0,
+      0
+    ],
+    "bad": {
+      "diagnostics": [
+        {
+          "path": "Main.lean",
+          "line": 10,
+          "column": 40,
+          "source_id": "096b446115fb8e0b428062b28fbde2fcfd3539f8b75819a1fc536189a556154a",
+          "source_root": "99bad151d8325fb797c1e02766c654ee0a8dbc60748b92c0040bfb3b19f2b890",
+          "message": "error: Application type mismatch: The argument"
+        }
+      ],
+      "artifact_absent": true,
+      "result": {
+        "path": "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-offline-workflow-20261116/01-bad-build.stdout.json",
+        "bytes": 9793,
+        "sha256": "ed7b2400c8462e96ebe207ff47001817c91c4dec7c39328e420226c7b00211f3"
+      }
+    },
+    "corrected": {
+      "result": {
+        "path": "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-offline-workflow-20261116/02-corrected-build.stdout.json",
+        "bytes": 9832,
+        "sha256": "43ae8c86f5ca5824ebfd47aad4b98fe6aa35eb524716e24a4c5969f41901c35a"
+      },
+      "artifact": {
+        "path": "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-offline-workflow-20261116/corrected-build/app.bin",
+        "bytes": 15196,
+        "sha256": "7e7bc1bf06637c79dd1f4e61b1f364f37d3913d3b3164a288f516accda2484b3"
+      }
+    },
+    "fresh_process": {
+      "check": {
+        "path": "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-offline-workflow-20261116/03-reopened-check.json",
+        "bytes": 1671,
+        "sha256": "68b8ba68ddd5833999317a4403812b1c4e39445c0e25784b535c2226abad6874"
+      },
+      "result": {
+        "path": "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-offline-workflow-20261116/03-reopened-build.stdout.json",
+        "bytes": 9831,
+        "sha256": "28d031aff8362f76299ef62a674762136e2085d1931d5a62ca1c643e6ff94bf9"
+      },
+      "artifact": {
+        "path": "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-offline-workflow-20261116/reopened-build/app.bin",
+        "bytes": 15196,
+        "sha256": "7e7bc1bf06637c79dd1f4e61b1f364f37d3913d3b3164a288f516accda2484b3"
+      },
+      "saved_source_and_lock_unchanged": true,
+      "artifact_bytes_identical": true
+    },
+    "pipeline": [
+      {
+        "tool": "clang-20",
+        "exit": 0
+      },
+      {
+        "tool": "clang-20",
+        "exit": 0
+      },
+      {
+        "tool": "clang-20",
+        "exit": 0
+      },
+      {
+        "tool": "ld.lld",
+        "exit": 0
+      },
+      {
+        "tool": "llvm-objcopy",
+        "exit": 0
+      }
+    ],
+    "compiler_output": "Actual freestanding RV64IM/LP64 raw artifact produced through Lean, Clang, elf64lriscv LLD and llvm-objcopy; 15196 bytes within 262144-byte profile limit",
+    "completed_by_utc": "2026-11-16T20:41:58.906929+00:00"
+  },
+  "resolver_validation": {
+    "path": "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-offline-workflow-20261116/resolver-checks-final/checks.json",
+    "bytes": 9660,
+    "sha256": "adde09d81e542cba2cc29466046d703c211524da9c1e878a7716fc3421a19bbe"
+  },
+  "environment": {
+    "path": "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-offline-workflow-20261116/cli-environment.json",
+    "bytes": 448,
+    "sha256": "cd17064880746adf47f0e74a293b022b38df7aa605224498f482702c4397c48a"
+  },
+  "cleanup": {
+    "cli_tool_sessions": [
+      32430,
+      91383,
+      15718
+    ],
+    "all_terminal": true,
+    "normal_namespace_launcher_waits_completed": true,
+    "timeout_or_interrupt": false,
+    "cleanup_signals_required": false,
+    "pid_receipt_scope": "Unchanged main launcher does not export PID/start receipts; terminal CLI results and normal launcher/runner waits are recorded, without claiming a separate PID audit."
+  },
+  "limits": {
+    "ready": true,
+    "user_namespace": true,
+    "mount_namespace": true,
+    "network_namespace": true,
+    "pid_namespace": true,
+    "readonly_input": true,
+    "work_bytes": 134217728,
+    "temp_bytes": 16777216,
+    "address_space_bytes": 17179869184,
+    "cpu_seconds": 60,
+    "artifact_output_bytes": 262144,
+    "artifact_file_limit_enforced": true,
+    "uid_process_limit": 1575,
+    "additional_uid_tasks": 64,
+    "signer_present": false
+  },
+  "protected_state": {
+    "path": "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-offline-workflow-20261116/protected-state.json",
+    "bytes": 1072,
+    "sha256": "2d556ee7fa3c1559954646b275aa5d1363fc509b6bd525fdafebda51886487e6"
+  },
+  "scope": "Host unsigned developer preview only. No artifact execution, image rebuild, native worker/image, ARM, ten-owner or release qualification; no signing, packaging, installation, credentials, services or remote writes. Existing blocked actions remain stopped.",
+  "integration": "Local review-ready changes only; not pushed or published",
+  "timing": {
+    "source": "Trusted coordinator independently read the owner transcript commandExecution records",
+    "scope": "Complete host command durations, not sandbox-only wall time or CPU measurements. Later commands include preceding assertions.",
+    "commands": [
+      {
+        "command_execution": "exec-cb28824f",
+        "step": "bad source",
+        "duration_ms": 5341,
+        "exit_code": 1
+      },
+      {
+        "command_execution": "exec-f5f4e2bd",
+        "step": "corrected source",
+        "duration_ms": 9220,
+        "exit_code": 0
+      },
+      {
+        "command_execution": "exec-a4280f12",
+        "step": "fresh-process rebuild",
+        "duration_ms": 7438,
+        "exit_code": 0
+      }
+    ]
+  }
+}
