@@ -1,0 +1,257 @@
+{
+  "schema": 1,
+  "recipe": "lemmatrix-lean-rv64-structured-2",
+  "job_id": "sdk-99bad151d8325fb797c1e027",
+  "source_root": "99bad151d8325fb797c1e02766c654ee0a8dbc60748b92c0040bfb3b19f2b890",
+  "snapshot_digest": "99bad151d8325fb797c1e02766c654ee0a8dbc60748b92c0040bfb3b19f2b890",
+  "module": "Main",
+  "entry": "Main.main",
+  "runtime_profile": 2,
+  "sdk_digest": "9dee115ed6cf55eb905cae8144818a7ce67e56040746f1244a89add7373ebd7c",
+  "output_limit": 262144,
+  "sdk_content_id": "3312ddcd277f401c377142b006bac6cf9aeefd8fa89f4d4c78f1fd5469caf533",
+  "dependency_lock_id": "a0a54b4d7b9537c1d82a3b92bebad4dded368269d326d938e681e8f50408784d",
+  "dependency_releases": [],
+  "dependency_sources": [],
+  "request_digest": "e9e193d2bf72fa052c78dc81da4148614eb6dc07e6832b87741422d0ce29191e",
+  "status": "error",
+  "diagnostics": [
+    {
+      "path": "Main.lean",
+      "line": 10,
+      "column": 40,
+      "source_id": "096b446115fb8e0b428062b28fbde2fcfd3539f8b75819a1fc536189a556154a",
+      "source_root": "99bad151d8325fb797c1e02766c654ee0a8dbc60748b92c0040bfb3b19f2b890",
+      "message": "error: Application type mismatch: The argument"
+    }
+  ],
+  "diagnostic_text": "/sdk/Guest/AppIntentSDK.lean:7:18: warning: Variable name `operation` is not explicitly referenced.\n\nHint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:\n  [apply] _operation\n\nNote: This linter can be disabled with `set_option linter.unusedVariables false`\n/input/Main.lean:10:40: error: Application type mismatch: The argument\n  \"unsigned preview\"\nhas type\n  String\nbut is expected to have type\n  UInt64\nin the application\n  Lemma.UI.createSurface \"unsigned preview\"\n\nbuild: build command failed\n",
+  "source_files": [
+    {
+      "path": "Main.lean",
+      "bytes": 663,
+      "sha256": "096b446115fb8e0b428062b28fbde2fcfd3539f8b75819a1fc536189a556154a"
+    },
+    {
+      "path": "lemma.lock.json",
+      "bytes": 433,
+      "sha256": "4d2cbf7540c1f78498a76bb3b3be1a228a4987eb6821dd87fbfe292c6b8e0893"
+    },
+    {
+      "path": "lemma.project.json",
+      "bytes": 395,
+      "sha256": "2e5bd5f767fd24677a179ecfa724f13e3cfbad18e472ed06d7c2e406b7ffdacc"
+    }
+  ],
+  "toolchain_id": "fac267e886b9c31804e4ffad11a2eaf0aa25e2eeaefc1860dc011dbe64d19248",
+  "toolchain_descriptor_sha256": "3c641e76195f884262cd965c6072afc78566e12c937c34ce691bc2a756bc10e0",
+  "toolchain_manifest_sha256": "d6cfcbeda83f5793985f247790ec2540fbfffc7714e79581081d0d49f01e5034",
+  "toolchain_descriptor": {
+    "lock_sha256": "e4f0ed363521be7aa05b3f1b0ed7c0294961f72ea5b64aab426b51bba9749602",
+    "provenance_sha256": "cabdc9085440745057dc28a859246479810ebc880e725ea3d895da9a8e128f17",
+    "schema": 1,
+    "store_roots": [
+      "/nix/store/10dxp0qxqxxsyiljrh2kp0xqhz6arhcx-bash-5.3p15",
+      "/nix/store/2gfxiwls9hbgwdwcy43mprchwsq36mg6-coreutils-9.11",
+      "/nix/store/2rqn5n8cihb3nkhbk5vwbygbpipz0xaq-llvm-20.1.8",
+      "/nix/store/328fx8r0jb6l2ai4cli7fhp8g26fbfnh-util-linux-minimal-2.42.3-lib",
+      "/nix/store/3668q0d9zhc5n9l2pnyvpd44kz9bjsjm-gnugrep-3.12",
+      "/nix/store/5i9x1yxqa9nk7jl7yflaavnlxvb09wrq-libuv-1.52.1",
+      "/nix/store/5q6bdxkp7lc70gn9mnf4yiybrx8ry5xq-gcc-16.2.0",
+      "/nix/store/67v4318ajiy9ia2wz14hqj7idy5181is-gdbm-1.26-lib",
+      "/nix/store/7v8b5idfzwfl06hx6n0cvd5ikd5p0sbg-pcre2-10.48",
+      "/nix/store/85lj8x78s9z5v8z8b5ik5phdcwri22ac-gmp-6.3.0",
+      "/nix/store/8wb7zk48s2iq3kix06vflp4dl5rpfsfs-binutils-2.46-lib",
+      "/nix/store/9074l1whzhvk68kj5va99ipj412rk5q2-acl-2.4.0",
+      "/nix/store/9j086va2zn7ifgdc3h3jlqbi2c23j1x5-mailcap-2.1.54",
+      "/nix/store/9x0m6s73sg89fv5awb95vsac2mbns8n0-sqlite-3.53.3",
+      "/nix/store/a8n1x3ldrvzx0jd209w0vpxk5pgv3igm-llvm-20.1.8-lib",
+      "/nix/store/adpf7qzjapilfn1r27x6k4chm87lf31a-libpfm-4.13.0",
+      "/nix/store/afhh51h1qz7f7jqhs4qs3ggxjipvn0i3-isl-0.20",
+      "/nix/store/c0jm2ghmasw8rljbixrhq3vw4hx2rgk8-clang-20.1.8",
+      "/nix/store/chwiiz63ngbsgr2qi82c4g40vn756ky2-gmp-with-cxx-6.3.0",
+      "/nix/store/cq65g1vyyiklplv6n2fgrjwxa6b4xfs9-mpdecimal-4.0.1",
+      "/nix/store/cx7av71pncwqgmbq774i9wg7my29axh0-cadical-2.1.3",
+      "/nix/store/cxd8d2vg70c3pa31v2473hphaa1v0j44-openssl-3.5.8",
+      "/nix/store/diaqxdd3h63sribv98gdh6ml565yrwj3-clang-20.1.8-lib",
+      "/nix/store/fy8mxgdjvjvmagv2igmj428a9j17hpcf-binutils-wrapper-2.46",
+      "/nix/store/g60m3aky9f59wgy1gi0y06xwmbw19d6m-xgcc-16.2.0-libgcc",
+      "/nix/store/ggggdaqvaxkimbzx5p6knxr2nlqlqqnl-linux-headers-7.2",
+      "/nix/store/h4wfwic161kxrr74jlzla5lsm28hgary-glibc-2.44-25",
+      "/nix/store/hzqwc6pv8sb9qrwivc4h42cr811gs1mk-ncurses-6.6",
+      "/nix/store/j1938gsbvbhkyz4kbmvjk56r479mkw3s-gcc-wrapper-16.2.0",
+      "/nix/store/j7qx4s4mr17j1wqgvqdzj33lmrnzb387-gcc-16.2.0-lib",
+      "/nix/store/jp8ql2fnd61xhvb4vsfp0bqwrzf16qrp-libunistring-1.4.2",
+      "/nix/store/kavf1x7bf1j36jlnybs5am32lca7gw8a-lld-20.1.8",
+      "/nix/store/lb41b0anx1f98y9y5s9mdv97gjgsq740-python3-3.14.7",
+      "/nix/store/m38wglsqnh1mrmj2cmqa3pjb6w4yjxdi-glibc-2.44-25-dev",
+      "/nix/store/mpqgjnlmzy3c5hslbgyc3s7zfz3m32lg-bzip2-1.0.8",
+      "/nix/store/n8fqcpnr5ni28l3i9svqa70wz46798v9-tzdata-2026d",
+      "/nix/store/p6cir20v12fjj5390b8xr9kdynm8bd9h-attr-2.6.0",
+      "/nix/store/ph4ib8mxy5yrw40k7a1l03bfd58hq6wj-zstd-1.5.7",
+      "/nix/store/pi2b23y3gv6zgcziwbgnihf8gam1cmlp-libffi-3.8.0",
+      "/nix/store/q0lbdx5yv93a3md74kjhm0v2kljjii89-libidn2-2.3.8",
+      "/nix/store/q2mkz6ca1alqfqf750dygvakmq8kjrwz-gcc-16.2.0-libgcc",
+      "/nix/store/qa8pjnpxm0nkpci88dbig628hc7xxf67-mpfr-4.2.2",
+      "/nix/store/qppfiapixbahy4nfvqky1dv5b2xgkdx5-expand-response-params",
+      "/nix/store/s4mrmq9aciz9r5kb37jzfc7cvgk3lnxb-libmpc-1.4.1",
+      "/nix/store/srvyqaf88njyqsrs1ajz3hznvdqq8hlw-glibc-2.44-25-bin",
+      "/nix/store/vfj3fn7rp56w7f3xy6vz5s41nziv4jgm-libxml2-2.15.4",
+      "/nix/store/vkwq2iap75p0srizppc3jl2j5b1lxpln-xz-5.8.4",
+      "/nix/store/wgw25d181h0qks7qsfp1bh7c5nd3f0s7-zlib-1.3.2",
+      "/nix/store/xnam05aa3vc7aqbbdixpwcdb8dpv71xn-readline-8.3p3",
+      "/nix/store/y5sgl0vvrpbcwgjwpjs60r1hg0gi7i0n-binutils-2.46",
+      "/nix/store/ysdqz5kaw8paig5v5q8d94yg6lkk0pkf-lean4-4.34.1",
+      "/nix/store/z7j20jl3wdi418wbajrbximy6j472y2j-gmp-with-cxx-6.3.0",
+      "/nix/store/zrkqwk0989k5wa1gn3cjb76jfga3d8i3-expat-2.8.5"
+    ],
+    "tools": {
+      "clang": {
+        "bytes": 214152,
+        "path": "/nix/store/c0jm2ghmasw8rljbixrhq3vw4hx2rgk8-clang-20.1.8/bin/clang-20",
+        "sha256": "e63da6f1ae63690861bab5e2981e72ead5a3a3245ce7b2853841d19646d0b23b",
+        "version": "clang version 20.1.8\nTarget: x86_64-unknown-linux-gnu\nThread model: posix\nInstalledDir: /nix/store/c0jm2ghmasw8rljbixrhq3vw4hx2rgk8-clang-20.1.8/bin"
+      },
+      "ld.lld": {
+        "bytes": 8554064,
+        "path": "/nix/store/kavf1x7bf1j36jlnybs5am32lca7gw8a-lld-20.1.8/bin/ld.lld",
+        "sha256": "e8406185c307f68d7926eaa7570920eaf2aa0c1e52126d914c3a05c6107e7f58",
+        "version": "LLD 20.1.8 (compatible with GNU linkers)"
+      },
+      "lean": {
+        "bytes": 401,
+        "path": "/nix/store/ysdqz5kaw8paig5v5q8d94yg6lkk0pkf-lean4-4.34.1/bin/lean",
+        "sha256": "f70d0a2a69e99b5d99c0abf4310731c512489c801099111f367981f24439a863",
+        "version": "Lean (version 4.34.1, Release)"
+      },
+      "llvm-objcopy": {
+        "bytes": 281768,
+        "path": "/nix/store/2rqn5n8cihb3nkhbk5vwbygbpipz0xaq-llvm-20.1.8/bin/llvm-objcopy",
+        "sha256": "1316f7fc33eb1a0e593879dfe5042d6e5a6ffe28ef45c69a5a3eb2062f0e09d1",
+        "version": "llvm-objcopy, compatible with GNU objcopy\nLLVM (http://llvm.org/):\n  LLVM version 20.1.8\n  Optimized build."
+      },
+      "python": {
+        "bytes": 15776,
+        "path": "/nix/store/lb41b0anx1f98y9y5s9mdv97gjgsq740-python3-3.14.7/bin/python3.14",
+        "sha256": "29affd28c5f44c2aeab8ac295bc850696f125020054243843ac122219e352d35",
+        "version": "Python 3.14.7"
+      }
+    }
+  },
+  "steps": [
+    {
+      "tool": "lean",
+      "exit": 0
+    },
+    {
+      "tool": "lean",
+      "exit": 0
+    },
+    {
+      "tool": "lean",
+      "exit": 0
+    },
+    {
+      "tool": "lean",
+      "exit": 0
+    },
+    {
+      "tool": "lean",
+      "exit": 0
+    },
+    {
+      "tool": "lean",
+      "exit": 0
+    },
+    {
+      "tool": "lean",
+      "exit": 0
+    },
+    {
+      "tool": "lean",
+      "exit": 0
+    },
+    {
+      "tool": "lean",
+      "exit": 0
+    },
+    {
+      "tool": "lean",
+      "exit": 0
+    },
+    {
+      "tool": "lean",
+      "exit": 0
+    },
+    {
+      "tool": "lean",
+      "exit": 0
+    },
+    {
+      "tool": "lean",
+      "exit": 0
+    },
+    {
+      "tool": "lean",
+      "exit": 0
+    },
+    {
+      "tool": "lean",
+      "exit": 0
+    },
+    {
+      "tool": "lean",
+      "exit": 0
+    },
+    {
+      "tool": "lean",
+      "exit": 0
+    },
+    {
+      "tool": "lean",
+      "exit": 0
+    },
+    {
+      "tool": "lean",
+      "exit": 0
+    },
+    {
+      "tool": "lean",
+      "exit": 0
+    },
+    {
+      "tool": "lean",
+      "exit": 0
+    },
+    {
+      "tool": "lean",
+      "exit": 0
+    },
+    {
+      "tool": "lean",
+      "exit": 0
+    },
+    {
+      "tool": "lean",
+      "exit": 1
+    }
+  ],
+  "sandbox": {
+    "ready": true,
+    "user_namespace": true,
+    "mount_namespace": true,
+    "network_namespace": true,
+    "pid_namespace": true,
+    "readonly_input": true,
+    "work_bytes": 134217728,
+    "temp_bytes": 16777216,
+    "address_space_bytes": 17179869184,
+    "cpu_seconds": 60,
+    "artifact_output_bytes": 262144,
+    "artifact_file_limit_enforced": true,
+    "uid_process_limit": 1567,
+    "additional_uid_tasks": 64,
+    "signer_present": false
+  },
+  "evidence_digest": "8638a0337c6191b23f9de1cc81d06a1ce3757a1b15cde752e2f37eef8075d52f"
+}

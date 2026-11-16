@@ -16,6 +16,25 @@
 ./lt run --backend x86_64 --socket /tmp/lt-developer.sock</code></pre>
 <p><code>build/my-tool-build/app.bin</code> is native LemmaTrix machine code, not a Linux executable. Run/install/sign it through the native workbench and publisher review; building does not authorize execution or publication. QEMU RV64 system execution is optional. The matching assembly emulator runs directly on its host architecture. Selecting the opposite assembly architecture explicitly uses QEMU userspace; emulated AArch64 execution does not establish physical ARM64 validation. Host Lean/LLVM remain a disclosed, key-free compiler bootstrap.</p>
 <p>The starter's <code>--template objects</code> uses the same public object client to stage and abort a real bounded object. <code>--template social</code> adds the same narrow intent clients used by Project Notes, with rights831 for its surface, input and object operations. It requests no raw network capability; consequential sharing uses the native intent review. These starter patterns do not create a social identity, send a message or claim an unimplemented payment capability. Project Notes supplies the useful complete object-backed and sharing application.</p>
+<h2 id="offline-preview">Unsigned builds with a pinned offline descriptor</h2>
+<p>The explicit offline path validates a saved descriptor without querying Nix. The checked <a href="evidence/campaign011-offline-toolchain-descriptor-v1.json">host descriptor</a> records the existing Lean 4.34.1, LLVM 20.1.8 and Python tool paths, file hashes, versions and read-only store closure. Other hosts need a matching reviewed descriptor and those tools already available. These two overrides select the recorded host's Clang and Python rather than the different default paths in a clean checkout:</p>
+<pre><code>export LT_CLANG=/nix/store/c0jm2ghmasw8rljbixrhq3vw4hx2rgk8-clang-20.1.8/bin/clang
+export LT_PYTHON=/nix/store/lb41b0anx1f98y9y5s9mdv97gjgsq740-python3-3.14.7/bin/python3.14
+./lt sdk init build/unsigned-preview --name unsigned-preview --template utility
+./lt sdk check build/unsigned-preview
+cp docs/evidence/sdk-offline-workflow-20261116/Main.bad.lean build/unsigned-preview/Main.lean
+# This build reports the real type error at Main.lean:10:40 and exits 1.
+./lt sdk build build/unsigned-preview --output build/preview-error \
+  --toolchain-manifest docs/evidence/campaign011-offline-toolchain-descriptor-v1.json
+cp docs/evidence/sdk-offline-workflow-20261116/Main.corrected.lean build/unsigned-preview/Main.lean
+./lt sdk build build/unsigned-preview --output build/preview-build \
+  --toolchain-manifest docs/evidence/campaign011-offline-toolchain-descriptor-v1.json
+# A later CLI process reads the same saved project and dependency lock.
+./lt sdk build build/unsigned-preview --output build/preview-reopened \
+  --toolchain-manifest docs/evidence/campaign011-offline-toolchain-descriptor-v1.json</code></pre>
+<p><code>LT_TOOLCHAIN_MANIFEST</code> selects the same descriptor when the option is omitted; an explicit option takes precedence. A missing, malformed, redirected or mismatched selection fails closed without discovery. The resolver checks the lock, configured paths, bytes, versions and declared closure, then freezes one resolution for the sandbox and worker identity. The result records both the selected file hash and normalized descriptor commitment. The descriptor attributes its saved closure provenance; actual runtime dependencies must still work in the normal sandbox.</p>
+<p>A Lean error returns a nonzero CLI status with the exact source path, line and source snapshot. Correct the file and build again; the dependency lock stays pinned. Successful output is unsigned freestanding RV64 <code>app.bin</code> plus <code>build-result.json</code>. The normal 120-second wall, 60-second CPU and runtime-profile code limits remain. This host developer preview establishes no signing, installation, execution, image, native worker, ARM or concurrent-owner qualification.</p>
+<p><a href="evidence/campaign011-sdk-offline-workflow-20261116.json">Recorded integration evidence</a>: the corrected and fresh-process builds each produced 15,196 bytes with SHA-256 <code>7e7bc1bf06637c79dd1f4e61b1f364f37d3913d3b3164a288f516accda2484b3</code>. The SDK and project lock stayed unchanged. The worker identity records the changed host resolver source; earlier image and runtime acceptance is not attributed to this build.</p>
 <h2>Implemented scope</h2>
 <table><thead><tr><th>Namespace</th><th>Available client operations</th></tr></thead><tbody>
 <tr><td>Lemma.UI</td><td>Ordinary caller surfaces, bounded raster upload, input, private byte access and scheduling; selected-project and retention requests to the trusted native shell. Applications cannot draw an approving trusted surface.</td></tr>

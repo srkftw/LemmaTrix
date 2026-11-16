@@ -1,0 +1,54 @@
+{
+  "schema": 1,
+  "status": "ok",
+  "project": "unsigned-preview",
+  "facet": "NativeApplication",
+  "sdk": {
+    "content_id": "3312ddcd277f401c377142b006bac6cf9aeefd8fa89f4d4c78f1fd5469caf533",
+    "version": "0.1.0"
+  },
+  "dependency_lock_id": "a0a54b4d7b9537c1d82a3b92bebad4dded368269d326d938e681e8f50408784d",
+  "dependencies": [],
+  "native_dependency_references": 0,
+  "source_files": [
+    {
+      "path": "Main.lean",
+      "bytes": 652,
+      "sha256": "9f7ee8466a67836efb831b2303ce0d812fa6ab5245a4bf07904487fad8280023"
+    },
+    {
+      "path": "lemma.lock.json",
+      "bytes": 433,
+      "sha256": "4d2cbf7540c1f78498a76bb3b3be1a228a4987eb6821dd87fbfe292c6b8e0893"
+    },
+    {
+      "path": "lemma.project.json",
+      "bytes": 395,
+      "sha256": "2e5bd5f767fd24677a179ecfa724f13e3cfbad18e472ed06d7c2e406b7ffdacc"
+    }
+  ],
+  "dependency_sources": [],
+  "modules": [
+    "Main"
+  ],
+  "rights": 768,
+  "license": "NOASSERTION",
+  "distribution_authority": "local author declaration; review before distribution",
+  "checks": [
+    "canonical source/module paths",
+    "reserved namespaces",
+    "finite cycle-free pinned module closure",
+    "exact SDK/dependency cache bytes",
+    "native dependency reference budget",
+    "manifest/recipe/profile agreement",
+    "license/distribution declarations",
+    "forbidden host/private calls"
+  ],
+  "release_prerequisites": [
+    "actual frozen Build/Evidence",
+    "trusted exact native signing review",
+    "current publisher and federation policy",
+    "separate install/execution approval"
+  ],
+  "assurance": "structural preflight; not compiler correctness, legal authorization or full verification"
+}
