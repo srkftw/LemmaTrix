@@ -1,0 +1,246 @@
+{
+  "schema": 1,
+  "status": "pass",
+  "sdk_content_id": "3312ddcd277f401c377142b006bac6cf9aeefd8fa89f4d4c78f1fd5469caf533",
+  "members": 28,
+  "member_bytes": 70279,
+  "checks": [
+    {
+      "check": "old import counterexample copies undeclared file, traverses directory symlink and recopies changed bytes",
+      "result": "pass"
+    },
+    {
+      "check": "import publishes only manifest and 28 captured members without enumerating input or reading outside symlink",
+      "result": "pass",
+      "read_calls": 116,
+      "max_read_request": 21087
+    },
+    {
+      "check": "export strips cache extras and valid exact export/import/resolve roundtrip succeeds",
+      "result": "pass"
+    },
+    {
+      "check": "import publishes captured bytes despite input mutation after validation",
+      "result": "pass"
+    },
+    {
+      "check": "export publishes captured bytes despite input mutation after validation",
+      "result": "pass"
+    },
+    {
+      "check": "missing input refused before publication",
+      "result": "pass",
+      "diagnostic": "[Errno 2] No such file or directory: 'UI.lean'"
+    },
+    {
+      "check": "corrupt input refused before publication",
+      "result": "pass",
+      "diagnostic": "SDK member differs from pinned content: Lemma/UI.lean"
+    },
+    {
+      "check": "manifest-json input refused before publication",
+      "result": "pass",
+      "diagnostic": "Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"
+    },
+    {
+      "check": "manifest-hash input refused before publication",
+      "result": "pass",
+      "diagnostic": "SDK manifest identity mismatch"
+    },
+    {
+      "check": "manifest-large input refused before publication",
+      "result": "pass",
+      "diagnostic": "SDK input must be a bounded regular file: manifest.json"
+    },
+    {
+      "check": "member-large input refused before publication",
+      "result": "pass",
+      "diagnostic": "SDK input must be a bounded regular file: Lemma/UI.lean"
+    },
+    {
+      "check": "manifest-link input refused before publication",
+      "result": "pass",
+      "diagnostic": "[Errno 40] Too many levels of symbolic links: 'manifest.json'"
+    },
+    {
+      "check": "member-link input refused before publication",
+      "result": "pass",
+      "diagnostic": "[Errno 40] Too many levels of symbolic links: 'UI.lean'"
+    },
+    {
+      "check": "parent-link input refused before publication",
+      "result": "pass",
+      "diagnostic": "[Errno 20] Not a directory: 'Lemma'"
+    },
+    {
+      "check": "recipe-link input refused before publication",
+      "result": "pass",
+      "diagnostic": "[Errno 40] Too many levels of symbolic links: 'Main.lean'"
+    },
+    {
+      "check": "member-fifo input refused before publication",
+      "result": "pass",
+      "diagnostic": "SDK input must be a bounded regular file: Lemma/UI.lean"
+    },
+    {
+      "check": "manifest-fifo input refused before publication",
+      "result": "pass",
+      "diagnostic": "SDK input must be a bounded regular file: manifest.json"
+    },
+    {
+      "check": "root-link input refused before publication",
+      "result": "pass",
+      "diagnostic": "[Errno 20] Not a directory: 'selected-root-link'"
+    },
+    {
+      "check": "valid existing cache validates actual manifest and members",
+      "result": "pass"
+    },
+    {
+      "check": "existing manifest-corrupt cache refuses import",
+      "result": "pass",
+      "diagnostic": "unsupported SDK manifest/version"
+    },
+    {
+      "check": "existing manifest-corrupt cache refuses checkout cache population",
+      "result": "pass",
+      "diagnostic": "unsupported SDK manifest/version"
+    },
+    {
+      "check": "existing manifest-corrupt cache refuses resolve without repair",
+      "result": "pass",
+      "diagnostic": "unsupported SDK manifest/version"
+    },
+    {
+      "check": "existing manifest-missing cache refuses import",
+      "result": "pass",
+      "diagnostic": "[Errno 2] No such file or directory: 'manifest.json'"
+    },
+    {
+      "check": "existing manifest-missing cache refuses checkout cache population",
+      "result": "pass",
+      "diagnostic": "[Errno 2] No such file or directory: 'manifest.json'"
+    },
+    {
+      "check": "existing manifest-missing cache refuses resolve without repair",
+      "result": "pass",
+      "diagnostic": "[Errno 2] No such file or directory: 'manifest.json'"
+    },
+    {
+      "check": "existing member-corrupt cache refuses import",
+      "result": "pass",
+      "diagnostic": "SDK input size differs from manifest: Lemma/UI.lean"
+    },
+    {
+      "check": "existing member-corrupt cache refuses checkout cache population",
+      "result": "pass",
+      "diagnostic": "SDK input size differs from manifest: Lemma/UI.lean"
+    },
+    {
+      "check": "existing member-corrupt cache refuses resolve without repair",
+      "result": "pass",
+      "diagnostic": "SDK input size differs from manifest: Lemma/UI.lean"
+    },
+    {
+      "check": "existing member-missing cache refuses import",
+      "result": "pass",
+      "diagnostic": "[Errno 2] No such file or directory: 'UI.lean'"
+    },
+    {
+      "check": "existing member-missing cache refuses checkout cache population",
+      "result": "pass",
+      "diagnostic": "[Errno 2] No such file or directory: 'UI.lean'"
+    },
+    {
+      "check": "existing member-missing cache refuses resolve without repair",
+      "result": "pass",
+      "diagnostic": "[Errno 2] No such file or directory: 'UI.lean'"
+    },
+    {
+      "check": "existing different-valid-manifest cache refuses import",
+      "result": "pass",
+      "diagnostic": "SDK cache collision"
+    },
+    {
+      "check": "existing different-valid-manifest cache refuses checkout cache population",
+      "result": "pass",
+      "diagnostic": "SDK cache collision"
+    },
+    {
+      "check": "existing different-valid-manifest cache refuses resolve without repair",
+      "result": "pass",
+      "diagnostic": "SDK cache identity/version mismatch"
+    },
+    {
+      "check": "existing file cache refuses import",
+      "result": "pass",
+      "diagnostic": "[Errno 20] Not a directory: '3312ddcd277f401c377142b006bac6cf9aeefd8fa89f4d4c78f1fd5469caf533'"
+    },
+    {
+      "check": "existing file cache refuses checkout cache population",
+      "result": "pass",
+      "diagnostic": "[Errno 20] Not a directory: '3312ddcd277f401c377142b006bac6cf9aeefd8fa89f4d4c78f1fd5469caf533'"
+    },
+    {
+      "check": "existing file cache refuses resolve without repair",
+      "result": "pass",
+      "diagnostic": "[Errno 20] Not a directory: '3312ddcd277f401c377142b006bac6cf9aeefd8fa89f4d4c78f1fd5469caf533'"
+    },
+    {
+      "check": "existing symlink cache refuses import",
+      "result": "pass",
+      "diagnostic": "[Errno 20] Not a directory: '3312ddcd277f401c377142b006bac6cf9aeefd8fa89f4d4c78f1fd5469caf533'"
+    },
+    {
+      "check": "existing symlink cache refuses checkout cache population",
+      "result": "pass",
+      "diagnostic": "[Errno 20] Not a directory: '3312ddcd277f401c377142b006bac6cf9aeefd8fa89f4d4c78f1fd5469caf533'"
+    },
+    {
+      "check": "existing symlink cache refuses resolve without repair",
+      "result": "pass",
+      "diagnostic": "[Errno 20] Not a directory: '3312ddcd277f401c377142b006bac6cf9aeefd8fa89f4d4c78f1fd5469caf533'"
+    },
+    {
+      "check": "preexisting or racing directory export target preserved",
+      "result": "pass",
+      "diagnostic": "SDK destination already exists"
+    },
+    {
+      "check": "preexisting or racing file export target preserved",
+      "result": "pass",
+      "diagnostic": "SDK destination already exists"
+    },
+    {
+      "check": "preexisting or racing symlink export target preserved",
+      "result": "pass",
+      "diagnostic": "SDK destination already exists"
+    },
+    {
+      "check": "preexisting or racing racing-directory export target preserved",
+      "result": "pass",
+      "diagnostic": "SDK destination already exists"
+    },
+    {
+      "check": "replaced staging basename refuses publication",
+      "result": "pass",
+      "diagnostic": "SDK staging directory changed before publication"
+    },
+    {
+      "check": "stage replacement preserved and never published or recursively removed",
+      "result": "pass"
+    },
+    {
+      "check": "cleanup preserves primary publication exception",
+      "result": "pass",
+      "diagnostic": "[Errno 5] primary publication failure"
+    },
+    {
+      "check": "post-publication exception does not roll back target",
+      "result": "pass",
+      "diagnostic": "[Errno 5] reporting after publication"
+    }
+  ],
+  "seconds": 0.363,
+  "real_builds": 0
+}

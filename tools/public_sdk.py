@@ -3,7 +3,8 @@
 Only content-addressed, verified SDK/dependency bytes enter the build sandbox.
 The public namespace is an API boundary; guest brokers remain the authority.
 """
-import base64,hashlib,json,re,shutil
+import base64,ctypes,hashlib,json,os,re,shutil,stat,sys,tempfile
+from contextlib import contextmanager
 from pathlib import Path,PurePosixPath
 import driver
 ROOT=driver.ROOT
@@ -13,6 +14,7 @@ CACHE=ROOT/'build/sdk-cache'
 DEPENDENCIES=ROOT/'build/dependency-cache'
 RECIPE='lemmatrix-lean-rv64-structured-2'
 MAX_FILES=128;MAX_BYTES=4*1024*1024;MAX_SOURCE=128*1024;MAX_DEPENDENCIES=16
+SDK_MANIFEST_LIMIT=256*1024
 MODULE=re.compile(r'[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*\Z')
 RESERVED={'Guest','Lemma','Compiler','Init','Lean','Std','runtime','sdk'}
 RECIPE_FILES=['Compiler/Main.lean','runtime/primitives.S','runtime/app.ld','runtime/app2.ld','tools/build_sandbox_runner.py']
@@ -83,11 +85,11 @@ def order(files,external=()):
  return ordered
 
 def current_manifest():
- manifest=json.loads(MANIFEST.read_bytes());validate_manifest(manifest)
- return manifest
+ with _sdk_directory(ROOT)as directory:
+  return _sdk_manifest(directory,'sdk/manifest.json')
 
 def validate_manifest(manifest):
- require(manifest.get('schema')==1 and manifest.get('namespace')=='Lemma' and manifest.get('version')==VERSION,'unsupported SDK manifest/version')
+ require(isinstance(manifest,dict) and manifest.get('schema')==1 and manifest.get('namespace')=='Lemma' and manifest.get('version')==VERSION,'unsupported SDK manifest/version')
  committed={k:v for k,v in manifest.items() if k!='content_id'}
  require(manifest.get('content_id')==sha(b'LT-PUBLIC-SDK-1\0'+canonical(committed)),'SDK manifest identity mismatch')
  entries=manifest.get('files',[])
@@ -98,6 +100,9 @@ def validate_manifest(manifest):
   name=x['path'][:-5].replace('/','.') if x['path'].endswith('.lean') else ''
   require(name in PUBLIC or name in CLIENTS,'SDK includes private implementation or nonmodule member')
  require([x['path'] for x in manifest.get('recipe_files',[])]==RECIPE_FILES,'SDK build recipe closure differs from supported version')
+ for x in manifest['recipe_files']:
+  require(identity(x.get('sha256'))and type(x.get('bytes'))is int and 0<x['bytes']<=(MAX_SOURCE if x['path'].endswith('.lean')else MAX_BYTES),'invalid SDK recipe member')
+ require(len(entries)+len(manifest['recipe_files'])<=MAX_FILES and sum(x['bytes']for x in entries+manifest['recipe_files'])<=MAX_BYTES,'SDK closure exceeds 128 files/4MiB')
  return manifest
 
 def generate_manifest():
@@ -114,39 +119,147 @@ def generate_manifest():
  manifest['content_id']=sha(b'LT-PUBLIC-SDK-1\0'+canonical(manifest));MANIFEST.write_bytes(canonical(manifest)+b'\n')
  return manifest
 
-def _read_sdk(directory,manifest):
+@contextmanager
+def _sdk_directory(path,create=False):
+ # Reuse the anchored/no-follow approach used by the reviewed project reader.
+ # Only selected path components are opened; no input tree is enumerated.
+ path=Path(os.path.abspath(path));flags=os.O_RDONLY|os.O_DIRECTORY|os.O_CLOEXEC|os.O_NOFOLLOW
+ directory=os.open(path.anchor,flags)
+ try:
+  for component in path.parts[1:]:
+   if create:
+    try:os.mkdir(component,dir_fd=directory)
+    except FileExistsError:pass
+   child=os.open(component,flags,dir_fd=directory);os.close(directory);directory=child
+  yield directory
+ finally:os.close(directory)
+
+def _sdk_member(directory,name,limit,expected=None):
+ relative(name,reserved=False);parts=Path(name).parts;parent=os.dup(directory)
+ def identity_of(info):return(info.st_dev,info.st_ino,info.st_mode,info.st_size,info.st_mtime_ns,info.st_ctime_ns)
+ try:
+  for component in parts[:-1]:
+   child=os.open(component,os.O_RDONLY|os.O_DIRECTORY|os.O_CLOEXEC|os.O_NOFOLLOW,dir_fd=parent);os.close(parent);parent=child
+  fd=os.open(parts[-1],os.O_RDONLY|os.O_CLOEXEC|os.O_NOFOLLOW|os.O_NONBLOCK,dir_fd=parent)
+  try:
+   opened=os.fstat(fd)
+   require(stat.S_ISREG(opened.st_mode)and opened.st_size<=limit,'SDK input must be a bounded regular file: '+name)
+   require(expected is None or opened.st_size==expected,'SDK input size differs from manifest: '+name)
+   chunks=[];size=0
+   while size<=opened.st_size:
+    data=os.read(fd,min(65536,opened.st_size+1-size))
+    if not data:break
+    chunks.append(data);size+=len(data)
+   current=os.stat(parts[-1],dir_fd=parent,follow_symlinks=False)
+   require(size==opened.st_size and identity_of(os.fstat(fd))==identity_of(opened)and identity_of(current)==identity_of(opened),'SDK input changed during read: '+name)
+   return b''.join(chunks)
+  finally:os.close(fd)
+ finally:os.close(parent)
+
+def _sdk_manifest(directory,name='manifest.json'):
+ def unique(pairs):
+  result={}
+  for key,value in pairs:
+   require(key not in result,'duplicate SDK manifest key: '+key);result[key]=value
+  return result
+ return validate_manifest(json.loads(_sdk_member(directory,name,SDK_MANIFEST_LIMIT),object_pairs_hook=unique))
+
+def _sdk_files(directory,manifest):
  files={}
  for record in manifest['files']:
-  path=directory/record['path'];require(path.is_file() and not path.is_symlink(),'SDK cache member unavailable: '+record['path'])
-  data=path.read_bytes();require(len(data)==record['bytes'] and sha(data)==record['sha256'],'SDK member differs from pinned content: '+record['path']);files[record['path']]=data
+  data=_sdk_member(directory,record['path'],MAX_SOURCE,record['bytes']);require(sha(data)==record['sha256'],'SDK member differs from pinned content: '+record['path']);files[record['path']]=data
  require(order(files)==manifest['modules'],'SDK transitive order differs from manifest')
  for record in manifest['recipe_files']:
-  data=(directory/record['path']).read_bytes();require(len(data)==record['bytes'] and sha(data)==record['sha256'],'SDK recipe differs from pinned content: '+record['path']);files[record['path']]=data
+  data=_sdk_member(directory,record['path'],MAX_BYTES,record['bytes']);require(sha(data)==record['sha256'],'SDK recipe differs from pinned content: '+record['path']);files[record['path']]=data
  return files
 
+def _read_sdk(directory,manifest):
+ validate_manifest(manifest)
+ with _sdk_directory(directory)as selected:return _sdk_files(selected,manifest)
+
+def capture_sdk(directory,manifest_path='manifest.json'):
+ with _sdk_directory(directory)as selected:
+  manifest=_sdk_manifest(selected,manifest_path);return manifest,_sdk_files(selected,manifest)
+
+def _rename_sdk(parent,source,destination):
+ # Linux is already the SDK build host contract. Never replace a racing target.
+ library=ctypes.CDLL(None,use_errno=True);rename=getattr(library,'renameat2',None)
+ require(rename is not None,'non-replacing SDK publication is unavailable')
+ rename.argtypes=[ctypes.c_int,ctypes.c_char_p,ctypes.c_int,ctypes.c_char_p,ctypes.c_uint];rename.restype=ctypes.c_int
+ if rename(parent,os.fsencode(source),parent,os.fsencode(destination),1):
+  error=ctypes.get_errno();raise OSError(error,os.strerror(error),destination)
+
+def _publish_sdk(destination,manifest,files,allow_existing=False):
+ # Freeze the captured map/manifest before any staging or existing-cache read.
+ encoded=canonical(manifest)+b'\n';require(len(encoded)<=SDK_MANIFEST_LIMIT,'canonical SDK manifest exceeds bound')
+ manifest=validate_manifest(json.loads(encoded));files=dict(files)
+ require(set(files)=={x['path']for x in manifest['files']+manifest['recipe_files']},'SDK publication differs from declared closure')
+ destination=Path(os.path.abspath(destination))
+ def existing(parent):
+  child=os.open(destination.name,os.O_RDONLY|os.O_DIRECTORY|os.O_CLOEXEC|os.O_NOFOLLOW,dir_fd=parent)
+  try:
+   actual=_sdk_manifest(child);captured=_sdk_files(child,actual)
+   require(actual==manifest and captured==files,'SDK cache collision')
+  finally:os.close(child)
+ with _sdk_directory(destination.parent,create=True)as parent:
+  try:os.stat(destination.name,dir_fd=parent,follow_symlinks=False)
+  except FileNotFoundError:pass
+  else:
+   require(allow_existing,'SDK destination already exists');existing(parent);return
+  # /proc/self/fd anchors staging to the opened parent, even if renamed.
+  name=Path(tempfile.mkdtemp(prefix='.lt-sdk-',dir='/proc/self/fd/'+str(parent))).name
+  child=os.open(name,os.O_RDONLY|os.O_DIRECTORY|os.O_CLOEXEC|os.O_NOFOLLOW,dir_fd=parent);owned=os.fstat(child)
+  def owns_stage():
+   try:current=os.stat(name,dir_fd=parent,follow_symlinks=False)
+   except FileNotFoundError:return False
+   return stat.S_ISDIR(current.st_mode)and(current.st_dev,current.st_ino)==(owned.st_dev,owned.st_ino)
+  try:
+   stage=Path('/proc/self/fd/'+str(child))
+   for relative_name,data in {**files,'manifest.json':encoded}.items():
+    path=stage/relative_name;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(data)
+   staged=_sdk_manifest(child);staged_files=_sdk_files(child,staged)
+   require(staged==manifest and staged_files==files,'staged SDK differs from captured bytes')
+   require(owns_stage(),'SDK staging directory changed before publication')
+   try:_rename_sdk(parent,name,destination.name)
+   except FileExistsError:
+    require(allow_existing,'SDK destination already exists');existing(parent)
+  finally:
+   # After successful rename there is no stage to remove. Never roll back the
+   # published destination, including if a later reporting operation fails.
+   active=sys.exception()
+   try:
+    if owns_stage():shutil.rmtree(name,dir_fd=parent)
+   except FileNotFoundError:pass
+   except OSError:
+    if active is None:raise
+   finally:os.close(child)
+
 def cache_sdk():
- manifest=current_manifest();files=_read_sdk(ROOT,manifest);directory=CACHE/manifest['content_id']
- directory.mkdir(parents=True,exist_ok=True)
- for name,data in files.items():
-  dest=directory/name;dest.parent.mkdir(parents=True,exist_ok=True)
-  if dest.exists():require(dest.read_bytes()==data,'SDK cache collision')
-  else:dest.write_bytes(data)
- (directory/'manifest.json').write_bytes(canonical(manifest)+b'\n')
+ manifest,files=capture_sdk(ROOT,'sdk/manifest.json');_publish_sdk(CACHE/manifest['content_id'],manifest,files,True)
+ return manifest
+
+def export_sdk(destination):
+ manifest=cache_sdk();captured,files=capture_sdk(CACHE/manifest['content_id'])
+ require(captured==manifest,'SDK cache manifest differs from installed SDK');_publish_sdk(destination,captured,files)
+ return captured
+
+def import_sdk(directory):
+ manifest,files=capture_sdk(directory);_publish_sdk(CACHE/manifest['content_id'],manifest,files,True)
  return manifest
 
 def resolve_sdk(pin=None):
  if pin is None:
-  manifest=current_manifest();return manifest,_read_sdk(ROOT,manifest)
+  return capture_sdk(ROOT,'sdk/manifest.json')
  require(isinstance(pin,dict) and pin.get('version')==VERSION and identity(pin.get('content_id')),'invalid pinned SDK')
- directory=CACHE/pin['content_id'];path=directory/'manifest.json'
- if not path.exists():
+ directory=CACHE/pin['content_id']
+ if not os.path.lexists(directory):
   # Only the exact installed SDK is eligible to populate a missing cache. An
   # older pin never silently changes to the checkout's current bytes.
   manifest=current_manifest()
   require(manifest['content_id']==pin['content_id'],'pinned SDK unavailable offline; import that exact SDK cache')
   cache_sdk()
- manifest=validate_manifest(json.loads(path.read_bytes()));require(manifest['content_id']==pin['content_id'],'SDK cache identity mismatch')
- return manifest,_read_sdk(directory,manifest)
+ manifest,files=capture_sdk(directory);require(manifest['content_id']==pin['content_id']and manifest['version']==pin['version'],'SDK cache identity/version mismatch')
+ return manifest,files
 
 def dependency_document(envelope,manifest,public,sources):
  return {'schema':1,'format':'LT-SOURCE-DEPENDENCY-1','release':base64.b64encode(envelope).decode(),'manifest':manifest,'publisher_public':base64.b64encode(public).decode(),'sources':{n:base64.b64encode(d).decode() for n,d in sorted(sources.items())}}

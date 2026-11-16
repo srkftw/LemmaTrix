@@ -1,0 +1,48 @@
+{
+  "recorded_utc": "2026-11-16T21:37:11.298294+00:00",
+  "source": "Trusted coordinator relayed independent SAME read-only source/test review",
+  "status": "PASS on supplied source/test hashes; no remaining concrete source blocker",
+  "reviewed_files": {
+    "tools/public_sdk.py": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/tools/public_sdk.py",
+      "bytes": 23836,
+      "sha256": "9804121575b99782a1ab56e43bad2ccb78ca39c1ea7b72114dd798e0c0fa84c0"
+    },
+    "tools/sdk.py": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/tools/sdk.py",
+      "bytes": 18195,
+      "sha256": "789deabe6e6d2c0d07e5f895495f55d3495ed11354380976c9d51f51f400ae41"
+    },
+    "tests/sdk_transfer.py": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/tests/sdk_transfer.py",
+      "bytes": 11982,
+      "sha256": "6e232468f86dc63440644d1239c1d3b7c4f1896c8b6717b139e4432c1bd2b29c"
+    }
+  },
+  "inspected_saved_checks": 48,
+  "reviewer_rerun": false,
+  "findings_resolved": [
+    "Held stage FD avoids passing proc-FD alias to external no-follow reader.",
+    "Stage device/inode checked before rename and cleanup; replacement preserved.",
+    "Primary operational error retained over secondary cleanup error; published target never rolled back."
+  ],
+  "scope": "Source/test and saved integrated SDK transfer/build evidence; no native release or independent administration acceptance.",
+  "integrated_evidence_review": {
+    "recorded_utc": "2026-11-16T21:40:13.716526+00:00",
+    "source": "Trusted coordinator relayed independent SAME saved-evidence review",
+    "status": "PASS; no material finding",
+    "independently_checked": [
+      "Export and receiver SDK cache have exactly 29 files and identical manifest/member maps.",
+      "Both source/request/evidence digests and worker identity recomputed from the two source trees; CLI stdout equals saved disk result.",
+      "Both actual artifacts independently hashed as 109692 bytes, SHA256 93caedd92d1d329b582becf8b1e5e1ee799dd91a728821c0f123f79f6673b3ec, and compared byte for byte.",
+      "Fresh checkout HEAD 25ecbd142c3dbe86f1c1aeace39f34b9406d17ec and all five tracked Notes members match; inline helper decodes to exact Schema and metadata.",
+      "Fresh dependency cache and toolchain-host config currently absent."
+    ],
+    "initial_state_qualification": "Initial empty-cache and clean-checkout state is the saved implementation owner observation; the reviewer did not independently witness initial state.",
+    "not_performed": [
+      "No reviewer build or cryptographic verification rerun.",
+      "No application execution, independent administration or separate hardware/toolchain/Git objects."
+    ],
+    "shared_prerequisites": "Same host, Nix store, installed toolchain and Git object database."
+  }
+}

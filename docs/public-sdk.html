@@ -53,6 +53,18 @@ cp docs/evidence/sdk-offline-workflow-20261116/Main.corrected.lean build/unsigne
 <pre><code>./lt sdk export-sdk build/sdk-export
 ./lt sdk import-sdk build/sdk-export
 ./lt sdk identity</code></pre>
+<p>Transfer captures the actual manifest and its declared module/recipe bytes once, then stages only those bytes and a canonical manifest. Unlisted files and directories are ignored without traversing them. Selected roots, parents and members must be real directories or bounded regular files; symlinks and special files are refused. The manifest is bounded to 256 KiB; the declared closure remains at most 128 members/4 MiB, with 128 KiB per Lean source. Existing caches must pass validation of their actual manifest and every pinned member. An incomplete or corrupt cache is refused rather than repaired. Exports require a new destination and publication never replaces an existing target. A failed staging operation preserves preexisting targets; a reporting error after publication does not roll back the published directory.</p>
+<p>To reproduce the tracked Project Notes application in a fresh checkout, transfer the exported directory through your chosen offline medium, then use the existing signed <code>Notes.Schema</code> carrier already tracked under <code>examples/project-notes/deps</code>. Keep its committed <code>lemma.lock.json</code>; this workflow needs no dependency re-signing or lock regeneration. With the reviewed descriptor and its tools already installed:</p>
+<pre><code># Origin checkout
+./lt sdk export-sdk /absolute/path/to/sdk-export
+# Fresh checkout, initially without build/sdk-cache or build/dependency-cache
+./lt sdk import-sdk /absolute/path/to/sdk-export
+./lt sdk check examples/project-notes
+# Use the LT_CLANG and LT_PYTHON overrides shown above for this host descriptor.
+./lt sdk build examples/project-notes --output build/project-notes-unsigned \
+  --toolchain-manifest docs/evidence/campaign011-offline-toolchain-descriptor-v1.json</code></pre>
+<p>The focused transfer regression is <code>python3 tests/sdk_transfer.py</code>. It uses owned temporary files and runs no compiler. A second checkout on the same host establishes intermediate reproduction with the installed tools; it does not establish independent administration or native release acceptance.</p>
+<p>The <a href="evidence/campaign011-sdk-exact-transfer-20261116.json">16 November exact-transfer record</a> preserves 48 focused checks and the actual origin/fresh-checkout Project Notes builds. Both produced 109,692 bytes with SHA-256 <code>93caedd92d1d329b582becf8b1e5e1ee799dd91a728821c0f123f79f6673b3ec</code>. The fresh checkout started without ignored build, SDK/dependency cache or host configuration, imported exactly the exported 29 files, and used the unchanged tracked signed helper carrier and application lock. The host worker identity changed with the transfer implementation; the SDK and compiler/runtime recipe stayed pinned. Both unsigned builds used the same explicit 53-root toolchain descriptor and normal sandbox limits.</p>
 <p>A source library is a signed <code>DevelopmentArtifact</code> with canonical source, exported modules, SDK/dependency lock, license and provenance. It has no dummy executable, execution rights or entry point. It can be checked and elaborated in the ordinary sandbox without producing executable bytes:</p>
 <pre><code>./lt sdk lock examples/notes-schema
 ./lt sdk check examples/notes-schema

@@ -189,11 +189,9 @@ def main(argv=None):
    write_lock(args.project,dependencies=sorted(deps,key=lambda x:x['release_id']))
   print(json.dumps(pin,indent=2));return 0
  if args.cmd=='export-sdk':
-  manifest=sdk.cache_sdk();source=sdk.CACHE/manifest['content_id'];sdk.require(not args.directory.exists(),'SDK export destination already exists');import shutil;shutil.copytree(source,args.directory);print(manifest['content_id']);return 0
+  manifest=sdk.export_sdk(args.directory);print(manifest['content_id']);return 0
  if args.cmd=='import-sdk':
-  manifest=sdk.validate_manifest(json.loads((args.directory/'manifest.json').read_bytes()));sdk._read_sdk(args.directory,manifest);dest=sdk.CACHE/manifest['content_id']
-  if dest.exists():sdk._read_sdk(dest,manifest)
-  else:import shutil;dest.parent.mkdir(parents=True,exist_ok=True);shutil.copytree(args.directory,dest)
+  manifest=sdk.import_sdk(args.directory)
   print(manifest['content_id']);return 0
 if __name__=='__main__':
  try:sys.exit(main())
