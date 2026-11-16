@@ -1,0 +1,1 @@
+lt sdk: saved build belongs to a different project snapshot; keep it as the earlier build and use a fresh output for current source

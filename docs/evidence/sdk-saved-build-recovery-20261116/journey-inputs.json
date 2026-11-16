@@ -1,0 +1,16 @@
+{
+  "source_A": "tracked examples/project-notes at base main2f6dbcf",
+  "source_B": "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-saved-build-recovery-20261116/project-B",
+  "changed_member": "Main.lean",
+  "bad_line": 608,
+  "A_source_sha256": "e0e610a52dc7debcb848a1761863af40233e202693d4583a6ff5617a5f733a40",
+  "B_source_sha256": "b92d27e30ba0880bcf409ba382e0e775577c8df1614679f6c8dfd900493e6933",
+  "unchanged_members": {
+    "deps/a4e39b5b087822dd3054501afc425bcbcfa6dcbc8faa98293e626f6256fb55c2.json": "ed35d33eefe6897fdfcef26c1855e130b8d1fccd55d1ceb823c296505ed149ac",
+    "lemma.lock.json": "0a599bb9cf1a46fcb9330995c0a1f31ee2b4794e952d18ad71c79787d4a9090e",
+    "lemma.project.json": "af1caa4b9e2a45f86f163bee24a0a219d840d4d54bdd6c7aba949a9c33365cbd",
+    "templates.txt": "5d90ef7fc0d040fd56a1e48697cfa99e0dfaf4fd803aefefc3b5053ec1d36aea"
+  },
+  "dependency_lock_unchanged": true,
+  "signed_helper_carrier_unchanged": true
+}

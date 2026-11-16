@@ -1,0 +1,18 @@
+{
+  "command": [
+    "./lt",
+    "sdk",
+    "build",
+    "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-saved-build-recovery-20261116/project-B",
+    "--toolchain-manifest",
+    "docs/evidence/campaign011-offline-toolchain-descriptor-v1.json",
+    "--output",
+    "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-saved-build-recovery-20261116/build-A"
+  ],
+  "exit_code": 1,
+  "seconds": 0.078,
+  "diagnostic": "lt sdk: build output already exists; preserve it and choose a fresh --output directory",
+  "A_unchanged": true,
+  "producer_job_started": false,
+  "proof_scope": "Actual CLI refuses reused output; focused producer spy separately proves no compiler/toolchain work on this path."
+}

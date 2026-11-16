@@ -1,0 +1,34 @@
+{
+  "base": "2f6dbcf02a0c53d93c7a880c294e3ce12f6632f6",
+  "status": "REPRODUCED BEFORE FIX",
+  "actual_compiler_jobs": 0,
+  "fixtures": "Owned copies of public PR9 unsigned Project Notes artifact and receipt. Actual missing explicit descriptor setup return; only sandbox Popen replaced by owned synthetic transport for write interruption. Public dependency signature verification uses the real verifier. No compiler or executable launched.",
+  "stale_success": {
+    "before": {
+      "app.bin": "93caedd92d1d329b582becf8b1e5e1ee799dd91a728821c0f123f79f6673b3ec",
+      "build-result.json": "73c4ec2f1f69dade03ef398a29b9fa07597bcd07df15ae9a42d0d50c0dfcc31c"
+    },
+    "after": {
+      "app.bin": "93caedd92d1d329b582becf8b1e5e1ee799dd91a728821c0f123f79f6673b3ec",
+      "build-result.json": "73c4ec2f1f69dade03ef398a29b9fa07597bcd07df15ae9a42d0d50c0dfcc31c"
+    },
+    "returned_status": "unavailable",
+    "returned_diagnostic": "[Errno 2] No such file or directory: '/home/sreekumaar/Desktop/LemmaTrix/build/sdk-saved-build-recovery-20261116/missing-explicit-descriptor.json'",
+    "disk_status": "ok",
+    "returned_snapshot": "86221c1db47c0017ced40302d4c8585a89a952ae943f78965dcc7c785d6184c8",
+    "saved_snapshot": "f2ef3ecbea63da71ded69267e6b4649eb03f0957ca54f03d7df8099034514012"
+  },
+  "incomplete_publication": {
+    "before": {
+      "app.bin": "93caedd92d1d329b582becf8b1e5e1ee799dd91a728821c0f123f79f6673b3ec",
+      "build-result.json": "73c4ec2f1f69dade03ef398a29b9fa07597bcd07df15ae9a42d0d50c0dfcc31c"
+    },
+    "after": {
+      "app.bin": "24d3e75b02a81774d81e7e6bbe555386d10e880a6eac7de7175ddb7ca96d5f2f",
+      "build-result.json": "73c4ec2f1f69dade03ef398a29b9fa07597bcd07df15ae9a42d0d50c0dfcc31c"
+    },
+    "failure": "owned injected receipt write failure",
+    "receipt_unchanged_while_artifact_replaced": true
+  },
+  "fixture_correction": "An initial broad Popen observer intercepted the public signature verifier before publication; restricted observer to sandbox command. No real build used."
+}

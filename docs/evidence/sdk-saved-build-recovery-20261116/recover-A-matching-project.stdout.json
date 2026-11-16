@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "status": "consistent",
+  "build_status": "ok",
+  "snapshot_digest": "f2ef3ecbea63da71ded69267e6b4649eb03f0957ca54f03d7df8099034514012",
+  "request_digest": "6496a74800f6f6aef71beb33e9604fb37ab842afc3449aa96138cb01e5eef55b",
+  "evidence_digest": "f0ecf39a94a286b2458c8b229bfc0052161cdf31f3b0b0b73d19f784fbd326e2",
+  "worker_id": "8fff48cc58274b825e44d7b5399c41f3ac573525d44cc5208dcf175e6ceb8c07",
+  "artifact": {
+    "member": "app.bin",
+    "bytes": 109692,
+    "sha256": "93caedd92d1d329b582becf8b1e5e1ee799dd91a728821c0f123f79f6673b3ec"
+  },
+  "current_project": "matches",
+  "assurance": "Internal consistency only; hashes do not authenticate a publisher or prove source-to-binary correctness."
+}

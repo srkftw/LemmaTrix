@@ -1,0 +1,8 @@
+{
+  "PATH": "/nix/store/jj6jldlw37r8yy9kc1smrax9dhnjm2x4-python3-3.13.9/bin",
+  "LANG": "C.UTF-8",
+  "HOME": "/nonexistent",
+  "LT_CLANG": "/nonexistent/clang",
+  "LT_PYTHON": "/nonexistent/sandbox-python",
+  "LT_TOOLCHAIN_MANIFEST": "/nonexistent/descriptor.json"
+}

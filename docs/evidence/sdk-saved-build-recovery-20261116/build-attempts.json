@@ -1,0 +1,43 @@
+{
+  "maximum_actual_jobs": 3,
+  "attempts": [
+    {
+      "number": 1,
+      "purpose": "A: unchanged tracked Project Notes successful unsigned build",
+      "started_utc": "2026-11-16T22:10:26.516348+00:00",
+      "started_monotonic": 75334.56088734,
+      "command": [
+        "./lt",
+        "sdk",
+        "build",
+        "examples/project-notes",
+        "--toolchain-manifest",
+        "docs/evidence/campaign011-offline-toolchain-descriptor-v1.json",
+        "--output",
+        "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-saved-build-recovery-20261116/build-A"
+      ],
+      "exit_code": 0,
+      "finished_utc": "2026-11-16T22:10:38.259078+00:00",
+      "seconds": 11.743
+    },
+    {
+      "number": 2,
+      "purpose": "B: owned erroneous Notes source; actual located Lean error in fresh output",
+      "started_utc": "2026-11-16T22:11:33.327018+00:00",
+      "started_monotonic": 75401.371558102,
+      "command": [
+        "./lt",
+        "sdk",
+        "build",
+        "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-saved-build-recovery-20261116/project-B",
+        "--toolchain-manifest",
+        "docs/evidence/campaign011-offline-toolchain-descriptor-v1.json",
+        "--output",
+        "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-saved-build-recovery-20261116/build-B"
+      ],
+      "exit_code": 1,
+      "finished_utc": "2026-11-16T22:11:40.509353+00:00",
+      "seconds": 7.182
+    }
+  ]
+}
