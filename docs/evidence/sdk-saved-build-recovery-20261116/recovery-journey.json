@@ -1,0 +1,89 @@
+{
+  "recorded_utc": "2026-11-16T22:12:59.218219+00:00",
+  "actual_compiler_jobs_during_inspection": 0,
+  "original_A_path": "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-saved-build-recovery-20261116/build-A",
+  "relocated_A_path": "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-saved-build-recovery-20261116/kept-A",
+  "old_A_path_absent": true,
+  "A_members_byte_identical_before_and_after_B_and_relocation_and_tamper_checks": true,
+  "kept_A_members": {
+    "app.bin": {
+      "bytes": 109692,
+      "sha256": "93caedd92d1d329b582becf8b1e5e1ee799dd91a728821c0f123f79f6673b3ec"
+    },
+    "build-result.json": {
+      "bytes": 8928,
+      "sha256": "54b7361c5e7e221d11ddcef943a4d297812577174087e22440ee5956e796b3c2"
+    }
+  },
+  "python_only_path": "/nix/store/jj6jldlw37r8yy9kc1smrax9dhnjm2x4-python3-3.13.9/bin",
+  "configured_toolchain_deliberately_unavailable": true,
+  "steps": [
+    {
+      "step": "recover-A-relocated",
+      "command": [
+        "./lt",
+        "sdk",
+        "check-build",
+        "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-saved-build-recovery-20261116/kept-A"
+      ],
+      "exit_code": 0,
+      "seconds": 0.042,
+      "diagnostic": ""
+    },
+    {
+      "step": "recover-A-matching-project",
+      "command": [
+        "./lt",
+        "sdk",
+        "check-build",
+        "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-saved-build-recovery-20261116/kept-A",
+        "--project",
+        "examples/project-notes"
+      ],
+      "exit_code": 0,
+      "seconds": 0.051,
+      "diagnostic": ""
+    },
+    {
+      "step": "inspect-B-error",
+      "command": [
+        "./lt",
+        "sdk",
+        "check-build",
+        "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-saved-build-recovery-20261116/build-B",
+        "--project",
+        "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-saved-build-recovery-20261116/project-B"
+      ],
+      "exit_code": 0,
+      "seconds": 0.048,
+      "diagnostic": ""
+    },
+    {
+      "step": "reject-A-as-current-B",
+      "command": [
+        "./lt",
+        "sdk",
+        "check-build",
+        "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-saved-build-recovery-20261116/kept-A",
+        "--project",
+        "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-saved-build-recovery-20261116/project-B"
+      ],
+      "exit_code": 1,
+      "seconds": 0.043,
+      "diagnostic": "lt sdk: saved build belongs to a different project snapshot; keep it as the earlier build and use a fresh output for current source"
+    },
+    {
+      "step": "reject-tampered-A",
+      "command": [
+        "./lt",
+        "sdk",
+        "check-build",
+        "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-saved-build-recovery-20261116/tampered-A"
+      ],
+      "exit_code": 1,
+      "seconds": 0.042,
+      "diagnostic": "lt sdk: saved artifact hash mismatch"
+    }
+  ],
+  "assurance": "Internal consistency and current-project attribution checks only; no publisher authentication or source-to-binary correctness proof."
+}

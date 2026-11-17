@@ -1,0 +1,10 @@
+{
+  "app.bin": {
+    "bytes": 109692,
+    "sha256": "93caedd92d1d329b582becf8b1e5e1ee799dd91a728821c0f123f79f6673b3ec"
+  },
+  "build-result.json": {
+    "bytes": 8928,
+    "sha256": "54b7361c5e7e221d11ddcef943a4d297812577174087e22440ee5956e796b3c2"
+  }
+}

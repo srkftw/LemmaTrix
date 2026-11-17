@@ -1,0 +1,31 @@
+{
+  "recorded_utc": "2026-11-16T22:15:38.805260+00:00",
+  "primary_head": "d2430aab3059081485663a5938a54d8813b18bec",
+  "primary_status": [
+    " M emulator/aarch64.S",
+    " M emulator/x86_64.S"
+  ],
+  "prototype_files": [
+    {
+      "path": "/home/sreekumaar/Desktop/LemmaTrix/emulator/aarch64.S",
+      "bytes": 42459,
+      "sha256": "3347779c4efa3b96412738a5b69c0c6250e92962634091e0989acd0999c3851d"
+    },
+    {
+      "path": "/home/sreekumaar/Desktop/LemmaTrix/emulator/x86_64.S",
+      "bytes": 53599,
+      "sha256": "d27ce744e57dfa78dc88b34cbfe21913058129120b4f07e84fa1c067d5a27e00"
+    }
+  ],
+  "preserved_refs": {
+    "codex/sdk-offline-workflow-20261116": "0d2f17245c435087ab5e852aa713dffec5a932f5",
+    "codex/main-diagnostic-hint-backport-20261116": "5f3eb798daa8ee91713c896b1ee75d19400e4914",
+    "codex/desktop-diagnostic-product-20261116": "afa6069b8a06652439b7ad182d20df2145b4eeb8",
+    "codex/creator-transition-integration-20261116": "7e02d095c82bd43c200622efc427917aa492dd6b",
+    "codex/coin-reconciliation-record-20261116": "abf9008f6318878cd503efd299660f70f9afa90e",
+    "codex/coin-reference-evidence-20261116": "c1f15471cb76dbd0784b2637453c63e4bcca43ac",
+    "codex/coin-spend-evidence-20261116": "6483d4de4773a07590f06031f78175ec0df85922",
+    "codex/integrated-creator-preview": "f093e05e815d74d424833f3a2c720513c9834990",
+    "codex/sdk-exact-transfer-20261116": "fa01f870af659ce2362b9d7d3876918321d9b06a"
+  }
+}

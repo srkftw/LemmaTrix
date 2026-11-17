@@ -1,0 +1,537 @@
+{
+  "schema": 1,
+  "recorded_utc": "2026-11-16T22:15:38.849800+00:00",
+  "status": "PASS: actual SDK A/B retention and compiler-free saved-build recovery journey; final scoped SAME source/saved-evidence review PASS",
+  "allocation": {
+    "receipt_utc": "2026-11-16T21:57:00+00:00",
+    "receipt_source": "First tool clock when processing the campaign, to one-second precision",
+    "receipt_monotonic_estimate": 74528.04453861,
+    "source_checkpoint_utc": "2026-11-16T22:12:00+00:00",
+    "journey_checkpoint_utc": "2026-11-16T22:42:00+00:00",
+    "work_end_utc": "2026-11-16T23:12:00+00:00",
+    "final_end_utc": "2026-11-16T23:27:00+00:00",
+    "base_main": "2f6dbcf02a0c53d93c7a880c294e3ce12f6632f6",
+    "maximum_actual_build_jobs": 3,
+    "actual_build_jobs": 0,
+    "scope": "SDK complete non-replacing per-attempt publication and ordinary saved-build integrity/current-project check; real A success, B located error, recover A. No remote mutation or app execution/signing/keys/authority changes. Existing normal sandbox limits and explicit installed offline descriptor only."
+  },
+  "base_main": "2f6dbcf02a0c53d93c7a880c294e3ce12f6632f6",
+  "branch": "codex/sdk-saved-build-recovery-20261116",
+  "worktree": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix",
+  "source_revision": "Real A/B jobs used base main plus exact executed-source.json hashes, including the saved build_jobs.executed.py.txt snapshot. A later malformed-binary type handling correction changed final source and computed worker identity; no further compiler job was run.",
+  "capability": "Fresh non-replacing complete per-attempt SDK directories; terminal failed/unavailable attempt receipts; ordinary bounded no-follow check-build with optional current project snapshot matching and relocation support.",
+  "old_defect": "Reproduced at unchanged main before edits: setup return kept old success receipt; injected receipt write interruption replaced artifact while old receipt stayed. Owned public fixtures, no compiler job.",
+  "implementation": {
+    "producer": "Extract existing compiler producer to captured result plus optional binary without host output writes. Legacy native/remote entry-point signature and disk-location contract retained. SDK stages/checks both receipt and bytes before non-replacing directory publication.",
+    "error_states": "Setup/transport/compiler failures keep their own terminal statuses and no artifact. Early failures without resolved tools do not invent a worker or claim successful compilation. Publication-error separately reports the producer build status and cannot claim rollback.",
+    "saved_check": "Fixed build-result.json and app.bin only; bounded regular no-follow reads, source/request/evidence commitments, declared versus actual artifact hash/length, optional current source/lock/carrier/resource snapshot. No compiler/version/SDK resolution/Nix call.",
+    "bounds": {
+      "receipt_bytes": 1048576,
+      "profile1_artifact_bytes": 65536,
+      "profile2_artifact_bytes": 262144,
+      "project_files": 128,
+      "project_bytes": 4194304,
+      "lean_source_bytes": 131072,
+      "directory_depth_cpu": "No unlimited adversarial tree/depth/CPU snapshot proof claimed."
+    },
+    "assurance": "Unkeyed internal consistency only. Existing evidence digest excludes the entire artifact dictionary; matching actual binary to its declared hash/length is not publisher authentication or source-to-binary correctness."
+  },
+  "source_hashes": {
+    "tools/build_jobs.py": {
+      "bytes": 20908,
+      "sha256": "6a59a165f688e6dd7e17a08f185ffd2d5141e208f2a3affde2bc94b3fe461c39"
+    },
+    "tools/sdk.py": {
+      "bytes": 21206,
+      "sha256": "7f8bfaf9cfde6a9dc5740dc107a9ea77dfd35e4a781ca29da7f3128263155608"
+    },
+    "tools/sdk_builds.py": {
+      "bytes": 8326,
+      "sha256": "424f02b1810665baa23a07a8d4a82c8afc014435a572a9d757d637e0604869aa"
+    },
+    "tests/sdk_saved_builds.py": {
+      "bytes": 14412,
+      "sha256": "335f33b2c6e1581c8a83056461c80bd7e71d02b87b684111a03158cd4fccad33"
+    },
+    "tests/sdk_ingestion_bounds.py": {
+      "bytes": 11469,
+      "sha256": "4b11b275a4fa76564403a020b8cebb0d4213d382b94635ba6fee650e972fe769"
+    }
+  },
+  "focused_validation": {
+    "saved_build_cases": 56,
+    "reused_project_reader_cases": 27,
+    "results": "pass",
+    "actual_compiler_jobs": 0,
+    "reused_reader_source": "Bounded anchored read_project and unchanged focused ingestion test from inspected afa6069; no unrelated SDK version/support change",
+    "unchanged_prior_checks": "PR9 transfer source and PR8 resolver selection code unchanged; prior reviewed validation reused without another build/suite.",
+    "before_type_guard_correction": 52,
+    "after_type_guard_correction": 56
+  },
+  "actual_journey": {
+    "real_build_jobs": 2,
+    "maximum_jobs": 3,
+    "builds": [
+      {
+        "number": 1,
+        "purpose": "A: unchanged tracked Project Notes successful unsigned build",
+        "started_utc": "2026-11-16T22:10:26.516348+00:00",
+        "started_monotonic": 75334.56088734,
+        "command": [
+          "./lt",
+          "sdk",
+          "build",
+          "examples/project-notes",
+          "--toolchain-manifest",
+          "docs/evidence/campaign011-offline-toolchain-descriptor-v1.json",
+          "--output",
+          "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-saved-build-recovery-20261116/build-A"
+        ],
+        "exit_code": 0,
+        "finished_utc": "2026-11-16T22:10:38.259078+00:00",
+        "seconds": 11.743
+      },
+      {
+        "number": 2,
+        "purpose": "B: owned erroneous Notes source; actual located Lean error in fresh output",
+        "started_utc": "2026-11-16T22:11:33.327018+00:00",
+        "started_monotonic": 75401.371558102,
+        "command": [
+          "./lt",
+          "sdk",
+          "build",
+          "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-saved-build-recovery-20261116/project-B",
+          "--toolchain-manifest",
+          "docs/evidence/campaign011-offline-toolchain-descriptor-v1.json",
+          "--output",
+          "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-saved-build-recovery-20261116/build-B"
+        ],
+        "exit_code": 1,
+        "finished_utc": "2026-11-16T22:11:40.509353+00:00",
+        "seconds": 7.182
+      }
+    ],
+    "A": {
+      "tracked_project": "examples/project-notes",
+      "snapshot_digest": "f2ef3ecbea63da71ded69267e6b4649eb03f0957ca54f03d7df8099034514012",
+      "request_digest": "6496a74800f6f6aef71beb33e9604fb37ab842afc3449aa96138cb01e5eef55b",
+      "evidence_digest": "f0ecf39a94a286b2458c8b229bfc0052161cdf31f3b0b0b73d19f784fbd326e2",
+      "artifact": {
+        "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-saved-build-recovery-20261116/A/app.bin",
+        "bytes": 109692,
+        "sha256": "93caedd92d1d329b582becf8b1e5e1ee799dd91a728821c0f123f79f6673b3ec"
+      },
+      "stdout_equals_saved_receipt": true,
+      "saved_receipt": {
+        "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-saved-build-recovery-20261116/A/build-result.json",
+        "bytes": 8928,
+        "sha256": "54b7361c5e7e221d11ddcef943a4d297812577174087e22440ee5956e796b3c2"
+      }
+    },
+    "B": {
+      "owned_source_copy": "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-saved-build-recovery-20261116/project-B",
+      "changed_only": "Main.lean appended missingRecoverySymbol declaration",
+      "snapshot_digest": "925a7051061398afb366cc9653a612b078c4126fffd0c7b86364cf40570f1bd7",
+      "request_digest": "14aea21a93545044ef587f6dc4a5fdd108728fc8c99ce673866949d5b8c7ab96",
+      "evidence_digest": "4199c3bcb3cbeed92d09918672185c2ee551d6bf5925cce64486b39bc3d5f646",
+      "status": "error",
+      "diagnostics": [
+        {
+          "path": "Main.lean",
+          "line": 608,
+          "column": 34,
+          "source_id": "b92d27e30ba0880bcf409ba382e0e775577c8df1614679f6c8dfd900493e6933",
+          "source_root": "925a7051061398afb366cc9653a612b078c4126fffd0c7b86364cf40570f1bd7",
+          "message": "error(lean.unknownIdentifier): Unknown identifier `missingRecoverySymbol`"
+        }
+      ],
+      "artifact_absent": true,
+      "stdout_equals_saved_receipt": true,
+      "saved_receipt": {
+        "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-saved-build-recovery-20261116/B/build-result.json",
+        "bytes": 8917,
+        "sha256": "5d5f097b363dd091294b7998a25a445086f354f97dca5dd2f27e2e64761b5374"
+      }
+    },
+    "reuse_refusal": {
+      "command": [
+        "./lt",
+        "sdk",
+        "build",
+        "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-saved-build-recovery-20261116/project-B",
+        "--toolchain-manifest",
+        "docs/evidence/campaign011-offline-toolchain-descriptor-v1.json",
+        "--output",
+        "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-saved-build-recovery-20261116/build-A"
+      ],
+      "exit_code": 1,
+      "seconds": 0.078,
+      "diagnostic": "lt sdk: build output already exists; preserve it and choose a fresh --output directory",
+      "A_unchanged": true,
+      "producer_job_started": false,
+      "proof_scope": "Actual CLI refuses reused output; focused producer spy separately proves no compiler/toolchain work on this path."
+    },
+    "recovery": {
+      "recorded_utc": "2026-11-16T22:12:59.218219+00:00",
+      "actual_compiler_jobs_during_inspection": 0,
+      "original_A_path": "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-saved-build-recovery-20261116/build-A",
+      "relocated_A_path": "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-saved-build-recovery-20261116/kept-A",
+      "old_A_path_absent": true,
+      "A_members_byte_identical_before_and_after_B_and_relocation_and_tamper_checks": true,
+      "kept_A_members": {
+        "app.bin": {
+          "bytes": 109692,
+          "sha256": "93caedd92d1d329b582becf8b1e5e1ee799dd91a728821c0f123f79f6673b3ec"
+        },
+        "build-result.json": {
+          "bytes": 8928,
+          "sha256": "54b7361c5e7e221d11ddcef943a4d297812577174087e22440ee5956e796b3c2"
+        }
+      },
+      "python_only_path": "/nix/store/jj6jldlw37r8yy9kc1smrax9dhnjm2x4-python3-3.13.9/bin",
+      "configured_toolchain_deliberately_unavailable": true,
+      "steps": [
+        {
+          "step": "recover-A-relocated",
+          "command": [
+            "./lt",
+            "sdk",
+            "check-build",
+            "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-saved-build-recovery-20261116/kept-A"
+          ],
+          "exit_code": 0,
+          "seconds": 0.042,
+          "diagnostic": ""
+        },
+        {
+          "step": "recover-A-matching-project",
+          "command": [
+            "./lt",
+            "sdk",
+            "check-build",
+            "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-saved-build-recovery-20261116/kept-A",
+            "--project",
+            "examples/project-notes"
+          ],
+          "exit_code": 0,
+          "seconds": 0.051,
+          "diagnostic": ""
+        },
+        {
+          "step": "inspect-B-error",
+          "command": [
+            "./lt",
+            "sdk",
+            "check-build",
+            "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-saved-build-recovery-20261116/build-B",
+            "--project",
+            "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-saved-build-recovery-20261116/project-B"
+          ],
+          "exit_code": 0,
+          "seconds": 0.048,
+          "diagnostic": ""
+        },
+        {
+          "step": "reject-A-as-current-B",
+          "command": [
+            "./lt",
+            "sdk",
+            "check-build",
+            "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-saved-build-recovery-20261116/kept-A",
+            "--project",
+            "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-saved-build-recovery-20261116/project-B"
+          ],
+          "exit_code": 1,
+          "seconds": 0.043,
+          "diagnostic": "lt sdk: saved build belongs to a different project snapshot; keep it as the earlier build and use a fresh output for current source"
+        },
+        {
+          "step": "reject-tampered-A",
+          "command": [
+            "./lt",
+            "sdk",
+            "check-build",
+            "/home/sreekumaar/Desktop/LemmaTrix/build/sdk-saved-build-recovery-20261116/tampered-A"
+          ],
+          "exit_code": 1,
+          "seconds": 0.042,
+          "diagnostic": "lt sdk: saved artifact hash mismatch"
+        }
+      ],
+      "assurance": "Internal consistency and current-project attribution checks only; no publisher authentication or source-to-binary correctness proof."
+    }
+  },
+  "unchanged_commitments": {
+    "sdk_content_id": "3312ddcd277f401c377142b006bac6cf9aeefd8fa89f4d4c78f1fd5469caf533",
+    "dependency_lock_id": "fa0fa0bc14985b973f64869197445390919ae618c6fe79499cdc5d6af56fb550",
+    "helper_release": "a4e39b5b087822dd3054501afc425bcbcfa6dcbc8faa98293e626f6256fb55c2",
+    "helper_carrier_sha256": "ed35d33eefe6897fdfcef26c1855e130b8d1fccd55d1ceb823c296505ed149ac",
+    "tracked_project_and_recipe_unchanged": true,
+    "toolchain_descriptor_sha256": "3c641e76195f884262cd965c6072afc78566e12c937c34ce691bc2a756bc10e0",
+    "toolchain_manifest_sha256": "d6cfcbeda83f5793985f247790ec2540fbfffc7714e79581081d0d49f01e5034",
+    "store_root_count": 53
+  },
+  "worker": {
+    "actual_A_and_B": "8fff48cc58274b825e44d7b5399c41f3ac573525d44cc5208dcf175e6ceb8c07",
+    "prior_pr9": "74a7c8082d246983521ac537045d150e5b27d24c582a0ee21efdcc89a327579d",
+    "change": "A/B executed producer SHA4ea6a3e1 and worker8fff48cc remain attributed to those actual jobs. Final TypeError decode guard changes producer SHA6a59a165 and computes worker0736b9a1 from the captured descriptor, without claiming that corrected worker performed the saved jobs.",
+    "final_computed_not_executed": "0736b9a10e518ef220e180982a7eb15a496eae90b95a6d34a9e710a28c9845e3",
+    "final_corrected_producer_sha256": "6a59a165f688e6dd7e17a08f185ffd2d5141e208f2a3affde2bc94b3fe461c39"
+  },
+  "sandbox": {
+    "wall_seconds": 120,
+    "A": {
+      "ready": true,
+      "user_namespace": true,
+      "mount_namespace": true,
+      "network_namespace": true,
+      "pid_namespace": true,
+      "readonly_input": true,
+      "work_bytes": 134217728,
+      "temp_bytes": 16777216,
+      "address_space_bytes": 17179869184,
+      "cpu_seconds": 60,
+      "artifact_output_bytes": 262144,
+      "artifact_file_limit_enforced": true,
+      "uid_process_limit": 1631,
+      "additional_uid_tasks": 64,
+      "signer_present": false
+    },
+    "B": {
+      "ready": true,
+      "user_namespace": true,
+      "mount_namespace": true,
+      "network_namespace": true,
+      "pid_namespace": true,
+      "readonly_input": true,
+      "work_bytes": 134217728,
+      "temp_bytes": 16777216,
+      "address_space_bytes": 17179869184,
+      "cpu_seconds": 60,
+      "artifact_output_bytes": 262144,
+      "artifact_file_limit_enforced": true,
+      "uid_process_limit": 1693,
+      "additional_uid_tasks": 64,
+      "signer_present": false
+    },
+    "all_A_steps_exit_zero": true,
+    "B_actual_Lean_failure": true
+  },
+  "review": {
+    "source_and_fixtures": "PASS: final actual-code/saved-evidence review by /root/saved_build_review; no remaining material defect",
+    "integrated_saved_evidence": "PASS: retained actual A/B bytes and executed versus computed-only worker attribution verified",
+    "reviewer_tests_or_builds_rerun": false,
+    "review_record": "sdk-saved-build-recovery-20261116/same-review.json"
+  },
+  "reliability_reflection": [
+    "A build directory is a complete attempt, not a reusable workspace. Refusing reuse before compiler work preserves an earlier success and makes each failed source snapshot inspectable.",
+    "Capturing compiler results before host output publication keeps compilation status distinct from disk failures. Non-replacing staged publication avoids stale binary/receipt combinations and preserves unknown destinations.",
+    "Saved byte checks must select their own fixed members, ignore untrusted historical paths, and compare an explicitly selected current project before attribution. The recorded hashes remain unauthenticated consistency evidence.",
+    "The useful recovery journey is A surviving failed B and remaining inspectable after relocation with no compiler/toolchain available; another same-host rebuild alone would not test that product behavior."
+  ],
+  "protected_state": {
+    "recorded_utc": "2026-11-16T22:15:38.805260+00:00",
+    "primary_head": "d2430aab3059081485663a5938a54d8813b18bec",
+    "primary_status": [
+      " M emulator/aarch64.S",
+      " M emulator/x86_64.S"
+    ],
+    "prototype_files": [
+      {
+        "path": "/home/sreekumaar/Desktop/LemmaTrix/emulator/aarch64.S",
+        "bytes": 42459,
+        "sha256": "3347779c4efa3b96412738a5b69c0c6250e92962634091e0989acd0999c3851d"
+      },
+      {
+        "path": "/home/sreekumaar/Desktop/LemmaTrix/emulator/x86_64.S",
+        "bytes": 53599,
+        "sha256": "d27ce744e57dfa78dc88b34cbfe21913058129120b4f07e84fa1c067d5a27e00"
+      }
+    ],
+    "preserved_refs": {
+      "codex/sdk-offline-workflow-20261116": "0d2f17245c435087ab5e852aa713dffec5a932f5",
+      "codex/main-diagnostic-hint-backport-20261116": "5f3eb798daa8ee91713c896b1ee75d19400e4914",
+      "codex/desktop-diagnostic-product-20261116": "afa6069b8a06652439b7ad182d20df2145b4eeb8",
+      "codex/creator-transition-integration-20261116": "7e02d095c82bd43c200622efc427917aa492dd6b",
+      "codex/coin-reconciliation-record-20261116": "abf9008f6318878cd503efd299660f70f9afa90e",
+      "codex/coin-reference-evidence-20261116": "c1f15471cb76dbd0784b2637453c63e4bcca43ac",
+      "codex/coin-spend-evidence-20261116": "6483d4de4773a07590f06031f78175ec0df85922",
+      "codex/integrated-creator-preview": "f093e05e815d74d424833f3a2c720513c9834990",
+      "codex/sdk-exact-transfer-20261116": "fa01f870af659ce2362b9d7d3876918321d9b06a"
+    }
+  },
+  "cleanup": {
+    "real_CLI_sessions_terminal": true,
+    "timeouts_or_interruptions": false,
+    "owned_real_process_signals_required": false,
+    "fixture_timeouts_synthetic_only": true,
+    "scope": "Unchanged normal namespace runner waits; no separate PID/start audit receipt added."
+  },
+  "scope": "Local unsigned SDK source/output recovery only. No native release/authenticated provenance/admission/execution/independent administration claim, signing, keys, guest/app execution, authority changes or remote mutation.",
+  "integration": "Local integration-ready source/evidence commits with scoped SAME PASS; no remote mutation. Real A/B jobs retain their preserved pre-TypeError-guard source and worker attribution.",
+  "evidence_files": {
+    "A/app.bin": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-saved-build-recovery-20261116/A/app.bin",
+      "bytes": 109692,
+      "sha256": "93caedd92d1d329b582becf8b1e5e1ee799dd91a728821c0f123f79f6673b3ec"
+    },
+    "A/build-result.json": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-saved-build-recovery-20261116/A/build-result.json",
+      "bytes": 8928,
+      "sha256": "54b7361c5e7e221d11ddcef943a4d297812577174087e22440ee5956e796b3c2"
+    },
+    "A-before.json": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-saved-build-recovery-20261116/A-before.json",
+      "bytes": 255,
+      "sha256": "8c7848bf0bc863e6678ec485af5bdab56f5ba7b9b05471f8bb3a031be0d4cc2d"
+    },
+    "B/build-result.json": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-saved-build-recovery-20261116/B/build-result.json",
+      "bytes": 8917,
+      "sha256": "5d5f097b363dd091294b7998a25a445086f354f97dca5dd2f27e2e64761b5374"
+    },
+    "Main.error.lean": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-saved-build-recovery-20261116/Main.error.lean",
+      "bytes": 30620,
+      "sha256": "b92d27e30ba0880bcf409ba382e0e775577c8df1614679f6c8dfd900493e6933"
+    },
+    "build-attempts.json": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-saved-build-recovery-20261116/build-attempts.json",
+      "bytes": 1419,
+      "sha256": "086916a8f3f3b9d14866484898687b1571a0feb0ee8d27d9d4230ff7c99ac11e"
+    },
+    "build_jobs.executed.py.txt": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-saved-build-recovery-20261116/build_jobs.executed.py.txt",
+      "bytes": 20898,
+      "sha256": "4ea6a3e18140b012e923d71649a75842cb9b8f9505e2b8db821e0126488b22aa"
+    },
+    "cli-environment.json": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-saved-build-recovery-20261116/cli-environment.json",
+      "bytes": 266,
+      "sha256": "4af75614ed4648bd61c98eb1e372adfd7ca63fcdcee9a41b328b404f8aa5872b"
+    },
+    "executed-source.json": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-saved-build-recovery-20261116/executed-source.json",
+      "bytes": 1991,
+      "sha256": "d9362120a2930cc2c02dc4bce56a5d28c20caeb7300b54c1487c4c6ffca9a914"
+    },
+    "fixture-checks.json": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-saved-build-recovery-20261116/fixture-checks.json",
+      "bytes": 9721,
+      "sha256": "35045efa5c28d5a61d6f992acb87de80308869638880dca2d0471e14e8938073"
+    },
+    "inspect-B-error.stdout.json": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-saved-build-recovery-20261116/inspect-B-error.stdout.json",
+      "bytes": 595,
+      "sha256": "f7e15b1a1abca90742a87dea5e1fc29a9df64e33e62516ad33201c42c68ea796"
+    },
+    "inspection-environment.json": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-saved-build-recovery-20261116/inspection-environment.json",
+      "bytes": 267,
+      "sha256": "028b94b95e999962dd8555e246069c9c6543d5b08c26a38316611b331808ea33"
+    },
+    "journey-inputs.json": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-saved-build-recovery-20261116/journey-inputs.json",
+      "bytes": 936,
+      "sha256": "c185027d4969acb2c15f36f373e86d89fb2fbfbdb143246641935d1643e260b5"
+    },
+    "old-counterexamples.json": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-saved-build-recovery-20261116/old-counterexamples.json",
+      "bytes": 2022,
+      "sha256": "23ff1add288b1ef44f54bd0a0ddc230ede7c9155b4b5101bd4709341da3fad81"
+    },
+    "post-journey-correction.json": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-saved-build-recovery-20261116/post-journey-correction.json",
+      "bytes": 1118,
+      "sha256": "ed8dfada7d8c3c048dd95927698ceebfcca94d4837869bd94e88c80ca60bfa1b"
+    },
+    "project-reader-checks.json": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-saved-build-recovery-20261116/project-reader-checks.json",
+      "bytes": 4992,
+      "sha256": "4c6ddc4caa8a4fd249c0d03af215ddc0e2feaad6116d08f65171748964f01f35"
+    },
+    "protected-state.json": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-saved-build-recovery-20261116/protected-state.json",
+      "bytes": 1443,
+      "sha256": "532c8b863853669e1ccc9249cfd18800428aa693925ca15989770821332cb2e9"
+    },
+    "recover-A-matching-project.stdout.json": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-saved-build-recovery-20261116/recover-A-matching-project.stdout.json",
+      "bytes": 720,
+      "sha256": "9cd18d724d91929860cc7c90866a9f917d6bff4db98c9868ce60be65fe7d7f67"
+    },
+    "recover-A-relocated.stdout.json": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-saved-build-recovery-20261116/recover-A-relocated.stdout.json",
+      "bytes": 725,
+      "sha256": "cdf14e335add168d6ae03cd34385b97c736659170592868392a8bd6c59d11d26"
+    },
+    "recovery-journey.json": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-saved-build-recovery-20261116/recovery-journey.json",
+      "bytes": 2971,
+      "sha256": "dc47f885aa8b49560af86ec5e7e12d7796e9eb5b90390debf3b155f0a6e1d3b0"
+    },
+    "reject-A-as-current-B.stderr.txt": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-saved-build-recovery-20261116/reject-A-as-current-B.stderr.txt",
+      "bytes": 132,
+      "sha256": "18fe49a7ba1144cec8ea2659879614a831a20f31fc4d4c74747e86bdbf5c48af"
+    },
+    "reject-tampered-A.stderr.txt": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-saved-build-recovery-20261116/reject-tampered-A.stderr.txt",
+      "bytes": 37,
+      "sha256": "ec7bd835191f55443598f10c259423180989786a51fcd48c91b6a5fcbbdcf9e5"
+    },
+    "reuse-refusal.json": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-saved-build-recovery-20261116/reuse-refusal.json",
+      "bytes": 688,
+      "sha256": "6fe25cf0530172a98350d59a2f486ba352cc18776307a73c2c83fe7e107dd867"
+    },
+    "same-review.json": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-saved-build-recovery-20261116/same-review.json",
+      "bytes": 2052,
+      "sha256": "53b3db08bf067cb2e44bae80ccab17808d313a3dd9cafe27aad3b3f7f57e32df"
+    },
+    "source-ready.json": {
+      "path": "/home/sreekumaar/.codex/worktrees/main-diagnostic-backport/LemmaTrix/docs/evidence/sdk-saved-build-recovery-20261116/source-ready.json",
+      "bytes": 2233,
+      "sha256": "1831a99ed7bf4cbd0b5423fefd89b22208ff3af6e8d2024a1c0c60d069b1a3b2"
+    }
+  },
+  "last_updated_utc": "2026-11-16T22:24:04.364398+00:00",
+  "executed_source_hashes": {
+    "tools/build_jobs.py": {
+      "bytes": 20898,
+      "sha256": "4ea6a3e18140b012e923d71649a75842cb9b8f9505e2b8db821e0126488b22aa"
+    },
+    "tools/sdk.py": {
+      "bytes": 21206,
+      "sha256": "7f8bfaf9cfde6a9dc5740dc107a9ea77dfd35e4a781ca29da7f3128263155608"
+    },
+    "tools/sdk_builds.py": {
+      "bytes": 8326,
+      "sha256": "424f02b1810665baa23a07a8d4a82c8afc014435a572a9d757d637e0604869aa"
+    },
+    "tests/sdk_saved_builds.py": {
+      "bytes": 14251,
+      "sha256": "7bad4261d671a67570bbaa9d9d6a2e34b80c1f217325ca4381078589d59c2dd5"
+    },
+    "tests/sdk_ingestion_bounds.py": {
+      "bytes": 11469,
+      "sha256": "4b11b275a4fa76564403a020b8cebb0d4213d382b94635ba6fee650e972fe769"
+    }
+  },
+  "post_journey_correction": {
+    "recorded_utc": "2026-11-16T22:18:51.351805+00:00",
+    "source": "Trusted coordinator independent actual-code P2 review",
+    "finding": "Valid JSON binary_base64:null/number/list/object raises TypeError and escaped receipt publication.",
+    "fix": "Add TypeError to the existing decode-error tuple; retain error status and invalid artifact transport diagnostic.",
+    "executed_A_B_producer_sha256": "4ea6a3e18140b012e923d71649a75842cb9b8f9505e2b8db821e0126488b22aa",
+    "executed_A_B_worker": "8fff48cc58274b825e44d7b5399c41f3ac573525d44cc5208dcf175e6ceb8c07",
+    "final_corrected_producer_sha256": "6a59a165f688e6dd7e17a08f185ffd2d5141e208f2a3affde2bc94b3fe461c39",
+    "final_computed_worker": "0736b9a10e518ef220e180982a7eb15a496eae90b95a6d34a9e710a28c9845e3",
+    "final_worker_scope": "Computed from actual corrected source and previously captured explicit toolchain descriptor; not executed in another compiler job. The two real A/B jobs and recovery evidence retain their prior executed source/worker identities.",
+    "focused_cases_after_correction": 56,
+    "fixture_status": "pass",
+    "additional_compiler_jobs": 0
+  },
+  "source_commit": "be862d9c57c2983e7ee8e363c0ff4b728a4c0158"
+}

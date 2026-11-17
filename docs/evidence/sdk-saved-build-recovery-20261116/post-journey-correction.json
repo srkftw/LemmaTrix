@@ -1,0 +1,14 @@
+{
+  "recorded_utc": "2026-11-16T22:18:51.351805+00:00",
+  "source": "Trusted coordinator independent actual-code P2 review",
+  "finding": "Valid JSON binary_base64:null/number/list/object raises TypeError and escaped receipt publication.",
+  "fix": "Add TypeError to the existing decode-error tuple; retain error status and invalid artifact transport diagnostic.",
+  "executed_A_B_producer_sha256": "4ea6a3e18140b012e923d71649a75842cb9b8f9505e2b8db821e0126488b22aa",
+  "executed_A_B_worker": "8fff48cc58274b825e44d7b5399c41f3ac573525d44cc5208dcf175e6ceb8c07",
+  "final_corrected_producer_sha256": "6a59a165f688e6dd7e17a08f185ffd2d5141e208f2a3affde2bc94b3fe461c39",
+  "final_computed_worker": "0736b9a10e518ef220e180982a7eb15a496eae90b95a6d34a9e710a28c9845e3",
+  "final_worker_scope": "Computed from actual corrected source and previously captured explicit toolchain descriptor; not executed in another compiler job. The two real A/B jobs and recovery evidence retain their prior executed source/worker identities.",
+  "focused_cases_after_correction": 56,
+  "fixture_status": "pass",
+  "additional_compiler_jobs": 0
+}

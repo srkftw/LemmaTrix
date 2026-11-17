@@ -1,0 +1,36 @@
+{
+  "recorded_utc": "2026-11-16T22:23:18.437827+00:00",
+  "status": "PASS for scoped SDK recovery; no remaining material defect",
+  "source": "Trusted coordinator relayed final fresh independent actual-code/saved-evidence review by /root/saved_build_review",
+  "reviewed_producer_sha256": "6a59a165f688e6dd7e17a08f185ffd2d5141e208f2a3affde2bc94b3fe461c39",
+  "reviewed_campaign_record_sha256": "03acf6f207b78527f404d5058909157dc0609d02b8be731974f404479969f5e2",
+  "other_supplied_source_test_pins_match": true,
+  "source_test_pins": {
+    "tools/build_jobs.py": {
+      "bytes": 20908,
+      "sha256": "6a59a165f688e6dd7e17a08f185ffd2d5141e208f2a3affde2bc94b3fe461c39"
+    },
+    "tools/sdk.py": {
+      "bytes": 21206,
+      "sha256": "7f8bfaf9cfde6a9dc5740dc107a9ea77dfd35e4a781ca29da7f3128263155608"
+    },
+    "tools/sdk_builds.py": {
+      "bytes": 8326,
+      "sha256": "424f02b1810665baa23a07a8d4a82c8afc014435a572a9d757d637e0604869aa"
+    },
+    "tests/sdk_saved_builds.py": {
+      "bytes": 14412,
+      "sha256": "335f33b2c6e1581c8a83056461c80bd7e71d02b87b684111a03158cd4fccad33"
+    },
+    "tests/sdk_ingestion_bounds.py": {
+      "bytes": 11469,
+      "sha256": "4b11b275a4fa76564403a020b8cebb0d4213d382b94635ba6fee650e972fe769"
+    }
+  },
+  "finding_resolved": "Only producer difference from preserved executed source adds TypeError handling. Four matching owned malformed-binary synthetic cases retain terminal error/no artifact/unchanged A. The 56 affected fixtures passed.",
+  "saved_evidence": "Retained actual A/B bytes unchanged. Evidence correctly separates executed worker8fff48cc58274b825e44d7b5399c41f3ac573525d44cc5208dcf175e6ceb8c07 from corrected worker0736b9a10e518ef220e180982a7eb15a496eae90b95a6d34a9e710a28c9845e3 computed only.",
+  "reviewer_tests_rerun": false,
+  "reviewer_builds_rerun": false,
+  "reviewer_files_changed": false,
+  "scope": "Actual source and saved SDK recovery evidence only; no native image, independent administration, application execution, authenticated provenance or other runtime acceptance."
+}

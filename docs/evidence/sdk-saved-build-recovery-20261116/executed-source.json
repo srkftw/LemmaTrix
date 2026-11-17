@@ -1,0 +1,39 @@
+{
+  "recorded_utc": "2026-11-16T22:15:38.804233+00:00",
+  "status": "Source and focused fixture tests ready for SAME review",
+  "files": {
+    "tools/build_jobs.py": {
+      "bytes": 20898,
+      "sha256": "4ea6a3e18140b012e923d71649a75842cb9b8f9505e2b8db821e0126488b22aa"
+    },
+    "tools/sdk.py": {
+      "bytes": 21206,
+      "sha256": "7f8bfaf9cfde6a9dc5740dc107a9ea77dfd35e4a781ca29da7f3128263155608"
+    },
+    "tools/sdk_builds.py": {
+      "bytes": 8326,
+      "sha256": "424f02b1810665baa23a07a8d4a82c8afc014435a572a9d757d637e0604869aa"
+    },
+    "tests/sdk_saved_builds.py": {
+      "bytes": 14251,
+      "sha256": "7bad4261d671a67570bbaa9d9d6a2e34b80c1f217325ca4381078589d59c2dd5"
+    },
+    "tests/sdk_ingestion_bounds.py": {
+      "bytes": 11469,
+      "sha256": "4b11b275a4fa76564403a020b8cebb0d4213d382b94635ba6fee650e972fe769"
+    }
+  },
+  "focused_cases": 52,
+  "focused_status": "pass",
+  "actual_compiler_jobs": 2,
+  "representation": "Request schema1 fields and evidence domain unchanged. Artifact dict remains excluded from evidence hash; checker validates selected app.bin against declared hash/length but makes no authenticated compilation/publisher claim. Historical artifact.path is never opened. Failed/unavailable attempts stay failed/unavailable, with finite terminal receipts; source-only success has no executable.",
+  "reader_reuse": "Existing inspected bounded anchored read_project at afa6069, used for optional project snapshot including lock/carrier/resources; no SDK resolution or compiler/Nix calls in saved check.",
+  "native_remote_interface": "Existing build_source_snapshot signature retained as legacy disk-output adapter; SDK uses captured result and bytes from extracted same producer core.",
+  "reused_project_reader_checks": {
+    "checks": 27,
+    "result": "pass",
+    "unchanged_test_source_sha256": "4b11b275a4fa76564403a020b8cebb0d4213d382b94635ba6fee650e972fe769",
+    "real_compiler_jobs": 0
+  },
+  "focused_fixture_compiler_jobs": 0
+}

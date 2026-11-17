@@ -1,0 +1,149 @@
+{
+  "schema": 1,
+  "result": "pass",
+  "scope": "Exercise actual local SDK ingestion with owned files, without building anything.",
+  "checks": [
+    {
+      "check": "exact 128KiB Lean member accepted",
+      "result": "pass",
+      "read_bytes": 131072
+    },
+    {
+      "check": "128KiB+1 Lean refused before read",
+      "result": "pass",
+      "diagnostic": "Lean source exceeds 128KiB: Main.lean"
+    },
+    {
+      "check": "exact 4MiB non-Lean member accepted",
+      "result": "pass",
+      "read_bytes": 4194304
+    },
+    {
+      "check": "4MiB+1 non-Lean refused before read",
+      "result": "pass",
+      "diagnostic": "source closure exceeds 128 files/4MiB"
+    },
+    {
+      "check": "cumulative exact 4MiB accepted",
+      "result": "pass"
+    },
+    {
+      "check": "cumulative 4MiB+1 refused before second member read",
+      "result": "pass",
+      "diagnostic": "source closure exceeds 128 files/4MiB"
+    },
+    {
+      "check": "128 selected files accepted",
+      "result": "pass"
+    },
+    {
+      "check": "129 selected files refused before reading member129",
+      "result": "pass",
+      "diagnostic": "source closure exceeds 128 files/4MiB"
+    },
+    {
+      "check": "valid path bytes and sorted result unchanged; hidden/build directories pruned",
+      "result": "pass",
+      "members": 5
+    },
+    {
+      "check": "noncanonical module validation preserved",
+      "result": "pass",
+      "diagnostic": "Lean source must use a canonical module path: App.Other.lean"
+    },
+    {
+      "check": "reserved namespace validation preserved",
+      "result": "pass",
+      "diagnostic": "project shadows reserved SDK/toolchain namespace"
+    },
+    {
+      "check": "invalid UTF-8 validation preserved",
+      "result": "pass",
+      "diagnostic": "'utf-8' codec can't decode byte 0xff in position 0: invalid start byte"
+    },
+    {
+      "check": "selected symlink file refused",
+      "result": "pass",
+      "diagnostic": "project symlinks are not a source closure"
+    },
+    {
+      "check": "selected symlink directory refused",
+      "result": "pass",
+      "diagnostic": "project symlinks are not a source closure"
+    },
+    {
+      "check": "replacement symlink file refused before outside read",
+      "result": "pass",
+      "diagnostic": "[Errno 40] Too many levels of symbolic links: 'item.bin'"
+    },
+    {
+      "check": "replacement symlink parent refused before outside read",
+      "result": "pass",
+      "diagnostic": "[Errno 20] Not a directory: 'Sub'"
+    },
+    {
+      "check": "regular-file identity replacement refused before read",
+      "result": "pass",
+      "diagnostic": "project member changed before read: item.bin"
+    },
+    {
+      "check": "resolved project parent replacement symlink refused before read",
+      "result": "pass",
+      "diagnostic": "[Errno 20] Not a directory: 'root-replacement'"
+    },
+    {
+      "check": "growth during actual descriptor read refused",
+      "result": "pass",
+      "diagnostic": "project member changed during read: item.bin"
+    },
+    {
+      "check": "growth-lean-limit during actual descriptor read refused",
+      "result": "pass",
+      "diagnostic": "project member changed during read: Main.lean"
+    },
+    {
+      "check": "growth-total-limit during actual descriptor read refused",
+      "result": "pass",
+      "diagnostic": "project member changed during read: item.bin"
+    },
+    {
+      "check": "truncation during actual descriptor read refused",
+      "result": "pass",
+      "diagnostic": "project member changed during read: item.bin"
+    },
+    {
+      "check": "same-size-write during actual descriptor read refused",
+      "result": "pass",
+      "diagnostic": "project member changed during read: item.bin"
+    },
+    {
+      "check": "pathname-symlink during actual descriptor read refused",
+      "result": "pass",
+      "diagnostic": "project member changed during read: item.bin"
+    },
+    {
+      "check": "opened parent replacement detected without following outside link",
+      "result": "pass",
+      "diagnostic": "project directory changed during traversal"
+    },
+    {
+      "check": "same sparse64MiB counterexample rejected by actual new loader before read",
+      "result": "pass",
+      "diagnostic": "source closure exceeds 128 files/4MiB"
+    },
+    {
+      "check": "old loader requests unrestricted read_bytes before records validation; stopped before allocation",
+      "result": "pass",
+      "old_loader_sha256": "5bd368bcc1aba76d1b40ec5bdb05cd417c3d312ee7d0cb2bc30345b587d977b8",
+      "declared_bytes": 67108864,
+      "unbounded_read_bytes_executed": false
+    }
+  ],
+  "seconds": 0.044570579993887804,
+  "temporary_directory_removed": true,
+  "compiler_or_runtime_invoked": false,
+  "limitations": [
+    "Actual owned-file loader checks, with thin syscall observers/interleaving hooks; no coherent adversarial filesystem snapshot proof.",
+    "No unlimited tree CPU/depth bound or native IDE/release/MVP acceptance."
+  ]
+}

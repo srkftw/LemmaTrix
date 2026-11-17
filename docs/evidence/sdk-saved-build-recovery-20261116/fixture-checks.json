@@ -1,0 +1,263 @@
+{
+  "schema": 1,
+  "status": "pass",
+  "checks": [
+    {
+      "check": "complete successful attempt publishes matching bytes and receipt together",
+      "result": "pass"
+    },
+    {
+      "check": "existing A refused before producer work",
+      "result": "pass",
+      "diagnostic": "build output already exists; preserve it and choose a fresh --output directory"
+    },
+    {
+      "check": "existing empty-directory refused before producer work",
+      "result": "pass",
+      "diagnostic": "build output already exists; preserve it and choose a fresh --output directory"
+    },
+    {
+      "check": "existing file refused before producer work",
+      "result": "pass",
+      "diagnostic": "build output already exists; preserve it and choose a fresh --output directory"
+    },
+    {
+      "check": "existing symlink refused before producer work",
+      "result": "pass",
+      "diagnostic": "build output already exists; preserve it and choose a fresh --output directory"
+    },
+    {
+      "check": "compiler-error retains its own complete terminal receipt, no app and unchanged A",
+      "result": "pass"
+    },
+    {
+      "check": "unavailable retains its own complete terminal receipt, no app and unchanged A",
+      "result": "pass"
+    },
+    {
+      "check": "launch-error retains its own complete terminal receipt, no app and unchanged A",
+      "result": "pass"
+    },
+    {
+      "check": "timeout retains its own complete terminal receipt, no app and unchanged A",
+      "result": "pass"
+    },
+    {
+      "check": "oversize-wire retains its own complete terminal receipt, no app and unchanged A",
+      "result": "pass"
+    },
+    {
+      "check": "invalid-json retains its own complete terminal receipt, no app and unchanged A",
+      "result": "pass"
+    },
+    {
+      "check": "wrong-json-shape retains its own complete terminal receipt, no app and unchanged A",
+      "result": "pass"
+    },
+    {
+      "check": "wrong-steps-shape retains its own complete terminal receipt, no app and unchanged A",
+      "result": "pass"
+    },
+    {
+      "check": "nonzero-ok retains its own complete terminal receipt, no app and unchanged A",
+      "result": "pass"
+    },
+    {
+      "check": "missing-binary retains its own complete terminal receipt, no app and unchanged A",
+      "result": "pass"
+    },
+    {
+      "check": "invalid-base64 retains its own complete terminal receipt, no app and unchanged A",
+      "result": "pass"
+    },
+    {
+      "check": "oversize-binary retains its own complete terminal receipt, no app and unchanged A",
+      "result": "pass"
+    },
+    {
+      "check": "nonstring-binary-null retains its own complete terminal receipt, no app and unchanged A",
+      "result": "pass"
+    },
+    {
+      "check": "nonstring-binary-number retains its own complete terminal receipt, no app and unchanged A",
+      "result": "pass"
+    },
+    {
+      "check": "nonstring-binary-list retains its own complete terminal receipt, no app and unchanged A",
+      "result": "pass"
+    },
+    {
+      "check": "nonstring-binary-object retains its own complete terminal receipt, no app and unchanged A",
+      "result": "pass"
+    },
+    {
+      "check": "resolver-error early return retains terminal receipt",
+      "result": "pass"
+    },
+    {
+      "check": "temporary-setup-error early return retains terminal receipt",
+      "result": "pass"
+    },
+    {
+      "check": "missing namespace tool retains unavailable receipt",
+      "result": "pass"
+    },
+    {
+      "check": "secondary execution cleanup preserves success completion/primary diagnostic",
+      "result": "pass"
+    },
+    {
+      "check": "secondary execution cleanup preserves compiler-error completion/primary diagnostic",
+      "result": "pass"
+    },
+    {
+      "check": "source-only completion has no dummy executable",
+      "result": "pass"
+    },
+    {
+      "check": "source-only incompatible transport is a terminal error",
+      "result": "pass"
+    },
+    {
+      "check": "app.bin publication failure preserves completed build status",
+      "result": "pass",
+      "diagnostic": "build attempt ended with status ok; output publication failed: [Errno 5] owned app.bin publication failure"
+    },
+    {
+      "check": "build-result.json publication failure preserves completed build status",
+      "result": "pass",
+      "diagnostic": "build attempt ended with status ok; output publication failed: [Errno 5] owned build-result.json publication failure"
+    },
+    {
+      "check": "racing output collision does not replace unknown target",
+      "result": "pass",
+      "diagnostic": "build attempt ended with status ok; output publication failed: [Errno 17] File exists: 'race'"
+    },
+    {
+      "check": "replaced stage refuses publication and preserves replacement",
+      "result": "pass",
+      "diagnostic": "build attempt ended with status ok; output publication failed: build staging directory changed before publication"
+    },
+    {
+      "check": "stage cleanup retains primary publication error",
+      "result": "pass",
+      "diagnostic": "build attempt ended with status ok; output publication failed: [Errno 5] owned primary publication failure"
+    },
+    {
+      "check": "post-publication reporting failure never removes completed output",
+      "result": "pass",
+      "diagnostic": "build attempt ended with status ok; output publication failed: [Errno 5] owned reporting failure after publication"
+    },
+    {
+      "check": "missing-receipt saved input refused with bounded selected reads",
+      "result": "pass",
+      "diagnostic": "[Errno 2] No such file or directory: 'build-result.json'"
+    },
+    {
+      "check": "short-receipt saved input refused with bounded selected reads",
+      "result": "pass",
+      "diagnostic": "Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"
+    },
+    {
+      "check": "duplicate-json saved input refused with bounded selected reads",
+      "result": "pass",
+      "diagnostic": "duplicate JSON key: schema"
+    },
+    {
+      "check": "receipt-large saved input refused with bounded selected reads",
+      "result": "pass",
+      "diagnostic": "SDK input must be a bounded regular file: build-result.json"
+    },
+    {
+      "check": "receipt-link saved input refused with bounded selected reads",
+      "result": "pass",
+      "diagnostic": "[Errno 40] Too many levels of symbolic links: 'build-result.json'"
+    },
+    {
+      "check": "artifact-link saved input refused with bounded selected reads",
+      "result": "pass",
+      "diagnostic": "[Errno 40] Too many levels of symbolic links: 'app.bin'"
+    },
+    {
+      "check": "receipt-fifo saved input refused with bounded selected reads",
+      "result": "pass",
+      "diagnostic": "SDK input must be a bounded regular file: build-result.json"
+    },
+    {
+      "check": "artifact-fifo saved input refused with bounded selected reads",
+      "result": "pass",
+      "diagnostic": "SDK input must be a bounded regular file: app.bin"
+    },
+    {
+      "check": "root-link saved input refused with bounded selected reads",
+      "result": "pass",
+      "diagnostic": "[Errno 20] Not a directory: 'selected-link'"
+    },
+    {
+      "check": "short-artifact saved input refused with bounded selected reads",
+      "result": "pass",
+      "diagnostic": "SDK input size differs from manifest: app.bin"
+    },
+    {
+      "check": "large-artifact saved input refused with bounded selected reads",
+      "result": "pass",
+      "diagnostic": "SDK input must be a bounded regular file: app.bin"
+    },
+    {
+      "check": "tamper saved input refused with bounded selected reads",
+      "result": "pass",
+      "diagnostic": "saved artifact hash mismatch"
+    },
+    {
+      "check": "evidence saved input refused with bounded selected reads",
+      "result": "pass",
+      "diagnostic": "saved build evidence commitment mismatch"
+    },
+    {
+      "check": "request saved input refused with bounded selected reads",
+      "result": "pass",
+      "diagnostic": "saved build request commitment mismatch"
+    },
+    {
+      "check": "snapshot saved input refused with bounded selected reads",
+      "result": "pass",
+      "diagnostic": "saved source snapshot commitment mismatch"
+    },
+    {
+      "check": "descriptor saved input refused with bounded selected reads",
+      "result": "pass",
+      "diagnostic": "saved toolchain descriptor commitment mismatch"
+    },
+    {
+      "check": "artifact-length saved input refused with bounded selected reads",
+      "result": "pass",
+      "diagnostic": "invalid saved artifact declaration"
+    },
+    {
+      "check": "failed-with-artifact saved input refused with bounded selected reads",
+      "result": "pass",
+      "diagnostic": "failed/source-only build must not contain app.bin"
+    },
+    {
+      "check": "source-only-with-artifact saved input refused with bounded selected reads",
+      "result": "pass",
+      "diagnostic": "failed/source-only build must not contain app.bin"
+    },
+    {
+      "check": "A cannot be attributed to current B",
+      "result": "pass",
+      "diagnostic": "saved build belongs to a different project snapshot; keep it as the earlier build and use a fresh output for current source"
+    },
+    {
+      "check": "relocated saved output ignores historical/forged artifact paths and unselected symlinks; no process, discovery or enumeration",
+      "result": "pass"
+    },
+    {
+      "check": "original A unchanged across all later error/publication/tamper checks",
+      "result": "pass"
+    }
+  ],
+  "real_compiler_jobs": 0,
+  "transport": "Only owned synthetic sandbox replies; public source/dependency parsing and commitment checks are real",
+  "seconds": 1.017
+}

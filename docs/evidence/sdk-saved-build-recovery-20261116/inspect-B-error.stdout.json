@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "status": "consistent",
+  "build_status": "error",
+  "snapshot_digest": "925a7051061398afb366cc9653a612b078c4126fffd0c7b86364cf40570f1bd7",
+  "request_digest": "14aea21a93545044ef587f6dc4a5fdd108728fc8c99ce673866949d5b8c7ab96",
+  "evidence_digest": "4199c3bcb3cbeed92d09918672185c2ee551d6bf5925cce64486b39bc3d5f646",
+  "worker_id": "8fff48cc58274b825e44d7b5399c41f3ac573525d44cc5208dcf175e6ceb8c07",
+  "artifact": null,
+  "current_project": "matches",
+  "assurance": "Internal consistency only; hashes do not authenticate a publisher or prove source-to-binary correctness."
+}
