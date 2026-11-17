@@ -48,13 +48,13 @@ def imports(source):
  text=without_comments(source.read_text())
  return [name for m in re.finditer(r'^\s*(?:public\s+)?import\s+([^\n]+)',text,re.M) for name in m[1].split() if re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*',name)]
 def build_identity():
- return content([ROOT/'tools/driver.py',ROOT/'tools/live_build.py',ROOT/'toolchain.lock.json',ROOT/'lean-toolchain'])+repr([driver.tool(n) for n in ['lean','clang','ld.lld','llvm-objcopy']])
+ return content([ROOT/'tools/driver.py',ROOT/'tools/live_build.py',ROOT/'toolchain.lock.json',ROOT/'lean-toolchain'])+repr([driver.tool(n) for n in ['lean','clang','ld.lld','llvm-objcopy']])+repr(driver.LEAN_OPTIONS)
 @functools.lru_cache(maxsize=1)
 def lean_module_identity():
  # Layout, LLVM, CLI and host adapters do not change Lean elaboration. Keep
  # their identities in artifact recipes while reusing unaffected .olean files.
  executable=Path(driver.tool('lean')).resolve()
- return hashlib.sha256(executable.read_bytes()).hexdigest()+str(executable)+driver.LOCK['lean']+'compiler.extract_closed=false'
+ return hashlib.sha256(executable.read_bytes()).hexdigest()+str(executable)+driver.LOCK['lean']+repr(driver.LEAN_OPTIONS)
 def module_inputs(module_name,seen=None):
  seen=set() if seen is None else seen
  if module_name in seen:return []
@@ -95,6 +95,14 @@ def artifact(module_name,entry,prefix,kernel=False,wide=False,objects_profile=Fa
  if undefined.strip():raise RuntimeError('unresolved live guest symbols:'+undefined)
  driver.run([driver.tool('llvm-objcopy'),'-O','binary',elf,binary]);stamp.write_text(key);return binary
 def build(clean=False):
+ # Resolve and validate before creating outputs, cleaning caches or compiling.
+ # Reuse one frozen resolution for the actual BuildJobs worker binding.
+ import build_jobs
+ resolved=build_jobs.resolve_toolchain()
+ identity=build_jobs.compiler_identity(toolchain=resolved)
+ if not isinstance(identity,str)or re.fullmatch('[0-9a-f]{64}',identity)is None or identity=='00'*32:
+  raise ValueError('normal core build requires a nonzero 32-byte compiler identity')
+ compiler_id=bytes.fromhex(identity)
  B.mkdir(parents=True,exist_ok=True);driver.validate_toolchain();check_service_layout()
  if clean:
   for path in B.iterdir():
@@ -114,10 +122,6 @@ def build(clean=False):
   data[offset:offset+len(part)]=part
   rights={1:0x1000000ff,2:0,3:127,4:127,5:2175,6:0}[pid]
   struct.pack_into('<4Q',data,0x200000+pid*32,len(part),rights,2,limit)
- try:
-  import build_jobs
-  compiler_id=bytes.fromhex(build_jobs.compiler_identity())
- except (OSError,RuntimeError):compiler_id=bytes(32)
  data[0x200400:0x200420]=compiler_id
  # Adapter-visible device selection only. Personal/catalog policy remains in
  # the guest. Zero here identifies earlier readable PCM1/stream1 images.
