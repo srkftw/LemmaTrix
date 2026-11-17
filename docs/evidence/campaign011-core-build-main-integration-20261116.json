@@ -1,0 +1,81 @@
+{
+  "schema": 1,
+  "recorded_utc": "2026-11-17T00:25:35.869674+00:00",
+  "status": "LOCAL PR-READY SOURCE INTEGRATION; publication awaits root dispatch",
+  "base_main": "5c53aecbc72758526d85638e850613b1b1be55fc",
+  "branch": "codex/core-build-main-integration-20261116",
+  "fix_reused_from": "b31ad418669fab570064d8a821b28f1d5cf42d7b",
+  "product_change": "Require canonical nonzero worker identity before normal output creation/clean/compile; embed the same once-resolved bytes. Central -j1/-s65536/extract_closed=false controls are shared by elaboration/emission and included in module/artifact cache identities. Compilation semantics and image/service resource caps unchanged.",
+  "production_bytes": {
+    "tools/driver.py": {
+      "bytes": 18021,
+      "sha256": "3b4180309885260447356fd99016a7a11edb767ce363ea4114da2feb642797dc",
+      "unchanged_by_PR10": true,
+      "exact_tested_fix_bytes": true
+    },
+    "tools/live_build.py": {
+      "bytes": 9460,
+      "sha256": "398fc9c63fb67d35f050ac824d7f16a0ff97d251557cd5407b094f13df8d4419",
+      "unchanged_by_PR10": true,
+      "exact_tested_fix_bytes": true
+    }
+  },
+  "affected_interfaces": {
+    "resolve_toolchain": {
+      "AST_identical_old_new_base": true,
+      "normalized_AST_sha256": "62d73e6d55e8c6caa11e57044b44dc25756bd51885441e6edc5ba79bb251cb95"
+    },
+    "compiler_identity": {
+      "AST_identical_old_new_base": true,
+      "normalized_AST_sha256": "ad25a600cffdd45360752074be9a99eba8b0c200231caeea1b2d9c0429c63fce"
+    }
+  },
+  "validation": {
+    "focused_command": "python3 tests/core_build_binding.py",
+    "focused_status": "pass",
+    "focused_cases": 13,
+    "focused_test_sha256": "e0216d93122273a479e149fa1d8a455e3893be2bba5e587e74f26bca055a30ea",
+    "local_raw_result_sha256": "0a811e0f525a6c14c41760fbd572226ce620419c9ca3e944562fec30d78bc4fb",
+    "diff_hygiene": "git diff --check and git diff --cached --check pass",
+    "tracked_repository_CI_workflows": [],
+    "new_Lean_compilation_image_guest_or_SDK_journey_jobs": 0,
+    "scope": "Owned inert producer/Lean doubles and affected-interface static comparison only; synthetic layout fixture is not a real image."
+  },
+  "historical_runtime_evidence": {
+    "tested_source_commit": "b31ad418669fab570064d8a821b28f1d5cf42d7b",
+    "tested_main_base": "2f6dbcf02a0c53d93c7a880c294e3ce12f6632f6",
+    "actual_worker": "74a7c8082d246983521ac537045d150e5b27d24c582a0ee21efdcc89a327579d",
+    "image": {
+      "bytes": 6291456,
+      "sha256": "973e1f9f73ecc32d22e2e7bc3d64b6b7fb392555303d5f587788324f2d55cbdb"
+    },
+    "x86_backend": {
+      "bytes": 34640,
+      "sha256": "3b7a6a43297d9b84253f095bbdab01755993980196d2aa768fbe68b8d41b519a"
+    },
+    "construction_seconds": 112.613612,
+    "guest_seconds": 2.346243,
+    "missing_descriptor_refusal_preserved_outputs": 264,
+    "native_observations": "ABI2; six distinct live core identities; public A create/read, B revision with parent equal actual A object ID; exact B and unchanged A readback; normal shutdown and exact owned cleanup/private socket removal.",
+    "review": "Scoped saved-evidence PASS by /root/core_build_review; no independent runtime reproduction.",
+    "complete_immutable_local_records": {
+      "branch": "codex/core-build-binding-20261116",
+      "commit": "a8fbd6c737d75e673b3a4024d0756831635cde9f",
+      "path": "docs/evidence/campaign011-core-direct-build-20261116.json",
+      "sha256": "b972ad8c5581a5972cc32b257748ffe1d50789882343ab36507970cfa76250bf",
+      "availability": "Retained locally, not published or transplanted into this integration."
+    },
+    "earlier_failed_wrapper": "Preserved separately at c252bc6ef1dd6c9937d52c68c18a6ecc2e76e103; its consumed failed launch is not relabeled."
+  },
+  "integrated_worker_attribution": {
+    "producer_sha256": "6a59a165f688e6dd7e17a08f185ffd2d5141e208f2a3affde2bc94b3fe461c39",
+    "computed_only_worker": "0736b9a10e518ef220e180982a7eb15a496eae90b95a6d34a9e710a28c9845e3",
+    "normalized_descriptor_sha256": "3c641e76195f884262cd965c6072afc78566e12c937c34ce691bc2a756bc10e0",
+    "selected_descriptor_file_sha256": "d6cfcbeda83f5793985f247790ec2540fbfffc7714e79581081d0d49f01e5034",
+    "reason": "PR10 changes the producer file hash while affected resolver/identity ASTs remain identical. Expected worker is computed from current source plus a previously captured descriptor; no resolver execution or identity override.",
+    "new_main_image_or_guest_acceptance": false
+  },
+  "limits_and_scope": "Worker resolution is frozen once; unchanged driver.tool still reads effective environment/configuration. Keep actual inputs stable. Historical runtime evidence supports the unchanged fix logic on its frozen source only. No later-main, SDK app, ARM, independent administration, ten-owner, creator or full RG01/MVP acceptance transfer.",
+  "selection": "Only tools/driver.py, tools/live_build.py, tests/core_build_binding.py, two existing usage/status HTML documents and this concise summary. No controller machinery, raw PID inventories, image/backend binary or duplicated detailed records.",
+  "integration": "Local preparation only; no push, PR, merge, new compiler/guest, settings or authority action."
+}

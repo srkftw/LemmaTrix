@@ -3,6 +3,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 LOCK = json.loads((ROOT/'toolchain.lock.json').read_text())
 BUILD = ROOT/'build'
+LEAN_OPTIONS = ('-j1', '-s65536', '-Dcompiler.extract_closed=false')
 
 def tool(name):
     config_path=BUILD/'toolchain-host.json'
@@ -29,7 +30,7 @@ def run(args, **kw):
 
 def lean(args):
     env = dict(os.environ, LEAN_PATH=str(ROOT), PATH=str(Path(tool('lean')).parent)+':'+os.environ['PATH'])
-    run([tool('lean'), '-Dcompiler.extract_closed=false', *args], env=env)
+    run([tool('lean'), *LEAN_OPTIONS, *args], env=env)
 
 def asm(src, out, target='riscv64-unknown-elf'):
     opts = ['-march=rv64im', '-mabi=lp64', '-mno-relax'] if target.startswith('riscv') else []
